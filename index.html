@@ -77,6 +77,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .logo-md{height:36px}
 .logo-lg{height:44px}
 .logo-xl{height:50px}
+.logo-plain{filter:none!important;opacity:0.95}
+.logo-badge{display:flex;align-items:center;justify-content:center;height:42px;min-width:42px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)}
+.logo-badge img{display:block;max-height:24px;max-width:110px;object-fit:contain}
+.logo-badge.square{padding:8px;min-width:42px;width:42px}
+.logo-badge.square img{max-height:24px;max-width:24px}
+.investor-logo-row{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.investor-logo{display:flex;align-items:center;justify-content:center;height:48px;min-width:48px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)}
+.investor-logo img{display:block;max-height:28px;max-width:120px;object-fit:contain}
+.investor-logo.square{padding:10px;min-width:48px;width:48px}
+.investor-logo.square img{max-height:28px;max-width:28px}
 
 /* ── CRED LOGOS ── */
 .cred-logo{width:56px;height:56px;object-fit:contain;border-radius:12px;margin-bottom:14px}
@@ -212,19 +222,21 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
     <div class="logo-strip reveal">
       <div class="logo-strip-label">Affiliated with</div>
       <div class="logo-row">
-        <img src="stanford.jpeg"            alt="Stanford"    class="logo-img logo-sq logo-md">
-        <img src="startx-wordmark-white.png" alt="StartX"    class="logo-img logo-sm">
-        <img src="alchemist-white.png"       alt="Alchemist"  class="logo-img logo-sm">
-        <img src="facebook.png"              alt="Facebook"   class="logo-img logo-sq logo-md">
-        <img src="mlp-official.png"          alt="MLP"        class="logo-img logo-md">
-        <img src="ppa-fixed.png"             alt="PPA"        class="logo-img logo-sq logo-xl">
-        <img src="dupr-white.png"            alt="DUPR"       class="logo-img logo-md">
+        <img src="stanford.jpeg"            alt="Stanford"     class="logo-img logo-sq logo-md">
+        <img src="startx-wordmark-white.png" alt="StartX"     class="logo-img logo-sm">
+        <img src="alchemist-white.png"       alt="Alchemist"   class="logo-img logo-sm">
+        <img src="facebook.png"              alt="Facebook"    class="logo-img logo-sq logo-md">
+        <img src="mlp-official.png"          alt="MLP"         class="logo-img logo-md">
+        <img src="ppa-fixed.png"             alt="PPA"         class="logo-img logo-sq logo-xl">
+        <img src="dupr-white.png"            alt="DUPR"        class="logo-img logo-md">
         <img src="texas-ranchers-fixed.png"  alt="TX Ranchers" class="logo-img logo-sq logo-xl">
-        <img src="hackcancer-white.png"      alt="HackCancer" class="logo-img logo-lg">
+        <img src="hackcancer-white.png"      alt="HackCancer"  class="logo-img logo-lg">
         <img src="pickleheads-ball.png"      alt="Pickleheads" class="logo-img logo-sq logo-md">
         <img src="pupsnchill-horizontal.png" alt="Pups N Chill" class="logo-img logo-xl">
-        <img src="nftpay-dark.png"           alt="NFTpay"     class="logo-img logo-md">
-        <img src="rageon-cutout.png"         alt="RageOn"     class="logo-img logo-md">
+        <img src="nftpay-dark.png"           alt="NFTpay"      class="logo-img logo-md">
+        <img src="rageon-cutout.png"         alt="RageOn"      class="logo-img logo-md">
+        <div class="logo-badge"><img src="shopify-bag.png" alt="Shopify" class="logo-plain"></div>
+        <div class="logo-badge square"><img src="bolt-electric.png" alt="Bolt" class="logo-plain"></div>
       </div>
     </div>
 
@@ -253,19 +265,14 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         <div class="cred-card-sub">Most raised in 5+ years — in under 2.5 weeks. Breaking the all-time fundraising record.</div>
       </div>
       <div class="cred-card reveal">
-        <img src="facebook.png" alt="Facebook" class="cred-logo">
-        <div class="cred-card-label">Investor · ~800% Return</div>
-        <div class="cred-card-title">Facebook</div>
-        <div class="cred-card-sub">Early investor · Long-term hold · ~800% return</div>
-      </div>
-      <div class="cred-card reveal">
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-          <img src="shopify.png" alt="Shopify" style="width:48px;height:48px;object-fit:contain;border-radius:10px">
-          <img src="bolt.png" alt="Bolt" style="width:48px;height:48px;object-fit:contain;border-radius:10px">
+        <div class="investor-logo-row">
+          <div class="investor-logo square"><img src="facebook.png" alt="Facebook"></div>
+          <div class="investor-logo"><img src="shopify-bag.png" alt="Shopify"></div>
+          <div class="investor-logo square"><img src="bolt-electric.png" alt="Bolt"></div>
         </div>
-        <div class="cred-card-label">Investor · ~2,200% Return</div>
-        <div class="cred-card-title">Shopify · Bolt · Portfolio</div>
-        <div class="cred-card-sub">~2,200% returns over 14 years · ~490% over 4 years across investment portfolio</div>
+        <div class="cred-card-label">Investor · Portfolio Returns</div>
+        <div class="cred-card-title">Facebook · Shopify · Bolt</div>
+        <div class="cred-card-sub">Early investor exposure across marquee platforms with standout long-term returns, including ~800% on Facebook and ~2,200% over 14 years across the broader portfolio.</div>
       </div>
       <div class="cred-card reveal">
         <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
