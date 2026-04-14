@@ -71,7 +71,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .logo-strip-label{font-size:13px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
 .logo-row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
 .logo-img{height:34px;object-fit:contain;filter:grayscale(100%) brightness(2.2);opacity:0.75;transition:all 0.25s}
-.logo-img:hover{filter:none;opacity:1}
+.logo-img:hover{opacity:1}
 .logo-sq{height:34px;width:34px;border-radius:8px;object-fit:cover}
 .logo-dark{background:rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px}
 .logo-on-dark{background:white;padding:5px 8px;border-radius:6px;filter:none!important;opacity:0.85}
@@ -214,16 +214,18 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       <div class="logo-strip-label">Affiliated with</div>
       <div class="logo-row">
         <img src="stanford.jpeg" alt="Stanford" class="logo-img logo-sq">
-        <img src="startx-wordmark.png" alt="StartX" class="logo-img">
-        <img src="alchemist.svg" alt="Alchemist" class="logo-invert logo-img" style="height:28px">
+        <img src="startx-wordmark-white.png" alt="StartX" class="logo-img" style="height:26px;filter:brightness(1) grayscale(0);opacity:0.85">
+        <img src="alchemist-white.png" alt="Alchemist" class="logo-img" style="height:26px;filter:brightness(1) grayscale(0);opacity:0.8">
         <img src="facebook.png" alt="Facebook" class="logo-img logo-sq">
         <img src="mlp-official.png" alt="MLP" class="logo-img">
         <img src="ppa-pickleball.jpeg" alt="PPA" class="logo-img logo-sq">
         <img src="dupr-wordmark.png" alt="DUPR" class="logo-img">
-        <img src="texas-ranchers-icon.jpeg" alt="TX Ranchers" class="logo-img logo-sq">
-        <img src="hackcancer.webp" alt="HackCancer" class="logo-on-dark logo-img logo-sq">
-        <img src="pickleheads-icon.png" alt="Pickleheads" class="logo-img logo-sq">
+        <img src="texas-ranchers-fixed.png" alt="TX Ranchers" class="logo-img logo-sq">
+        <img src="hackcancer-white.png" alt="HackCancer" class="logo-img" style="height:26px;filter:brightness(1) grayscale(0);opacity:0.8">
+        <img src="pickleheads-ball.png" alt="Pickleheads" class="logo-img logo-sq">
         <img src="pupsnchill.png" alt="Pups N Chill" class="logo-img logo-sq">
+        <img src="nftpay-dark.png" alt="NFTpay" class="logo-img" style="height:26px;filter:brightness(1) grayscale(0);opacity:0.85">
+        <img src="rageon.png" alt="RageOn" class="logo-on-dark logo-img" style="height:28px;padding:4px 8px">
       </div>
     </div>
 
@@ -231,7 +233,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       <div class="cred-card reveal">
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
           <img src="stanford.jpeg" alt="Stanford" style="width:48px;height:48px;object-fit:contain;border-radius:10px">
-          <img src="startx-wordmark.png" alt="StartX" style="height:28px;object-fit:contain;filter:brightness(2)">
+          <img src="startx-wordmark-white.png" alt="StartX" style="height:28px;object-fit:contain">
         </div>
         <div class="cred-card-label">Alum</div>
         <div class="cred-card-title">Stanford StartX</div>
@@ -239,14 +241,14 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       </div>
       <div class="cred-card reveal">
         <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;display:inline-flex;align-items:center;margin-bottom:14px;max-width:180px">
-          <img src="alchemist.svg" alt="Alchemist" style="height:28px;width:auto;filter:invert(1) brightness(1.8)">
+          <img src="alchemist-white.png" alt="Alchemist" style="height:28px;width:auto">
         </div>
         <div class="cred-card-label">Alum · Mentor · Lecturer</div>
         <div class="cred-card-title">Alchemist Accelerator</div>
         <div class="cred-card-sub">#1 Enterprise B2B Accelerator · MIT · Fundraising & Strategy</div>
       </div>
       <div class="cred-card reveal">
-        <img src="hackcancer.webp" alt="HackCancer" class="cred-logo cred-logo-white">
+        <img src="hackcancer-white.png" alt="HackCancer" style="height:40px;width:auto;margin-bottom:14px;opacity:0.9">
         <div class="cred-card-label">Mr. Silicon Valley</div>
         <div class="cred-card-title">HackCancer</div>
         <div class="cred-card-sub">Most raised in 5+ years — in under 2.5 weeks. Breaking the all-time fundraising record.</div>
@@ -268,8 +270,8 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
           <img src="mlp-pickleball.jpeg" alt="MLP" class="cred-logo-sm">
           <img src="ppa-pickleball.jpeg" alt="PPA" class="cred-logo-sm">
           <img src="dupr-icon.jpeg" alt="DUPR" class="cred-logo-sm" style="background:#fff;padding:4px;border-radius:6px">
-          <img src="texas-ranchers-icon.jpeg" alt="TX Ranchers" class="cred-logo-sm">
-          <img src="pickleheads-icon.png" alt="Pickleheads" class="cred-logo-sm">
+          <img src="texas-ranchers-fixed.png" alt="TX Ranchers" class="cred-logo-sm">
+          <img src="pickleheads-ball.png" alt="Pickleheads" class="cred-logo-sm">
         </div>
         <div class="cred-card-label">Investor</div>
         <div class="cred-card-title">Pickleball Portfolio</div>
@@ -305,6 +307,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       </a>
       <div class="venture reveal" style="cursor:default">
         <div class="venture-left">
+          <div style="margin-bottom:14px"><img src="nftpay-dark.png" alt="NFTpay" style="height:34px;object-fit:contain"></div>
           <div class="venture-role">CEO & Co-founder · Exit 2025</div>
           <div class="venture-name">NFTpay</div>
           <div class="venture-desc">Best payment solution for digital assets & NFTs. Patent pending. Pioneered NFT infrastructure starting 2016.</div>
@@ -313,6 +316,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       </div>
       <div class="venture reveal" style="cursor:default">
         <div class="venture-left">
+          <div style="margin-bottom:14px"><img src="rageon.png" alt="RageOn" style="height:32px;background:white;padding:4px 10px;border-radius:8px;object-fit:contain"></div>
           <div class="venture-role">CEO & Co-founder · Acquired</div>
           <div class="venture-name">RageOn!</div>
           <div class="venture-desc">World's largest all-over-print online store. $30M+ revenue. Patented POD technology. 100M+ products. Licensed with KISS, Black Eyed Peas, Seth Rogen, Lisa Frank & more.</div>
