@@ -78,15 +78,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .logo-lg{height:44px}
 .logo-xl{height:50px}
 .logo-plain{filter:none!important;opacity:0.95}
-.logo-badge{display:flex;align-items:center;justify-content:center;height:42px;min-width:42px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)}
-.logo-badge img{display:block;max-height:24px;max-width:110px;object-fit:contain}
+.logo-badge{display:flex;align-items:center;justify-content:center;height:42px;min-width:42px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);transition:all 0.3s ease}
+.logo-badge img{display:block;max-height:24px;max-width:110px;object-fit:contain;filter:grayscale(100%) brightness(1.9);opacity:0.72;transition:all 0.3s ease}
+.logo-badge:hover img{filter:grayscale(0%) brightness(1);opacity:1}
 .logo-badge.square{padding:8px;min-width:42px;width:42px}
 .logo-badge.square img{max-height:24px;max-width:24px}
+.logo-badge.dupr img{max-height:18px;max-width:78px}
 .investor-logo-row{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 .investor-logo{display:flex;align-items:center;justify-content:center;height:48px;min-width:48px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)}
 .investor-logo img{display:block;max-height:28px;max-width:120px;object-fit:contain}
 .investor-logo.square{padding:10px;min-width:48px;width:48px}
 .investor-logo.square img{max-height:28px;max-width:28px}
+.investor-logo.wide{min-width:56px;padding:10px 12px}
+.investor-logo.wide img{max-height:30px;max-width:34px}
 
 /* ── CRED LOGOS ── */
 .cred-logo{width:56px;height:56px;object-fit:contain;border-radius:12px;margin-bottom:14px}
@@ -228,15 +232,16 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         <img src="facebook.png"              alt="Facebook"    class="logo-img logo-sq logo-md">
         <img src="mlp-official.png"          alt="MLP"         class="logo-img logo-md">
         <img src="ppa-fixed.png"             alt="PPA"         class="logo-img logo-sq logo-xl">
-        <img src="dupr-white.png"            alt="DUPR"        class="logo-img logo-md">
+        <div class="logo-badge dupr"><img src="dupr-wordmark.png" alt="DUPR"></div>
         <img src="texas-ranchers-fixed.png"  alt="TX Ranchers" class="logo-img logo-sq logo-xl">
         <img src="hackcancer-white.png"      alt="HackCancer"  class="logo-img logo-lg">
         <img src="pickleheads-ball.png"      alt="Pickleheads" class="logo-img logo-sq logo-md">
         <img src="pupsnchill-horizontal.png" alt="Pups N Chill" class="logo-img logo-xl">
         <img src="nftpay-dark.png"           alt="NFTpay"      class="logo-img logo-md">
         <img src="rageon-cutout.png"         alt="RageOn"      class="logo-img logo-md">
-        <div class="logo-badge"><img src="shopify-bag.png" alt="Shopify" class="logo-plain"></div>
-        <div class="logo-badge square"><img src="bolt-electric.png" alt="Bolt" class="logo-plain"></div>
+        <div class="logo-badge square"><img src="shopify-bag.png" alt="Shopify"></div>
+        <div class="logo-badge square"><img src="bolt-electric.png" alt="Bolt"></div>
+        <div class="logo-badge square"><img src="tesla-symbol.png" alt="Tesla"></div>
       </div>
     </div>
 
@@ -267,18 +272,19 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       <div class="cred-card reveal">
         <div class="investor-logo-row">
           <div class="investor-logo square"><img src="facebook.png" alt="Facebook"></div>
-          <div class="investor-logo"><img src="shopify-bag.png" alt="Shopify"></div>
+          <div class="investor-logo square"><img src="shopify-bag.png" alt="Shopify"></div>
           <div class="investor-logo square"><img src="bolt-electric.png" alt="Bolt"></div>
+          <div class="investor-logo wide"><img src="tesla-symbol.png" alt="Tesla"></div>
         </div>
         <div class="cred-card-label">Investor · Portfolio Returns</div>
-        <div class="cred-card-title">Facebook · Shopify · Bolt</div>
-        <div class="cred-card-sub">Early investor exposure across marquee platforms with standout long-term returns, including ~800% on Facebook and ~2,200% over 14 years across the broader portfolio.</div>
+        <div class="cred-card-title">Facebook · Shopify · Bolt · Tesla</div>
+        <div class="cred-card-sub">Early investor exposure across marquee platforms with standout long-term returns, including Facebook, Shopify, Bolt, and Tesla across the broader portfolio.</div>
       </div>
       <div class="cred-card reveal">
         <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
           <img src="mlp-official.png"         alt="MLP"        style="height:40px;width:auto;object-fit:contain">
           <img src="ppa-fixed.png"            alt="PPA"        style="width:40px;height:40px;object-fit:cover;border-radius:8px">
-          <img src="dupr-white.png"           alt="DUPR"       style="height:32px;width:auto;object-fit:contain">
+          <img src="dupr-wordmark.png" alt="DUPR" style="height:22px;width:auto;object-fit:contain;opacity:0.9">
           <img src="texas-ranchers-fixed.png" alt="TX Ranchers" style="width:40px;height:40px;object-fit:cover;border-radius:8px">
           <img src="pickleheads-ball.png"     alt="Pickleheads" style="width:40px;height:40px;object-fit:cover;border-radius:50%">
         </div>
