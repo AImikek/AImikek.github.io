@@ -69,15 +69,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 /* ── LOGO STRIP ── */
 .logo-strip{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;margin-top:52px}
 .logo-strip-label{font-size:13px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
-.logo-row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
-.logo-img{height:34px;object-fit:contain;filter:grayscale(100%) brightness(2.2);opacity:0.75;transition:all 0.25s}
-.logo-img:hover{opacity:1}
-.logo-sq{height:34px;width:34px;border-radius:8px;object-fit:cover}
-.logo-dark{background:rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px}
-.logo-on-dark{background:white;padding:5px 8px;border-radius:6px;filter:none!important;opacity:0.85}
-.logo-on-dark:hover{opacity:1}
-.logo-invert{filter:invert(1) grayscale(100%) brightness(1.8)!important;opacity:0.75}
-.logo-invert:hover{filter:invert(0)!important;opacity:1}
+.logo-row{display:flex;flex-wrap:wrap;gap:28px;align-items:center}
+.logo-img{height:36px;object-fit:contain;filter:grayscale(100%) brightness(2.0);opacity:0.65;transition:all 0.3s ease}
+.logo-img:hover{filter:grayscale(0%) brightness(1);opacity:1}
+.logo-sq{height:36px;width:36px;border-radius:8px;object-fit:cover}
+.logo-sm{height:28px}
+.logo-md{height:36px}
+.logo-lg{height:44px}
+.logo-xl{height:50px}
 
 /* ── CRED LOGOS ── */
 .cred-logo{width:56px;height:56px;object-fit:contain;border-radius:12px;margin-bottom:14px}
@@ -213,19 +212,19 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
     <div class="logo-strip reveal">
       <div class="logo-strip-label">Affiliated with</div>
       <div class="logo-row">
-        <img src="stanford.jpeg" alt="Stanford" class="logo-img logo-sq">
-        <img src="startx-wordmark-white.png" alt="StartX" class="logo-img" style="height:26px;filter:brightness(1) grayscale(0);opacity:0.85">
-        <img src="alchemist-white.png" alt="Alchemist" class="logo-img" style="height:26px;filter:brightness(1) grayscale(0);opacity:0.8">
-        <img src="facebook.png" alt="Facebook" class="logo-img logo-sq">
-        <img src="mlp-official.png" alt="MLP" class="logo-img">
-        <img src="ppa-fixed.png" alt="PPA" class="logo-img logo-sq" style="filter:brightness(1) grayscale(0);opacity:0.85">
-        <img src="dupr-white.png" alt="DUPR" class="logo-img" style="height:30px;filter:brightness(1) grayscale(0);opacity:0.85">
-        <img src="texas-ranchers-fixed.png" alt="TX Ranchers" class="logo-img logo-sq">
-        <img src="hackcancer-white.png" alt="HackCancer" class="logo-img" style="height:26px;filter:brightness(1) grayscale(0);opacity:0.8">
-        <img src="pickleheads-ball.png" alt="Pickleheads" class="logo-img logo-sq">
-        <img src="pupsnchill-horizontal.png" alt="Pups N Chill" class="logo-img" style="height:28px;filter:brightness(1) grayscale(0);opacity:0.85">
-        <img src="nftpay-dark.png" alt="NFTpay" class="logo-img" style="height:26px;filter:brightness(1) grayscale(0);opacity:0.85">
-        <img src="rageon-cutout.png" alt="RageOn" class="logo-img" style="height:30px;filter:brightness(1.8) grayscale(0);opacity:0.85">
+        <img src="stanford.jpeg"            alt="Stanford"    class="logo-img logo-sq logo-md">
+        <img src="startx-wordmark-white.png" alt="StartX"    class="logo-img logo-sm">
+        <img src="alchemist-white.png"       alt="Alchemist"  class="logo-img logo-sm">
+        <img src="facebook.png"              alt="Facebook"   class="logo-img logo-sq logo-md">
+        <img src="mlp-official.png"          alt="MLP"        class="logo-img logo-md">
+        <img src="ppa-fixed.png"             alt="PPA"        class="logo-img logo-sq logo-xl">
+        <img src="dupr-white.png"            alt="DUPR"       class="logo-img logo-md">
+        <img src="texas-ranchers-fixed.png"  alt="TX Ranchers" class="logo-img logo-sq logo-xl">
+        <img src="hackcancer-white.png"      alt="HackCancer" class="logo-img logo-lg">
+        <img src="pickleheads-ball.png"      alt="Pickleheads" class="logo-img logo-sq logo-md">
+        <img src="pupsnchill-horizontal.png" alt="Pups N Chill" class="logo-img logo-xl">
+        <img src="nftpay-dark.png"           alt="NFTpay"     class="logo-img logo-md">
+        <img src="rageon-cutout.png"         alt="RageOn"     class="logo-img logo-md">
       </div>
     </div>
 
@@ -260,18 +259,21 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         <div class="cred-card-sub">Early investor · Long-term hold · ~800% return</div>
       </div>
       <div class="cred-card reveal">
-        <img src="dupr-wordmark.png" alt="DUPR" class="cred-logo-wide" style="height:40px;margin-bottom:16px;filter:brightness(2.5) saturate(0.8)">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+          <img src="shopify.png" alt="Shopify" style="width:48px;height:48px;object-fit:contain;border-radius:10px">
+          <img src="bolt.png" alt="Bolt" style="width:48px;height:48px;object-fit:contain;border-radius:10px">
+        </div>
         <div class="cred-card-label">Investor · ~2,200% Return</div>
-        <div class="cred-card-title">Shopify + Portfolio</div>
+        <div class="cred-card-title">Shopify · Bolt · Portfolio</div>
         <div class="cred-card-sub">~2,200% returns over 14 years · ~490% over 4 years across investment portfolio</div>
       </div>
       <div class="cred-card reveal">
         <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
-          <img src="mlp-pickleball.jpeg" alt="MLP" class="cred-logo-sm">
-          <img src="ppa-fixed.png" alt="PPA" class="cred-logo-sm">
-          <img src="dupr-white.png" alt="DUPR" class="cred-logo-sm" style="height:36px;width:auto">
-          <img src="texas-ranchers-fixed.png" alt="TX Ranchers" class="cred-logo-sm">
-          <img src="pickleheads-ball.png" alt="Pickleheads" class="cred-logo-sm">
+          <img src="mlp-official.png"         alt="MLP"        style="height:40px;width:auto;object-fit:contain">
+          <img src="ppa-fixed.png"            alt="PPA"        style="width:40px;height:40px;object-fit:cover;border-radius:8px">
+          <img src="dupr-white.png"           alt="DUPR"       style="height:32px;width:auto;object-fit:contain">
+          <img src="texas-ranchers-fixed.png" alt="TX Ranchers" style="width:40px;height:40px;object-fit:cover;border-radius:8px">
+          <img src="pickleheads-ball.png"     alt="Pickleheads" style="width:40px;height:40px;object-fit:cover;border-radius:50%">
         </div>
         <div class="cred-card-label">Investor</div>
         <div class="cred-card-title">Pickleball Portfolio</div>
@@ -299,7 +301,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       </a>
       <a href="https://pupsnchill.com" target="_blank" class="venture reveal">
         <div class="venture-left">
-          <div style="margin-bottom:14px"><img src="pupsnchill-horizontal.png" alt="Pups N Chill" style="height:36px;object-fit:contain"></div>
+          <div style="margin-bottom:14px"><img src="pupsnchill-horizontal.png" alt="Pups N Chill" style="height:52px;object-fit:contain"></div>
           <div class="venture-role">CEO & Founder · Current</div>
           <div class="venture-name">Pups N Chill</div>
           <div class="venture-desc">The #1 health, wellness, and animal advocacy event platform — uniting fitness, community, and philanthropy at scale. Miami & beyond.</div>
