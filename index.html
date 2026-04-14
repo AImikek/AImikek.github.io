@@ -4,69 +4,71 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mike Krilivsky — mikek.ai</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,600&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0d0d0f;
-  --bg2:#13131a;
-  --bg3:#1a1a24;
-  --white:#f5f3ef;
-  --gold:#c8a96e;
-  --gold2:#a88a50;
-  --muted:#8a8a9a;
-  --border:rgba(200,169,110,0.15);
-  --accent:#c8a96e;
+  --bg:#06060a;
+  --bg2:#0c0c14;
+  --bg3:#11111c;
+  --white:#f0f0f8;
+  --accent:#6c8bff;
+  --accent2:#4f6de0;
+  --accentglow:rgba(108,139,255,0.15);
+  --cyan:#4dd9c0;
+  --muted:#9494aa;
+  --border:rgba(108,139,255,0.12);
+  --border2:rgba(108,139,255,0.22);
 }
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--white);font-family:'Lato',sans-serif;font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{background:var(--bg);color:var(--white);font-family:'DM Sans',sans-serif;font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 
 /* ── NAV ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:flex;justify-content:space-between;align-items:center;background:rgba(13,13,15,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-.nav-logo{font-family:'Playfair Display',serif;font-size:18px;font-weight:400;color:var(--white);text-decoration:none;letter-spacing:0.02em}
-.nav-logo span{color:var(--gold)}
+.nav-logo{font-family:'DM Sans',sans-serif;font-size:20px;font-weight:600;color:var(--white);text-decoration:none;letter-spacing:-0.02em}
+.nav-logo span{color:var(--accent)}
 .nav-links{display:flex;gap:28px;align-items:center}
-.nav-links a{font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s}
-.nav-links a:hover{color:var(--gold)}
-.nav-cta{background:var(--gold);color:var(--bg)!important;padding:8px 18px;border-radius:6px;font-size:12px!important}
-.nav-cta:hover{background:var(--gold2);color:var(--bg)!important}
+.nav-links a{font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s}
+.nav-links a:hover{color:var(--accent)}
+.nav-cta{background:var(--accent);color:#fff!important;padding:8px 20px;border-radius:999px;font-size:12px!important;letter-spacing:0.06em}
+.nav-cta:hover{background:var(--accent2);color:#fff!important}
 
 /* ── HERO ── */
 .hero{min-height:100vh;display:flex;align-items:center;padding:120px 32px 80px;position:relative;overflow:hidden}
-.hero-glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(200,169,110,0.08) 0%,transparent 65%);pointer-events:none}
-.hero-glow2{position:absolute;bottom:-200px;left:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(200,169,110,0.05) 0%,transparent 65%);pointer-events:none}
+.hero-glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(108,139,255,0.12) 0%,transparent 65%);pointer-events:none}
+.hero-glow2{position:absolute;bottom:-200px;left:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(108,139,255,0.07) 0%,transparent 65%);pointer-events:none}
 .hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 380px;gap:80px;align-items:center}
-.hero-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:20px}
-.hero-title{font-family:'Playfair Display',serif;font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;letter-spacing:-0.02em;margin-bottom:16px}
-.hero-title em{font-style:italic;color:var(--gold)}
-.hero-sub{font-size:18px;font-weight:300;color:var(--muted);line-height:1.75;max-width:520px;margin-bottom:36px}
+.hero-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+.hero-title{font-family:'DM Serif Display',serif;font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;letter-spacing:-0.02em;margin-bottom:16px}
+.hero-title em{font-style:italic;color:var(--accent)}
+.hero-sub{font-size:19px;font-weight:300;color:var(--muted);line-height:1.75;max-width:520px;margin-bottom:36px}
 .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px}
 .hero-stat{border:1px solid var(--border);border-radius:12px;padding:16px 18px;background:var(--bg2)}
-.hero-stat-num{font-family:'Playfair Display',serif;font-size:26px;font-weight:400;color:var(--gold);line-height:1;margin-bottom:4px}
-.hero-stat-label{font-size:11px;font-weight:400;color:var(--muted);line-height:1.4}
+.hero-stat-num{font-family:'DM Serif Display',serif;font-size:26px;font-weight:400;color:var(--accent);line-height:1;margin-bottom:4px}
+.hero-stat-label{font-size:13px;font-weight:400;color:var(--muted);line-height:1.4}
 .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
-.btn-primary{background:var(--gold);color:var(--bg);font-size:14px;font-weight:700;letter-spacing:0.06em;padding:14px 28px;border-radius:8px;text-decoration:none;transition:all 0.2s}
-.btn-primary:hover{background:var(--gold2)}
-.btn-secondary{border:1px solid var(--border);color:var(--white);font-size:14px;font-weight:700;letter-spacing:0.06em;padding:14px 28px;border-radius:8px;text-decoration:none;transition:all 0.2s}
-.btn-secondary:hover{border-color:var(--gold);color:var(--gold)}
+.btn-primary{background:var(--accent);color:#fff;font-size:14px;font-weight:600;letter-spacing:0.04em;padding:14px 32px;border-radius:999px;text-decoration:none;transition:all 0.2s}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{border:1px solid var(--border2);color:var(--white);font-size:14px;font-weight:500;letter-spacing:0.02em;padding:14px 32px;border-radius:999px;text-decoration:none;transition:all 0.2s}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);background:var(--accentglow)}
 .hero-photo{position:relative}
 .hero-photo img{width:100%;border-radius:20px;object-fit:cover;aspect-ratio:3/4;filter:grayscale(20%)}
-.hero-photo::before{content:'';position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(135deg,var(--gold) 0%,transparent 60%);z-index:-1;opacity:0.4}
+.hero-photo::before{content:'';position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);z-index:-1;opacity:0.4}
 
 /* ── SECTIONS ── */
 .section{padding:100px 32px}
 .section-inner{max-width:1100px;margin:0 auto}
-.section-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
-.section-title{font-family:'Playfair Display',serif;font-size:clamp(32px,4vw,52px);font-weight:400;line-height:1.1;letter-spacing:-0.02em;margin-bottom:24px}
-.section-title em{font-style:italic;color:var(--gold)}
-.section-body{font-size:16px;font-weight:300;color:var(--muted);line-height:1.9;max-width:680px;margin-bottom:16px}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+.section-title{font-family:'DM Serif Display',serif;font-size:clamp(32px,4vw,52px);font-weight:400;line-height:1.1;letter-spacing:-0.02em;margin-bottom:24px}
+.section-title em{font-style:italic;color:var(--accent)}
+.section-body{font-size:17px;font-weight:300;color:var(--muted);line-height:1.9;max-width:680px;margin-bottom:16px}
 .alt{background:var(--bg2)}
 
 /* ── CREDENTIALS ── */
 
 /* ── LOGO STRIP ── */
-.logo-strip{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px 28px;margin-top:52px}
-.logo-strip-label{font-size:10px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.logo-strip{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;margin-top:52px}
+.logo-strip-label{font-size:12px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
 .logo-row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
 .logo-img{height:32px;object-fit:contain;filter:grayscale(100%) brightness(1.8);opacity:0.7;transition:all 0.2s}
 .logo-img:hover{filter:none;opacity:1}
@@ -80,50 +82,53 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .cred-logo-sm{width:36px;height:36px;object-fit:contain;border-radius:6px}
 
 .cred-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:48px}
-.cred-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:24px 26px}
-.cred-card-label{font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
-.cred-card-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:400;color:var(--white);margin-bottom:6px}
-.cred-card-sub{font-size:14px;color:var(--muted);line-height:1.55}
+.cred-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:26px;transition:border-color 0.2s}.cred-card:hover{border-color:var(--border2)}
+.cred-card-label{font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.cred-card-title{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;color:var(--white);margin-bottom:6px}
+.cred-card-sub{font-size:15px;color:var(--muted);line-height:1.55}
 
 /* ── VENTURES ── */
 .ventures{display:flex;flex-direction:column;gap:16px;margin-top:48px}
-.venture{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:26px 28px;display:flex;justify-content:space-between;align-items:center;gap:20px;text-decoration:none;transition:all 0.2s}
-.venture:hover{border-color:var(--gold);transform:translateX(4px)}
+.venture{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;display:flex;justify-content:space-between;align-items:center;gap:20px;text-decoration:none;transition:all 0.25s}
+.venture:hover{border-color:var(--border2);background:var(--bg3);transform:translateX(6px)}
 .venture-left{}
-.venture-role{font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
-.venture-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;color:var(--white);margin-bottom:4px}
-.venture-desc{font-size:14px;color:var(--muted);line-height:1.5;max-width:500px}
-.venture-arrow{font-size:22px;color:var(--gold);flex-shrink:0;opacity:0.5}
+.venture-role{font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.venture-name{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;color:var(--white);margin-bottom:4px}
+.venture-desc{font-size:15px;color:var(--muted);line-height:1.5;max-width:500px}
+.venture-arrow{font-size:22px;color:var(--accent);flex-shrink:0;opacity:0.5}
 
 /* ── CONTACT FORM ── */
-.form-wrap{max-width:620px;margin:48px auto 0}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-wrap{max-width:680px;margin:48px 0 0}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form-full{grid-column:1/-1}
-.form-group{display:flex;flex-direction:column;gap:6px}
-label{font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted)}
-label span{color:var(--gold);margin-left:2px}
-input,textarea,select{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-family:'Lato',sans-serif;font-size:15px;font-weight:400;color:var(--white);outline:none;transition:border-color 0.2s;-webkit-appearance:none}
-input::placeholder,textarea::placeholder{color:rgba(138,138,154,0.5)}
-input:focus,textarea:focus,select:focus{border-color:var(--gold)}
-textarea{resize:vertical;min-height:110px}
-.form-submit{width:100%;background:var(--gold);color:var(--bg);font-family:'Lato',sans-serif;font-size:15px;font-weight:700;letter-spacing:0.08em;padding:16px;border:none;border-radius:10px;cursor:pointer;transition:background 0.2s;margin-top:8px}
-.form-submit:hover{background:var(--gold2)}
-.form-success{display:none;text-align:center;padding:28px;background:rgba(200,169,110,0.1);border:1px solid var(--border);border-radius:16px;margin-top:16px}
-.form-success h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);margin-bottom:8px}
-.form-success p{font-size:15px;color:var(--muted)}
+.form-group{display:flex;flex-direction:column;gap:7px}
+label{font-size:12px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+label .req{color:var(--accent);margin-left:2px}
+label .opt{color:rgba(107,107,128,0.6);font-size:9px;margin-left:4px;text-transform:none;letter-spacing:0}
+input,textarea{background:transparent;border:none;border-bottom:1px solid rgba(108,139,255,0.2);border-radius:0;padding:12px 0;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:300;color:var(--white);outline:none;transition:border-color 0.25s;width:100%;-webkit-appearance:none}
+input::placeholder,textarea::placeholder{color:rgba(107,107,128,0.45);font-weight:300}
+input:focus,textarea:focus{border-bottom-color:var(--accent)}
+textarea{resize:none;min-height:100px;padding-top:14px}
+.form-divider{grid-column:1/-1;height:1px;background:var(--border);margin:8px 0}
+.form-submit{width:auto;padding-left:48px;padding-right:48px;background:transparent;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:18px;border:1px solid var(--border2);border-radius:999px;cursor:pointer;transition:all 0.25s;margin-top:16px}
+.form-submit:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.form-success{display:none;text-align:left;padding:48px 0}
+.form-success-icon{font-size:32px;margin-bottom:16px;opacity:0.8}
+.form-success h3{font-family:'DM Serif Display',serif;font-size:26px;font-weight:400;color:var(--white);margin-bottom:10px}
+.form-success p{font-size:15px;color:var(--muted);font-weight:300}
 
 /* ── SOCIAL / FOOTER ── */
 footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px 36px;text-align:center}
 .footer-inner{max-width:1100px;margin:0 auto}
-.footer-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;color:var(--white);margin-bottom:24px}
-.footer-logo span{color:var(--gold)}
+.footer-logo{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;color:var(--white);margin-bottom:24px}
+.footer-logo span{color:var(--accent)}
 .social-row{display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:28px;flex-wrap:wrap}
-.social-btn{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:10px 18px;color:var(--white);text-decoration:none;font-size:13px;font-weight:700;transition:all 0.2s}
-.social-btn:hover{border-color:var(--gold);color:var(--gold)}
+.social-btn{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:11px 20px;color:var(--white);text-decoration:none;font-size:14px;font-weight:700;transition:all 0.2s}
+.social-btn:hover{border-color:var(--accent);color:var(--accent)}
 .social-btn svg{width:16px;height:16px;fill:currentColor;flex-shrink:0}
-.share-btn{background:var(--gold);color:var(--bg);border-color:var(--gold)}
-.share-btn:hover{background:var(--gold2);color:var(--bg)}
-.footer-copy{font-size:12px;color:rgba(138,138,154,0.5);margin-top:24px}
+.share-btn{background:var(--accent);color:#fff;border-color:var(--accent)}
+.share-btn:hover{background:var(--accent2);color:#fff}
+.footer-copy{font-size:13px;color:rgba(138,138,154,0.5);margin-top:24px}
 
 /* ── SCROLL REVEAL ── */
 .reveal{opacity:0;transform:translateY(28px);transition:opacity 0.7s ease,transform 0.7s ease}
@@ -162,7 +167,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
   <div class="hero-glow2"></div>
   <div class="hero-inner">
     <div>
-      <div class="hero-tag">mikek.ai · Miami, FL</div>
+      <div class="hero-tag">mikek.ai</div>
       <h1 class="hero-title">0→1 Builder.<br><em>Revenue Operator.</em></h1>
       <p class="hero-sub">Founder and executive who builds companies from zero to scale. Specializing in product-market fit, elite teams, and AI-powered revenue systems for the physical world.</p>
       <div class="hero-stats">
@@ -307,48 +312,49 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
 
 <!-- CONTACT -->
 <section class="section alt" id="contact">
-  <div class="section-inner" style="text-align:center">
-    <div class="section-tag reveal" style="justify-content:center">Contact</div>
+  <div class="section-inner">
+    <div class="section-tag reveal">Contact</div>
     <h2 class="section-title reveal">Let's <em>Connect.</em></h2>
-    <p class="section-body reveal" style="margin:0 auto 0">Investor, partnership, advisory, or business inquiries welcome.</p>
+    <p class="section-body reveal">Investor, partnership, advisory, or business inquiries welcome.</p>
 
     <div class="form-wrap">
       <form id="contactForm" onsubmit="submitForm(event)">
         <div class="form-grid">
           <div class="form-group">
-            <label>Your Name <span>*</span></label>
+            <label>Your Name <span class="req">*</span></label>
             <input type="text" name="name" placeholder="John Smith" required>
           </div>
           <div class="form-group">
-            <label>Company <span>*</span></label>
+            <label>Company <span class="req">*</span></label>
             <input type="text" name="company" placeholder="Acme Inc." required>
           </div>
           <div class="form-group">
-            <label>Phone <span>*</span></label>
+            <label>Phone <span class="req">*</span></label>
             <input type="tel" name="phone" placeholder="+1 (555) 000-0000" required>
           </div>
           <div class="form-group">
-            <label>Email <span>*</span></label>
+            <label>Email <span class="req">*</span></label>
             <input type="email" name="email" placeholder="you@company.com" required>
           </div>
           <div class="form-group form-full">
-            <label>Why do you want to connect? <span>*</span></label>
+            <label>What brings you here? <span class="req">*</span></label>
             <textarea name="reason" placeholder="Tell me what you have in mind..." required></textarea>
           </div>
           <div class="form-group">
-            <label>Instagram URL <span style="color:var(--muted);font-size:9px">(optional)</span></label>
+            <label>Instagram <span class="opt">optional</span></label>
             <input type="url" name="instagram" placeholder="instagram.com/yourhandle">
           </div>
           <div class="form-group">
-            <label>LinkedIn URL <span style="color:var(--muted);font-size:9px">(optional)</span></label>
+            <label>LinkedIn <span class="opt">optional</span></label>
             <input type="url" name="linkedin" placeholder="linkedin.com/in/yourname">
           </div>
         </div>
         <button type="submit" class="form-submit">Send Message →</button>
       </form>
       <div class="form-success" id="formSuccess">
-        <h3>Message Sent ✓</h3>
-        <p>Thanks for reaching out. I'll be in touch shortly.</p>
+        <div class="form-success-icon">✦</div>
+        <h3>Message received.</h3>
+        <p>I'll be in touch shortly.</p>
       </div>
     </div>
   </div>
@@ -385,7 +391,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         Share
       </button>
     </div>
-    <div class="footer-copy">© 2026 Mike Krilivsky · mikek.ai · Miami, FL</div>
+    <div class="footer-copy">© 2026 Mike Krilivsky · mikek.ai</div>
   </div>
 </footer>
 
