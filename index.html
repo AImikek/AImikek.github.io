@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mike Krilivsky — mikek.ai</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -12,20 +12,20 @@
   --bg2:#0c0c14;
   --bg3:#11111c;
   --white:#f0f0f8;
-  --accent:#6c8bff;
-  --accent2:#4f6de0;
-  --accentglow:rgba(108,139,255,0.15);
+  --accent:#7b9fff;
+  --accent2:#5f7df5;
+  --accentglow:rgba(123,159,255,0.15);
   --cyan:#4dd9c0;
   --muted:#9494aa;
-  --border:rgba(108,139,255,0.12);
-  --border2:rgba(108,139,255,0.22);
+  --border:rgba(123,159,255,0.13);
+  --border2:rgba(123,159,255,0.24);
 }
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--white);font-family:'DM Sans',sans-serif;font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 
 /* ── NAV ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:flex;justify-content:space-between;align-items:center;background:rgba(13,13,15,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-.nav-logo{font-family:'DM Sans',sans-serif;font-size:20px;font-weight:600;color:var(--white);text-decoration:none;letter-spacing:-0.02em}
+.nav-logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--white);text-decoration:none;letter-spacing:-0.03em}
 .nav-logo span{color:var(--accent)}
 .nav-links{display:flex;gap:28px;align-items:center}
 .nav-links a{font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s}
@@ -35,17 +35,17 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 
 /* ── HERO ── */
 .hero{min-height:100vh;display:flex;align-items:center;padding:120px 32px 80px;position:relative;overflow:hidden}
-.hero-glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(108,139,255,0.12) 0%,transparent 65%);pointer-events:none}
-.hero-glow2{position:absolute;bottom:-200px;left:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(108,139,255,0.07) 0%,transparent 65%);pointer-events:none}
+.hero-glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(123,159,255,0.13) 0%,transparent 65%);pointer-events:none}
+.hero-glow2{position:absolute;bottom:-200px;left:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(123,159,255,0.08) 0%,transparent 65%);pointer-events:none}
 .hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 380px;gap:80px;align-items:center}
 .hero-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
-.hero-title{font-family:'DM Serif Display',serif;font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;letter-spacing:-0.02em;margin-bottom:16px}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(44px,6vw,76px);font-weight:700;line-height:1.0;letter-spacing:-0.03em;margin-bottom:16px}
 .hero-title em{font-style:italic;color:var(--accent)}
-.hero-sub{font-size:19px;font-weight:300;color:var(--muted);line-height:1.75;max-width:520px;margin-bottom:36px}
+.hero-sub{font-size:19px;font-weight:300;font-weight:300;color:var(--muted);line-height:1.75;max-width:520px;margin-bottom:36px}
 .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px}
 .hero-stat{border:1px solid var(--border);border-radius:12px;padding:16px 18px;background:var(--bg2)}
-.hero-stat-num{font-family:'DM Serif Display',serif;font-size:26px;font-weight:400;color:var(--accent);line-height:1;margin-bottom:4px}
-.hero-stat-label{font-size:13px;font-weight:400;color:var(--muted);line-height:1.4}
+.hero-stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:4px}
+.hero-stat-label{font-size:14px;font-weight:400;color:var(--muted);line-height:1.4}
 .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
 .btn-primary{background:var(--accent);color:#fff;font-size:14px;font-weight:600;letter-spacing:0.04em;padding:14px 32px;border-radius:999px;text-decoration:none;transition:all 0.2s}
 .btn-primary:hover{background:var(--accent2)}
@@ -59,33 +59,38 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .section{padding:100px 32px}
 .section-inner{max-width:1100px;margin:0 auto}
 .section-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
-.section-title{font-family:'DM Serif Display',serif;font-size:clamp(32px,4vw,52px);font-weight:400;line-height:1.1;letter-spacing:-0.02em;margin-bottom:24px}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:700;line-height:1.1;letter-spacing:-0.03em;margin-bottom:24px}
 .section-title em{font-style:italic;color:var(--accent)}
-.section-body{font-size:17px;font-weight:300;color:var(--muted);line-height:1.9;max-width:680px;margin-bottom:16px}
+.section-body{font-size:17px;font-weight:300;font-weight:300;color:var(--muted);line-height:1.9;max-width:680px;margin-bottom:16px}
 .alt{background:var(--bg2)}
 
 /* ── CREDENTIALS ── */
 
 /* ── LOGO STRIP ── */
 .logo-strip{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;margin-top:52px}
-.logo-strip-label{font-size:12px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.logo-strip-label{font-size:13px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
 .logo-row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
-.logo-img{height:32px;object-fit:contain;filter:grayscale(100%) brightness(1.8);opacity:0.7;transition:all 0.2s}
+.logo-img{height:34px;object-fit:contain;filter:grayscale(100%) brightness(2.2);opacity:0.75;transition:all 0.25s}
 .logo-img:hover{filter:none;opacity:1}
-.logo-sq{height:32px;width:32px;border-radius:6px}
-.logo-dark{background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:6px}
+.logo-sq{height:34px;width:34px;border-radius:8px;object-fit:cover}
+.logo-dark{background:rgba(255,255,255,0.12);padding:8px 12px;border-radius:8px}
+.logo-on-dark{background:white;padding:5px 8px;border-radius:6px;filter:none!important;opacity:0.85}
+.logo-on-dark:hover{opacity:1}
+.logo-invert{filter:invert(1) grayscale(100%) brightness(1.8)!important;opacity:0.75}
+.logo-invert:hover{filter:invert(0)!important;opacity:1}
 
 /* ── CRED LOGOS ── */
-.cred-logo{width:52px;height:52px;object-fit:contain;border-radius:10px;margin-bottom:12px}
-.cred-logo-wide{width:auto;height:36px;margin-bottom:16px}
-.cred-logo-svg{width:120px;height:36px;margin-bottom:12px;display:flex;align-items:center;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:8px}
-.cred-logo-sm{width:36px;height:36px;object-fit:contain;border-radius:6px}
+.cred-logo{width:56px;height:56px;object-fit:contain;border-radius:12px;margin-bottom:14px}
+.cred-logo-wide{width:auto;height:40px;margin-bottom:16px;object-fit:contain}
+.cred-logo-svg{width:140px;height:40px;margin-bottom:14px;display:flex;align-items:center;background:rgba(255,255,255,0.08);padding:10px 14px;border-radius:10px}
+.cred-logo-sm{width:40px;height:40px;object-fit:cover;border-radius:8px}
+.cred-logo-white{background:white;padding:8px;border-radius:10px}
 
 .cred-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:48px}
 .cred-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:26px;transition:border-color 0.2s}.cred-card:hover{border-color:var(--border2)}
-.cred-card-label{font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
-.cred-card-title{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400;color:var(--white);margin-bottom:6px}
-.cred-card-sub{font-size:15px;color:var(--muted);line-height:1.55}
+.cred-card-label{font-size:13px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.cred-card-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:600;color:var(--white);margin-bottom:6px}
+.cred-card-sub{font-size:15px;font-weight:300;color:var(--muted);line-height:1.55}
 
 /* ── VENTURES ── */
 .ventures{display:flex;flex-direction:column;gap:16px;margin-top:48px}
@@ -93,8 +98,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .venture:hover{border-color:var(--border2);background:var(--bg3);transform:translateX(6px)}
 .venture-left{}
 .venture-role{font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
-.venture-name{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;color:var(--white);margin-bottom:4px}
-.venture-desc{font-size:15px;color:var(--muted);line-height:1.5;max-width:500px}
+.venture-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:600;color:var(--white);margin-bottom:4px}
+.venture-desc{font-size:15px;font-weight:300;color:var(--muted);line-height:1.5;max-width:500px}
 .venture-arrow{font-size:22px;color:var(--accent);flex-shrink:0;opacity:0.5}
 
 /* ── CONTACT FORM ── */
@@ -102,25 +107,25 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form-full{grid-column:1/-1}
 .form-group{display:flex;flex-direction:column;gap:7px}
-label{font-size:12px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+label{font-size:13px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
 label .req{color:var(--accent);margin-left:2px}
 label .opt{color:rgba(107,107,128,0.6);font-size:9px;margin-left:4px;text-transform:none;letter-spacing:0}
-input,textarea{background:transparent;border:none;border-bottom:1px solid rgba(108,139,255,0.2);border-radius:0;padding:12px 0;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:300;color:var(--white);outline:none;transition:border-color 0.25s;width:100%;-webkit-appearance:none}
+input,textarea{background:transparent;border:none;border-bottom:1px solid rgba(108,139,255,0.2);border-radius:0;padding:12px 0;font-family:'Inter',sans-serif;font-size:16px;font-weight:300;color:var(--white);outline:none;transition:border-color 0.25s;width:100%;-webkit-appearance:none}
 input::placeholder,textarea::placeholder{color:rgba(107,107,128,0.45);font-weight:300}
 input:focus,textarea:focus{border-bottom-color:var(--accent)}
 textarea{resize:none;min-height:100px;padding-top:14px}
 .form-divider{grid-column:1/-1;height:1px;background:var(--border);margin:8px 0}
-.form-submit{width:auto;padding-left:48px;padding-right:48px;background:transparent;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:18px;border:1px solid var(--border2);border-radius:999px;cursor:pointer;transition:all 0.25s;margin-top:16px}
+.form-submit{width:auto;padding-left:48px;padding-right:48px;background:transparent;color:var(--accent);font-family:'Inter',sans-serif;font-size:15px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:18px;border:1px solid var(--border2);border-radius:999px;cursor:pointer;transition:all 0.25s;margin-top:16px}
 .form-submit:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .form-success{display:none;text-align:left;padding:48px 0}
 .form-success-icon{font-size:32px;margin-bottom:16px;opacity:0.8}
-.form-success h3{font-family:'DM Serif Display',serif;font-size:26px;font-weight:400;color:var(--white);margin-bottom:10px}
+.form-success h3{font-family:'Syne',sans-serif;font-size:26px;font-weight:400;color:var(--white);margin-bottom:10px}
 .form-success p{font-size:15px;color:var(--muted);font-weight:300}
 
 /* ── SOCIAL / FOOTER ── */
 footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px 36px;text-align:center}
 .footer-inner{max-width:1100px;margin:0 auto}
-.footer-logo{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;color:var(--white);margin-bottom:24px}
+.footer-logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--white);margin-bottom:24px}
 .footer-logo span{color:var(--accent)}
 .social-row{display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:28px;flex-wrap:wrap}
 .social-btn{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:11px 20px;color:var(--white);text-decoration:none;font-size:14px;font-weight:700;transition:all 0.2s}
@@ -208,33 +213,40 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
     <div class="logo-strip reveal">
       <div class="logo-strip-label">Affiliated with</div>
       <div class="logo-row">
-        <img src="startx-wordmark.png" alt="Stanford StartX" class="logo-img">
-        <img src="alchemist.svg" alt="Alchemist Accelerator" class="logo-img logo-dark">
+        <img src="stanford.jpeg" alt="Stanford" class="logo-img logo-sq">
+        <img src="startx-wordmark.png" alt="StartX" class="logo-img">
+        <img src="alchemist.svg" alt="Alchemist" class="logo-invert logo-img" style="height:28px">
         <img src="facebook.png" alt="Facebook" class="logo-img logo-sq">
-        <img src="mlp-official.png" alt="Major League Pickleball" class="logo-img">
-        <img src="ppa-pickleball.jpeg" alt="PPA Tour" class="logo-img logo-sq">
+        <img src="mlp-official.png" alt="MLP" class="logo-img">
+        <img src="ppa-pickleball.jpeg" alt="PPA" class="logo-img logo-sq">
         <img src="dupr-wordmark.png" alt="DUPR" class="logo-img">
-        <img src="texas-ranchers-wordmark.png" alt="TX Ranchers" class="logo-img">
-        <img src="hackcancer.webp" alt="HackCancer" class="logo-img logo-sq">
+        <img src="texas-ranchers-icon.jpeg" alt="TX Ranchers" class="logo-img logo-sq">
+        <img src="hackcancer.webp" alt="HackCancer" class="logo-on-dark logo-img logo-sq">
+        <img src="pickleheads-icon.png" alt="Pickleheads" class="logo-img logo-sq">
         <img src="pupsnchill.png" alt="Pups N Chill" class="logo-img logo-sq">
       </div>
     </div>
 
     <div class="cred-grid">
       <div class="cred-card reveal">
-        <img src="startx-icon.jpeg" alt="StartX" class="cred-logo">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
+          <img src="stanford.jpeg" alt="Stanford" style="width:48px;height:48px;object-fit:contain;border-radius:10px">
+          <img src="startx-wordmark.png" alt="StartX" style="height:28px;object-fit:contain;filter:brightness(2)">
+        </div>
         <div class="cred-card-label">Alum</div>
         <div class="cred-card-title">Stanford StartX</div>
         <div class="cred-card-sub">Stanford's top entrepreneur accelerator · 2016–2017 · Takes no equity · Extremely selective</div>
       </div>
       <div class="cred-card reveal">
-        <div class="cred-logo cred-logo-svg"><img src="alchemist.svg" alt="Alchemist" style="width:100%;filter:invert(1)"></div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;display:inline-flex;align-items:center;margin-bottom:14px;max-width:180px">
+          <img src="alchemist.svg" alt="Alchemist" style="height:28px;width:auto;filter:invert(1) brightness(1.8)">
+        </div>
         <div class="cred-card-label">Alum · Mentor · Lecturer</div>
         <div class="cred-card-title">Alchemist Accelerator</div>
         <div class="cred-card-sub">#1 Enterprise B2B Accelerator · MIT · Fundraising & Strategy</div>
       </div>
       <div class="cred-card reveal">
-        <img src="hackcancer.webp" alt="HackCancer" class="cred-logo">
+        <img src="hackcancer.webp" alt="HackCancer" class="cred-logo cred-logo-white">
         <div class="cred-card-label">Mr. Silicon Valley</div>
         <div class="cred-card-title">HackCancer</div>
         <div class="cred-card-sub">Most raised in 5+ years — in under 2.5 weeks. Breaking the all-time fundraising record.</div>
@@ -246,17 +258,18 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         <div class="cred-card-sub">Early investor · Long-term hold · ~800% return</div>
       </div>
       <div class="cred-card reveal">
-        <img src="dupr-wordmark.png" alt="DUPR" class="cred-logo cred-logo-wide">
+        <img src="dupr-wordmark.png" alt="DUPR" class="cred-logo-wide" style="height:40px;margin-bottom:16px;filter:brightness(2.5) saturate(0.8)">
         <div class="cred-card-label">Investor · ~2,200% Return</div>
         <div class="cred-card-title">Shopify + Portfolio</div>
         <div class="cred-card-sub">~2,200% returns over 14 years · ~490% over 4 years across investment portfolio</div>
       </div>
       <div class="cred-card reveal">
-        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-          <img src="mlp-official.png" alt="MLP" class="cred-logo-sm">
+        <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+          <img src="mlp-pickleball.jpeg" alt="MLP" class="cred-logo-sm">
           <img src="ppa-pickleball.jpeg" alt="PPA" class="cred-logo-sm">
-          <img src="dupr-icon.jpeg" alt="DUPR" class="cred-logo-sm">
+          <img src="dupr-icon.jpeg" alt="DUPR" class="cred-logo-sm" style="background:#fff;padding:4px;border-radius:6px">
           <img src="texas-ranchers-icon.jpeg" alt="TX Ranchers" class="cred-logo-sm">
+          <img src="pickleheads-icon.png" alt="Pickleheads" class="cred-logo-sm">
         </div>
         <div class="cred-card-label">Investor</div>
         <div class="cred-card-title">Pickleball Portfolio</div>
@@ -282,7 +295,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         </div>
         <div class="venture-arrow">→</div>
       </a>
-      <a href="https://pupnsnchill.com" target="_blank" class="venture reveal">
+      <a href="https://pupsnchill.com" target="_blank" class="venture reveal">
         <div class="venture-left">
           <div class="venture-role">CEO & Founder · Current</div>
           <div class="venture-name">Pups N Chill</div>
