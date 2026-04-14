@@ -63,6 +63,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .alt{background:var(--bg2)}
 
 /* ── CREDENTIALS ── */
+
+/* ── LOGO STRIP ── */
+.logo-strip{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px 28px;margin-top:52px}
+.logo-strip-label{font-size:10px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.logo-row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+.logo-img{height:32px;object-fit:contain;filter:grayscale(100%) brightness(1.8);opacity:0.7;transition:all 0.2s}
+.logo-img:hover{filter:none;opacity:1}
+.logo-sq{height:32px;width:32px;border-radius:6px}
+.logo-dark{background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:6px}
+
+/* ── CRED LOGOS ── */
+.cred-logo{width:52px;height:52px;object-fit:contain;border-radius:10px;margin-bottom:12px}
+.cred-logo-wide{width:auto;height:36px;margin-bottom:16px}
+.cred-logo-svg{width:120px;height:36px;margin-bottom:12px;display:flex;align-items:center;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:8px}
+.cred-logo-sm{width:36px;height:36px;object-fit:contain;border-radius:6px}
+
 .cred-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:48px}
 .cred-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:24px 26px}
 .cred-card-label{font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
@@ -183,36 +199,63 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
     <p class="section-body reveal">Stanford StartX alum. Alchemist Accelerator mentor and lecturer. Named Mr. Silicon Valley. Raised more money for HackCancer in under 2.5 weeks than anyone had in 5+ years — breaking the all-time fundraising record. Accepted to West Point with a Congressional Nomination — turned it down to tour with a rock band and run a record label.</p>
     <p class="section-body reveal">Now building AI-powered revenue systems for physical businesses — starting with longevity clinics. The same frameworks that scaled my companies are being automated for operators who don't have time to build them from scratch.</p>
 
+    <!-- LOGO STRIP -->
+    <div class="logo-strip reveal">
+      <div class="logo-strip-label">Affiliated with</div>
+      <div class="logo-row">
+        <img src="startx-wordmark.png" alt="Stanford StartX" class="logo-img">
+        <img src="alchemist.svg" alt="Alchemist Accelerator" class="logo-img logo-dark">
+        <img src="facebook.png" alt="Facebook" class="logo-img logo-sq">
+        <img src="mlp-official.png" alt="Major League Pickleball" class="logo-img">
+        <img src="ppa-pickleball.jpeg" alt="PPA Tour" class="logo-img logo-sq">
+        <img src="dupr-wordmark.png" alt="DUPR" class="logo-img">
+        <img src="texas-ranchers-wordmark.png" alt="TX Ranchers" class="logo-img">
+        <img src="hackcancer.webp" alt="HackCancer" class="logo-img logo-sq">
+        <img src="pupsnchill.png" alt="Pups N Chill" class="logo-img logo-sq">
+      </div>
+    </div>
+
     <div class="cred-grid">
       <div class="cred-card reveal">
-        <div class="cred-card-label">Education</div>
+        <img src="startx-icon.jpeg" alt="StartX" class="cred-logo">
+        <div class="cred-card-label">Alum</div>
         <div class="cred-card-title">Stanford StartX</div>
-        <div class="cred-card-sub">Entrepreneurship & Venture Acceleration · 2016–2017</div>
+        <div class="cred-card-sub">Stanford's top entrepreneur accelerator · 2016–2017 · Takes no equity · Extremely selective</div>
       </div>
       <div class="cred-card reveal">
-        <div class="cred-card-label">Recognition</div>
-        <div class="cred-card-title">Mr. Silicon Valley</div>
-        <div class="cred-card-sub">HackCancer · Most raised in 5+ years — in under 2.5 weeks</div>
-      </div>
-      <div class="cred-card reveal">
-        <div class="cred-card-label">AI Certifications</div>
-        <div class="cred-card-title">Claude · ChatGPT · DeepSeek</div>
-        <div class="cred-card-sub">Stable Diffusion · Coursiv · 2026</div>
-      </div>
-      <div class="cred-card reveal">
-        <div class="cred-card-label">Mentor & Lecturer</div>
+        <div class="cred-logo cred-logo-svg"><img src="alchemist.svg" alt="Alchemist" style="width:100%;filter:invert(1)"></div>
+        <div class="cred-card-label">Alum · Mentor · Lecturer</div>
         <div class="cred-card-title">Alchemist Accelerator</div>
         <div class="cred-card-sub">#1 Enterprise B2B Accelerator · MIT · Fundraising & Strategy</div>
       </div>
       <div class="cred-card reveal">
-        <div class="cred-card-label">Investor</div>
-        <div class="cred-card-title">Facebook · Shopify · Bolt</div>
-        <div class="cred-card-sub">~2,200% returns over 14 years · ~490% over 4 years</div>
+        <img src="hackcancer.webp" alt="HackCancer" class="cred-logo">
+        <div class="cred-card-label">Mr. Silicon Valley</div>
+        <div class="cred-card-title">HackCancer</div>
+        <div class="cred-card-sub">Most raised in 5+ years — in under 2.5 weeks. Breaking the all-time fundraising record.</div>
       </div>
       <div class="cred-card reveal">
-        <div class="cred-card-label">Co-Owner</div>
-        <div class="cred-card-title">Texas Ranchers — MLP</div>
-        <div class="cred-card-sub">Major League Pickleball · w/ Zach Bryan, Scottie Scheffler, Micah Parsons</div>
+        <img src="facebook.png" alt="Facebook" class="cred-logo">
+        <div class="cred-card-label">Investor · ~800% Return</div>
+        <div class="cred-card-title">Facebook</div>
+        <div class="cred-card-sub">Early investor · Long-term hold · ~800% return</div>
+      </div>
+      <div class="cred-card reveal">
+        <img src="dupr-wordmark.png" alt="DUPR" class="cred-logo cred-logo-wide">
+        <div class="cred-card-label">Investor · ~2,200% Return</div>
+        <div class="cred-card-title">Shopify + Portfolio</div>
+        <div class="cred-card-sub">~2,200% returns over 14 years · ~490% over 4 years across investment portfolio</div>
+      </div>
+      <div class="cred-card reveal">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+          <img src="mlp-official.png" alt="MLP" class="cred-logo-sm">
+          <img src="ppa-pickleball.jpeg" alt="PPA" class="cred-logo-sm">
+          <img src="dupr-icon.jpeg" alt="DUPR" class="cred-logo-sm">
+          <img src="texas-ranchers-icon.jpeg" alt="TX Ranchers" class="cred-logo-sm">
+        </div>
+        <div class="cred-card-label">Investor</div>
+        <div class="cred-card-title">Pickleball Portfolio</div>
+        <div class="cred-card-sub">MLP · UPA · PPA · TX Ranchers · DUPR · Pickleheads</div>
       </div>
     </div>
   </div>
