@@ -67,9 +67,10 @@
     border-radius: 24px;
     padding: 40px;
     margin: 40px auto;
-    max-width: 800px;
+    max-width: 850px;
   }
   .hook-value { font-size: 4.5rem; font-weight: 900; color: var(--sky); font-family: 'Nunito'; line-height: 1; }
+  .viral-desc { font-size: 20px; line-height: 1.6; max-width: 700px; margin: 20px auto 0; opacity: 0.9; }
 
   .section { padding: 80px 24px; }
   .label {
@@ -97,7 +98,7 @@
     margin-bottom: 40px;
   }
 
-  .economics { background: #08131c; color: white; padding: 80px 0; }
+  .economics { background: #08131c; color: white; padding: 80px 0; border-radius: 40px; margin: 0 20px; }
   .economics-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
   .economics h2 { color: #FFFFFF !important; }
   .economics .sub { color: rgba(255,255,255,0.9) !important; font-weight: 600; }
@@ -153,24 +154,14 @@
   .info-card { border-radius: 24px; padding: 40px; }
   .info-card.dark { background: #08131c; color: white; border: 1px solid rgba(255,255,255,0.1); }
   .info-card.light { background: var(--white); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-  .info-title-row { margin-bottom: 30px; }
-  .info-eyebrow { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 10px; color: var(--sky); }
-  .info-card h3 { font-family: 'Nunito'; font-size: 38px; font-weight: 900; margin-bottom: 10px; }
-
-  .grid-list { display: grid; gap: 20px; }
-  .grid-item { display: flex; align-items: flex-start; gap: 15px; }
+  .grid-item { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;}
   .icon-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 900; margin-top: 4px; }
   .dark .icon-circle { background: rgba(91,200,245,0.2); color: var(--sky); }
   .light .icon-circle { background: var(--light); color: var(--deep); border: 1px solid var(--border); }
-  
-  .item-content strong { display: block; font-size: 18px; margin-bottom: 4px; }
-  .item-content p { font-size: 16px; opacity: 0.8; line-height: 1.6; }
 
   .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 40px; }
   .step { background: var(--off); border: 1px solid var(--border); border-radius: 24px; padding: 30px 20px; }
   .step-num { width: 44px; height: 44px; border-radius: 50%; background: var(--sky); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; margin-bottom: 20px; }
-  .step h3 { font-size: 22px; font-weight: 900; margin-bottom: 12px; }
-  .step p { font-size: 16px; color: var(--mid); line-height: 1.6; }
 
   .mission-section { background: var(--light); text-align: center; border-radius: 40px; margin: 40px 20px; padding: 60px 40px; }
   .footer { background: var(--navy); color: rgba(255,255,255,0.6); text-align: center; padding: 60px 24px; }
@@ -185,11 +176,13 @@
 
   <section class="hero">
     <div class="hero-inner">
-      <h1>Turn Miami’s energy into your Profit.<br>🐶 Save animal lives. 🫶<br><span class="accent">Build massive Wealth.</span></h1>
+      <h1>Turn Miami’s energy into your Profit.<br>🐶 Save animal lives 🫶<br><span class="accent">Build massive Wealth.</span></h1>
       <div class="hook-container">
-        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.2em; opacity: 1; margin-bottom: 10px; font-weight: 800; color: white;">YOUR ESTIMATED MONTHLY PROFIT</div>
-        <div class="hook-value" id="heroIncome">$13,542</div>
-        <div style="font-size: 20px; margin-top: 10px; opacity: 0.6; font-weight: 400;">Based on Aggressive Performance</div>
+        <div style="font-size: 18px; text-transform: uppercase; letter-spacing: 0.2em; font-weight: 800; color: white;">YOUR ESTIMATED PROFIT</div>
+        <div class="hook-value" id="heroIncome">$13,542 / MONTH</div>
+        <div class="viral-desc">
+          We've built the most viral street activation in Miami. Now, we're looking for the right partners to scale it. When you win, local animal rescues win. We've already raised $10k+ for shelters—help us save animals.
+        </div>
       </div>
     </div>
   </section>
@@ -197,7 +190,7 @@
   <!-- ECONOMICS SECTION -->
   <section class="economics" id="money">
     <div class="economics-inner">
-      <span class="label">Economics</span>
+      <span class="label">The Numbers Driven Deal</span>
       <h2>What's in it for YOU?</h2>
       <p class="sub">This is exactly what you put in your pocket every month based on a 50/50 split with your partner.</p>
       
@@ -211,17 +204,14 @@
         <div class="econ-card highlight">
           <div style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.5); margin-bottom: 12px; text-transform: uppercase;">YOUR MONTHLY PROFIT</div>
           <div class="v" id="cardIncome">$13,542</div>
-          <div style="margin-top: 10px; opacity: 0.8; font-size: 16px;">Direct cash take-home per person.</div>
         </div>
         <div class="econ-card">
           <div style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.5); margin-bottom: 12px; text-transform: uppercase;">YOUR ANNUAL UPSIDE</div>
           <div class="v" id="cardYearly">$162,504</div>
-          <div style="margin-top: 10px; opacity: 0.8; font-size: 16px;">Based on current performance tier.</div>
         </div>
         <div class="econ-card">
           <div style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.5); margin-bottom: 12px; text-transform: uppercase;">EQUITY CREDITS</div>
           <div class="v">$3,640</div>
-          <div style="margin-top: 10px; opacity: 0.8; font-size: 16px;">Earned at $30/hr toward a $10M valuation.</div>
         </div>
       </div>
 
@@ -229,7 +219,7 @@
         <table>
           <thead>
             <tr>
-              <th>Revenue Type</th>
+              <th>Revenue Stream</th>
               <th>Volume Assumption</th>
               <th>YOUR PROFIT (50/50 Split)</th>
             </tr>
@@ -261,7 +251,7 @@
 
       <div class="view-callout">
         <div id="aggressive-view" class="view-text active">
-          <p><span class="view-label">Aggressive view:</span> This assumes a very strong operator who shows up consistently, brings energy, builds sponsor relationships, and treats this like a real business.</p>
+          <p><span class="view-label">Aggressive view:</span> This assumes a very strong operator who shows up consistently, brings energy, and builds sponsor relationships.</p>
         </div>
         <div id="moderate-view" class="view-text">
           <p><span class="view-label">Moderate view:</span> This assumes consistent execution, good sponsor traction, and solid merchandise movement, but not a breakout pace every week.</p>
@@ -273,80 +263,52 @@
     </div>
   </section>
 
-  <!-- INFORMATION CARDS BELOW ECONOMICS -->
+  <!-- INFO CARDS -->
   <section class="section">
     <div class="section-inner">
       <div class="info-card-container">
         <div class="info-card dark">
-          <div class="info-title-row">
-            <div class="info-eyebrow">The Deal in Plain English</div>
-            <h3>How you win</h3>
-          </div>
+          <div style="color: var(--sky); font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 10px;">The Deal in Plain English</div>
+          <h3 style="font-family:'Nunito'; font-size:38px; font-weight:900; margin-bottom:30px;">How you win</h3>
           <div class="grid-list">
             <div class="grid-item">
               <div class="icon-circle">✓</div>
-              <div class="item-content">
-                <strong>Cash flow from day one</strong>
-                <p>Keep 75% of hang-bar donations collected through your code. This is immediate, motivating profit.</p>
-              </div>
+              <div style="font-size: 18px;"><strong>Cash flow from day one:</strong> Keep 75% of donations.</div>
             </div>
             <div class="grid-item">
               <div class="icon-circle">✓</div>
-              <div class="item-content">
-                <strong>Sponsorship upside on top</strong>
-                <p>Every brand intro becomes meaningful extra money. Your social network converts into a 30% commission.</p>
-              </div>
+              <div style="font-size: 18px;"><strong>Sponsorship upside:</strong> Earn 30% commission on intros.</div>
             </div>
             <div class="grid-item">
               <div class="icon-circle">✓</div>
-              <div class="item-content">
-                <strong>Equity credit story</strong>
-                <p>Every hour worked earns equity credits at $30/hr, giving you an ownership stake in a $10M brand.</p>
-              </div>
+              <div style="font-size: 18px;"><strong>Equity credits:</strong> Earn $30/hr toward a $10M valuation.</div>
             </div>
             <div class="grid-item">
               <div class="icon-circle">✓</div>
-              <div class="item-content">
-                <strong>Visibility and relationships</strong>
-                <p>Meet Miami's elite. You are the face of a high-energy movement with massive networking value.</p>
-              </div>
+              <div style="font-size: 18px;"><strong>Mission Driven:</strong> Help save animal lives while building wealth.</div>
             </div>
           </div>
         </div>
 
         <div class="info-card light">
-          <div class="info-title-row">
-            <div class="info-eyebrow">What you must do</div>
-            <h3>What success requires</h3>
-          </div>
+          <div style="color: var(--sky); font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 10px;">The Commitment</div>
+          <h3 style="font-family:'Nunito'; font-size:38px; font-weight:900; margin-bottom:30px;">What success requires</h3>
           <div class="grid-list">
             <div class="grid-item">
               <div class="icon-circle">1</div>
-              <div class="item-content">
-                <strong>Show up consistently</strong>
-                <p>Operate the bar at approved locations at least 5 nights a week. Consistency builds the brand.</p>
-              </div>
+              <div style="font-size: 18px;"><strong>Consistency:</strong> Min 5 nights/wk at approved locations.</div>
             </div>
             <div class="grid-item">
               <div class="icon-circle">2</div>
-              <div class="item-content">
-                <strong>Bring the energy</strong>
-                <p>You aren't just holding a bar; you're pitching a challenge. Talk to people, keep the vibe strong, and close donations.</p>
-              </div>
+              <div style="font-size: 18px;"><strong>Energy:</strong> Pitch the challenge and close donations.</div>
             </div>
             <div class="grid-item">
               <div class="icon-circle">3</div>
-              <div class="item-content">
-                <strong>Track everything</strong>
-                <p>Log your hours and ensure every participant registers using your unique referral code.</p>
-              </div>
+              <div style="font-size: 18px;"><strong>Tracking:</strong> Log hours and referral code data.</div>
             </div>
             <div class="grid-item">
               <div class="icon-circle">4</div>
-              <div class="item-content">
-                <strong>Think bigger than the bar</strong>
-                <p>The real value is stacking donations, sponsors, merchandise, and content together into one powerhouse income stream.</p>
-              </div>
+              <div style="font-size: 18px;"><strong>Professionalism:</strong> Maintain branded gear and supplies.</div>
             </div>
           </div>
         </div>
@@ -360,11 +322,11 @@
       <span class="label">The Path</span>
       <h2>Your 5 Steps to Launch</h2>
       <div class="steps">
-        <div class="step"><div class="step-num">1</div><h3>The Deal</h3><p>Review your 75% donation split, 30% sponsor fee, and equity credits.</p></div>
-        <div class="step"><div class="step-num">2</div><h3>The Partner</h3><p>Find your reliable co-founder. This is a two-person powerhouse operation.</p></div>
-        <div class="step"><div class="step-num">3</div><h3>The Logistics</h3><p>Set your 28-hour/5-night schedule and prep your time logging tools.</p></div>
-        <div class="step"><div class="step-num">4</div><h3>The Gear</h3><p>Order your branded bar, whiteboard, signage, and TMC apparel.</p></div>
-        <div class="step"><div class="step-num">5</div><h3>The Execution</h3><p>Hit the street, save animals, and start generating founder-level income.</p></div>
+        <div class="step"><div class="step-num">1</div><h3>The Deal</h3><p>Review your splits and equity structure.</p></div>
+        <div class="step"><div class="step-num">2</div><h3>The Partner</h3><p>Find your two-person powerhouse co-founder.</p></div>
+        <div class="step"><div class="step-num">3</div><h3>The Logistics</h3><p>Map your 28-hr weekly schedule.</p></div>
+        <div class="step"><div class="step-num">4</div><h3>The Gear</h3><p>Order your branded bar and TMC apparel.</p></div>
+        <div class="step"><div class="step-num">5</div><h3>The Execution</h3><p>Hit the street and start generating income.</p></div>
       </div>
     </div>
   </section>
@@ -374,20 +336,20 @@
       <div class="mission-section">
         <div style="font-size: 60px; margin-bottom: 20px;">🐾</div>
         <h2>A Challenge With a Purpose</h2>
-        <p class="sub" style="margin: 0 auto 30px;">Every 140-second hang helps fund a future for an animal in need. To date, we have helped save dozens of animal lives and raised over <strong>$10,000+ for local animal shelters and rescues</strong>. By joining us, you aren't just operating a business—you're leading a movement that gives back to those who can't speak for themselves.</p>
+        <p class="sub" style="margin: 0 auto 30px;">Every 140-second hang funds a future for an animal in need. We have helped save dozens of animal lives and raised over <strong>$10,000+ for local shelters</strong>. Join us and lead a movement that gives back.</p>
       </div>
     </div>
   </section>
 
   <div class="footer">
     <p>Pups N Chill 🐶🫶 Subsidiary</p>
-    <p style="margin-top:10px; font-weight:800; color:var(--sky);">Together, we've helped save dozens of animal lives and raised $10k+ for animal rescues.</p>
+    <p style="margin-top:10px; font-weight:800; color:var(--sky);">Dozens of animal lives saved &middot; $10k+ raised for rescues.</p>
   </div>
 
 <script>
 const scenarios = {
   aggressive: {
-    hero: '$13,542',
+    hero: '$13,542 / MONTH',
     card: '$13,542',
     yearly: '$162,504',
     hangA: '$1,000/day &middot; 5 days/wk',
@@ -398,7 +360,7 @@ const scenarios = {
     shirtP: '$867'
   },
   moderate: {
-    hero: '$8,217',
+    hero: '$8,217 / MONTH',
     card: '$8,217',
     yearly: '$98,604',
     hangA: '$600/day &middot; 5 days/wk',
@@ -409,7 +371,7 @@ const scenarios = {
     shirtP: '$1,392'
   },
   conservative: {
-    hero: '$4,533',
+    hero: '$4,533 / MONTH',
     card: '$4,533',
     yearly: '$54,396',
     hangA: '$400/day &middot; 5 days/wk',
