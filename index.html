@@ -436,18 +436,16 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
 const obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add('vis') }), {threshold:0.08});
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-// Contact form — sends to Google Sheets via Google Form
-// IMPORTANT: Replace this URL with your own Google Form action URL
-// Instructions: Create a Google Form, get the pre-filled URL, replace below
-const GOOGLE_FORM_URL = 'YOUR_GOOGLE_FORM_ACTION_URL_HERE';
+// Contact form — sends to Google Form / linked Google Sheet
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScdMOB-U2hwx_NMgi069y1Oqi0bBnIRCud7toaYPl9v_pBMeg/formResponse';
 const FIELD_MAP = {
-  name: 'entry.YOUR_NAME_FIELD_ID',
-  company: 'entry.YOUR_COMPANY_FIELD_ID',
-  phone: 'entry.YOUR_PHONE_FIELD_ID',
-  email: 'entry.YOUR_EMAIL_FIELD_ID',
-  reason: 'entry.YOUR_REASON_FIELD_ID',
-  instagram: 'entry.YOUR_INSTAGRAM_FIELD_ID',
-  linkedin: 'entry.YOUR_LINKEDIN_FIELD_ID',
+  name: 'entry.1805292766',
+  company: 'entry.857428000',
+  phone: 'entry.62471081',
+  email: 'entry.1438320057',
+  reason: 'entry.1391928046',
+  instagram: 'entry.1872101300',
+  linkedin: 'entry.93254045',
 };
 
 function submitForm(e) {
