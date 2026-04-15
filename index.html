@@ -34,10 +34,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .nav-cta:hover{background:var(--accent2);color:#fff!important}
 
 /* ── HERO ── */
-.hero{min-height:100vh;display:flex;align-items:center;padding:120px 32px 80px;position:relative;overflow:hidden}
+.hero{min-height:78vh;display:flex;align-items:center;padding:84px 32px 24px;position:relative;overflow:hidden}
 .hero-glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(123,159,255,0.13) 0%,transparent 65%);pointer-events:none}
 .hero-glow2{position:absolute;bottom:-200px;left:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(123,159,255,0.08) 0%,transparent 65%);pointer-events:none}
-.hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 380px;gap:80px;align-items:center}
+.hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 380px;gap:64px;align-items:center}
 .hero-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
 .hero-title{font-family:'Syne',sans-serif;font-size:clamp(44px,6vw,76px);font-weight:700;line-height:1.0;letter-spacing:-0.03em;margin-bottom:16px}
 .hero-title em{font-style:italic;color:var(--accent)}
@@ -56,7 +56,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .hero-photo::before{content:'';position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);z-index:-1;opacity:0.4}
 
 /* ── SECTIONS ── */
-.section{padding:100px 32px}
+.section{padding:84px 32px}
 .section-inner{max-width:1100px;margin:0 auto}
 .section-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
 .section-title{font-family:'Syne',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:700;line-height:1.1;letter-spacing:-0.03em;margin-bottom:24px}
@@ -67,11 +67,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 /* ── CREDENTIALS ── */
 
 /* ── LOGO STRIP ── */
-.logo-strip{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;margin-top:52px}
+.logo-strip{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;margin-top:36px}
 .logo-strip-label{font-size:13px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
-.logo-row{display:flex;flex-wrap:wrap;gap:28px;align-items:center}
+.logo-row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
 .logo-img{height:36px;object-fit:contain;filter:grayscale(100%) brightness(2.0);opacity:0.65;transition:all 0.3s ease}
 .logo-img:hover{filter:grayscale(0%) brightness(1);opacity:1}
+.dupr-logo{height:24px;max-width:92px;filter:grayscale(100%) brightness(2.15);opacity:0.92;transition:all 0.3s ease}
+.dupr-logo:hover{filter:brightness(0) saturate(100%) invert(60%) sepia(68%) saturate(1221%) hue-rotate(194deg) brightness(103%) contrast(101%);opacity:1}
 .logo-sq{height:36px;width:36px;border-radius:8px;object-fit:cover}
 .logo-sm{height:28px}
 .logo-md{height:36px}
@@ -83,8 +85,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .logo-badge:hover img{filter:grayscale(0%) brightness(1);opacity:1}
 .logo-badge.square{padding:8px;min-width:42px;width:42px}
 .logo-badge.square img{max-height:24px;max-width:24px}
-.logo-badge.dupr{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.14)}
-.logo-badge.dupr img{max-height:18px;max-width:78px;filter:grayscale(100%) brightness(2.9)!important;opacity:0.95!important}
+.logo-badge.dupr{background:transparent;border-color:transparent;padding:0;min-width:auto;height:auto;border-radius:0}
+.logo-badge.dupr img{max-height:24px;max-width:92px;filter:grayscale(100%) brightness(2.15)!important;opacity:0.92!important}.logo-badge.dupr:hover img{filter:brightness(0) saturate(100%) invert(60%) sepia(68%) saturate(1221%) hue-rotate(194deg) brightness(103%) contrast(101%)!important;opacity:1!important}
 .investor-logo-row{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 .investor-logo{display:flex;align-items:center;justify-content:center;height:48px;min-width:48px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)}
 .investor-logo img{display:block;max-height:28px;max-width:120px;object-fit:contain}
@@ -157,11 +159,11 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
   nav{padding:14px 20px}
   .nav-links{gap:16px}
   .nav-links a:not(.nav-cta){display:none}
-  .hero{padding:100px 20px 60px}
+  .hero{padding:74px 20px 22px;min-height:auto}
   .hero-inner{grid-template-columns:1fr;gap:48px}
   .hero-photo{order:-1;max-width:280px;margin:0 auto}
   .hero-stats{grid-template-columns:1fr 1fr}
-  .section{padding:72px 20px}
+  .section{padding:60px 20px}
   .cred-grid{grid-template-columns:1fr}
   .form-grid{grid-template-columns:1fr}
   footer{padding:40px 20px 28px}
@@ -192,7 +194,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       <div class="hero-stats">
         <div class="hero-stat">
           <div class="hero-stat-num">$50M+</div>
-          <div class="hero-stat-label">Revenue built across ventures</div>
+          <div class="hero-stat-label">Revenue generated across ventures</div>
         </div>
         <div class="hero-stat">
           <div class="hero-stat-num">$10M+</div>
@@ -200,7 +202,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         </div>
         <div class="hero-stat">
           <div class="hero-stat-num">100M+</div>
-          <div class="hero-stat-label">Products on patented tech</div>
+          <div class="hero-stat-label">Products generated on patented tech</div>
         </div>
       </div>
       <div class="hero-btns">
@@ -225,7 +227,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
 
     <!-- LOGO STRIP -->
     <div class="logo-strip reveal">
-      <div class="logo-strip-label">Affiliated with</div>
+      <div class="logo-strip-label">Selected Platforms & Portfolio</div>
       <div class="logo-row">
         <img src="stanford.jpeg"            alt="Stanford"     class="logo-img logo-sq logo-md">
         <img src="startx-wordmark-white.png" alt="StartX"     class="logo-img logo-sm">
@@ -233,7 +235,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         <img src="facebook.png"              alt="Facebook"    class="logo-img logo-sq logo-md">
         <img src="mlp-official.png"          alt="MLP"         class="logo-img logo-md">
         <img src="ppa-fixed.png"             alt="PPA"         class="logo-img logo-sq logo-xl">
-        <div class="logo-badge dupr"><img src="dupr-wordmark.png" alt="DUPR"></div>
+        <img src="dupr-wordmark.png" alt="DUPR" class="logo-img dupr-logo">
         <img src="texas-ranchers-fixed.png"  alt="TX Ranchers" class="logo-img logo-sq logo-xl">
         <img src="hackcancer-white.png"      alt="HackCancer"  class="logo-img logo-lg">
         <img src="pickleheads-ball.png"      alt="Pickleheads" class="logo-img logo-sq logo-md">
@@ -279,13 +281,13 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
         </div>
         <div class="cred-card-label">Investor · Portfolio Returns</div>
         <div class="cred-card-title">Facebook · Shopify · Bolt · Tesla</div>
-        <div class="cred-card-sub">Early investor exposure across marquee platforms with standout long-term returns, including Facebook, Shopify, Bolt, and Tesla across the broader portfolio.</div>
+        <div class="cred-card-sub">Early investor exposure across 50+ startups, crypto, and public companies, including marquee names like Facebook, Shopify, Bolt, and Tesla.</div>
       </div>
       <div class="cred-card reveal">
         <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
           <img src="mlp-official.png"         alt="MLP"        style="height:40px;width:auto;object-fit:contain">
           <img src="ppa-fixed.png"            alt="PPA"        style="width:40px;height:40px;object-fit:cover;border-radius:8px">
-          <img src="dupr-wordmark.png" alt="DUPR" style="height:22px;width:auto;object-fit:contain;opacity:0.9">
+          <img src="dupr-wordmark.png" alt="DUPR" style="height:22px;width:auto;object-fit:contain;opacity:1;filter:brightness(1.35)">
           <img src="texas-ranchers-fixed.png" alt="TX Ranchers" style="width:40px;height:40px;object-fit:cover;border-radius:8px">
           <img src="pickleheads-ball.png"     alt="Pickleheads" style="width:40px;height:40px;object-fit:cover;border-radius:50%">
         </div>
@@ -325,7 +327,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
       <div class="venture reveal" style="cursor:default">
         <div class="venture-left">
           <div style="margin-bottom:14px"><img src="nftpay-dark.png" alt="NFTpay" style="height:34px;object-fit:contain"></div>
-          <div class="venture-role">CEO & Co-founder · Exit 2025</div>
+          <div class="venture-role">CEO & Co-founder · Exit</div>
           <div class="venture-name">NFTpay</div>
           <div class="venture-desc">Best payment solution for digital assets & NFTs. Patent pending. Pioneered NFT infrastructure starting 2016.</div>
         </div>
