@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mike Krilivsky — mikek.ai</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -21,7 +21,7 @@
   --border2:rgba(123,159,255,0.24);
 }
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{background:var(--bg);color:var(--white);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;text-rendering:optimizeLegibility}
 
 /* ── NAV ── */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:flex;justify-content:space-between;align-items:center;background:rgba(13,13,15,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
@@ -39,7 +39,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .hero-glow2{position:absolute;bottom:-200px;left:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(123,159,255,0.08) 0%,transparent 65%);pointer-events:none}
 .hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 380px;gap:64px;align-items:center}
 .hero-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
-.hero-title{font-family:'Syne',sans-serif;font-size:clamp(44px,6vw,76px);font-weight:700;line-height:1.0;letter-spacing:-0.03em;margin-bottom:16px}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(44px,6vw,76px);font-weight:700;line-height:1.06;letter-spacing:-0.03em;margin-bottom:16px;padding-bottom:0.08em}
 .hero-title em{font-style:italic;color:var(--accent)}
 .hero-sub{font-size:19px;font-weight:300;font-weight:300;color:var(--muted);line-height:1.75;max-width:520px;margin-bottom:36px}
 .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px}
@@ -75,8 +75,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:fl
 .dupr-logo{height:24px;max-width:92px;filter:grayscale(100%) brightness(2.15);opacity:0.92;transition:all 0.3s ease}
 .dupr-logo:hover{filter:brightness(0) saturate(100%) invert(60%) sepia(68%) saturate(1221%) hue-rotate(194deg) brightness(103%) contrast(101%);opacity:1}
 .logo-sq{height:36px;width:36px;border-radius:8px;object-fit:cover}
-.logo-sm{height:28px}
-.logo-md{height:36px}
+.logo-sm{height:30px}
+.logo-md{height:40px}
 .logo-lg{height:44px}
 .logo-xl{height:50px}
 .logo-plain{filter:none!important;opacity:0.95}
@@ -221,9 +221,9 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
   <div class="section-inner">
     <div class="section-tag reveal">About</div>
     <h2 class="section-title reveal">Builder. Investor. <em>Operator.</em></h2>
-    <p class="section-body reveal">I build companies from zero — and scale them to $30M+. I've pioneered NFT payment infrastructure, deployed patented print-on-demand technology across four continents, and assembled executive teams drawing from Amazon, Google, Apple, Microsoft, Uber, PayPal, Salesforce, Oracle, Walmart, Airbnb, eBay, Stanford, and MIT.</p>
-    <p class="section-body reveal">Stanford StartX alum. Alchemist Accelerator mentor and lecturer. Named Mr. Silicon Valley. Raised more money for HackCancer in under 2.5 weeks than anyone had in 5+ years — breaking the all-time fundraising record. Accepted to West Point with a Congressional Nomination — turned it down to tour with a rock band and run a record label.</p>
-    <p class="section-body reveal">Now building AI-powered revenue systems for physical businesses — starting with longevity clinics. The same frameworks that scaled my companies are being automated for operators who don't have time to build them from scratch.</p>
+    <p class="section-body reveal">Mike Krilivsky is a founder, operator, investor, and executive who builds companies from zero to scale. He has generated tens of millions in revenue, raised over $10 million from top tier investors, and helped create products used across major consumer platforms.</p>
+    <p class="section-body reveal">His work spans revenue, partnerships, product market fit, brand, and disciplined execution. He is known for building real world businesses, creating momentum quickly, and turning vision into measurable growth.</p>
+    <p class="section-body reveal">Today he is focused on AI powered revenue systems for physical businesses, applying the same operating frameworks, growth instincts, and execution standards that have powered his past ventures.</p>
 
     <!-- LOGO STRIP -->
     <div class="logo-strip reveal">
@@ -320,7 +320,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
           <div style="margin-bottom:14px"><img src="pupsnchill-horizontal.png" alt="Pups N Chill" style="height:52px;object-fit:contain"></div>
           <div class="venture-role">CEO & Founder · Current</div>
           <div class="venture-name">Pups N Chill</div>
-          <div class="venture-desc">The #1 health, wellness, and animal advocacy event platform — uniting fitness, community, and philanthropy at scale. Miami & beyond.</div>
+          <div class="venture-desc">Miami's leading health, wellness, and animal advocacy event. 500 to 4000+ attendees, millions of reach online, worked with hundreds of incredible brands like Equinox, Starbucks, Lamborghini, and more. Dozens of animal lives saved, $10,000 donated to local animal shelters and rescues!</div>
         </div>
         <div class="venture-arrow">→</div>
       </a>
@@ -329,7 +329,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
           <div style="margin-bottom:14px"><img src="nftpay-dark.png" alt="NFTpay" style="height:34px;object-fit:contain"></div>
           <div class="venture-role">CEO & Co-founder · Exit</div>
           <div class="venture-name">NFTpay</div>
-          <div class="venture-desc">Best payment solution for digital assets & NFTs. Patent pending. Pioneered NFT infrastructure starting 2016.</div>
+          <div class="venture-desc">First and best credit card payment solution for NFTs. Patent pending. Pioneered NFT infrastructure starting 2016.</div>
         </div>
         <div class="venture-arrow" style="opacity:0.2">→</div>
       </div>
@@ -338,7 +338,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px
           <div style="margin-bottom:14px"><img src="rageon-cutout.png" alt="RageOn" style="height:36px;object-fit:contain;filter:brightness(2)"></div>
           <div class="venture-role">CEO & Co-founder · Acquired</div>
           <div class="venture-name">RageOn!</div>
-          <div class="venture-desc">World's largest all-over-print online store. $30M+ revenue. Patented POD technology. 100M+ products. Licensed with KISS, Black Eyed Peas, Seth Rogen, Lisa Frank & more.</div>
+          <div class="venture-desc">World's largest all-over-print online store. $30M+ revenue. Patented POD technology. 100M+ products. Licensed and worked with Netflix, T-Mobile, KISS, Black Eyed Peas, Shaq, Dennis Rodman, Lisa Frank and more.</div>
         </div>
         <div class="venture-arrow" style="opacity:0.2">→</div>
       </div>
