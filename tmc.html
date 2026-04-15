@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Miami Challenge — Founding Operator Opportunity</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #5BC8F5;
+    --deep: #2A9DC5;
+    --navy: #0f1e2b;
+    --ink: #172331;
+    --mid: #506476;
+    --muted: #8396a7;
+    --white: #ffffff;
+    --off: #f7fbfe;
+    --light: #eef7fd;
+    --border: #ddeaf2;
+    --gold: #c8955a;
+    --success: #12b981;
+    --tmc-orange: #FF5F1F;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Nunito Sans', sans-serif;
+    background: var(--white);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    font-size: 18px;
+  }
+  .topbar {
+    background: var(--navy);
+    color: rgba(255,255,255,.85);
+    text-align: center;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+  }
+  .hero {
+    background: radial-gradient(ellipse at top, rgba(91,200,245,.14), transparent 45%), linear-gradient(180deg, #07121b 0%, #0d1d2b 100%);
+    color: white;
+    padding: 80px 24px 100px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+  .hero-inner, .section-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 2; }
+  
+  h1 {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    line-height: 1.1;
+    font-size: clamp(2.8rem, 7vw, 5rem);
+    max-width: 950px;
+    margin: 0 auto 24px;
+  }
+  h1 .accent { color: var(--sky); }
+  
+  .hook-container {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid var(--sky);
+    border-radius: 24px;
+    padding: 40px;
+    margin: 40px auto;
+    max-width: 800px;
+  }
+  .hook-value { font-size: 4.5rem; font-weight: 900; color: var(--sky); font-family: 'Nunito'; line-height: 1; }
+
+  .section { padding: 80px 24px; }
+  .label {
+    display: inline-block;
+    color: var(--sky);
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  h2 {
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    line-height: 1.1;
+    margin-bottom: 20px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+  .sub {
+    color: var(--mid);
+    line-height: 1.75;
+    font-size: 20px;
+    max-width: 850px;
+    margin-bottom: 40px;
+  }
+
+  .economics { background: #08131c; color: white; padding: 80px 0; }
+  .economics-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  .economics h2 { color: #FFFFFF !important; }
+  .economics .sub { color: rgba(255,255,255,0.9) !important; font-weight: 600; }
+
+  .tabs { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 34px; justify-content: center; }
+  .tab {
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06);
+    color: white;
+    border-radius: 999px;
+    padding: 14px 28px;
+    font-weight: 800;
+    cursor: pointer;
+    font-size: 16px;
+    transition: .2s ease;
+  }
+  .tab.active { background: var(--sky); color: white; border-color: var(--sky); }
+  
+  .econ-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+  .econ-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    padding: 34px 24px;
+    text-align: center;
+  }
+  .econ-card.highlight { background: rgba(91,200,245,0.15); border-color: var(--sky); }
+  .econ-card .v { font-size: 3.2rem; font-weight: 900; color: white; font-family: 'Nunito'; }
+
+  .table-wrap {
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px; overflow: hidden;
+    background: rgba(0,0,0,0.2); margin-bottom: 30px;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 20px 24px; text-align: left; }
+  th { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.5); font-size: 12px; text-transform: uppercase; }
+  td { border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .money { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 22px; }
+
+  .view-callout {
+    background: rgba(18, 185, 129, 0.05);
+    border-radius: 20px;
+    padding: 25px;
+    margin-top: 30px;
+    border: 1px solid rgba(18, 185, 129, 0.15);
+  }
+  .view-text { display: none; font-size: 16px; line-height: 1.6; }
+  .view-text.active { display: block; }
+  .view-label { font-weight: 800; color: var(--success); text-transform: uppercase; font-size: 14px; display: inline-block; margin-right: 5px; }
+
+  .info-card-container { display: grid; gap: 30px; margin-top: 60px; }
+  .info-card { border-radius: 24px; padding: 40px; }
+  .info-card.dark { background: #08131c; color: white; border: 1px solid rgba(255,255,255,0.1); }
+  .info-card.light { background: var(--white); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+  .info-title-row { margin-bottom: 30px; }
+  .info-eyebrow { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 10px; color: var(--sky); }
+  .info-card h3 { font-family: 'Nunito'; font-size: 38px; font-weight: 900; margin-bottom: 10px; }
+
+  .grid-list { display: grid; gap: 20px; }
+  .grid-item { display: flex; align-items: flex-start; gap: 15px; }
+  .icon-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 900; margin-top: 4px; }
+  .dark .icon-circle { background: rgba(91,200,245,0.2); color: var(--sky); }
+  .light .icon-circle { background: var(--light); color: var(--deep); border: 1px solid var(--border); }
+  
+  .item-content strong { display: block; font-size: 18px; margin-bottom: 4px; }
+  .item-content p { font-size: 16px; opacity: 0.8; line-height: 1.6; }
+
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 40px; }
+  .step { background: var(--off); border: 1px solid var(--border); border-radius: 24px; padding: 30px 20px; }
+  .step-num { width: 44px; height: 44px; border-radius: 50%; background: var(--sky); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; margin-bottom: 20px; }
+  .step h3 { font-size: 22px; font-weight: 900; margin-bottom: 12px; }
+  .step p { font-size: 16px; color: var(--mid); line-height: 1.6; }
+
+  .mission-section { background: var(--light); text-align: center; border-radius: 40px; margin: 40px 20px; padding: 60px 40px; }
+  .footer { background: var(--navy); color: rgba(255,255,255,0.6); text-align: center; padding: 60px 24px; }
+  
+  @media (max-width: 900px) {
+    .econ-grid, .steps { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">Confidential Founding Partner Opportunity <span>&middot;</span> The Miami Challenge</div>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Turn Miami’s energy into your Profit.<br>🐶 Save animal lives. 🫶<br><span class="accent">Build massive Wealth.</span></h1>
+      <div class="hook-container">
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.2em; opacity: 1; margin-bottom: 10px; font-weight: 800; color: white;">YOUR ESTIMATED MONTHLY PROFIT</div>
+        <div class="hook-value" id="heroIncome">$13,542</div>
+        <div style="font-size: 20px; margin-top: 10px; opacity: 0.6; font-weight: 400;">Based on Aggressive Performance</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ECONOMICS SECTION -->
+  <section class="economics" id="money">
+    <div class="economics-inner">
+      <span class="label">Economics</span>
+      <h2>What's in it for YOU?</h2>
+      <p class="sub">This is exactly what you put in your pocket every month based on a 50/50 split with your partner.</p>
+      
+      <div class="tabs">
+        <button class="tab active" data-scenario="aggressive">Aggressive</button>
+        <button class="tab" data-scenario="moderate">Moderate</button>
+        <button class="tab" data-scenario="conservative">Conservative</button>
+      </div>
+
+      <div class="econ-grid">
+        <div class="econ-card highlight">
+          <div style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.5); margin-bottom: 12px; text-transform: uppercase;">YOUR MONTHLY PROFIT</div>
+          <div class="v" id="cardIncome">$13,542</div>
+          <div style="margin-top: 10px; opacity: 0.8; font-size: 16px;">Direct cash take-home per person.</div>
+        </div>
+        <div class="econ-card">
+          <div style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.5); margin-bottom: 12px; text-transform: uppercase;">YOUR ANNUAL UPSIDE</div>
+          <div class="v" id="cardYearly">$162,504</div>
+          <div style="margin-top: 10px; opacity: 0.8; font-size: 16px;">Based on current performance tier.</div>
+        </div>
+        <div class="econ-card">
+          <div style="font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.5); margin-bottom: 12px; text-transform: uppercase;">EQUITY CREDITS</div>
+          <div class="v">$3,640</div>
+          <div style="margin-top: 10px; opacity: 0.8; font-size: 16px;">Earned at $30/hr toward a $10M valuation.</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Revenue Type</th>
+              <th>Volume Assumption</th>
+              <th>YOUR PROFIT (50/50 Split)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Hang Bar Donations (75%)</td>
+              <td id="hangAssump">$1,000/day &middot; 5 days/wk</td>
+              <td class="money" style="color:var(--sky);" id="hangProfit">$8,125</td>
+            </tr>
+            <tr>
+              <td>Sponsorship Fees (30%)</td>
+              <td id="sponsAssump">$7,000/wk closed revenue</td>
+              <td class="money" style="color:var(--sky);" id="sponsProfit">$4,550</td>
+            </tr>
+            <tr>
+              <td>Merch Sales (50%)</td>
+              <td id="shirtAssump">$400/day &middot; 5 days/wk</td>
+              <td class="money" style="color:var(--sky);" id="shirtProfit">$867</td>
+            </tr>
+            <tr>
+              <td>Other Benefits</td>
+              <td>Relationships, Content, Free Products</td>
+              <td class="money" style="color:var(--sky);">Priceless</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="view-callout">
+        <div id="aggressive-view" class="view-text active">
+          <p><span class="view-label">Aggressive view:</span> This assumes a very strong operator who shows up consistently, brings energy, builds sponsor relationships, and treats this like a real business.</p>
+        </div>
+        <div id="moderate-view" class="view-text">
+          <p><span class="view-label">Moderate view:</span> This assumes consistent execution, good sponsor traction, and solid merchandise movement, but not a breakout pace every week.</p>
+        </div>
+        <div id="conservative-view" class="view-text">
+          <p><span class="view-label">Conservative view:</span> If you put in the hours and the work, this is the baseline of what you can achieve while building your momentum and mastering the movement.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INFORMATION CARDS BELOW ECONOMICS -->
+  <section class="section">
+    <div class="section-inner">
+      <div class="info-card-container">
+        <div class="info-card dark">
+          <div class="info-title-row">
+            <div class="info-eyebrow">The Deal in Plain English</div>
+            <h3>How you win</h3>
+          </div>
+          <div class="grid-list">
+            <div class="grid-item">
+              <div class="icon-circle">✓</div>
+              <div class="item-content">
+                <strong>Cash flow from day one</strong>
+                <p>Keep 75% of hang-bar donations collected through your code. This is immediate, motivating profit.</p>
+              </div>
+            </div>
+            <div class="grid-item">
+              <div class="icon-circle">✓</div>
+              <div class="item-content">
+                <strong>Sponsorship upside on top</strong>
+                <p>Every brand intro becomes meaningful extra money. Your social network converts into a 30% commission.</p>
+              </div>
+            </div>
+            <div class="grid-item">
+              <div class="icon-circle">✓</div>
+              <div class="item-content">
+                <strong>Equity credit story</strong>
+                <p>Every hour worked earns equity credits at $30/hr, giving you an ownership stake in a $10M brand.</p>
+              </div>
+            </div>
+            <div class="grid-item">
+              <div class="icon-circle">✓</div>
+              <div class="item-content">
+                <strong>Visibility and relationships</strong>
+                <p>Meet Miami's elite. You are the face of a high-energy movement with massive networking value.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card light">
+          <div class="info-title-row">
+            <div class="info-eyebrow">What you must do</div>
+            <h3>What success requires</h3>
+          </div>
+          <div class="grid-list">
+            <div class="grid-item">
+              <div class="icon-circle">1</div>
+              <div class="item-content">
+                <strong>Show up consistently</strong>
+                <p>Operate the bar at approved locations at least 5 nights a week. Consistency builds the brand.</p>
+              </div>
+            </div>
+            <div class="grid-item">
+              <div class="icon-circle">2</div>
+              <div class="item-content">
+                <strong>Bring the energy</strong>
+                <p>You aren't just holding a bar; you're pitching a challenge. Talk to people, keep the vibe strong, and close donations.</p>
+              </div>
+            </div>
+            <div class="grid-item">
+              <div class="icon-circle">3</div>
+              <div class="item-content">
+                <strong>Track everything</strong>
+                <p>Log your hours and ensure every participant registers using your unique referral code.</p>
+              </div>
+            </div>
+            <div class="grid-item">
+              <div class="icon-circle">4</div>
+              <div class="item-content">
+                <strong>Think bigger than the bar</strong>
+                <p>The real value is stacking donations, sponsors, merchandise, and content together into one powerhouse income stream.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 STEPS TO LAUNCH -->
+  <section class="section" style="padding-top:0;">
+    <div class="section-inner">
+      <span class="label">The Path</span>
+      <h2>Your 5 Steps to Launch</h2>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><h3>The Deal</h3><p>Review your 75% donation split, 30% sponsor fee, and equity credits.</p></div>
+        <div class="step"><div class="step-num">2</div><h3>The Partner</h3><p>Find your reliable co-founder. This is a two-person powerhouse operation.</p></div>
+        <div class="step"><div class="step-num">3</div><h3>The Logistics</h3><p>Set your 28-hour/5-night schedule and prep your time logging tools.</p></div>
+        <div class="step"><div class="step-num">4</div><h3>The Gear</h3><p>Order your branded bar, whiteboard, signage, and TMC apparel.</p></div>
+        <div class="step"><div class="step-num">5</div><h3>The Execution</h3><p>Hit the street, save animals, and start generating founder-level income.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 0;">
+    <div class="section-inner">
+      <div class="mission-section">
+        <div style="font-size: 60px; margin-bottom: 20px;">🐾</div>
+        <h2>A Challenge With a Purpose</h2>
+        <p class="sub" style="margin: 0 auto 30px;">Every 140-second hang helps fund a future for an animal in need. To date, we have helped save dozens of animal lives and raised over <strong>$10,000+ for local animal shelters and rescues</strong>. By joining us, you aren't just operating a business—you're leading a movement that gives back to those who can't speak for themselves.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <p>Pups N Chill 🐶🫶 Subsidiary</p>
+    <p style="margin-top:10px; font-weight:800; color:var(--sky);">Together, we've helped save dozens of animal lives and raised $10k+ for animal rescues.</p>
+  </div>
+
+<script>
+const scenarios = {
+  aggressive: {
+    hero: '$13,542',
+    card: '$13,542',
+    yearly: '$162,504',
+    hangA: '$1,000/day &middot; 5 days/wk',
+    sponsA: '$7,000/wk closed revenue',
+    shirtA: '$400/day &middot; 5 days/wk',
+    hangP: '$8,125',
+    sponsP: '$4,550',
+    shirtP: '$867'
+  },
+  moderate: {
+    hero: '$8,217',
+    card: '$8,217',
+    yearly: '$98,604',
+    hangA: '$600/day &middot; 5 days/wk',
+    sponsA: '$3,000/wk closed revenue',
+    shirtA: '$200/day &middot; 5 days/wk',
+    hangP: '$4,875',
+    sponsP: '$1,950',
+    shirtP: '$1,392'
+  },
+  conservative: {
+    hero: '$4,533',
+    card: '$4,533',
+    yearly: '$54,396',
+    hangA: '$400/day &middot; 5 days/wk',
+    sponsA: '$1,000/wk closed revenue',
+    shirtA: '$120/day &middot; 5 days/wk',
+    hangP: '$3,250',
+    sponsP: '$650',
+    shirtP: '$633'
+  }
+};
+
+const tabs = document.querySelectorAll('.tab');
+function update(name) {
+  const s = scenarios[name];
+  document.getElementById('heroIncome').innerText = s.hero;
+  document.getElementById('cardIncome').innerText = s.card;
+  document.getElementById('cardYearly').innerText = s.yearly;
+  document.getElementById('hangAssump').innerHTML = s.hangA;
+  document.getElementById('sponsAssump').innerHTML = s.sponsA;
+  document.getElementById('shirtAssump').innerHTML = s.shirtA;
+  document.getElementById('hangProfit').innerText = s.hangP;
+  document.getElementById('sponsProfit').innerText = s.sponsP;
+  document.getElementById('shirtProfit').innerText = s.shirtP;
+  
+  document.querySelectorAll('.view-text').forEach(v => v.classList.remove('active'));
+  document.getElementById(name + '-view').classList.add('active');
+
+  tabs.forEach(t => t.classList.toggle('active', t.dataset.scenario === name));
+}
+
+tabs.forEach(t => t.addEventListener('click', () => update(t.dataset.scenario)));
+</script>
+</body>
+</html>
