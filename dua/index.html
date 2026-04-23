@@ -1,1 +1,2561 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DUA Pickleball & Recovery — Rooftop Club Pro Forma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0E12;
+    --bg-alt: #0F1418;
+    --surface: #141A20;
+    --surface-elev: #1A222A;
+    --ink: #F5F1E8;
+    --ink-soft: #C9C2B0;
+    --ink-muted: #78756B;
+    --accent: #D4FF3A;
+    --accent-warm: #E8D5A6;
+    --accent-deep: #8FA834;
+    --accent-soft: #2D3518;
+    --line: rgba(245, 241, 232, 0.08);
+    --line-strong: rgba(245, 241, 232, 0.18);
+    --terra: #B8714A;
+    --sky: #7BA7BC;
+    --danger: #E8845A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter Tight', -apple-system, sans-serif;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ============= NDA GATE ============= */
+  .gate {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .gate.hidden { display: none; }
+  .gate-inner {
+    max-width: 620px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    padding: 56px 52px;
+    border-radius: 2px;
+    position: relative;
+  }
+  .gate-inner::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px; right: -1px;
+    height: 2px;
+    background: var(--accent);
+  }
+  .gate-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .gate-eyebrow::before {
+    content: '';
+    width: 18px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .gate h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 34px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 18px;
+  }
+  .gate h1 em {
+    font-style: italic;
+    color: var(--accent-warm);
+  }
+  .gate-attribution {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .gate-attribution strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .gate-body {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .gate-terms {
+    background: var(--bg-alt);
+    border: 1px solid var(--line);
+    padding: 22px 24px;
+    margin-bottom: 28px;
+    max-height: 180px;
+    overflow-y: auto;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.65;
+  }
+  .gate-terms strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .gate-form {
+    display: grid;
+    gap: 16px;
+  }
+  .gate-form input[type="text"],
+  .gate-form input[type="email"] {
+    background: var(--bg-alt);
+    border: 1px solid var(--line);
+    padding: 14px 16px;
+    color: var(--ink);
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 14.5px;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .gate-form input:focus { border-color: var(--accent); }
+  .gate-form label.check {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .gate-form input[type="checkbox"] {
+    margin-top: 3px;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+  }
+  .gate-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-top: 8px;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .gate-btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .gate-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .gate-footer {
+    margin-top: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    text-align: center;
+    text-transform: uppercase;
+  }
+  @media (max-width: 520px) {
+    .gate-inner { padding: 36px 28px; }
+    .gate h1 { font-size: 26px; }
+  }
+
+  /* ============= MAIN ============= */
+  .container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+    z-index: 2;
+  }
+
+  nav {
+    position: sticky;
+    top: 0;
+    backdrop-filter: blur(20px);
+    background: rgba(10, 14, 18, 0.82);
+    border-bottom: 1px solid var(--line);
+    z-index: 100;
+    padding: 18px 0;
+  }
+  .nav-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .nav-brand {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav-brand .dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent);
+  }
+  .nav-links {
+    display: flex;
+    gap: 28px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-weight: 500;
+  }
+  .nav-links a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+  @media (max-width: 820px) { .nav-links { display: none; } }
+
+  /* HERO */
+  .hero {
+    padding: 120px 0 100px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    right: -200px;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(212, 255, 58, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: clamp(48px, 8vw, 108px);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin-bottom: 40px;
+    max-width: 18ch;
+  }
+  .hero h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent-warm);
+  }
+  .hero h1 .accent {
+    color: var(--accent);
+    font-style: italic;
+  }
+  .hero-sub {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin-bottom: 64px;
+    font-weight: 400;
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--line-strong);
+    border-bottom: 1px solid var(--line-strong);
+    padding: 36px 0;
+  }
+  .hero-stats > div {
+    padding: 0 28px;
+    border-right: 1px solid var(--line);
+  }
+  .hero-stats > div:first-child { padding-left: 0; }
+  .hero-stats > div:last-child { border-right: none; padding-right: 0; }
+  .hero-stats .num {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .hero-stats .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    line-height: 1.4;
+  }
+  @media (max-width: 720px) {
+    .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .hero-stats > div { border-right: none; border-bottom: 1px solid var(--line); padding: 0 0 20px 0 !important; }
+    .hero-stats > div:nth-last-child(-n+2) { border-bottom: none; }
+  }
+
+  section {
+    padding: 100px 0;
+    position: relative;
+  }
+  .section-head {
+    margin-bottom: 72px;
+    max-width: 820px;
+  }
+  .section-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-eyebrow .num {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .section-eyebrow::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+    margin-left: 8px;
+    max-width: 180px;
+  }
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: clamp(36px, 5vw, 60px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin-bottom: 28px;
+  }
+  h2 em {
+    font-style: italic;
+    color: var(--accent-warm);
+  }
+  .lede {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 68ch;
+  }
+
+  /* VISION */
+  .vision {
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .rooftop-viz {
+    margin-top: 60px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 48px;
+    position: relative;
+  }
+  .placeholder-note {
+    background: var(--bg-alt);
+    border: 1px dashed var(--line-strong);
+    padding: 24px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    line-height: 1.7;
+  }
+  .placeholder-note strong {
+    color: var(--accent);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .vision-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 40px;
+    margin-top: 40px;
+  }
+  .vision-grid > div {
+    padding: 0 32px;
+    border-right: 1px solid var(--line);
+  }
+  .vision-grid > div:first-child { padding-left: 0; }
+  .vision-grid > div:last-child { border-right: none; padding-right: 0; }
+  .vision-grid h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .vision-grid p {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  @media (max-width: 820px) {
+    .vision-grid { grid-template-columns: 1fr; gap: 28px; }
+    .vision-grid > div { padding: 0 0 24px 0 !important; border-right: none; border-bottom: 1px solid var(--line); }
+    .vision-grid > div:last-child { border-bottom: none; padding-bottom: 0 !important; }
+  }
+
+  /* ===== MEMBERSHIP PHASES ===== */
+  .phases {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 60px;
+  }
+  @media (max-width: 900px) { .phases { grid-template-columns: 1fr; } }
+
+  .phase-col {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+  .phase-col.current {
+    border-color: var(--accent);
+  }
+  .phase-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-alt);
+  }
+  .phase-col.current .phase-header {
+    background: linear-gradient(180deg, rgba(212, 255, 58, 0.06) 0%, var(--bg-alt) 100%);
+  }
+  .phase-header .num-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 8px;
+  }
+  .phase-col.current .phase-header .num-tag { color: var(--accent); }
+  .phase-header h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .phase-header .subline {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  .phase-tiers {
+    padding: 24px 28px;
+  }
+  .phase-tier {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 14px;
+  }
+  .phase-tier:last-child { border-bottom: none; }
+  .phase-tier .tier-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .phase-tier .tier-name {
+    font-size: 15.5px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .phase-tier .tier-cap {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .phase-tier .price {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .phase-tier .price .per {
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em;
+    margin-left: 4px;
+  }
+  .phase-total {
+    padding: 16px 28px;
+    background: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-warm);
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--line);
+  }
+  .phase-total span:last-child { color: var(--accent); font-weight: 600; }
+
+  /* ===== TIER DEEP DIVE ===== */
+  .tiers-detail {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 20px;
+  }
+  @media (max-width: 820px) { .tiers-detail { grid-template-columns: 1fr; } }
+
+  .tier-detail {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 40px 36px;
+    border-radius: 2px;
+    position: relative;
+  }
+  .tier-detail.club {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(212, 255, 58, 0.04) 0%, var(--surface) 60%);
+  }
+  .tier-detail.club::before {
+    content: 'PICKLEBALL + RECOVERY';
+    position: absolute;
+    top: -11px;
+    left: 36px;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 2px;
+  }
+  .tier-detail-head {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tier-detail-name {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .tier-detail-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .tier-detail ul { list-style: none; }
+  .tier-detail li {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    padding: 7px 0 7px 24px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .tier-detail li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .mechanic-callout {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 40px;
+    margin-top: 32px;
+    border-radius: 2px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  @media (max-width: 820px) { .mechanic-callout { grid-template-columns: 1fr; } }
+  .mechanic-callout h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: var(--accent-warm);
+  }
+  .mechanic-callout p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+
+  .amenity-stack {
+    margin-top: 60px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 48px;
+    border-radius: 2px;
+  }
+  .amenity-stack h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .amenity-stack .sub {
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin-bottom: 36px;
+  }
+  .amenity-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+  .amenity-list > div {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  .amenity-list > div:nth-last-child(-n+2) { border-bottom: none; }
+  .amenity-list > div:nth-child(odd) { padding-right: 32px; border-right: 1px solid var(--line); }
+  .amenity-list > div:nth-child(even) { padding-left: 32px; }
+  @media (max-width: 720px) {
+    .amenity-list { grid-template-columns: 1fr; }
+    .amenity-list > div { padding: 18px 0 !important; border-right: none !important; border-bottom: 1px solid var(--line) !important; }
+    .amenity-list > div:last-child { border-bottom: none !important; }
+  }
+  .amenity-name { font-size: 15.5px; color: var(--ink); }
+  .amenity-perk {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-align: right;
+  }
+
+  /* BUILD OPTIONS */
+  .build-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 40px;
+  }
+  @media (max-width: 820px) { .build-options { grid-template-columns: 1fr; } }
+
+  .build-opt {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .build-opt.recommended {
+    border-color: var(--accent);
+    position: relative;
+  }
+  .build-opt.recommended::before {
+    content: 'RECOMMENDED';
+    position: absolute;
+    top: -11px;
+    left: 28px;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 2px;
+    z-index: 2;
+  }
+  .build-opt-header {
+    padding: 36px 36px 28px;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg-alt) 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .build-opt.recommended .build-opt-header {
+    background: linear-gradient(180deg, rgba(212, 255, 58, 0.06) 0%, var(--surface) 100%);
+  }
+  .build-opt-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+  }
+  .build-opt.recommended .build-opt-tag { color: var(--accent); }
+  .build-opt h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .build-opt .timeline-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-warm);
+    letter-spacing: 0.1em;
+  }
+  .build-opt-body {
+    padding: 32px 36px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .build-opt-price {
+    font-family: 'Fraunces', serif;
+    font-size: 54px;
+    font-weight: 300;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .build-opt-price-sub {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.08em;
+  }
+  .build-opt ul { list-style: none; margin-bottom: 24px; }
+  .build-opt li {
+    font-size: 14px;
+    color: var(--ink-soft);
+    padding: 8px 0 8px 22px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .build-opt li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .build-opt-tradeoff {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-style: italic;
+    line-height: 1.55;
+  }
+  .build-opt-tradeoff strong {
+    color: var(--ink-soft);
+    font-style: normal;
+  }
+
+  /* TIMELINE */
+  .timeline { margin-top: 40px; position: relative; }
+  .timeline-track {
+    position: relative;
+    padding-left: 40px;
+  }
+  .timeline-track::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: var(--line-strong);
+  }
+  .phase-line {
+    position: relative;
+    padding-bottom: 36px;
+    padding-left: 20px;
+  }
+  .phase-line:last-child { padding-bottom: 0; }
+  .phase-line::before {
+    content: '';
+    position: absolute;
+    left: -34px;
+    top: 6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+  }
+  .phase-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .phase-name {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+  .phase-duration {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .phase-desc {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    max-width: 70ch;
+  }
+
+  /* BUDGET */
+  .budget {
+    margin-top: 40px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 48px;
+  }
+  .budget h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .budget .total-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 40px;
+  }
+  .budget-lines > div {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 24px;
+  }
+  .budget-lines > div:last-child { border-bottom: none; }
+  .budget-line-name { font-size: 15px; }
+  .budget-line-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 3px;
+    letter-spacing: 0.05em;
+  }
+  .budget-bar {
+    width: 180px;
+    height: 4px;
+    background: var(--bg-alt);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .budget-bar-fill { height: 100%; background: var(--accent); }
+  .budget-amt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 100px;
+    text-align: right;
+  }
+  .budget-total {
+    margin-top: 8px;
+    padding-top: 24px;
+    border-top: 2px solid var(--accent) !important;
+    display: flex !important;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .budget-total .label {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 400;
+  }
+  .budget-total .amt {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  @media (max-width: 720px) {
+    .budget { padding: 28px; }
+    .budget-lines > div { grid-template-columns: 1fr; gap: 6px; }
+    .budget-bar { display: none; }
+    .budget-amt { text-align: left; font-size: 16px; }
+  }
+
+  .budget-toggle {
+    display: flex;
+    gap: 0;
+    margin-bottom: 32px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--bg-alt);
+    max-width: 500px;
+  }
+  .budget-toggle button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--ink-muted);
+    padding: 14px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .budget-toggle button.active {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .budget-toggle button:hover:not(.active) { color: var(--ink); }
+
+  /* CALCULATOR */
+  .calculator {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--surface-elev) 100%);
+    border: 1px solid var(--accent);
+    padding: 56px;
+    margin-top: 40px;
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+  .calculator::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(212, 255, 58, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .calc-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .calc-title {
+    font-family: 'Fraunces', serif;
+    font-size: 34px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .calc-sub {
+    color: var(--ink-muted);
+    font-size: 15px;
+    margin-bottom: 40px;
+  }
+  .calc-section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent-warm);
+    margin: 32px 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .calc-section-label:first-of-type { margin-top: 0; }
+
+  .calc-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px 36px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 820px) {
+    .calc-controls { grid-template-columns: 1fr; gap: 24px; }
+    .calculator { padding: 32px; }
+  }
+
+  .control label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 14px;
+  }
+  .control-value {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .control-value .unit {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-family: 'Inter Tight', sans-serif;
+    margin-left: 4px;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--line-strong);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 0 16px rgba(212, 255, 58, 0.4);
+    transition: transform 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: grab;
+    border: none;
+  }
+  .range-bounds {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    margin-top: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  .calc-output {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--line-strong);
+    padding-top: 40px;
+    margin-top: 20px;
+  }
+  .calc-output > div {
+    padding: 0 24px;
+    border-right: 1px solid var(--line);
+  }
+  .calc-output > div:first-child { padding-left: 0; }
+  .calc-output > div:last-child { border-right: none; padding-right: 0; }
+  @media (max-width: 820px) {
+    .calc-output { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .calc-output > div { padding: 0 !important; border: none !important; }
+  }
+  .output-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .output-value {
+    font-family: 'Fraunces', serif;
+    font-size: 34px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+
+  /* HALO */
+  .halo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 40px;
+  }
+  @media (max-width: 900px) { .halo-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .halo-grid { grid-template-columns: 1fr; } }
+  .halo-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 36px 28px;
+    border-radius: 2px;
+  }
+  .halo-card .num {
+    font-family: 'Fraunces', serif;
+    font-size: 42px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .halo-card h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    margin-bottom: 10px;
+  }
+  .halo-card p {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+
+  .reality-check {
+    margin-top: 40px;
+    background: var(--surface);
+    border: 1px solid var(--danger);
+    border-left-width: 3px;
+    padding: 36px 40px;
+    border-radius: 2px;
+  }
+  .reality-check.info { border-color: var(--sky); }
+  .reality-check.accent { border-color: var(--accent); }
+  .reality-check .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--danger);
+    margin-bottom: 12px;
+  }
+  .reality-check.info .tag { color: var(--sky); }
+  .reality-check.accent .tag { color: var(--accent); }
+  .reality-check h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    margin-bottom: 18px;
+  }
+  .reality-check p {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .reality-check p:last-child { margin-bottom: 0; }
+  .reality-check strong { color: var(--ink); }
+
+  /* VALUATION */
+  .valuation {
+    background: linear-gradient(180deg, var(--bg) 0%, var(--surface) 100%);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .val-feature {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  @media (max-width: 820px) { .val-feature { grid-template-columns: 1fr; } }
+  .val-math {
+    padding: 56px;
+    border-right: 1px solid var(--line);
+  }
+  @media (max-width: 820px) {
+    .val-math { border-right: none; border-bottom: 1px solid var(--line); padding: 40px; }
+  }
+  .val-math .line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+  .val-math .line:last-of-type { border-bottom: none; }
+  .val-math .line .key { color: var(--ink-soft); }
+  .val-math .line .val { color: var(--ink); font-weight: 600; }
+  .val-math .final {
+    margin-top: 24px;
+    padding: 28px 0 0;
+    border-top: 2px solid var(--accent);
+  }
+  .val-math .final-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+  }
+  .val-math .final-value {
+    font-family: 'Fraunces', serif;
+    font-size: 56px;
+    font-weight: 300;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .val-math .final-note {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 12px;
+    line-height: 1.55;
+  }
+  .val-right {
+    padding: 56px;
+    background: var(--bg-alt);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  @media (max-width: 820px) { .val-right { padding: 40px; } }
+  .val-right h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    line-height: 1.15;
+  }
+  .val-right p {
+    font-size: 15px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .val-right p:last-child { margin-bottom: 0; }
+
+  .cap-explainer {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 32px 40px;
+    margin-top: 40px;
+    border-radius: 2px;
+  }
+  .cap-explainer h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    margin-bottom: 16px;
+    color: var(--accent-warm);
+  }
+  .cap-explainer p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .cap-explainer code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-alt);
+    padding: 2px 8px;
+    border-radius: 2px;
+    color: var(--accent);
+    font-size: 12.5px;
+  }
+
+  .moat {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 40px;
+  }
+  @media (max-width: 820px) { .moat { grid-template-columns: 1fr; } }
+  .moat-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 40px;
+    border-radius: 2px;
+  }
+  .moat-card h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    margin-bottom: 16px;
+    color: var(--accent-warm);
+  }
+  .moat-card p {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  /* OPERATOR — subtle */
+  .operator-note {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 36px 40px;
+    margin-top: 60px;
+    border-radius: 2px;
+  }
+  .operator-note .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .operator-note h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    margin-bottom: 16px;
+  }
+  .operator-note p {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .operator-note p:last-child { margin-bottom: 0; }
+  .operator-note strong { color: var(--ink); }
+
+  /* CTA */
+  .cta {
+    padding: 140px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(212, 255, 58, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cta h2 {
+    font-size: clamp(44px, 6.5vw, 84px);
+    margin-bottom: 32px;
+    max-width: 18ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cta p {
+    font-size: 18px;
+    color: var(--ink-soft);
+    max-width: 52ch;
+    margin: 0 auto 48px;
+    line-height: 1.55;
+  }
+  .cta-stats {
+    display: flex;
+    gap: 64px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 64px;
+    padding-top: 48px;
+    border-top: 1px solid var(--line);
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cta-stat .v {
+    font-family: 'Fraunces', serif;
+    font-size: 42px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .cta-stat .l {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* IP FOOTER */
+  .ip-notice {
+    background: var(--bg-alt);
+    border-top: 1px solid var(--accent);
+    padding: 48px 0;
+  }
+  .ip-notice .container {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  @media (max-width: 720px) { .ip-notice .container { grid-template-columns: 1fr; gap: 24px; } }
+  .ip-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 2px;
+    white-space: nowrap;
+    height: fit-content;
+  }
+  .ip-text {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+  .ip-text strong { color: var(--ink); }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 36px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+  }
+  footer .inner {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  .reveal.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NDA GATE -->
+<div class="gate" id="ndaGate">
+  <div class="gate-inner">
+    <div class="gate-eyebrow">Confidential · NDA Required</div>
+    <h1>This is proprietary work.<br>Before you <em>read it</em>, acknowledge the terms.</h1>
+    <div class="gate-attribution">Prepared by <strong>Michael Krilivsky</strong></div>
+    <div class="gate-body">
+      What follows is a complete operational blueprint, financial pro forma, and capital-improvement roadmap developed specifically for DUA Hotel. It represents significant original work product. Please review and acknowledge before viewing.
+    </div>
+    <div class="gate-terms">
+      <strong>Confidentiality & Intellectual Property Acknowledgment</strong><br><br>
+      By entering, you acknowledge that (1) the contents of this pitch — including all financial models, operational structures, membership designs, build specifications, and valuation frameworks — are the <strong>original intellectual property of Michael Krilivsky</strong> and are shared under confidentiality; (2) you will not reproduce, redistribute, share externally, or execute against this material without a signed written agreement with Michael Krilivsky; (3) you will not engage third parties to implement any portion of this concept for DUA Hotel without compensating or formally engaging Michael Krilivsky as the originator of the concept; (4) this acknowledgment is logged with timestamp, name, and email as evidence of receipt and assent.<br><br>
+      A formal Non-Disclosure & Non-Circumvention Agreement will be circulated separately for signature before any execution discussions.
+    </div>
+    <div class="gate-form">
+      <input type="text" id="gateName" placeholder="Full name" autocomplete="name">
+      <input type="email" id="gateEmail" placeholder="Email address" autocomplete="email">
+      <input type="text" id="gateRole" placeholder="Role / Company (e.g., GM, DUA Hotel)">
+      <label class="check">
+        <input type="checkbox" id="gateAgree">
+        <span>I acknowledge I am reviewing confidential, proprietary work and agree to the terms above.</span>
+      </label>
+      <button class="gate-btn" id="gateBtn" disabled>Acknowledge & Continue →</button>
+    </div>
+    <div class="gate-footer">Timestamped · Logged · Protected</div>
+  </div>
+</div>
+
+<nav>
+  <div class="container nav-inner">
+    <div class="nav-brand"><span class="dot"></span>DUA · Pickleball & Recovery</div>
+    <div class="nav-links">
+      <a href="#vision">Vision</a>
+      <a href="#membership">Membership</a>
+      <a href="#build">Build</a>
+      <a href="#proforma">Pro Forma</a>
+      <a href="#valuation">Valuation</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container">
+    <div class="eyebrow">Confidential · Prepared for Alan · DUA Hotel Brickell</div>
+    <h1>A rooftop court<br>that lifts the <em>entire</em><br>P&L — and the <span class="accent">valuation.</span></h1>
+    <p class="hero-sub">
+      One enclosed, professional-grade pickleball court on the pool deck, integrated with the spa, pool, jacuzzi, cold plunge, saunas, steam, and fitness facilities DUA already owns — repackaged as <strong style="color:var(--ink)">DUA Pickleball & Recovery.</strong> A tiered-membership engine scaling from 30 founding members at launch to 180 at full maturity, driving room nights, F&B, and membership revenue flowing directly to DUA's P&L.
+    </p>
+    <div class="hero-stats">
+      <div>
+        <div class="num">~$1.2M</div>
+        <div class="label">Est. Year&nbsp;3 Annual<br>Revenue Uplift</div>
+      </div>
+      <div>
+        <div class="num">~8mo</div>
+        <div class="label">Est. Payback<br>Roof-From-Day-One</div>
+      </div>
+      <div>
+        <div class="num">+$7.1M</div>
+        <div class="label">Property Value<br>At 7% Cap Rate</div>
+      </div>
+      <div>
+        <div class="num">180</div>
+        <div class="label">Mature Membership<br>(Phased Rollout)</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- VISION -->
+<section class="vision" id="vision">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow"><span class="num">01</span> The Vision</div>
+      <h2>The <em>one amenity</em> Brickell's<br>wellness-luxury market is missing.</h2>
+      <p class="lede">
+        Brickell has cold plunges. It has steam rooms. It has rooftop pools. Nobody has an enclosed rooftop pickleball court bundled with a full recovery stack. DUA already owns the spa, saunas, jacuzzi, pool, and 3-room gym. Adding one enclosed court flips DUA from "boutique hotel with amenities" to <em style="font-family:'Fraunces',serif;color:var(--accent-warm)">the only pickleball-and-recovery club in Brickell.</em>
+      </p>
+    </div>
+
+    <div class="rooftop-viz reveal">
+      <div class="placeholder-note">
+        <strong>Architectural rendering placeholder</strong>
+        Final renderings to be commissioned from DUA's architect of record<br>
+        to ensure accuracy against existing pool-deck structural plans and Starck design language.
+      </div>
+    </div>
+
+    <div class="vision-grid reveal">
+      <div>
+        <h4>01 · The Court</h4>
+        <p>One enclosed court, 25ft+ high acoustic-dampened walls. Glass on the skyline-facing side, tensioned mesh/polycarbonate on the other three — architectural, beautiful, sound-controlled, weather-protected.</p>
+      </div>
+      <div>
+        <h4>02 · The Stack</h4>
+        <p>Court + rooftop pool + 13-person outdoor co-ed jacuzzi + cold plunge + men's & women's sauna + steam + 3-room gym + locker rooms + towel service. The full recovery loop — already on-property.</p>
+      </div>
+      <div>
+        <h4>03 · The Engine</h4>
+        <p>Phased membership (launching at 30, growing to 180) plus non-member bookings plus events. Three revenue streams from one amenity, all flowing to the same P&L.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MEMBERSHIP — 3 PHASE ROLLOUT -->
+<section id="membership">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow"><span class="num">02</span> The Membership</div>
+      <h2>A phased rollout.<br><em>Scarcity first.</em> Scale second.</h2>
+      <p class="lede">
+        We launch with Founding pricing to fill the roster fast and lock in loyalty. As demand proves out, prices ramp to Intro, then Final. Founding members keep their rate — they're the evangelists. This is how every premium club handles launch.
+      </p>
+    </div>
+
+    <div class="phases reveal">
+      <div class="phase-col current">
+        <div class="phase-header">
+          <div class="num-tag">Phase 1 · Launch</div>
+          <h3>Founding</h3>
+          <div class="subline">First 30 members · rates locked</div>
+        </div>
+        <div class="phase-tiers">
+          <div class="phase-tier">
+            <div class="tier-info">
+              <div class="tier-name">Founding Recovery</div>
+              <div class="tier-cap">20 seats</div>
+            </div>
+            <div class="price">$149<span class="per">/mo</span></div>
+          </div>
+          <div class="phase-tier">
+            <div class="tier-info">
+              <div class="tier-name">Founding Club</div>
+              <div class="tier-cap">10 seats · pickleball + recovery</div>
+            </div>
+            <div class="price">$199<span class="per">/mo</span></div>
+          </div>
+        </div>
+        <div class="phase-total"><span>Monthly at full phase</span><span>$4,970</span></div>
+      </div>
+
+      <div class="phase-col">
+        <div class="phase-header">
+          <div class="num-tag">Phase 2 · Scale</div>
+          <h3>Intro</h3>
+          <div class="subline">Next 60 members</div>
+        </div>
+        <div class="phase-tiers">
+          <div class="phase-tier">
+            <div class="tier-info">
+              <div class="tier-name">Intro Recovery</div>
+              <div class="tier-cap">40 seats</div>
+            </div>
+            <div class="price">$199<span class="per">/mo</span></div>
+          </div>
+          <div class="phase-tier">
+            <div class="tier-info">
+              <div class="tier-name">Intro Club</div>
+              <div class="tier-cap">20 seats · pickleball + recovery</div>
+            </div>
+            <div class="price">$249<span class="per">/mo</span></div>
+          </div>
+        </div>
+        <div class="phase-total"><span>Monthly at full phase</span><span>$12,940</span></div>
+      </div>
+
+      <div class="phase-col">
+        <div class="phase-header">
+          <div class="num-tag">Phase 3 · Mature</div>
+          <h3>Final</h3>
+          <div class="subline">Final 90 members · steady state</div>
+        </div>
+        <div class="phase-tiers">
+          <div class="phase-tier">
+            <div class="tier-info">
+              <div class="tier-name">Recovery</div>
+              <div class="tier-cap">60 seats</div>
+            </div>
+            <div class="price">$249<span class="per">/mo</span></div>
+          </div>
+          <div class="phase-tier">
+            <div class="tier-info">
+              <div class="tier-name">Club</div>
+              <div class="tier-cap">30 seats · pickleball + recovery</div>
+            </div>
+            <div class="price">$299<span class="per">/mo</span></div>
+          </div>
+        </div>
+        <div class="phase-total"><span>Monthly at full phase</span><span>$23,910</span></div>
+      </div>
+    </div>
+
+    <div class="reality-check accent reveal">
+      <div class="tag">Why 180 total, and why 60 is the pickleball ceiling</div>
+      <h3>The two memberships scale differently — on purpose.</h3>
+      <p>
+        <strong>Recovery (120 members at maturity)</strong> uses the pool, jacuzzi, cold plunge, saunas, steam, and gym — none of which consume court time. This tier is scalable. If demand warrants, the soft cap can flex above 120. Exclusivity is maintained through pricing and member curation, not artificial ceilings. By comparison, Equinox Brickell runs thousands of members on comparable wellness facilities. 120 is conservative scarcity.
+      </p>
+      <p>
+        <strong>Club (60 members at maturity)</strong> is the pickleball tier. This number is hard-capped by court availability. Every Club member gets 6 free off-peak booking hours per month — at 60 members that's 360 free hours/month, all concentrated in the off-peak 11am–4pm weekday window, which means peak revenue hours (mornings before 11am, evenings after 4pm, and weekends) stay fully available for non-member paid bookings and events. Going above 60 overwhelms off-peak capacity and starts eating into peak revenue.
+      </p>
+    </div>
+
+    <div class="section-head reveal" style="margin-top:80px; margin-bottom:36px">
+      <h2 style="font-size: clamp(30px, 3.5vw, 42px)">What each tier actually gets.</h2>
+    </div>
+
+    <div class="tiers-detail reveal">
+      <div class="tier-detail">
+        <div class="tier-detail-head">
+          <div class="tier-detail-name">Recovery</div>
+          <div class="tier-detail-sub">Wellness Access · No Included Court Time</div>
+        </div>
+        <ul>
+          <li>Full rooftop pool access · 8am–9pm</li>
+          <li>13-person outdoor co-ed jacuzzi</li>
+          <li>Outdoor co-ed cold plunge</li>
+          <li>Men's and women's locker rooms, each with sauna and showers</li>
+          <li>Co-ed steam room</li>
+          <li>3-room state-of-the-art gym</li>
+          <li>Towel service included</li>
+          <li>Shared locker access (available in locker rooms)</li>
+          <li>Key fob building access · seamless entry</li>
+          <li>15% off F&B (Ahu Mar + pool bar) and spa</li>
+          <li>Pay-per-play pickleball at member rate (25% off · $75/hr vs. $100 public)</li>
+          <li>Court booking: 3 days advance window</li>
+          <li><strong style="color:var(--accent-warm)">2 free guest passes per month</strong> — bring a friend to experience the full recovery stack</li>
+          <li>Invitation to members-only events</li>
+        </ul>
+      </div>
+
+      <div class="tier-detail club">
+        <div class="tier-detail-head">
+          <div class="tier-detail-name">Club</div>
+          <div class="tier-detail-sub">Pickleball + Full Recovery</div>
+        </div>
+        <ul>
+          <li>Everything in Recovery, plus:</li>
+          <li><strong style="color:var(--accent)">6 free off-peak court bookings per month · $600 value</strong></li>
+          <li>25% off additional court bookings ($75/hr)</li>
+          <li>Priority booking window · 5 days advance (vs. 2 days public)</li>
+          <li><strong style="color:var(--accent-warm)">4 free guest passes per month</strong> — double the Recovery tier</li>
+          <li>Free or discounted members-only events</li>
+          <li>Early access to tournaments and clinics</li>
+          <li>Invite fellow members to join your bookings at no extra charge</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mechanic-callout reveal">
+      <div>
+        <h4>How court bookings actually work</h4>
+        <p><strong>One person reserves, but everyone can pay.</strong> Booking software (PlayByPoint / Court Reserve) lets the reservation holder invite up to 3 others to "join" the booking — the system splits the charge across everyone automatically.<br><br>A Club member booking an off-peak slot gets it <strong>free</strong>. If they bring 3 fellow members, everyone plays free. If they bring non-members, those non-members pay a guest rate the system collects from each of them.<br><br>Members should always reserve — it unlocks the best pricing for the whole group.</p>
+      </div>
+      <div>
+        <h4>Peak vs. off-peak · when free hours apply</h4>
+        <p><strong>Peak hours:</strong> mornings until 11am, evenings 4pm and beyond, and all weekends. These are full price — $100/hr public, $75/hr Club members (25% off).<br><br><strong>Off-peak hours:</strong> weekdays 11am–4pm. This is when Club members redeem their 6 free monthly bookings. Protects peak revenue while making the membership feel generous.<br><br>Non-members book at $100/hr — 2 days advance window.</p>
+      </div>
+    </div>
+
+    <div class="mechanic-callout reveal" style="margin-top:20px">
+      <div>
+        <h4>The "guest" perk, clarified</h4>
+        <p>There are two different uses of "guest":<br><br><strong>Guests on a court booking</strong> — non-members who join a member's reservation. They play, and if the booking isn't the member's free off-peak slot, they pay their share through the split-payment system.<br><br><strong>Guest passes</strong> (the actual perk) — Recovery members get <strong>2 passes/month</strong>, Club members get <strong>4 passes/month</strong> to bring a non-member to experience the full recovery stack (pool, jacuzzi, sauna, steam, gym) — no court booking required. This is how referrals happen.</p>
+      </div>
+      <div>
+        <h4>Why this structure drives membership</h4>
+        <p>The $600/month in free court value at Club tier alone covers the $299 Final membership twice over.<br><br>Combined with 25% off peak bookings, 5-day priority window, full recovery stack access, 4 guest passes/month, F&B discount, and key fob access — the membership delivers <strong>$1,200+/month in tangible value</strong> at a $299 price point.<br><br>That value gap is what makes Club tier feel like a no-brainer.</p>
+      </div>
+    </div>
+
+    <div class="amenity-stack reveal">
+      <h3>The full stack, packaged as one.</h3>
+      <p class="sub">What members actually get for their monthly dues — all on-property, all included.</p>
+      <div class="amenity-list">
+        <div><span class="amenity-name">Enclosed rooftop pickleball court</span><span class="amenity-perk">Weather-protected</span></div>
+        <div><span class="amenity-name">Rooftop pool · 8am–9pm</span><span class="amenity-perk">Daily access</span></div>
+        <div><span class="amenity-name">13-person outdoor co-ed jacuzzi</span><span class="amenity-perk">Social format</span></div>
+        <div><span class="amenity-name">Outdoor co-ed cold plunge</span><span class="amenity-perk">Recovery</span></div>
+        <div><span class="amenity-name">Men's & women's saunas (in-locker)</span><span class="amenity-perk">Included</span></div>
+        <div><span class="amenity-name">Co-ed steam room</span><span class="amenity-perk">Included</span></div>
+        <div><span class="amenity-name">3-room state-of-the-art gym</span><span class="amenity-perk">Full equipment</span></div>
+        <div><span class="amenity-name">Locker rooms + showers</span><span class="amenity-perk">Daily access</span></div>
+        <div><span class="amenity-name">Key fob building access</span><span class="amenity-perk">Seamless entry</span></div>
+        <div><span class="amenity-name">Shared locker access</span><span class="amenity-perk">Member use</span></div>
+        <div><span class="amenity-name">Towel service</span><span class="amenity-perk">All tiers</span></div>
+        <div><span class="amenity-name">15% off F&B and spa</span><span class="amenity-perk">All tiers</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BUILD -->
+<section id="build" style="background:var(--bg-alt)">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow"><span class="num">03</span> The Build</div>
+      <h2>Two paths. <em>Same court.</em><br>Different timing.</h2>
+      <p class="lede">
+        An enclosed pickleball court in Miami has one real challenge: summer heat. A glass box without climate control becomes unplayable June through September — killing half the revenue year. We present two options: build the full climate-controlled version on Day One, or stage the roof + AC as a Year 2 upgrade once revenue is proven.
+      </p>
+    </div>
+
+    <div class="build-options reveal">
+      <div class="build-opt recommended">
+        <div class="build-opt-header">
+          <div class="build-opt-tag">Option A · Hero Build</div>
+          <h3>Roof + Climate Control<br>on Day One</h3>
+          <div class="timeline-tag">16–18 WEEKS · PLAYS YEAR-ROUND</div>
+        </div>
+        <div class="build-opt-body">
+          <div class="build-opt-price">$295K</div>
+          <div class="build-opt-price-sub">Range: $275K–$325K</div>
+          <ul>
+            <li>Full enclosure · 25ft glass + mesh + polycarbonate</li>
+            <li>Fixed-roof structure · steel frame + insulated panels</li>
+            <li>Mini-split AC + mechanical ventilation</li>
+            <li>Acoustic baffling throughout</li>
+            <li>Musco/LSI LED sport lighting</li>
+            <li>Plays in any weather, any season</li>
+          </ul>
+          <div class="build-opt-tradeoff">
+            <strong>Trade-off:</strong> Higher upfront cost, longer build timeline. But year-round playability protects ~40% of summer revenue that the staged version loses, and the club can market as a true all-weather facility from launch — which drives faster membership sell-through and faster payback.
+          </div>
+        </div>
+      </div>
+
+      <div class="build-opt">
+        <div class="build-opt-header">
+          <div class="build-opt-tag">Option B · Staged Build</div>
+          <h3>Open-Top Enclosure<br>Upgrade in Year 2</h3>
+          <div class="timeline-tag">12–14 WEEKS · ROOF ADDED LATER</div>
+        </div>
+        <div class="build-opt-body">
+          <div class="build-opt-price">$210K</div>
+          <div class="build-opt-price-sub">+ ~$110K for Year 2 roof upgrade</div>
+          <ul>
+            <li>Full enclosure · 25ft walls on three sides</li>
+            <li>Open top · wind-protected, sun-exposed</li>
+            <li>Acoustic dampening on walls</li>
+            <li>Musco/LSI LED sport lighting</li>
+            <li>Plays in mild weather (Oct–May peak)</li>
+            <li>Roof + AC upgrade triggered by revenue milestone</li>
+          </ul>
+          <div class="build-opt-tradeoff">
+            <strong>Trade-off:</strong> Lower upfront cost and faster to open. But expect ~15–20% seasonal revenue loss during summer peak heat and ~10% of bookings lost to rain. Total 3-year cost is roughly the same once the Year 2 upgrade is added — so this option mainly spreads CapEx, not reduces it.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reality-check info reveal" style="margin-top:40px">
+      <div class="tag">Miami Reality Check</div>
+      <h3>Why a roof without AC isn't on the table.</h3>
+      <p>
+        Miami summer highs average 90°F+ from June through September with 70–80% humidity. A glass enclosure traps heat — unventilated, interior temps hit 110°F+ by midday. That's heat-stroke territory, not a premium club experience. If we're building an enclosure, it needs AC, or it needs no roof.
+      </p>
+      <p>
+        Option A solves this with mini-split AC + ventilation, allowing year-round play. Option B stays open-top so summer heat escapes, accepting seasonal revenue loss and adding the AC-controlled roof in Year 2 once cashflow justifies it. <strong>There is no middle path — a closed roof without AC breaks the product.</strong>
+      </p>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="timeline reveal" style="margin-top:80px">
+      <h3 style="font-family:'Fraunces',serif; font-weight:400; font-size:26px; margin-bottom:32px; letter-spacing:-0.02em">Build Timeline (Option A · Hero)</h3>
+      <div class="timeline-track">
+        <div class="phase-line">
+          <div class="phase-head">
+            <div class="phase-name">Phase 1 · Structural + Design</div>
+            <div class="phase-duration">WEEKS 1–4</div>
+          </div>
+          <div class="phase-desc">
+            Structural engineer walk-through to confirm deck capacity for court + enclosure + roof + HVAC loads. Architect coordinates enclosure with Starck's existing language. Mechanical engineer specs AC zoning and ventilation. Deliverable: sealed drawings ready for permitting.
+          </div>
+        </div>
+        <div class="phase-line">
+          <div class="phase-head">
+            <div class="phase-name">Phase 2 · Miami-Dade Permitting</div>
+            <div class="phase-duration">WEEKS 3–9 (OVERLAPS)</div>
+          </div>
+          <div class="phase-desc">
+            Commercial alteration permit. NOA approvals for all hurricane-rated glazing. Mechanical permit for HVAC. Plumbing/electrical for AC and lighting loads.
+          </div>
+        </div>
+        <div class="phase-line">
+          <div class="phase-head">
+            <div class="phase-name">Phase 3 · Court + Enclosure + Roof Install</div>
+            <div class="phase-duration">WEEKS 10–16</div>
+          </div>
+          <div class="phase-desc">
+            Acrylic cushioned court surface. Steel frame erection. Glass + mesh + polycarbonate panels. Roof structure with insulated panels. Mini-split AC install. Acoustic baffling. LED sport lighting. Net + striping + accessories.
+          </div>
+        </div>
+        <div class="phase-line">
+          <div class="phase-head">
+            <div class="phase-name">Phase 4 · Finish + Soft Launch</div>
+            <div class="phase-duration">WEEKS 17–18</div>
+          </div>
+          <div class="phase-desc">
+            Final inspections, C/O, branded signage, booking software, staff onboarding. Founding members invited to 2-week soft launch. Grand opening event with content production.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUDGET BREAKDOWN -->
+    <div class="budget reveal" style="margin-top:80px">
+      <h3>Detailed Build Budget</h3>
+      <div class="total-label">Toggle between Option A (full build) and Option B (staged build)</div>
+
+      <div class="budget-toggle">
+        <button class="active" data-opt="A">Option A · Roof + AC</button>
+        <button data-opt="B">Option B · Staged</button>
+      </div>
+
+      <!-- Option A -->
+      <div class="budget-lines" id="budgetA">
+        <div>
+          <div>
+            <div class="budget-line-name">Structural + mechanical + architectural</div>
+            <div class="budget-line-note">DESIGN + SEALED DRAWINGS</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:7%"></div></div>
+          <div class="budget-amt">$22,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Permits + NOA + mechanical fees</div>
+            <div class="budget-line-note">MIAMI-DADE COMMERCIAL</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:5%"></div></div>
+          <div class="budget-amt">$14,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Court surface · cushioned acrylic</div>
+            <div class="budget-line-note">4–5 COAT SYSTEM</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:10%"></div></div>
+          <div class="budget-amt">$28,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Enclosure · glass + mesh + polycarbonate walls</div>
+            <div class="budget-line-note">25FT · HURRICANE-RATED</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:32%"></div></div>
+          <div class="budget-amt">$92,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Roof structure + insulated panels</div>
+            <div class="budget-line-note">STEEL FRAME · WIND-RATED</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:20%"></div></div>
+          <div class="budget-amt">$58,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">AC system + ventilation + electrical</div>
+            <div class="budget-line-note">MINI-SPLIT · 3–4 ZONES</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:13%"></div></div>
+          <div class="budget-amt">$38,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">LED sport lighting</div>
+            <div class="budget-line-note">MUSCO/LSI · TOURNAMENT SPEC</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:6%"></div></div>
+          <div class="budget-amt">$16,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Acoustic baffling + sound treatment</div>
+            <div class="budget-line-note">UPPER PANELS · QUIET CATEGORY</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:4%"></div></div>
+          <div class="budget-amt">$11,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Net, striping, accessories, ball cart, benches</div>
+            <div class="budget-line-note">TOURNAMENT-GRADE</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:4%"></div></div>
+          <div class="budget-amt">$9,500</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Branding, signage, booking software</div>
+            <div class="budget-line-note">PLAYBYPOINT + ENVIRONMENTAL</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:3%"></div></div>
+          <div class="budget-amt">$11,500</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Project management + 10% contingency</div>
+            <div class="budget-line-note">END-TO-END · ALL VENDORS</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:12%"></div></div>
+          <div class="budget-amt">$35,000</div>
+        </div>
+        <div class="budget-total">
+          <div class="label">Total · Option A midpoint</div>
+          <div class="amt">$335,000</div>
+        </div>
+      </div>
+
+      <!-- Option B -->
+      <div class="budget-lines" id="budgetB" style="display:none">
+        <div>
+          <div>
+            <div class="budget-line-name">Structural + architectural</div>
+            <div class="budget-line-note">DESIGN + SEALED DRAWINGS</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:6%"></div></div>
+          <div class="budget-amt">$14,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Permits + NOA fees</div>
+            <div class="budget-line-note">MIAMI-DADE COMMERCIAL</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:4%"></div></div>
+          <div class="budget-amt">$9,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Court surface · cushioned acrylic</div>
+            <div class="budget-line-note">4–5 COAT SYSTEM</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:12%"></div></div>
+          <div class="budget-amt">$26,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Enclosure walls · glass + mesh + polycarbonate</div>
+            <div class="budget-line-note">25FT · HURRICANE-RATED · OPEN TOP</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:42%"></div></div>
+          <div class="budget-amt">$88,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">LED sport lighting</div>
+            <div class="budget-line-note">MUSCO/LSI</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:7%"></div></div>
+          <div class="budget-amt">$15,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Acoustic wall treatment</div>
+            <div class="budget-line-note">QUIET CATEGORY PANELS</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:4%"></div></div>
+          <div class="budget-amt">$9,000</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Net, striping, accessories, ball cart, benches</div>
+            <div class="budget-line-note">TOURNAMENT-GRADE</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:4%"></div></div>
+          <div class="budget-amt">$9,500</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Branding, signage, booking software</div>
+            <div class="budget-line-note">PLAYBYPOINT + ENVIRONMENTAL</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:4%"></div></div>
+          <div class="budget-amt">$10,500</div>
+        </div>
+        <div>
+          <div>
+            <div class="budget-line-name">Project management + 12% contingency</div>
+            <div class="budget-line-note">END-TO-END · ALL VENDORS</div>
+          </div>
+          <div class="budget-bar"><div class="budget-bar-fill" style="width:13%"></div></div>
+          <div class="budget-amt">$29,000</div>
+        </div>
+        <div class="budget-total">
+          <div class="label">Total · Option B Year 1</div>
+          <div class="amt">$210,000</div>
+        </div>
+        <div style="display:grid !important; grid-template-columns: 1fr auto; gap:20px; padding-top:24px; border-top: 1px solid var(--line)">
+          <div>
+            <div class="budget-line-name" style="color: var(--ink-muted)">+ Year 2 roof + AC + structural upgrade</div>
+            <div class="budget-line-note">DEFERRED · TRIGGERED BY REVENUE MILESTONE</div>
+          </div>
+          <div class="budget-amt" style="color: var(--ink-muted)">+$110,000</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRO FORMA / CALCULATOR -->
+<section id="proforma">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow"><span class="num">04</span> The Pro Forma</div>
+      <h2>The revenue math,<br><em>with your hands on the dials.</em></h2>
+      <p class="lede">
+        All sliders start at conservative defaults for steady-state Year 3 (180 members at Final pricing). Every number recalculates live.
+      </p>
+    </div>
+
+    <div class="calculator reveal">
+      <div class="calc-label">Interactive · Year 3 steady-state · Final pricing</div>
+      <div class="calc-title">Revenue Model</div>
+      <div class="calc-sub">Adjust any slider to stress-test. All figures annualized.</div>
+
+      <div class="calc-section-label">Membership</div>
+      <div class="calc-controls">
+        <div class="control">
+          <label>Recovery members (cap 120 soft)</label>
+          <div class="control-value"><span id="recCount">115</span><span class="unit">members</span></div>
+          <input type="range" id="recCountCtrl" min="40" max="150" value="115" step="5">
+          <div class="range-bounds"><span>40</span><span>150</span></div>
+        </div>
+        <div class="control">
+          <label>Club members (cap 60 hard)</label>
+          <div class="control-value"><span id="clubCount">55</span><span class="unit">members</span></div>
+          <input type="range" id="clubCountCtrl" min="15" max="60" value="55" step="1">
+          <div class="range-bounds"><span>15</span><span>60</span></div>
+        </div>
+        <div class="control">
+          <label>Blended Recovery monthly dues</label>
+          <div class="control-value">$<span id="recDues">235</span><span class="unit">/mo</span></div>
+          <input type="range" id="recDuesCtrl" min="149" max="249" value="235" step="5">
+          <div class="range-bounds"><span>$149</span><span>$249</span></div>
+        </div>
+        <div class="control">
+          <label>Blended Club monthly dues</label>
+          <div class="control-value">$<span id="clubDues">285</span><span class="unit">/mo</span></div>
+          <input type="range" id="clubDuesCtrl" min="199" max="299" value="285" step="5">
+          <div class="range-bounds"><span>$199</span><span>$299</span></div>
+        </div>
+      </div>
+
+      <div class="calc-section-label">Court Bookings · Non-member & Paid Member</div>
+      <div class="calc-controls">
+        <div class="control">
+          <label>Paid booking hours / week</label>
+          <div class="control-value"><span id="bookingHrs">25</span><span class="unit">hrs</span></div>
+          <input type="range" id="bookings" min="5" max="50" value="25" step="1">
+          <div class="range-bounds"><span>5</span><span>50</span></div>
+        </div>
+        <div class="control">
+          <label>Blended booking rate</label>
+          <div class="control-value">$<span id="bookingRate">90</span><span class="unit">/hr</span></div>
+          <input type="range" id="rateCtrl" min="70" max="120" value="90" step="5">
+          <div class="range-bounds"><span>$70</span><span>$120</span></div>
+        </div>
+        <div class="control">
+          <label>Weather / maintenance downtime</label>
+          <div class="control-value"><span id="rainPct">8</span><span class="unit">% lost</span></div>
+          <input type="range" id="rain" min="0" max="25" value="8" step="1">
+          <div class="range-bounds"><span>0%</span><span>25%</span></div>
+        </div>
+      </div>
+
+      <div class="calc-section-label">Events, Lessons & Halo</div>
+      <div class="calc-controls">
+        <div class="control">
+          <label>Events & lessons revenue / month</label>
+          <div class="control-value">$<span id="eventsVal">5K</span></div>
+          <input type="range" id="events" min="0" max="15000" value="5000" step="500">
+          <div class="range-bounds"><span>$0</span><span>$15K</span></div>
+        </div>
+        <div class="control">
+          <label>Total annual F&B lift (Ahu Mar + pool bar)</label>
+          <div class="control-value"><span id="fbLiftVal">+8</span><span class="unit">%</span></div>
+          <input type="range" id="fbLift" min="0" max="20" value="8" step="1">
+          <div class="range-bounds"><span>0%</span><span>20%</span></div>
+        </div>
+        <div class="control">
+          <label>Incremental room nights / year</label>
+          <div class="control-value"><span id="roomNightsVal">450</span><span class="unit">nights</span></div>
+          <input type="range" id="roomNights" min="0" max="1200" value="450" step="25">
+          <div class="range-bounds"><span>0</span><span>1,200</span></div>
+        </div>
+      </div>
+
+      <div class="calc-output">
+        <div>
+          <div class="output-label">Direct membership<br>& court revenue</div>
+          <div class="output-value">$<span id="outDirect">0</span></div>
+        </div>
+        <div>
+          <div class="output-label">Events & lessons<br>revenue</div>
+          <div class="output-value">$<span id="outEvents">0</span></div>
+        </div>
+        <div>
+          <div class="output-label">F&B, spa, room<br>halo revenue</div>
+          <div class="output-value">$<span id="outHalo">0</span></div>
+        </div>
+        <div>
+          <div class="output-label">Total annual<br>revenue uplift</div>
+          <div class="output-value" style="color:var(--accent-warm)">$<span id="outTotal">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="halo-grid reveal" style="margin-top:60px">
+      <div class="halo-card">
+        <div class="num">+3%</div>
+        <h4>Conservative room lift</h4>
+        <p>Pickleball travelers book 2–4 night stays around the sport. Model uses ~450 incremental room nights/yr at $270 ADR — roughly 1 occupancy point on the current base.</p>
+      </div>
+      <div class="halo-card">
+        <div class="num">+8%</div>
+        <h4>Total F&B lift</h4>
+        <p>Combined Ahu Mar + pool bar uplift from member dining frequency and pickleball guest spend. Conservative vs. what similar club-integrated hotels see.</p>
+      </div>
+      <div class="halo-card">
+        <div class="num">10+</div>
+        <h4>Events per year</h4>
+        <p>Tournaments, member mixers, clinics, corporate buyouts. Each drives same-day F&B, next-visit returns, and organic content.</p>
+      </div>
+      <div class="halo-card">
+        <div class="num">60d</div>
+        <h4>Halo return window</h4>
+        <p>Same mechanic as PNC: anyone who experiences DUA through pickleball returns within 60 days. Compounding engine.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VALUATION -->
+<section class="valuation" id="valuation">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-eyebrow"><span class="num">05</span> The Valuation</div>
+      <h2>The multiplier effect <em>on<br>property value.</em></h2>
+      <p class="lede">
+        Brickell boutique hotels trade at 6–8% cap rates. Every dollar of recurring NOI is worth roughly $14 of property value at a 7% cap. A capped membership club with recurring dues and a waitlist isn't just revenue — it's a capitalizable, transferable asset.
+      </p>
+    </div>
+
+    <div class="val-feature reveal">
+      <div class="val-math">
+        <div class="line"><span class="key">Year 3 total revenue uplift (est.)</span><span class="val">$1,200,000</span></div>
+        <div class="line"><span class="key">Less · direct club operating expenses</span><span class="val">($285,000)</span></div>
+        <div class="line"><span class="key">= Net revenue contribution to DUA</span><span class="val">$915,000</span></div>
+        <div class="line"><span class="key">× NOI margin (blended direct + halo)</span><span class="val">~54%</span></div>
+        <div class="line"><span class="key">= Incremental annual NOI</span><span class="val">~$494,000</span></div>
+        <div class="line"><span class="key">÷ Applied cap rate (Brickell boutique)</span><span class="val">7.00%</span></div>
+        <div class="final">
+          <div class="final-label">Estimated increase in property value</div>
+          <div class="final-value">+$7.1M</div>
+          <div class="final-note">Range: $6.2M (at 8% cap) → $8.2M (at 6% cap)<br>Lower cap rate = higher property value. Signed annual membership contracts compress cap rates.</div>
+        </div>
+      </div>
+      <div class="val-right">
+        <h3>The membership roster is a transferable asset.</h3>
+        <p>
+          180 memberships with annual contracts, a waitlist, and recurring dues is exactly the kind of asset that compresses cap rates. Buyers underwrite it. Lenders underwrite it. It signals DUA isn't just a 124-key boutique — it's a community with cashflow.
+        </p>
+        <p>
+          Miami hasn't built this category yet. Being first in Brickell with a capped, curated pickleball-and-recovery club is the kind of moat that shows up in the exit multiple, not just the P&L.
+        </p>
+      </div>
+    </div>
+
+    <div class="cap-explainer reveal">
+      <h4>Quick note on cap rates</h4>
+      <p>
+        Cap rate is the yield a buyer demands. Lower cap = buyer is willing to pay more for the same NOI. Higher cap = buyer demands more yield. Brickell boutique hotels trade at the lower end because they're high-demand assets.<br><br>
+        <code>NOI ÷ cap rate = property value</code>. So $494K NOI ÷ 6% = $8.2M. ÷ 7% = $7.1M. ÷ 8% = $6.2M. <strong>Lower cap = higher value.</strong>
+      </p>
+    </div>
+
+    <div class="moat reveal" style="margin-top:60px">
+      <div class="moat-card">
+        <h4>Why this stacks with the PNC partnership</h4>
+        <p>PNC drives wellness-crowd awareness. The pickleball club converts that awareness into recurring membership revenue. They reinforce each other — PNC events become member acquisition, members become PNC event regulars. One hotel, two halo systems, compounding.</p>
+      </div>
+      <div class="moat-card">
+        <h4>Why now, before someone else does it</h4>
+        <p>DETA has 17 courts in West Miami. Dinko has indoor courts in Upper Eastside. Sip & Pickle is in Wynwood. Nobody has a capped, luxury, rooftop, recovery-integrated club in Brickell. That window is open right now. In 18 months, it won't be.</p>
+      </div>
+      <div class="moat-card">
+        <h4>Why phased pricing matters</h4>
+        <p>Founding rates create urgency and evangelists. Intro proves demand. Final establishes premium positioning. By the time we're at Final pricing, we have waitlists — which is when Alan realizes the real value isn't the court, it's the recurring revenue asset attached to his building.</p>
+      </div>
+      <div class="moat-card">
+        <h4>Why the recovery stack is the moat</h4>
+        <p>Any hotel can add a court. Only a handful can bundle a court with pool, outdoor jacuzzi, cold plunge, saunas, steam, gym, towel service — already built, already licensed, already staffed. The amenities DUA already owns make membership worth $299, not $80.</p>
+      </div>
+    </div>
+
+    <!-- OPERATOR NOTE (subtle) -->
+    <div class="operator-note reveal">
+      <div class="tag">Operating Partner Engagement</div>
+      <h3>An aligned partner, not a payroll line.</h3>
+      <p>
+        This concept requires someone to sell memberships, run events, manage bookings, integrate with PNC, produce content, and keep the member experience on-brand. Hiring a GM to do this costs DUA a fixed salary regardless of performance. Engaging an operating partner on a <strong>performance-aligned structure</strong> means DUA only pays real money when the club is actually producing.
+      </p>
+      <p>
+        Proposed structure: a modest monthly base during build and ramp, with performance compensation tied to gross revenue. <strong>The performance share steps up only after DUA has recovered its full CapEx investment</strong> — meaning Alan pays the highest rate only once the project is already profitable on a cumulative basis. Detailed terms circulated separately under engagement agreement.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="container">
+    <div class="eyebrow" style="justify-content:center">· The Ask ·</div>
+    <h2 class="reveal">Four months to build.<br><em>Under a year</em> to pay it back.<br><span style="color:var(--accent);font-style:italic">A decade</span> of compounding.</h2>
+    <p class="reveal">
+      Approve the structural walk-through and the operating partnership. We launch founding membership pre-construction, pre-sell Club tier before the court opens, and cut the ribbon with a full roster on day one.
+    </p>
+    <div class="cta-stats reveal">
+      <div class="cta-stat">
+        <div class="v">$335K</div>
+        <div class="l">Hero build · Option A</div>
+      </div>
+      <div class="cta-stat">
+        <div class="v">~8mo</div>
+        <div class="l">Payback window</div>
+      </div>
+      <div class="cta-stat">
+        <div class="v">~$1.2M</div>
+        <div class="l">Year 3 revenue uplift</div>
+      </div>
+      <div class="cta-stat">
+        <div class="v">+$7.1M</div>
+        <div class="l">Property valuation lift</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IP NOTICE -->
+<div class="ip-notice">
+  <div class="container">
+    <div class="ip-badge">© Confidential IP</div>
+    <div class="ip-text">
+      <strong>Intellectual Property Notice.</strong> This pro forma, operational blueprint, membership structure, build budget, and valuation framework are the original intellectual property of <strong>Michael Krilivsky</strong> and are shared with DUA Hotel under confidentiality. By reviewing this material, the recipient agrees not to reproduce, redistribute, or execute against this concept — in whole or in part, independently or through third parties — without a signed written engagement with Michael Krilivsky as the originator.<br><br>
+      A formal Non-Disclosure & Non-Circumvention Agreement will be circulated separately before any execution discussions.
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container inner">
+    <div>DUA Hotel · Brickell · Pickleball & Recovery Pro Forma</div>
+    <div id="accessLog">Confidential · Prepared for Alan</div>
+  </div>
+</footer>
+
+<script>
+  // NDA Gate
+  const gate = document.getElementById('ndaGate');
+  const gateName = document.getElementById('gateName');
+  const gateEmail = document.getElementById('gateEmail');
+  const gateRole = document.getElementById('gateRole');
+  const gateAgree = document.getElementById('gateAgree');
+  const gateBtn = document.getElementById('gateBtn');
+
+  function checkGate() {
+    const valid = gateName.value.trim().length > 1 &&
+                  gateEmail.value.includes('@') &&
+                  gateEmail.value.includes('.') &&
+                  gateAgree.checked;
+    gateBtn.disabled = !valid;
+  }
+  [gateName, gateEmail, gateRole, gateAgree].forEach(el => {
+    el.addEventListener('input', checkGate);
+    el.addEventListener('change', checkGate);
+  });
+
+  gateBtn.addEventListener('click', () => {
+    const log = {
+      name: gateName.value.trim(),
+      email: gateEmail.value.trim(),
+      role: gateRole.value.trim(),
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent
+    };
+    try {
+      const existing = JSON.parse(localStorage.getItem('ndaLog') || '[]');
+      existing.push(log);
+      localStorage.setItem('ndaLog', JSON.stringify(existing));
+    } catch(e) {}
+    document.getElementById('accessLog').textContent =
+      'Viewed by ' + log.name + ' · ' + new Date().toLocaleDateString();
+    gate.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  });
+
+  // Reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('show');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Budget toggle
+  document.querySelectorAll('.budget-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.budget-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const opt = btn.dataset.opt;
+      document.getElementById('budgetA').style.display = opt === 'A' ? 'block' : 'none';
+      document.getElementById('budgetB').style.display = opt === 'B' ? 'block' : 'none';
+    });
+  });
+
+  // Calculator
+  const inputs = {
+    recCount: document.getElementById('recCountCtrl'),
+    clubCount: document.getElementById('clubCountCtrl'),
+    recDues: document.getElementById('recDuesCtrl'),
+    clubDues: document.getElementById('clubDuesCtrl'),
+    bookings: document.getElementById('bookings'),
+    rateCtrl: document.getElementById('rateCtrl'),
+    rain: document.getElementById('rain'),
+    events: document.getElementById('events'),
+    fbLift: document.getElementById('fbLift'),
+    roomNights: document.getElementById('roomNights')
+  };
+
+  const displays = {
+    recCount: document.getElementById('recCount'),
+    clubCount: document.getElementById('clubCount'),
+    recDues: document.getElementById('recDues'),
+    clubDues: document.getElementById('clubDues'),
+    bookingHrs: document.getElementById('bookingHrs'),
+    bookingRate: document.getElementById('bookingRate'),
+    rainPct: document.getElementById('rainPct'),
+    eventsVal: document.getElementById('eventsVal'),
+    fbLiftVal: document.getElementById('fbLiftVal'),
+    roomNightsVal: document.getElementById('roomNightsVal')
+  };
+
+  const outputs = {
+    direct: document.getElementById('outDirect'),
+    events: document.getElementById('outEvents'),
+    halo: document.getElementById('outHalo'),
+    total: document.getElementById('outTotal')
+  };
+
+  function fmtK(n) {
+    if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
+    if (n >= 1000) return Math.round(n/1000) + 'K';
+    return n.toFixed(0);
+  }
+  function fmtKshort(n) {
+    if (n >= 1000) return Math.round(n/1000) + 'K';
+    return n.toFixed(0);
+  }
+
+  // Assumptions for F&B baseline: Ahu Mar $1.3M + pool bar $156K = ~$1.46M baseline
+  const F_B_BASELINE = 1460000;
+
+  function recalc() {
+    const rc = +inputs.recCount.value;
+    const cc = +inputs.clubCount.value;
+    const rd = +inputs.recDues.value;
+    const cd = +inputs.clubDues.value;
+    const bk = +inputs.bookings.value;
+    const rt = +inputs.rateCtrl.value;
+    const rn = +inputs.rain.value;
+    const ev = +inputs.events.value;
+    const fb = +inputs.fbLift.value;
+    const rnights = +inputs.roomNights.value;
+
+    displays.recCount.textContent = rc;
+    displays.clubCount.textContent = cc;
+    displays.recDues.textContent = rd;
+    displays.clubDues.textContent = cd;
+    displays.bookingHrs.textContent = bk;
+    displays.bookingRate.textContent = rt;
+    displays.rainPct.textContent = rn;
+    displays.eventsVal.textContent = fmtKshort(ev);
+    displays.fbLiftVal.textContent = '+' + fb;
+    displays.roomNightsVal.textContent = rnights;
+
+    const membershipRev = (rc * rd + cc * cd) * 12;
+    const bookingRev = bk * rt * 52 * (1 - rn/100);
+    const directRev = membershipRev + bookingRev;
+
+    const eventsRev = ev * 12;
+
+    const fbHalo = F_B_BASELINE * (fb / 100);
+    const roomHalo = rnights * 270;
+    const halo = fbHalo + roomHalo;
+
+    const total = directRev + eventsRev + halo;
+
+    outputs.direct.textContent = fmtK(directRev);
+    outputs.events.textContent = fmtK(eventsRev);
+    outputs.halo.textContent = fmtK(halo);
+    outputs.total.textContent = fmtK(total);
+  }
+
+  Object.values(inputs).forEach(i => i.addEventListener('input', recalc));
+  recalc();
+
+  document.body.style.overflow = 'hidden';
+</script>
+
+</body>
+</html>
+
