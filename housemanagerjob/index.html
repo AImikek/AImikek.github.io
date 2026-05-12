@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="House Manager & Private Chef — Brickell, Miami. Hiring now.">
+<title>House Manager & Private Chef · Brickell, Miami</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1f1b16;
+    --body: #2f2a24;        /* darker than before — better contrast for older eyes */
+    --mute: #5a534a;
+    --cream: #f8f3e8;
+    --paper: #fdfbf6;
+    --bronze: #8b6f47;
+    --bronze-deep: #5f4a2e;
+    --bronze-light: #c9b896;
+    --hairline: #c8c0a8;
+    --highlight: #fff9ec;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Source Sans 3', -apple-system, system-ui, sans-serif;
+    font-size: 18px;          /* base bumped from 16px */
+    line-height: 1.55;
+    color: var(--body);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif { font-family: 'Lora', Georgia, serif; }
+
+  /* ===== LANGUAGE TOGGLE ===== */
+  .lang-bar {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 10px 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .lang-btn {
+    background: none;
+    border: 1px solid rgba(248, 243, 232, 0.3);
+    color: var(--cream);
+    padding: 6px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .lang-btn:hover { background: rgba(248, 243, 232, 0.1); }
+  .lang-btn.active {
+    background: var(--bronze-light);
+    color: var(--ink);
+    border-color: var(--bronze-light);
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 36px 24px 32px;
+    text-align: center;
+    border-bottom: 4px solid var(--bronze);
+  }
+  .header .badge {
+    display: inline-block;
+    background: var(--bronze);
+    color: var(--cream);
+    padding: 6px 16px;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 16px;
+    border-radius: 4px;
+  }
+  .header h1 {
+    font-family: 'Lora', serif;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.15;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .header .sub {
+    font-size: 18px;
+    color: var(--bronze-light);
+    font-weight: 500;
+  }
+
+  /* ===== QUICK FACTS ===== */
+  .facts {
+    background: var(--cream);
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .fact-label {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bronze-deep);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .fact-value {
+    font-size: 17px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  @media (max-width: 700px) {
+    .facts { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ===== MAIN ===== */
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+  }
+
+  section { margin-bottom: 36px; }
+
+  h2 {
+    font-family: 'Lora', serif;
+    font-size: 26px;
+    color: var(--ink);
+    font-weight: 600;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--bronze);
+    display: inline-block;
+  }
+
+  p {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  p:last-child { margin-bottom: 0; }
+
+  strong { color: var(--ink); font-weight: 700; }
+
+  /* ===== RESPONSIBILITY LIST ===== */
+  .duties {
+    list-style: none;
+    margin-top: 8px;
+  }
+  .duties li {
+    padding: 10px 0 10px 28px;
+    position: relative;
+    font-size: 18px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .duties li:last-child { border-bottom: none; }
+  .duties li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    color: var(--bronze);
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .duties li b {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* ===== PERKS — THE STAR SECTION ===== */
+  .perks-section {
+    background: linear-gradient(180deg, #fff9ec 0%, var(--cream) 100%);
+    border: 2px solid var(--bronze);
+    border-radius: 8px;
+    padding: 24px;
+    margin: 36px 0;
+  }
+  .perks-section h2 {
+    border-bottom-color: var(--bronze-deep);
+    margin-bottom: 4px;
+  }
+  .perks-section .lead {
+    font-size: 17px;
+    color: var(--mute);
+    font-style: italic;
+    margin-bottom: 18px;
+  }
+  .perk {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-top: 1px solid var(--hairline);
+    align-items: flex-start;
+  }
+  .perk:first-of-type { border-top: none; padding-top: 4px; }
+  .perk-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    background: var(--bronze);
+    color: var(--cream);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Lora', serif;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .perk-body {
+    flex: 1;
+  }
+  .perk-title {
+    font-family: 'Lora', serif;
+    font-size: 20px;
+    color: var(--ink);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .perk-desc {
+    font-size: 17px;
+    color: var(--body);
+    margin-bottom: 0;
+  }
+  .perk-value {
+    display: inline-block;
+    background: var(--bronze-deep);
+    color: var(--cream);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  /* ===== REQUIREMENTS ===== */
+  .reqs {
+    background: var(--paper);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    padding: 4px 20px;
+  }
+  .reqs .duties li { font-size: 17px; }
+
+  /* ===== PAY ===== */
+  .pay-box {
+    background: var(--ink);
+    color: var(--cream);
+    border-radius: 8px;
+    padding: 28px 24px;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .pay-eyebrow {
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--bronze-light);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .pay-range {
+    font-family: 'Lora', serif;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .pay-range .arrow {
+    color: var(--bronze-light);
+    margin: 0 12px;
+    font-weight: 500;
+  }
+  .pay-unit {
+    font-size: 16px;
+    color: var(--bronze-light);
+    font-style: italic;
+    margin-bottom: 14px;
+  }
+  .pay-note {
+    font-size: 16px;
+    color: rgba(248, 243, 232, 0.85);
+    line-height: 1.55;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  /* ===== APPLY ===== */
+  .apply {
+    text-align: center;
+    background: var(--cream);
+    border: 2px solid var(--bronze);
+    border-radius: 8px;
+    padding: 28px 24px;
+    margin-top: 28px;
+  }
+  .apply h2 {
+    border: none;
+    padding: 0;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .apply p {
+    font-size: 18px;
+    margin-bottom: 18px;
+  }
+  .btn {
+    display: inline-block;
+    background: var(--bronze-deep);
+    color: var(--cream);
+    text-decoration: none;
+    padding: 14px 28px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: var(--ink); }
+  .apply-email {
+    display: block;
+    margin-top: 14px;
+    font-size: 17px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .apply-email a {
+    color: var(--bronze-deep);
+    text-decoration: underline;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    text-align: center;
+    padding: 20px 24px;
+    font-size: 14px;
+    color: var(--mute);
+    background: var(--paper);
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* hide whichever language isn't active */
+  body.lang-es .en, body:not(.lang-es) .es { display: none; }
+</style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <span style="margin-right:6px;">Language / Idioma:</span>
+  <button class="lang-btn active" id="btn-en" onclick="setLang('en')">English</button>
+  <button class="lang-btn" id="btn-es" onclick="setLang('es')">Español</button>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="header">
+  <span class="badge en">Now Hiring</span>
+  <span class="badge es">Contratando Ahora</span>
+  <h1 class="en">House Manager &amp; Private Chef</h1>
+  <h1 class="es">Encargada de Hogar y Chef Privada</h1>
+  <div class="sub en">Private Residence · Brickell, Miami</div>
+  <div class="sub es">Residencia Privada · Brickell, Miami</div>
+</header>
+
+<!-- ============ QUICK FACTS ============ -->
+<div class="facts">
+  <div>
+    <div class="fact-label en">Pay</div>
+    <div class="fact-label es">Pago</div>
+    <div class="fact-value">$25–$30/hr</div>
+  </div>
+  <div>
+    <div class="fact-label en">Days</div>
+    <div class="fact-label es">Días</div>
+    <div class="fact-value">Mon · Wed · Fri</div>
+  </div>
+  <div>
+    <div class="fact-label en">Hours</div>
+    <div class="fact-label es">Horario</div>
+    <div class="fact-value">9:30 AM – 3:30 PM</div>
+  </div>
+  <div>
+    <div class="fact-label en">Location</div>
+    <div class="fact-label es">Ubicación</div>
+    <div class="fact-value">Brickell, Miami</div>
+  </div>
+</div>
+
+<main>
+
+<!-- ============ ABOUT ============ -->
+<section class="en">
+  <h2>About the Role</h2>
+  <p>We are looking for a <strong>reliable, detail-oriented House Manager</strong> to help run a private home in Brickell. This is a great role for someone who enjoys cooking healthy meals, keeping a home clean and organized, and taking pride in their work.</p>
+  <p>The right person is trustworthy, proactive, and happy to anticipate what the home needs.</p>
+</section>
+<section class="es">
+  <h2>Sobre el Puesto</h2>
+  <p>Buscamos una <strong>Encargada de Hogar confiable y detallista</strong> para ayudar a manejar una casa privada en Brickell. Es un puesto ideal para alguien que disfruta cocinar comidas saludables, mantener un hogar limpio y organizado, y siente orgullo por su trabajo.</p>
+  <p>La persona ideal es confiable, proactiva, y le gusta anticipar lo que la casa necesita.</p>
+</section>
+
+<!-- ============ DUTIES ============ -->
+<section class="en">
+  <h2>What You'll Do</h2>
+  <ul class="duties">
+    <li><b>Cook healthy meals</b> — prepare meals and snacks; manage weekly meal prep.</li>
+    <li><b>Clean and organize</b> — keep the home tidy and well-maintained.</li>
+    <li><b>Daily upkeep</b> — laundry, dishes, and general household tasks.</li>
+    <li><b>Receive deliveries</b> — groceries, packages, and keep the pantry stocked.</li>
+    <li><b>Coordinate</b> — work with building management, vendors, and service providers.</li>
+    <li><b>Take ownership</b> — anticipate household needs and keep things running smoothly.</li>
+  </ul>
+</section>
+<section class="es">
+  <h2>Tus Responsabilidades</h2>
+  <ul class="duties">
+    <li><b>Cocinar comidas saludables</b> — preparar comidas y meriendas; planificación semanal.</li>
+    <li><b>Limpiar y organizar</b> — mantener el hogar ordenado y bien cuidado.</li>
+    <li><b>Tareas diarias</b> — lavandería, lavar platos, y quehaceres generales.</li>
+    <li><b>Recibir entregas</b> — víveres, paquetes, y mantener la despensa surtida.</li>
+    <li><b>Coordinar</b> — trabajar con la administración del edificio y proveedores.</li>
+    <li><b>Tomar iniciativa</b> — anticipar las necesidades del hogar y mantener todo funcionando bien.</li>
+  </ul>
+</section>
+
+<!-- ============ PERKS — THE STAR ============ -->
+<section class="perks-section">
+  <h2 class="en">The Perks</h2>
+  <h2 class="es">Los Beneficios</h2>
+  <p class="lead en">More than just a paycheck — extras you can use every week.</p>
+  <p class="lead es">Más que solo un salario — beneficios reales que puedes usar cada semana.</p>
+
+  <div class="perk">
+    <div class="perk-icon">$</div>
+    <div class="perk-body">
+      <div class="perk-title en">Cash Bonuses</div>
+      <div class="perk-title es">Bonos en Efectivo</div>
+      <div class="perk-desc en">Performance-based monetary bonuses when you go above and beyond.</div>
+      <div class="perk-desc es">Bonos basados en buen desempeño cuando das más de lo esperado.</div>
+    </div>
+  </div>
+
+  <div class="perk">
+    <div class="perk-icon">★</div>
+    <div class="perk-body">
+      <div class="perk-title en">5-Star Hotel Rooftop Access</div>
+      <div class="perk-title es">Acceso al Rooftop de Hotel 5 Estrellas</div>
+      <div class="perk-desc en">FOB access to a world-class hotel's rooftop: <strong>pool, jacuzzi, cold plunge, sauna, steam room, gym, and showers</strong>. Yours to use while on the clock.</div>
+      <div class="perk-desc es">Acceso con llave al rooftop de un hotel de lujo: <strong>piscina, jacuzzi, baño frío, sauna, baño de vapor, gimnasio y duchas</strong>. Para tu uso durante tu horario de trabajo.</div>
+    </div>
+  </div>
+
+  <div class="perk">
+    <div class="perk-icon">P</div>
+    <div class="perk-body">
+      <div class="perk-title en">Free Parking in Brickell</div>
+      <div class="perk-title es">Estacionamiento Gratis en Brickell</div>
+      <div class="perk-desc en">Parking is covered once hired — no more meters or daily search.</div>
+      <div class="perk-desc es">El estacionamiento está cubierto una vez contratada — sin parquímetros.</div>
+      <span class="perk-value en">~$200/month value</span>
+      <span class="perk-value es">Valor de ~$200/mes</span>
+    </div>
+  </div>
+
+  <div class="perk">
+    <div class="perk-icon">☕</div>
+    <div class="perk-body">
+      <div class="perk-title en">Free Supplements & Coffee</div>
+      <div class="perk-title es">Suplementos y Café Gratis</div>
+      <div class="perk-desc en">Help yourself to the in-home stash: <strong>specialty coffee, nootropics, Magic Mind, electrolytes, and more</strong>.</div>
+      <div class="perk-desc es">Sírvete del surtido en casa: <strong>café especial, nootrópicos, Magic Mind, electrolitos, y más</strong>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REQUIREMENTS ============ -->
+<section class="en">
+  <h2>Who We're Looking For</h2>
+  <div class="reqs">
+    <ul class="duties">
+      <li><b>Experience:</b> Minimum 4 years in house management, cleaning, cooking, hospitality, or similar.</li>
+      <li><b>English:</b> Strong spoken English is required — clear, comfortable communication.</li>
+      <li><b>References:</b> Clean recent background check and two professional references.</li>
+      <li><b>Skills:</b> Well-organized, good communicator, able to work independently.</li>
+      <li><b>Personality:</b> Trustworthy, proactive, detail-oriented, and responsive.</li>
+    </ul>
+  </div>
+</section>
+<section class="es">
+  <h2>A Quién Buscamos</h2>
+  <div class="reqs">
+    <ul class="duties">
+      <li><b>Experiencia:</b> Mínimo 4 años en manejo de hogar, limpieza, cocina, hospitalidad, o similar.</li>
+      <li><b>Inglés:</b> Se requiere buen nivel de inglés hablado — comunicación clara y cómoda.</li>
+      <li><b>Referencias:</b> Verificación de antecedentes limpia y dos referencias profesionales.</li>
+      <li><b>Habilidades:</b> Organizada, buena comunicadora, capaz de trabajar de forma independiente.</li>
+      <li><b>Personalidad:</b> Confiable, proactiva, detallista, y responde a mensajes rápidamente.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ PAY ============ -->
+<section class="en">
+  <h2>Pay & Growth</h2>
+  <div class="pay-box">
+    <div class="pay-eyebrow">Starting to Top Rate</div>
+    <div class="pay-range">$25<span class="arrow">→</span>$30</div>
+    <div class="pay-unit">per hour</div>
+    <p class="pay-note">Start at $25/hour with growth to $30/hour for someone who consistently performs well, takes ownership of the role, and proves to be a strong long-term fit. <strong>Plus bonuses.</strong></p>
+  </div>
+</section>
+<section class="es">
+  <h2>Pago y Crecimiento</h2>
+  <div class="pay-box">
+    <div class="pay-eyebrow">De Inicio a Máximo</div>
+    <div class="pay-range">$25<span class="arrow">→</span>$30</div>
+    <div class="pay-unit">por hora</div>
+    <p class="pay-note">Comienza en $25/hora con crecimiento hasta $30/hora para alguien que demuestra buen desempeño, toma responsabilidad del puesto, y resulta ser una buena opción a largo plazo. <strong>Más bonos.</strong></p>
+  </div>
+</section>
+
+<!-- ============ APPLY ============ -->
+<section class="apply">
+  <h2 class="en">Ready to Apply?</h2>
+  <h2 class="es">¿Lista para Aplicar?</h2>
+  <p class="en">Send your resume and a short note about your experience.</p>
+  <p class="es">Envía tu currículum y una nota breve sobre tu experiencia.</p>
+  <a href="mailto:m@mikek.ai?subject=House%20Manager%20Application" class="btn en">Apply by Email →</a>
+  <a href="mailto:m@mikek.ai?subject=Aplicaci%C3%B3n%20Encargada%20de%20Hogar" class="btn es">Aplicar por Correo →</a>
+  <div class="apply-email">
+    <a href="mailto:m@mikek.ai">m@mikek.ai</a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Private Residence · Brickell, Miami
+</footer>
+
+<script>
+  function setLang(lang) {
+    if (lang === 'es') {
+      document.body.classList.add('lang-es');
+      document.documentElement.lang = 'es';
+      document.getElementById('btn-es').classList.add('active');
+      document.getElementById('btn-en').classList.remove('active');
+    } else {
+      document.body.classList.remove('lang-es');
+      document.documentElement.lang = 'en';
+      document.getElementById('btn-en').classList.add('active');
+      document.getElementById('btn-es').classList.remove('active');
+    }
+    try { localStorage.setItem('hm_lang', lang); } catch(e) {}
+  }
+  // Restore preference, or auto-detect browser language on first visit
+  (function() {
+    let saved = null;
+    try { saved = localStorage.getItem('hm_lang'); } catch(e) {}
+    if (saved) {
+      setLang(saved);
+    } else if ((navigator.language || '').toLowerCase().startsWith('es')) {
+      setLang('es');
+    }
+  })();
+</script>
+
+</body>
+</html>
