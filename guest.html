@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Welcome · Unit 3506 · Brickell</title>
-<meta name="description" content="Guest guide for Unit 3506, Brickell, Miami. Here for lunch or staying the night, here's everything you need.">
+<meta name="description" content="Guest guide for Unit 3506, Brickell, Miami. Here for a meeting or staying the night, here's everything you need.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700;800;900&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -54,12 +54,12 @@ body.mode-lunch [data-mode="overnight"]{display:none}
 .hero{position:relative;min-height:94vh;display:flex;align-items:flex-end;padding:clamp(32px,6vw,80px);color:#fff;overflow:hidden;background:#0e3b4a}
 .hero .bg{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.06);animation:zoom 18s ease-out forwards}
 @keyframes zoom{to{transform:scale(1)}}
-.hero .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,40,55,.12) 0%,rgba(11,40,55,.05) 38%,rgba(10,30,45,.82) 100%)}
+.hero .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,28,40,.36) 0%,rgba(8,28,40,.30) 28%,rgba(6,22,34,.72) 58%,rgba(4,16,26,.95) 100%)}
 .hero-in{position:relative;max-width:780px}
 .eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-weight:700;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:rgba(11,40,55,.55);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(4px);padding:.45rem .9rem;border-radius:100px;margin-bottom:1.3rem}
 .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--yellow)}
-.hero h1{font-size:clamp(3rem,9vw,6.4rem);font-weight:800;letter-spacing:-.035em;line-height:.96;text-shadow:0 2px 30px rgba(0,0,0,.25)}
-.hero .sub{margin-top:1.2rem;font-size:clamp(1.1rem,2.4vw,1.5rem);font-weight:500;color:rgba(255,255,255,.92);max-width:30ch}
+.hero h1{font-size:clamp(3rem,9vw,6.4rem);font-weight:800;letter-spacing:-.035em;line-height:.96;text-shadow:0 2px 28px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.4)}
+.hero .sub{margin-top:1.2rem;font-size:clamp(1.1rem,2.4vw,1.5rem);font-weight:500;color:#fff;max-width:30ch;text-shadow:0 1px 16px rgba(0,0,0,.65),0 1px 2px rgba(0,0,0,.45)}
 .hero .sub .on{font-family:inherit}
 .hero-actions{margin-top:2rem;display:flex;flex-wrap:wrap;gap:.8rem;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:.55rem;font-weight:700;font-size:1.05rem;padding:1rem 1.9rem;border-radius:100px;cursor:pointer;border:none;font-family:inherit;transition:transform .15s,box-shadow .2s,background .2s}
@@ -214,10 +214,10 @@ body.mode-lunch .sub-night{display:none}
   <div class="bg" data-img="hero"></div>
   <div class="scrim"></div>
   <div class="hero-in">
-    <span class="eyebrow"><span class="dot"></span> Brickell, Miami · Floor 35</span>
+    <span class="eyebrow"><span class="dot"></span> Brickell, Miami · Unit 3506</span>
     <h1>Welcome.</h1>
     <p class="sub">
-      <span class="sub-lunch">So glad you're joining us for lunch. Here's the quick rundown for getting up to us.</span>
+      <span class="sub-lunch">So glad we're meeting here. Here's the quick rundown for getting up to us.</span>
       <span class="sub-night">Make yourself at home for the next few days. Everything you need is right here.</span>
     </p>
     <div class="hero-actions">
@@ -225,7 +225,7 @@ body.mode-lunch .sub-night{display:none}
       <a href="#getin" class="btn btn-ghost">How to get in</a>
     </div>
     <div class="specrow">
-      <span>📍 <b>1300 S Miami Ave</b></span><span>FLOOR <b>35</b></span><span>UNIT <b>3506</b></span>
+      <span>📍 <b>1300 S Miami Ave</b></span><span>FLOOR <b>35</b></span>
     </div>
   </div>
 </header>
@@ -234,7 +234,7 @@ body.mode-lunch .sub-night{display:none}
 <div class="tailor">
   <div class="q">What brings you by?</div>
   <div class="seg" role="tablist">
-    <button id="segLunch" class="on" role="tab">🍽️ Here for lunch</button>
+    <button id="segLunch" class="on" role="tab">🍽️ Here for a meeting</button>
     <button id="segNight" role="tab">🌙 Staying overnight</button>
   </div>
 </div>
@@ -243,8 +243,8 @@ body.mode-lunch .sub-night{display:none}
 <section class="block wrap lunch-only">
   <div class="reveal">
     <span class="kicker">The short version</span>
-    <h2 class="h-lg">A sunny lunch, 35 floors up.</h2>
-    <p class="lead">You're coming up to our home on the 35th floor, skyline and bay in every window. Lunch is handled, so come hungry and relaxed. The only thing we need from you is a quick registration so reception lets you up and we can plan around any allergies.</p>
+    <h2 class="h-lg">Your meeting, 35 floors up.</h2>
+    <p class="lead">You're coming up to our home on the 35th floor, skyline and bay in every window. Whether it's a cafecito, lunch, or dinner, the food and the setting are handled. The only thing we need from you is a quick registration, so reception can clear you up and we can plan around any allergies.</p>
   </div>
   <div class="gallery reveal">
     <div class="photo" data-img="rainbow"></div>
@@ -258,8 +258,8 @@ body.mode-lunch .sub-night{display:none}
 <section class="block wrap lunch-only" style="padding-top:0">
   <div class="company reveal">
     <span class="kicker">Good company</span>
-    <h2 class="h-lg" style="max-width:20ch">You never quite know who's at the table.</h2>
-    <p class="lead">Lunch here has a way of bringing the right people together: founders, investors, operators, and creatives passing through Miami. Some lunches are all business, some are purely social, and the best ones land somewhere in between. More than a few conversations at this table have turned into partnerships, and a handful into deals worth real money. Either way, people tend to leave with a few new names worth knowing.</p>
+    <h2 class="h-lg" style="max-width:20ch">More than a meeting.</h2>
+    <p class="lead">The right people tend to end up around this table: founders, investors, operators, and creatives passing through Miami. Some meetings are all business, some are purely social, and the best ones land somewhere in between. More than a few conversations here have turned into partnerships, and a handful into deals worth real money. Whether it's one on one or a full table, the time tends to be worth far more than the hour it takes.</p>
   </div>
 </section>
 
@@ -283,8 +283,8 @@ body.mode-lunch .sub-night{display:none}
     <h2 class="h-lg">Finding your way up.</h2>
   </div>
   <div class="steps reveal">
-        <div class="step"><div class="n">01</div><div><h3>Park</h3><p>Valet for guests is <b>$25</b> (or <b>$50 overnight</b>) when the garage isn't full. There's also street parking, usually behind the building or the street perpendicular to it.</p></div></div>
-        <div class="step"><div class="n">02</div><div><h3>Find the entrance</h3><p>We're on the corner of <b>S Miami Ave and 13th Street</b>, with entrances on both sides. Use the call button at the lobby to be let in.</p></div></div>
+        <div class="step"><div class="n">01</div><div><h3>Getting here</h3><p>Easiest is a <b>rideshare</b> straight to the door, or just walk, we're central to everything in Brickell. The <b>Metrorail</b> Financial District / Brickell station is half a block away. If you drive, there's street parking on the back and perpendicular streets, or valet at <b>$30</b> ($60 overnight, tax and fees included).</p></div></div>
+        <div class="step"><div class="n">02</div><div><h3>Find the entrance</h3><p>Come to the <b>residential side entrance</b>, 1300 S Miami Residences. Use the call button at the lobby to be let in.</p></div></div>
         <div class="step"><div class="n">03</div><div><h3>Check in at the front desk</h3><p>Tell reception you're visiting <b>Unit 3506, Mike Krilivsky</b>. They'll call up and grant elevator access.</p></div></div>
         <div class="step"><div class="n">04</div><div><h3>Up to the 35th floor</h3><p>Off the elevator, turn <b>right</b> and follow the hall around to <b>#3506</b>. Knock loudly and slip off your shoes at the door. We keep clean indoor sandals waiting for you.</p></div></div>
       </div>
@@ -293,7 +293,7 @@ body.mode-lunch .sub-night{display:none}
   <div class="facts reveal">
     <div class="fact"><div class="k">WiFi</div><div class="v mono">2306</div><div class="s">Password &nbsp;23062306</div></div>
     <div class="fact"><div class="k">Front Desk</div><div class="v">Unit 3506</div><div class="s">Ask for Mike Krilivsky</div></div>
-    <div class="fact"><div class="k">Valet Parking</div><div class="v">$25</div><div class="s">$50 overnight · street parking nearby</div></div>
+    <div class="fact"><div class="k">Getting here</div><div class="v">Rideshare</div><div class="s">or walk · Metrorail ½ block · valet $30</div></div>
   </div>
 </section>
 
@@ -304,8 +304,8 @@ body.mode-lunch .sub-night{display:none}
   <div class="cards reveal">
     <div class="card"><div class="tag">Key access</div><h3>Coming &amp; going</h3><p>Once you're registered, our house manager hands you a key. Heading out? Bring it and press <b>L</b> for the lobby. Coming back, check in at the front desk first, then press <b>35</b> to come up.</p></div>
     <div class="card"><div class="tag">Sound</div><h3>Music, anywhere</h3><p>Just ask out loud in the kitchen or living room. On WiFi with an iPhone, you can also steer it from Apple's Music app.</p><span class="siri">"Hey Siri, play Rufus Du Sol"</span></div>
-    <div class="card"><div class="tag">Spare room · shades</div><h3>Smart shades</h3><p>Open and close them by voice only. Please don't pull them by hand, it can damage the mechanism.</p><span class="siri">"Siri, open shades" / "close shades"</span></div>
-    <div class="card"><div class="tag">Spare room · lighting</div><h3>The blue lights</h3><p>Set the mood with the two accent lights whenever you like.</p><span class="siri">"Siri, turn on magic" / "off magic"</span></div>
+    <div class="card"><div class="tag">Lighting</div><h3>The blue lights</h3><p>Two accent lights to set the mood, on or off by voice.</p><span class="siri">"Hey Siri, turn on magic" / "off magic"</span></div>
+    <div class="card"><div class="tag">Everything</div><h3>One command for it all</h3><p>Turn the whole place on or off in a single ask.</p><span class="siri">"Hey Siri, turn on all" / "turn off all"</span></div>
   </div>
 </section>
 
@@ -327,7 +327,7 @@ body.mode-lunch .sub-night{display:none}
         <li>Billiards room</li>
       </ul>
       <ul class="floorlist">
-        <li><span class="fl">P</span><div><h4>The amenity deck</h4><p>The main pool, a 13-person jacuzzi, hot tub and cold plunge, sauna and steam room, gym, spa, and a restaurant and bar, with a movie theatre and billiards close by.</p><span class="hrs">Bar, food &amp; towels · 11:00–17:30</span></div></li>
+        <li><span class="fl">P</span><div><h4>The amenity deck</h4><p>The main pool, a 13-person jacuzzi, hot tub and cold plunge, sauna and steam room, gym, spa, and a restaurant and bar, with a movie theatre and billiards close by.</p><span class="hrs">Restaurant &amp; bar · 12pm–5:30pm</span></div></li>
         <li><span class="fl">54</span><div><h4>Rooftop pool</h4><p>A second pool on the 54th floor with incredible views over all of Miami. Worth every floor up.</p></div></li>
       </ul>
       <div class="notice">
