@@ -56,7 +56,7 @@ body.mode-lunch [data-mode="overnight"]{display:none}
 @keyframes zoom{to{transform:scale(1)}}
 .hero .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,40,55,.12) 0%,rgba(11,40,55,.05) 38%,rgba(10,30,45,.82) 100%)}
 .hero-in{position:relative;max-width:780px}
-.eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-weight:700;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);padding:.45rem .9rem;border-radius:100px;margin-bottom:1.3rem}
+.eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-weight:700;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#fff;background:rgba(11,40,55,.55);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(4px);padding:.45rem .9rem;border-radius:100px;margin-bottom:1.3rem}
 .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--yellow)}
 .hero h1{font-size:clamp(3rem,9vw,6.4rem);font-weight:800;letter-spacing:-.035em;line-height:.96;text-shadow:0 2px 30px rgba(0,0,0,.25)}
 .hero .sub{margin-top:1.2rem;font-size:clamp(1.1rem,2.4vw,1.5rem);font-weight:500;color:rgba(255,255,255,.92);max-width:30ch}
@@ -81,8 +81,8 @@ body.mode-lunch [data-mode="overnight"]{display:none}
 @media(max-width:480px){.seg button{padding:.6rem 1rem;font-size:.84rem}}
 
 /* layout */
-.wrap{max-width:1100px;margin:0 auto;padding:0 clamp(20px,5vw,44px)}
-.block{padding:clamp(58px,9vw,116px) 0}
+.wrap{max-width:1100px;margin:0 auto;padding-left:clamp(22px,5.5vw,48px);padding-right:clamp(22px,5.5vw,48px)}
+.block{padding-top:clamp(58px,9vw,116px);padding-bottom:clamp(58px,9vw,116px)}
 .kicker{display:inline-block;font-weight:700;font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--aqua-d);margin-bottom:1rem}
 .kicker.coral{color:var(--coral-d)}
 .h-lg{font-size:clamp(2.1rem,5vw,3.6rem);font-weight:800;letter-spacing:-.03em}
@@ -150,6 +150,8 @@ body.mode-lunch [data-mode="overnight"]{display:none}
 .floorlist h4{font-size:1.1rem;font-weight:700;margin-bottom:.2rem}
 .floorlist p{color:var(--ink-2);font-size:.97rem}
 .floorlist .hrs{display:inline-block;margin-top:.4rem;font-family:"JetBrains Mono";font-size:.8rem;color:var(--aqua-d);background:var(--aquatint);padding:.25rem .6rem;border-radius:8px}
+.amlist{display:flex;flex-wrap:wrap;gap:9px;list-style:none;margin-bottom:1.8rem}
+.amlist li{background:var(--aquatint);color:var(--ink);font-weight:600;font-size:.9rem;padding:.55rem .95rem;border-radius:100px;border:1px solid var(--line)}
 .notice{background:#FFF4EC;border:1px solid rgba(255,94,91,.3);border-left:4px solid var(--coral);border-radius:16px;padding:clamp(20px,3vw,26px);margin-top:16px}
 .notice h4{font-size:1.05rem;color:var(--coral-d);margin-bottom:.6rem;font-family:"Schibsted Grotesk";font-weight:700}
 .notice ul{list-style:none}
@@ -257,7 +259,7 @@ body.mode-lunch .sub-night{display:none}
   <div class="company reveal">
     <span class="kicker">Good company</span>
     <h2 class="h-lg" style="max-width:20ch">You never quite know who's at the table.</h2>
-    <p class="lead">Lunch here has a way of bringing interesting people together: founders, investors, creatives, and the occasional familiar face passing through Miami. There's no agenda and nothing to pitch, just good conversation over a good meal. Now and then those conversations quietly turn into partnerships, and a few have turned into deals worth real money. Mostly, people leave with a handful of new friends worth knowing.</p>
+    <p class="lead">Lunch here has a way of bringing the right people together: founders, investors, operators, and creatives passing through Miami. Some lunches are all business, some are purely social, and the best ones land somewhere in between. More than a few conversations at this table have turned into partnerships, and a handful into deals worth real money. Either way, people tend to leave with a few new names worth knowing.</p>
   </div>
 </section>
 
@@ -291,7 +293,7 @@ body.mode-lunch .sub-night{display:none}
   <div class="facts reveal">
     <div class="fact"><div class="k">WiFi</div><div class="v mono">2306</div><div class="s">Password &nbsp;23062306</div></div>
     <div class="fact"><div class="k">Front Desk</div><div class="v">Unit 3506</div><div class="s">Ask for Mike Krilivsky</div></div>
-    <div class="fact"><div class="k">Valet Parking</div><div class="v">$25</div><div class="s">$50 overnight · street nearby</div></div>
+    <div class="fact"><div class="k">Valet Parking</div><div class="v">$25</div><div class="s">$50 overnight · street parking nearby</div></div>
   </div>
 </section>
 
@@ -309,13 +311,24 @@ body.mode-lunch .sub-night{display:none}
 
 <!-- AMENITIES (overnight) -->
 <section class="block wrap overnight-only" id="amenities" style="padding-top:0">
-  <div class="reveal"><span class="kicker coral">The building</span><h2 class="h-lg">Pools, plunge &amp; rooftop.</h2>
-  <p class="lead">Take a tour with our house manager or Mike. Officially the amenities are for residents and their guests together, and the staff are wonderfully relaxed about it. The pool, cold plunge, and hot tub are all yours to enjoy.</p></div>
+  <div class="reveal"><span class="kicker coral">The building</span><h2 class="h-lg">Two rooftops, and plenty in between.</h2>
+  <p class="lead">Take a tour with our house manager or Mike. The amenities are for residents and their guests, and the staff are wonderfully relaxed about it. Here's what's waiting downstairs.</p></div>
   <div class="amen-grid">
     <div class="reveal">
+      <ul class="amlist">
+        <li>Resort-style pool</li>
+        <li>13-person jacuzzi</li>
+        <li>Hot tub &amp; cold plunge</li>
+        <li>Sauna &amp; steam room</li>
+        <li>Fitness center</li>
+        <li>Spa services</li>
+        <li>Restaurant &amp; bar</li>
+        <li>Movie theatre</li>
+        <li>Billiards room</li>
+      </ul>
       <ul class="floorlist">
-        <li><span class="fl">P</span><div><h4>Resident &amp; hotel amenities</h4><p>Pool, hot tub, cold plunge, steam room, sauna, gym, spa, and a bar with food and drink.</p><span class="hrs">Bar, food &amp; towels · 11:00–17:30</span></div></li>
-        <li><span class="fl">54</span><div><h4>Rooftop pool</h4><p>A private residents' pool with incredible views. Worth the trip up.</p></div></li>
+        <li><span class="fl">P</span><div><h4>The amenity deck</h4><p>The main pool, a 13-person jacuzzi, hot tub and cold plunge, sauna and steam room, gym, spa, and a restaurant and bar, with a movie theatre and billiards close by.</p><span class="hrs">Bar, food &amp; towels · 11:00–17:30</span></div></li>
+        <li><span class="fl">54</span><div><h4>Rooftop pool</h4><p>A second pool on the 54th floor with incredible views over all of Miami. Worth every floor up.</p></div></li>
       </ul>
       <div class="notice">
         <h4>One small thing</h4>
@@ -345,7 +358,7 @@ body.mode-lunch .sub-night{display:none}
 <section class="block wrap" style="padding-top:0">
   <div class="reveal"><span class="kicker">Good to know</span><h2 class="h-lg">A couple of perks.</h2></div>
   <div class="perks reveal">
-    <div class="perk a"><div class="tag">Ground floor</div><h3>Ahu Mar</h3><p>A delicious restaurant right downstairs, no need to go far for a great meal.</p></div>
+    <div class="perk a"><div class="tag">In the kitchen</div><h3>A chef in the house</h3><p>Our house manager doubles as an onsite chef, so good food is part of the deal, whether you're here for lunch or a few days.</p></div>
     <div class="perk b"><div class="tag">Sponsored stay</div><h3>Pups N Chill</h3><p>Your visit is partially sponsored by <a href="https://pupsnchill.com">Pups N Chill</a>, Miami's #1 Health, Wellness, and Animal Advocacy event.</p></div>
   </div>
 </section>
@@ -379,7 +392,8 @@ var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isInter
 document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 /* floating register */
 var fr=document.getElementById('floatReg');
-window.addEventListener('scroll',function(){fr.classList.toggle('show',window.scrollY>640);},{passive:true});
+function updFR(){var y=window.scrollY,nearBottom=(window.innerHeight+y)>(document.body.scrollHeight-740);fr.classList.toggle('show',y>640&&!nearBottom);}
+window.addEventListener('scroll',updFR,{passive:true});window.addEventListener('resize',updFR);
 </script>
 </body>
 </html>
