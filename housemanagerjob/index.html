@@ -3,579 +3,592 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="House Manager & Private Chef — Brickell, Miami. Hiring now.">
+<meta name="description" content="House Manager & Private Chef - Brickell, Miami. Hiring now. Apply online.">
 <title>House Manager & Private Chef · Brickell, Miami</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink: #1f1b16;
-    --body: #2f2a24;        /* darker than before — better contrast for older eyes */
-    --mute: #5a534a;
-    --cream: #f8f3e8;
-    --paper: #fdfbf6;
-    --bronze: #8b6f47;
-    --bronze-deep: #5f4a2e;
-    --bronze-light: #c9b896;
-    --hairline: #c8c0a8;
-    --highlight: #fff9ec;
+  :root{
+    --navy:#0e2235; --navy-soft:#16324a; --turquoise:#19c2c2; --turquoise-deep:#0fa3a3;
+    --coral:#ff6f61; --yellow:#ffd166; --pink:#ffb3c1; --sand:#fef9f2;
+    --ink:#10222f; --ink-soft:#4c6275; --line:#e4ded2; --ok:#16a085; --bad:#e0564a;
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'Source Sans 3', -apple-system, system-ui, sans-serif;
-    font-size: 18px;          /* base bumped from 16px */
-    line-height: 1.55;
-    color: var(--body);
-    background: var(--paper);
-    -webkit-font-smoothing: antialiased;
-  }
-  .serif { font-family: 'Lora', Georgia, serif; }
-
-  /* ===== LANGUAGE TOGGLE ===== */
-  .lang-bar {
-    background: var(--ink);
-    color: var(--cream);
-    padding: 10px 24px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .lang-btn {
-    background: none;
-    border: 1px solid rgba(248, 243, 232, 0.3);
-    color: var(--cream);
-    padding: 6px 14px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    border-radius: 4px;
-    transition: all 0.2s;
-  }
-  .lang-btn:hover { background: rgba(248, 243, 232, 0.1); }
-  .lang-btn.active {
-    background: var(--bronze-light);
-    color: var(--ink);
-    border-color: var(--bronze-light);
-  }
-
-  /* ===== HEADER ===== */
-  .header {
-    background: var(--ink);
-    color: var(--cream);
-    padding: 36px 24px 32px;
-    text-align: center;
-    border-bottom: 4px solid var(--bronze);
-  }
-  .header .badge {
-    display: inline-block;
-    background: var(--bronze);
-    color: var(--cream);
-    padding: 6px 16px;
-    font-size: 13px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    font-weight: 700;
-    margin-bottom: 16px;
-    border-radius: 4px;
-  }
-  .header h1 {
-    font-family: 'Lora', serif;
-    font-size: clamp(30px, 5vw, 44px);
-    line-height: 1.15;
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-  .header .sub {
-    font-size: 18px;
-    color: var(--bronze-light);
-    font-weight: 500;
-  }
-
-  /* ===== QUICK FACTS ===== */
-  .facts {
-    background: var(--cream);
-    padding: 20px 24px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    text-align: center;
-    border-bottom: 1px solid var(--hairline);
-  }
-  .fact-label {
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--bronze-deep);
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-  .fact-value {
-    font-size: 17px;
-    color: var(--ink);
-    font-weight: 600;
-  }
-  @media (max-width: 700px) {
-    .facts { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  /* ===== MAIN ===== */
-  main {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 32px 24px 48px;
-  }
-
-  section { margin-bottom: 36px; }
-
-  h2 {
-    font-family: 'Lora', serif;
-    font-size: 26px;
-    color: var(--ink);
-    font-weight: 600;
-    margin-bottom: 14px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--bronze);
-    display: inline-block;
-  }
-
-  p {
-    font-size: 18px;
-    margin-bottom: 12px;
-  }
-  p:last-child { margin-bottom: 0; }
-
-  strong { color: var(--ink); font-weight: 700; }
-
-  /* ===== RESPONSIBILITY LIST ===== */
-  .duties {
-    list-style: none;
-    margin-top: 8px;
-  }
-  .duties li {
-    padding: 10px 0 10px 28px;
-    position: relative;
-    font-size: 18px;
-    border-bottom: 1px solid var(--hairline);
-  }
-  .duties li:last-child { border-bottom: none; }
-  .duties li::before {
-    content: '✓';
-    position: absolute;
-    left: 0;
-    top: 10px;
-    color: var(--bronze);
-    font-weight: 700;
-    font-size: 18px;
-  }
-  .duties li b {
-    color: var(--ink);
-    font-weight: 700;
-  }
-
-  /* ===== PERKS — THE STAR SECTION ===== */
-  .perks-section {
-    background: linear-gradient(180deg, #fff9ec 0%, var(--cream) 100%);
-    border: 2px solid var(--bronze);
-    border-radius: 8px;
-    padding: 24px;
-    margin: 36px 0;
-  }
-  .perks-section h2 {
-    border-bottom-color: var(--bronze-deep);
-    margin-bottom: 4px;
-  }
-  .perks-section .lead {
-    font-size: 17px;
-    color: var(--mute);
-    font-style: italic;
-    margin-bottom: 18px;
-  }
-  .perk {
-    display: flex;
-    gap: 16px;
-    padding: 16px 0;
-    border-top: 1px solid var(--hairline);
-    align-items: flex-start;
-  }
-  .perk:first-of-type { border-top: none; padding-top: 4px; }
-  .perk-icon {
-    flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    background: var(--bronze);
-    color: var(--cream);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Lora', serif;
-    font-size: 22px;
-    font-weight: 700;
-  }
-  .perk-body {
-    flex: 1;
-  }
-  .perk-title {
-    font-family: 'Lora', serif;
-    font-size: 20px;
-    color: var(--ink);
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-  .perk-desc {
-    font-size: 17px;
-    color: var(--body);
-    margin-bottom: 0;
-  }
-  .perk-value {
-    display: inline-block;
-    background: var(--bronze-deep);
-    color: var(--cream);
-    padding: 3px 10px;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 600;
-    margin-top: 6px;
-  }
-
-  /* ===== REQUIREMENTS ===== */
-  .reqs {
-    background: var(--paper);
-    border: 1px solid var(--hairline);
-    border-radius: 6px;
-    padding: 4px 20px;
-  }
-  .reqs .duties li { font-size: 17px; }
-
-  /* ===== PAY ===== */
-  .pay-box {
-    background: var(--ink);
-    color: var(--cream);
-    border-radius: 8px;
-    padding: 28px 24px;
-    text-align: center;
-    margin-top: 8px;
-  }
-  .pay-eyebrow {
-    font-size: 13px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--bronze-light);
-    font-weight: 700;
-    margin-bottom: 12px;
-  }
-  .pay-range {
-    font-family: 'Lora', serif;
-    font-size: 44px;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 6px;
-  }
-  .pay-range .arrow {
-    color: var(--bronze-light);
-    margin: 0 12px;
-    font-weight: 500;
-  }
-  .pay-unit {
-    font-size: 16px;
-    color: var(--bronze-light);
-    font-style: italic;
-    margin-bottom: 14px;
-  }
-  .pay-note {
-    font-size: 16px;
-    color: rgba(248, 243, 232, 0.85);
-    line-height: 1.55;
-    max-width: 520px;
-    margin: 0 auto;
-  }
-
-  /* ===== APPLY ===== */
-  .apply {
-    text-align: center;
-    background: var(--cream);
-    border: 2px solid var(--bronze);
-    border-radius: 8px;
-    padding: 28px 24px;
-    margin-top: 28px;
-  }
-  .apply h2 {
-    border: none;
-    padding: 0;
-    margin-bottom: 8px;
-    display: block;
-  }
-  .apply p {
-    font-size: 18px;
-    margin-bottom: 18px;
-  }
-  .btn {
-    display: inline-block;
-    background: var(--bronze-deep);
-    color: var(--cream);
-    text-decoration: none;
-    padding: 14px 28px;
-    font-size: 18px;
-    font-weight: 700;
-    border-radius: 6px;
-    transition: background 0.2s;
-  }
-  .btn:hover { background: var(--ink); }
-  .apply-email {
-    display: block;
-    margin-top: 14px;
-    font-size: 17px;
-    color: var(--ink);
-    font-weight: 600;
-  }
-  .apply-email a {
-    color: var(--bronze-deep);
-    text-decoration: underline;
-  }
-
-  /* ===== FOOTER ===== */
-  footer {
-    text-align: center;
-    padding: 20px 24px;
-    font-size: 14px;
-    color: var(--mute);
-    background: var(--paper);
-    border-top: 1px solid var(--hairline);
-  }
-
-  /* hide whichever language isn't active */
-  body.lang-es .en, body:not(.lang-es) .es { display: none; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Manrope',sans-serif;background:var(--sand);color:var(--ink);line-height:1.6}
+  h1,h2,h3{font-family:'Schibsted Grotesk',sans-serif;line-height:1.2}
+  .wrap{max-width:780px;margin:0 auto;padding:20px 18px 90px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 0}
+  .lang-toggle{display:flex;gap:0;border:2px solid var(--navy);border-radius:999px;overflow:hidden;font-weight:700;font-size:13px}
+  .lang-toggle button{border:none;background:transparent;padding:7px 16px;cursor:pointer;font-family:inherit;font-weight:700;color:var(--navy)}
+  .lang-toggle button.active{background:var(--navy);color:#fff}
+  .hiring-pill{display:inline-block;padding:5px 16px;border-radius:999px;background:var(--yellow);color:var(--navy);font-weight:800;font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+  .hero{text-align:center;padding:26px 0 8px}
+  .hero h1{font-size:clamp(30px,6vw,44px);font-weight:800;color:var(--navy);margin:14px 0 6px}
+  .hero .sub{color:var(--ink-soft);font-weight:600}
+  .chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:26px 0}
+  .chip{background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center}
+  .chip .k{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
+  .chip .v{font-family:'Schibsted Grotesk',sans-serif;font-weight:800;color:var(--navy);margin-top:4px}
+  .btn{display:inline-block;border:none;cursor:pointer;font-family:'Schibsted Grotesk',sans-serif;font-weight:800;font-size:17px;
+       padding:16px 42px;border-radius:999px;background:var(--coral);color:#fff;box-shadow:0 6px 18px rgba(255,111,97,.35);
+       transition:transform .12s ease, box-shadow .12s ease;text-decoration:none;text-align:center}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(255,111,97,.42)}
+  .btn:disabled{opacity:.55;cursor:default;transform:none}
+  .btn-block{width:100%;max-width:420px}
+  .btn-quiet{background:#fff;color:var(--navy);border:2px solid var(--navy);box-shadow:none;font-size:14px;padding:10px 22px}
+  .btn-pick{background:#fff;color:var(--navy);border:2px solid var(--line);box-shadow:none;font-size:15px;padding:12px 10px;flex:1;border-radius:12px;font-weight:700}
+  .btn-pick.sel{border-color:var(--turquoise);background:var(--turquoise);color:#fff}
+  .center{display:flex;justify-content:center}
+  section.card{background:#fff;border:2px solid var(--line);border-radius:18px;padding:24px 22px;margin:18px 0}
+  section.card h2{color:var(--navy);font-size:24px;margin-bottom:10px}
+  section.card h3{color:var(--navy);font-size:18px;margin:20px 0 8px}
+  ul.list{list-style:none}
+  ul.list li{padding:7px 0 7px 30px;position:relative}
+  ul.list li::before{content:"✓";position:absolute;left:4px;color:var(--turquoise-deep);font-weight:800}
+  .perk{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px dashed var(--line)}
+  .perk:last-child{border-bottom:none}
+  .perk .ico{width:42px;height:42px;flex-shrink:0;border-radius:12px;background:var(--navy);color:var(--yellow);
+             display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+  .pay-flag{background:var(--navy);color:#fff;border-radius:18px;padding:24px;text-align:center;margin:18px 0}
+  .pay-flag .big{font-family:'Schibsted Grotesk',sans-serif;font-size:40px;font-weight:800;color:var(--yellow)}
+  .field{margin-bottom:20px}
+  .field label{display:block;font-weight:700;color:var(--navy);margin-bottom:7px;font-size:15px}
+  .field input,.field textarea,.field select{width:100%;padding:13px 14px;border:2px solid var(--line);border-radius:12px;
+        font-family:inherit;font-size:15px;background:#fff;color:var(--ink)}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--turquoise)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .err{background:#fdecea;border:2px solid var(--bad);color:var(--bad);border-radius:12px;padding:12px 14px;margin:14px 0;font-weight:600;display:none}
+  .note{background:#eafaf8;border:2px solid var(--turquoise);border-radius:12px;padding:14px 16px;margin:14px 0}
+  .phonebox{background:var(--navy);color:#fff;border-radius:16px;padding:20px;text-align:center;margin:18px 0}
+  .phonebox .num{font-family:'Schibsted Grotesk',sans-serif;font-size:26px;font-weight:800;color:var(--yellow);margin:4px 0}
+  .refcard{background:var(--sand);border:2px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+  .small{font-size:13px;color:var(--ink-soft)}
+  .ok-badge{color:var(--ok);font-weight:700;font-size:13px;margin-top:6px;display:none}
+  footer{text-align:center;color:var(--ink-soft);font-size:13px;padding-top:30px}
+  .step{display:none}
+  .step.active{display:block}
+  body[data-lang="en"] .es{display:none!important}
+  body[data-lang="es"] .en{display:none!important}
+  @media(max-width:520px){ .btn{padding:15px 26px;font-size:16px} section.card{padding:20px 16px} }
 </style>
 </head>
-<body>
+<body data-lang="en">
+<div class="wrap">
 
-<div class="lang-bar">
-  <span style="margin-right:6px;">Language / Idioma:</span>
-  <button class="lang-btn active" id="btn-en" onclick="setLang('en')">English</button>
-  <button class="lang-btn" id="btn-es" onclick="setLang('es')">Español</button>
+  <div class="topbar">
+    <span class="hiring-pill"><span class="en">Now Hiring</span><span class="es">Contratando Ahora</span></span>
+    <div class="lang-toggle">
+      <button id="langEn" class="active" onclick="setLang('en')">English</button>
+      <button id="langEs" onclick="setLang('es')">Español</button>
+    </div>
+  </div>
+
+  <!-- ============================ STEP: INTRO ============================ -->
+  <div class="step active" id="step-intro">
+
+    <div class="hero">
+      <h1><span class="en">House Manager &amp; Private Chef</span><span class="es">Encargada de Hogar y Chef Privada</span></h1>
+      <div class="sub"><span class="en">Private Residence · Brickell, Miami</span><span class="es">Residencia Privada · Brickell, Miami</span></div>
+    </div>
+
+    <div class="center" style="margin:18px 0 6px">
+      <button class="btn btn-block" onclick="goStep('form')"><span class="en">Apply Now</span><span class="es">Aplicar Ahora</span></button>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><div class="k"><span class="en">Pay</span><span class="es">Pago</span></div><div class="v">$25–$30/hr</div></div>
+      <div class="chip"><div class="k"><span class="en">Days</span><span class="es">Días</span></div><div class="v">Mon · Wed · Fri</div></div>
+      <div class="chip"><div class="k"><span class="en">Hours</span><span class="es">Horario</span></div><div class="v">9:30 AM – 3:30 PM</div></div>
+      <div class="chip"><div class="k"><span class="en">Location</span><span class="es">Ubicación</span></div><div class="v">Brickell, Miami</div></div>
+    </div>
+
+    <section class="card">
+      <h2><span class="en">About the Role</span><span class="es">Sobre el Puesto</span></h2>
+      <p class="en">We are looking for a <strong>reliable, detail-oriented House Manager</strong> to help run a private home in Brickell. This is a great role for someone who enjoys cooking healthy meals, keeping a home clean and organized, and taking pride in their work. The right person is trustworthy, proactive, and happy to anticipate what the home needs.</p>
+      <p class="es">Buscamos una <strong>Encargada de Hogar confiable y detallista</strong> para ayudar a manejar una casa privada en Brickell. Es un puesto ideal para alguien que disfruta cocinar comidas saludables, mantener un hogar limpio y organizado, y siente orgullo por su trabajo. La persona ideal es confiable, proactiva, y le gusta anticipar lo que la casa necesita.</p>
+
+      <h3><span class="en">What You'll Do</span><span class="es">Tus Responsabilidades</span></h3>
+      <ul class="list en">
+        <li><strong>Cook healthy meals:</strong> prepare meals and snacks; manage weekly meal prep.</li>
+        <li><strong>Clean and organize:</strong> keep the home tidy and well-maintained.</li>
+        <li><strong>Daily upkeep:</strong> laundry, dishes, and general household tasks.</li>
+        <li><strong>Receive deliveries:</strong> groceries, packages, and keep the pantry stocked.</li>
+        <li><strong>Coordinate:</strong> work with building management, vendors, and service providers.</li>
+        <li><strong>Take ownership:</strong> anticipate household needs and keep things running smoothly.</li>
+      </ul>
+      <ul class="list es">
+        <li><strong>Cocinar comidas saludables:</strong> preparar comidas y meriendas; planificación semanal.</li>
+        <li><strong>Limpiar y organizar:</strong> mantener el hogar ordenado y bien cuidado.</li>
+        <li><strong>Tareas diarias:</strong> lavandería, lavar platos, y quehaceres generales.</li>
+        <li><strong>Recibir entregas:</strong> víveres, paquetes, y mantener la despensa surtida.</li>
+        <li><strong>Coordinar:</strong> trabajar con la administración del edificio y proveedores.</li>
+        <li><strong>Tomar iniciativa:</strong> anticipar las necesidades del hogar y mantener todo funcionando bien.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2><span class="en">The Perks</span><span class="es">Los Beneficios</span></h2>
+      <p class="small en">More than just a paycheck. Extras you can use every week.</p>
+      <p class="small es">Más que solo un salario. Beneficios reales que puedes usar cada semana.</p>
+      <div class="perk"><div class="ico">$</div><div>
+        <strong class="en">Cash Bonuses</strong><strong class="es">Bonos en Efectivo</strong>
+        <div class="small en">Performance-based monetary bonuses when you go above and beyond.</div>
+        <div class="small es">Bonos basados en buen desempeño cuando das más de lo esperado.</div>
+      </div></div>
+      <div class="perk"><div class="ico">★</div><div>
+        <strong class="en">5-Star Hotel Rooftop Access</strong><strong class="es">Acceso al Rooftop de Hotel 5 Estrellas</strong>
+        <div class="small en">FOB access to a world-class rooftop: pool, jacuzzi, cold plunge, sauna, steam room, gym, and showers. Yours to use while off the clock.</div>
+        <div class="small es">Acceso con llave al rooftop de un hotel de lujo: piscina, jacuzzi, baño frío, sauna, baño de vapor, gimnasio y duchas. Para tu uso fuera de tu horario de trabajo.</div>
+      </div></div>
+      <div class="perk"><div class="ico">P</div><div>
+        <strong class="en">Free Parking in Brickell</strong><strong class="es">Estacionamiento Gratis en Brickell</strong>
+        <div class="small en">Parking is covered once hired (~$200/month value). No more meters or daily search.</div>
+        <div class="small es">El estacionamiento está cubierto una vez contratada (valor de ~$200/mes). Sin parquímetros.</div>
+      </div></div>
+      <div class="perk"><div class="ico">☕</div><div>
+        <strong class="en">Free Supplements &amp; Coffee</strong><strong class="es">Suplementos y Café Gratis</strong>
+        <div class="small en">Help yourself to the in-home stash: specialty coffee, nootropics, Magic Mind, electrolytes, and more.</div>
+        <div class="small es">Sírvete del surtido en casa: café especial, nootrópicos, Magic Mind, electrolitos, y más.</div>
+      </div></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="en">Who We're Looking For</span><span class="es">A Quién Buscamos</span></h2>
+      <ul class="list en">
+        <li><strong>Experience:</strong> minimum 4 years in house management, cleaning, cooking, hospitality, or similar.</li>
+        <li><strong>English:</strong> strong spoken English is required. Clear, comfortable communication.</li>
+        <li><strong>References:</strong> clean recent background check and two professional references.</li>
+        <li><strong>Skills:</strong> well-organized, good communicator, able to work independently.</li>
+        <li><strong>Personality:</strong> trustworthy, proactive, detail-oriented, and responsive.</li>
+      </ul>
+      <ul class="list es">
+        <li><strong>Experiencia:</strong> mínimo 4 años en manejo de hogar, limpieza, cocina, hospitalidad, o similar.</li>
+        <li><strong>Inglés:</strong> se requiere buen nivel de inglés hablado. Comunicación clara y cómoda.</li>
+        <li><strong>Referencias:</strong> verificación de antecedentes limpia y dos referencias profesionales.</li>
+        <li><strong>Habilidades:</strong> organizada, buena comunicadora, capaz de trabajar de forma independiente.</li>
+        <li><strong>Personalidad:</strong> confiable, proactiva, detallista, y responde a mensajes rápidamente.</li>
+      </ul>
+    </section>
+
+    <div class="pay-flag">
+      <div class="small" style="color:#cfe3ee"><span class="en">Starting to Top Rate</span><span class="es">De Inicio a Máximo</span></div>
+      <div class="big">$25→$30</div>
+      <div class="small" style="color:#cfe3ee"><span class="en">per hour</span><span class="es">por hora</span></div>
+      <p style="margin-top:10px;font-size:14px">
+        <span class="en">Start at $25/hour with growth to $30/hour for someone who consistently performs well, takes ownership of the role, and proves to be a strong long-term fit. <strong>Plus bonuses.</strong></span>
+        <span class="es">Comienza en $25/hora con crecimiento hasta $30/hora para alguien que demuestra buen desempeño, toma responsabilidad del puesto, y resulta ser una buena opción a largo plazo. <strong>Más bonos.</strong></span>
+      </p>
+    </div>
+
+    <div class="center" style="margin-top:24px">
+      <button class="btn btn-block" onclick="goStep('form')"><span class="en">Apply Now</span><span class="es">Aplicar Ahora</span></button>
+    </div>
+  </div>
+
+  <!-- ============================ STEP: FORM ============================ -->
+  <div class="step" id="step-form">
+    <section class="card">
+      <h2><span class="en">Application Questions</span><span class="es">Preguntas de Aplicación</span></h2>
+      <p class="small en">If you think this role is a good fit for you, please answer these questions ASAP. All questions are required.</p>
+      <p class="small es">Si crees que este puesto es para ti, por favor responde estas preguntas lo antes posible. Todas las preguntas son obligatorias.</p>
+
+      <div class="field" style="margin-top:18px">
+        <label><span class="en">1. Full legal name</span><span class="es">1. Nombre legal completo</span></label>
+        <input id="q-name" autocomplete="name">
+      </div>
+      <div class="field">
+        <label><span class="en">2. Email</span><span class="es">2. Correo electrónico</span></label>
+        <input id="q-email" type="email" autocomplete="email">
+      </div>
+      <div class="field">
+        <label><span class="en">3. Phone</span><span class="es">3. Teléfono</span></label>
+        <input id="q-phone" type="tel" autocomplete="tel">
+      </div>
+      <div class="field">
+        <label><span class="en">4. Are you good at cleaning, cooking, and managing a home?</span><span class="es">4. ¿Eres buena limpiando, cocinando y manejando un hogar?</span></label>
+        <div class="row" data-pick="goodAtHome">
+          <button type="button" class="btn-pick" data-val="yes"><span class="en">Yes</span><span class="es">Sí</span></button>
+          <button type="button" class="btn-pick" data-val="no"><span class="en">No</span><span class="es">No</span></button>
+        </div>
+      </div>
+      <div class="field">
+        <label><span class="en">5. How many years have you been doing cleaning, house management, cooking, or similar work?</span><span class="es">5. ¿Cuántos años llevas haciendo limpieza, manejo de hogar, cocina, o trabajo similar?</span></label>
+        <div class="row" data-pick="experienceYears">
+          <button type="button" class="btn-pick" data-val="0-3">0–3</button>
+          <button type="button" class="btn-pick" data-val="4-7">4–7</button>
+          <button type="button" class="btn-pick" data-val="8+">8+</button>
+        </div>
+      </div>
+      <div class="field">
+        <label><span class="en">6. Describe your experience. Was it cooking, cleaning, house managing, or all of it?</span><span class="es">6. Describe tu experiencia. ¿Fue cocina, limpieza, manejo de hogar, o todo?</span></label>
+        <textarea id="q-expdesc" rows="4"></textarea>
+      </div>
+      <div class="field">
+        <label><span class="en">7. Do you have a clean and recent background check?</span><span class="es">7. ¿Tienes una verificación de antecedentes limpia y reciente?</span></label>
+        <div class="row" data-pick="backgroundCheck">
+          <button type="button" class="btn-pick" data-val="yes"><span class="en">Yes</span><span class="es">Sí</span></button>
+          <button type="button" class="btn-pick" data-val="no"><span class="en">No</span><span class="es">No</span></button>
+        </div>
+      </div>
+      <div class="field">
+        <label><span class="en">8. What hourly pay are you looking for?</span><span class="es">8. ¿Qué pago por hora buscas?</span></label>
+        <input id="q-pay" placeholder="$">
+      </div>
+      <div class="field">
+        <label><span class="en">9. Are you available Monday, Wednesday, and Friday from 9:30am to 3:30pm?</span><span class="es">9. ¿Estás disponible lunes, miércoles y viernes de 9:30am a 3:30pm?</span></label>
+        <div class="row" data-pick="availableMWF">
+          <button type="button" class="btn-pick" data-val="yes"><span class="en">Yes</span><span class="es">Sí</span></button>
+          <button type="button" class="btn-pick" data-val="no"><span class="en">No</span><span class="es">No</span></button>
+        </div>
+        <input id="q-schedalt" style="margin-top:10px;display:none">
+      </div>
+      <div class="field">
+        <label><span class="en">10. Are you comfortable with healthy meal prep, laundry, organizing, groceries, and receiving packages?</span><span class="es">10. ¿Te sientes cómoda con preparación de comidas saludables, lavandería, organización, víveres y recibir paquetes?</span></label>
+        <div class="row" data-pick="comfortableDuties">
+          <button type="button" class="btn-pick" data-val="yes"><span class="en">Yes</span><span class="es">Sí</span></button>
+          <button type="button" class="btn-pick" data-val="no"><span class="en">No</span><span class="es">No</span></button>
+        </div>
+      </div>
+      <div class="field">
+        <label><span class="en">11. Do you have references from previous clients or employers?</span><span class="es">11. ¿Tienes referencias de clientes o empleadores anteriores?</span></label>
+        <div class="row" data-pick="hasReferences">
+          <button type="button" class="btn-pick" data-val="yes"><span class="en">Yes</span><span class="es">Sí</span></button>
+          <button type="button" class="btn-pick" data-val="no"><span class="en">No</span><span class="es">No</span></button>
+        </div>
+      </div>
+      <div class="field">
+        <label><span class="en">12. Rate your English skills from 1 to 10 (10 = perfect English)</span><span class="es">12. Califica tu inglés del 1 al 10 (10 = inglés perfecto)</span></label>
+        <div class="row" data-pick="englishLevel">
+          <button type="button" class="btn-pick" data-val="1-2">1–2</button>
+          <button type="button" class="btn-pick" data-val="3-4">3–4</button>
+          <button type="button" class="btn-pick" data-val="5-6">5–6</button>
+          <button type="button" class="btn-pick" data-val="7-8">7–8</button>
+          <button type="button" class="btn-pick" data-val="9-10">9–10</button>
+        </div>
+      </div>
+      <div class="field">
+        <label><span class="en">13. Resume (upload a file, paste a link, or type NA)</span><span class="es">13. Currículum (sube un archivo, pega un enlace, o escribe NA)</span></label>
+        <div class="row" style="align-items:center">
+          <label class="btn btn-quiet" style="cursor:pointer" id="resumeBtnLabel">
+            <span class="en" id="resumeBtnEn">Upload file</span><span class="es" id="resumeBtnEs">Subir archivo</span>
+            <input id="q-resume-file" type="file" accept=".pdf,.doc,.docx,image/*" style="display:none">
+          </label>
+          <input id="q-resume" style="flex:1;min-width:200px" placeholder="https://... / NA">
+        </div>
+        <div class="ok-badge" id="resumeOk"><span class="en">Resume attached ✓</span><span class="es">Currículum adjunto ✓</span></div>
+      </div>
+
+      <div class="err" id="form-err"></div>
+      <button class="btn btn-block" id="submitFormBtn" style="width:100%;max-width:none">
+        <span class="en">Submit application</span><span class="es">Enviar aplicación</span>
+      </button>
+    </section>
+  </div>
+
+  <!-- ============================ STEP: DECLINED ============================ -->
+  <div class="step" id="step-declined">
+    <section class="card" style="text-align:center;padding:50px 24px">
+      <h2><span class="en">Thank you for applying</span><span class="es">Gracias por aplicar</span></h2>
+      <p class="en" style="max-width:520px;margin:12px auto;color:var(--ink-soft)">We appreciate you taking the time to apply. After reviewing your answers, we don't think this particular role is the right fit, so we're going to pass for now. We wish you the very best in your search.</p>
+      <p class="es" style="max-width:520px;margin:12px auto;color:var(--ink-soft)">Agradecemos el tiempo que tomaste para aplicar. Después de revisar tus respuestas, no creemos que este puesto en particular sea la mejor opción, así que vamos a pasar por ahora. Te deseamos lo mejor en tu búsqueda.</p>
+    </section>
+  </div>
+
+  <!-- ============================ STEP: REFERENCES ============================ -->
+  <div class="step" id="step-references">
+    <section class="card">
+      <h2><span class="en">Great news! You're a potential fit</span><span class="es">¡Buenas noticias! Eres una candidata potencial</span></h2>
+      <p class="small en">Next step: please provide two professional references, plus your social profiles for a light background check. Type NA for Instagram or LinkedIn if you don't have them, but if you do, please include them.</p>
+      <p class="small es">Siguiente paso: por favor proporciona dos referencias profesionales, más tus perfiles sociales para una verificación ligera. Escribe NA en Instagram o LinkedIn si no los tienes, pero si los tienes, por favor inclúyelos.</p>
+
+      <div class="refcard">
+        <h3 style="margin-top:0"><span class="en">Reference 1</span><span class="es">Referencia 1</span></h3>
+        <div class="field"><label><span class="en">Name</span><span class="es">Nombre</span></label><input id="r1-name"></div>
+        <div class="field"><label><span class="en">Email</span><span class="es">Correo</span></label><input id="r1-email" type="email"></div>
+        <div class="field"><label><span class="en">Phone</span><span class="es">Teléfono</span></label><input id="r1-phone" type="tel"></div>
+        <div class="field"><label><span class="en">Relationship (how do they know you?)</span><span class="es">Relación (¿cómo te conocen?)</span></label><input id="r1-rel"></div>
+      </div>
+
+      <div class="refcard">
+        <h3 style="margin-top:0"><span class="en">Reference 2</span><span class="es">Referencia 2</span></h3>
+        <div class="field"><label><span class="en">Name</span><span class="es">Nombre</span></label><input id="r2-name"></div>
+        <div class="field"><label><span class="en">Email</span><span class="es">Correo</span></label><input id="r2-email" type="email"></div>
+        <div class="field"><label><span class="en">Phone</span><span class="es">Teléfono</span></label><input id="r2-phone" type="tel"></div>
+        <div class="field"><label><span class="en">Relationship (how do they know you?)</span><span class="es">Relación (¿cómo te conocen?)</span></label><input id="r2-rel"></div>
+      </div>
+
+      <div class="field"><label>Instagram <span class="small">(<span class="en">handle or link, or NA</span><span class="es">usuario o enlace, o NA</span>)</span></label><input id="q-instagram" placeholder="@..."></div>
+      <div class="field"><label>LinkedIn <span class="small">(<span class="en">link, or NA</span><span class="es">enlace, o NA</span>)</span></label><input id="q-linkedin" placeholder="linkedin.com/in/..."></div>
+
+      <div class="err" id="refs-err"></div>
+      <button class="btn" id="submitRefsBtn" style="width:100%">
+        <span class="en">Submit references</span><span class="es">Enviar referencias</span>
+      </button>
+    </section>
+  </div>
+
+  <!-- ============================ STEP: INSTRUCTIONS ============================ -->
+  <div class="step" id="step-instructions">
+    <section class="card">
+      <h2><span class="en">One more step: reference intros</span><span class="es">Un paso más: presentar tus referencias</span></h2>
+      <div class="note">
+        <p class="en">Please reach out to your two references first and ask if they're open to a quick chat. Once they say yes, connect us in a group text. Two separate group chats, not one big group. Do a proper intro so we each know who we're talking to. I'll keep it to a few quick questions and be respectful of their time. Thanks in advance!</p>
+        <p class="es">Por favor contacta primero a tus dos referencias y pregúntales si están abiertas a una charla rápida. Cuando digan que sí, conéctanos en un mensaje de texto grupal. Dos chats separados, no un solo grupo grande. Haz una presentación adecuada para que sepamos quién es quién. Serán solo unas preguntas rápidas y respetaré su tiempo. ¡Gracias de antemano!</p>
+      </div>
+      <div class="phonebox">
+        <div class="small" style="color:#cfe3ee;text-transform:uppercase;letter-spacing:1.4px"><span class="en">Text Mike at</span><span class="es">Envía un texto a Mike al</span></div>
+        <div class="num">+1 617-633-0544</div>
+        <div class="small" style="color:#cfe3ee"><span class="en">Regular text message only (no WhatsApp)</span><span class="es">Solo mensaje de texto normal (no WhatsApp)</span></div>
+      </div>
+      <p class="small en">Once you have completed BOTH group text intros, click the button below to schedule your FaceTime or video call interview.</p>
+      <p class="small es">Cuando hayas completado AMBAS presentaciones por texto grupal, haz clic en el botón de abajo para agendar tu entrevista por FaceTime o videollamada.</p>
+      <button class="btn" id="completeBtn" style="width:100%;margin-top:10px">
+        <span class="en">I've completed both group text intros</span><span class="es">Completé ambas presentaciones grupales</span>
+      </button>
+    </section>
+  </div>
+
+  <!-- ============================ STEP: DONE ============================ -->
+  <div class="step" id="step-done">
+    <section class="card" style="text-align:center;padding:46px 24px">
+      <h2><span class="en">You're all set! Let's talk</span><span class="es">¡Listo! Hablemos</span></h2>
+      <p class="en" style="max-width:520px;margin:12px auto 24px;color:var(--ink-soft)">Final step: schedule your FaceTime or video call interview. Pick any time that works for you.</p>
+      <p class="es" style="max-width:520px;margin:12px auto 24px;color:var(--ink-soft)">Último paso: agenda tu entrevista por FaceTime o videollamada. Elige el horario que mejor te funcione.</p>
+      <a class="btn" href="https://calendly.com/m-pupsnchill/15min" target="_blank" rel="noopener noreferrer">
+        <span class="en">Schedule your interview</span><span class="es">Agendar tu entrevista</span>
+      </a>
+      <p class="small" style="margin-top:14px">calendly.com/m-pupsnchill/15min</p>
+    </section>
+  </div>
+
+  <footer>
+    <span class="en">Private Residence · Brickell, Miami</span>
+    <span class="es">Residencia Privada · Brickell, Miami</span>
+  </footer>
 </div>
 
-<!-- ============ HEADER ============ -->
-<header class="header">
-  <span class="badge en">Now Hiring</span>
-  <span class="badge es">Contratando Ahora</span>
-  <h1 class="en">House Manager &amp; Private Chef</h1>
-  <h1 class="es">Encargada de Hogar y Chef Privada</h1>
-  <div class="sub en">Private Residence · Brickell, Miami</div>
-  <div class="sub es">Residencia Privada · Brickell, Miami</div>
-</header>
+<script type="module">
+/* ------------------------------------------------------------------
+   Firebase: anonymous, create-only writes to the existing
+   house-manager-3506 backend. Applicants can only ADD documents.
+   They can never read, edit, or delete anything (enforced by rules).
+------------------------------------------------------------------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-<!-- ============ QUICK FACTS ============ -->
-<div class="facts">
-  <div>
-    <div class="fact-label en">Pay</div>
-    <div class="fact-label es">Pago</div>
-    <div class="fact-value">$25–$30/hr</div>
-  </div>
-  <div>
-    <div class="fact-label en">Days</div>
-    <div class="fact-label es">Días</div>
-    <div class="fact-value">Mon · Wed · Fri</div>
-  </div>
-  <div>
-    <div class="fact-label en">Hours</div>
-    <div class="fact-label es">Horario</div>
-    <div class="fact-value">9:30 AM – 3:30 PM</div>
-  </div>
-  <div>
-    <div class="fact-label en">Location</div>
-    <div class="fact-label es">Ubicación</div>
-    <div class="fact-value">Brickell, Miami</div>
-  </div>
-</div>
+const app = initializeApp({
+  apiKey: "AIzaSyBmv9J2OJ4XstnypN3z25GJH4f0zMOGqkY",
+  authDomain: "house-manager-3506.firebaseapp.com",
+  projectId: "house-manager-3506",
+  storageBucket: "house-manager-3506.firebasestorage.app",
+  messagingSenderId: "492469088677",
+  appId: "1:492469088677:web:19ebca54450cab3096784c"
+});
+const db = getFirestore(app);
 
-<main>
+/* ----------------------------- state ----------------------------- */
+let lang = "en";
+let appId = null;
+const picks = {}; // goodAtHome, experienceYears, backgroundCheck, availableMWF, comfortableDuties, hasReferences, englishLevel
 
-<!-- ============ ABOUT ============ -->
-<section class="en">
-  <h2>About the Role</h2>
-  <p>We are looking for a <strong>reliable, detail-oriented House Manager</strong> to help run a private home in Brickell. This is a great role for someone who enjoys cooking healthy meals, keeping a home clean and organized, and taking pride in their work.</p>
-  <p>The right person is trustworthy, proactive, and happy to anticipate what the home needs.</p>
-</section>
-<section class="es">
-  <h2>Sobre el Puesto</h2>
-  <p>Buscamos una <strong>Encargada de Hogar confiable y detallista</strong> para ayudar a manejar una casa privada en Brickell. Es un puesto ideal para alguien que disfruta cocinar comidas saludables, mantener un hogar limpio y organizado, y siente orgullo por su trabajo.</p>
-  <p>La persona ideal es confiable, proactiva, y le gusta anticipar lo que la casa necesita.</p>
-</section>
+/* ------------------------- language toggle ----------------------- */
+window.setLang = (l) => {
+  lang = l;
+  document.body.dataset.lang = l;
+  document.getElementById("langEn").classList.toggle("active", l === "en");
+  document.getElementById("langEs").classList.toggle("active", l === "es");
+};
 
-<!-- ============ DUTIES ============ -->
-<section class="en">
-  <h2>What You'll Do</h2>
-  <ul class="duties">
-    <li><b>Cook healthy meals</b> — prepare meals and snacks; manage weekly meal prep.</li>
-    <li><b>Clean and organize</b> — keep the home tidy and well-maintained.</li>
-    <li><b>Daily upkeep</b> — laundry, dishes, and general household tasks.</li>
-    <li><b>Receive deliveries</b> — groceries, packages, and keep the pantry stocked.</li>
-    <li><b>Coordinate</b> — work with building management, vendors, and service providers.</li>
-    <li><b>Take ownership</b> — anticipate household needs and keep things running smoothly.</li>
-  </ul>
-</section>
-<section class="es">
-  <h2>Tus Responsabilidades</h2>
-  <ul class="duties">
-    <li><b>Cocinar comidas saludables</b> — preparar comidas y meriendas; planificación semanal.</li>
-    <li><b>Limpiar y organizar</b> — mantener el hogar ordenado y bien cuidado.</li>
-    <li><b>Tareas diarias</b> — lavandería, lavar platos, y quehaceres generales.</li>
-    <li><b>Recibir entregas</b> — víveres, paquetes, y mantener la despensa surtida.</li>
-    <li><b>Coordinar</b> — trabajar con la administración del edificio y proveedores.</li>
-    <li><b>Tomar iniciativa</b> — anticipar las necesidades del hogar y mantener todo funcionando bien.</li>
-  </ul>
-</section>
+/* --------------------------- step engine ------------------------- */
+window.goStep = (name) => {
+  document.querySelectorAll(".step").forEach((s) => s.classList.remove("active"));
+  document.getElementById("step-" + name).classList.add("active");
+  window.scrollTo({ top: 0, behavior: "instant" });
+};
 
-<!-- ============ PERKS — THE STAR ============ -->
-<section class="perks-section">
-  <h2 class="en">The Perks</h2>
-  <h2 class="es">Los Beneficios</h2>
-  <p class="lead en">More than just a paycheck — extras you can use every week.</p>
-  <p class="lead es">Más que solo un salario — beneficios reales que puedes usar cada semana.</p>
+/* ------------------------- pick-row buttons ---------------------- */
+document.querySelectorAll("[data-pick]").forEach((row) => {
+  const key = row.dataset.pick;
+  row.querySelectorAll(".btn-pick").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      picks[key] = btn.dataset.val;
+      row.querySelectorAll(".btn-pick").forEach((b) => b.classList.remove("sel"));
+      btn.classList.add("sel");
+      if (key === "availableMWF") {
+        const alt = document.getElementById("q-schedalt");
+        alt.style.display = btn.dataset.val === "no" ? "block" : "none";
+        alt.placeholder = lang === "es" ? "¿Qué horario te funciona mejor?" : "What schedule works best for you?";
+      }
+    });
+  });
+});
 
-  <div class="perk">
-    <div class="perk-icon">$</div>
-    <div class="perk-body">
-      <div class="perk-title en">Cash Bonuses</div>
-      <div class="perk-title es">Bonos en Efectivo</div>
-      <div class="perk-desc en">Performance-based monetary bonuses when you go above and beyond.</div>
-      <div class="perk-desc es">Bonos basados en buen desempeño cuando das más de lo esperado.</div>
-    </div>
-  </div>
-
-  <div class="perk">
-    <div class="perk-icon">★</div>
-    <div class="perk-body">
-      <div class="perk-title en">5-Star Hotel Rooftop Access</div>
-      <div class="perk-title es">Acceso al Rooftop de Hotel 5 Estrellas</div>
-      <div class="perk-desc en">FOB access to a world-class hotel's rooftop: <strong>pool, jacuzzi, cold plunge, sauna, steam room, gym, and showers</strong>. Yours to use while off the clock.</div>
-      <div class="perk-desc es">Acceso con llave al rooftop de un hotel de lujo: <strong>piscina, jacuzzi, baño frío, sauna, baño de vapor, gimnasio y duchas</strong>. Para tu uso durante tu horario de trabajo.</div>
-    </div>
-  </div>
-
-  <div class="perk">
-    <div class="perk-icon">P</div>
-    <div class="perk-body">
-      <div class="perk-title en">Free Parking in Brickell</div>
-      <div class="perk-title es">Estacionamiento Gratis en Brickell</div>
-      <div class="perk-desc en">Parking is covered once hired — no more meters or daily search.</div>
-      <div class="perk-desc es">El estacionamiento está cubierto una vez contratada — sin parquímetros.</div>
-      <span class="perk-value en">~$200/month value</span>
-      <span class="perk-value es">Valor de ~$200/mes</span>
-    </div>
-  </div>
-
-  <div class="perk">
-    <div class="perk-icon">☕</div>
-    <div class="perk-body">
-      <div class="perk-title en">Free Supplements & Coffee</div>
-      <div class="perk-title es">Suplementos y Café Gratis</div>
-      <div class="perk-desc en">Help yourself to the in-home stash: <strong>specialty coffee, nootropics, Magic Mind, electrolytes, and more</strong>.</div>
-      <div class="perk-desc es">Sírvete del surtido en casa: <strong>café especial, nootrópicos, Magic Mind, electrolitos, y más</strong>.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ REQUIREMENTS ============ -->
-<section class="en">
-  <h2>Who We're Looking For</h2>
-  <div class="reqs">
-    <ul class="duties">
-      <li><b>Experience:</b> Minimum 4 years in house management, cleaning, cooking, hospitality, or similar.</li>
-      <li><b>English:</b> Strong spoken English is required — clear, comfortable communication.</li>
-      <li><b>References:</b> Clean recent background check and two professional references.</li>
-      <li><b>Skills:</b> Well-organized, good communicator, able to work independently.</li>
-      <li><b>Personality:</b> Trustworthy, proactive, detail-oriented, and responsive.</li>
-    </ul>
-  </div>
-</section>
-<section class="es">
-  <h2>A Quién Buscamos</h2>
-  <div class="reqs">
-    <ul class="duties">
-      <li><b>Experiencia:</b> Mínimo 4 años en manejo de hogar, limpieza, cocina, hospitalidad, o similar.</li>
-      <li><b>Inglés:</b> Se requiere buen nivel de inglés hablado — comunicación clara y cómoda.</li>
-      <li><b>Referencias:</b> Verificación de antecedentes limpia y dos referencias profesionales.</li>
-      <li><b>Habilidades:</b> Organizada, buena comunicadora, capaz de trabajar de forma independiente.</li>
-      <li><b>Personalidad:</b> Confiable, proactiva, detallista, y responde a mensajes rápidamente.</li>
-    </ul>
-  </div>
-</section>
-
-<!-- ============ PAY ============ -->
-<section class="en">
-  <h2>Pay & Growth</h2>
-  <div class="pay-box">
-    <div class="pay-eyebrow">Starting to Top Rate</div>
-    <div class="pay-range">$25<span class="arrow">→</span>$30</div>
-    <div class="pay-unit">per hour</div>
-    <p class="pay-note">Start at $25/hour with growth to $30/hour for someone who consistently performs well, takes ownership of the role, and proves to be a strong long-term fit. <strong>Plus bonuses.</strong></p>
-  </div>
-</section>
-<section class="es">
-  <h2>Pago y Crecimiento</h2>
-  <div class="pay-box">
-    <div class="pay-eyebrow">De Inicio a Máximo</div>
-    <div class="pay-range">$25<span class="arrow">→</span>$30</div>
-    <div class="pay-unit">por hora</div>
-    <p class="pay-note">Comienza en $25/hora con crecimiento hasta $30/hora para alguien que demuestra buen desempeño, toma responsabilidad del puesto, y resulta ser una buena opción a largo plazo. <strong>Más bonos.</strong></p>
-  </div>
-</section>
-
-<!-- ============ APPLY ============ -->
-<section class="apply">
-  <h2 class="en">Ready to Apply?</h2>
-  <h2 class="es">¿Lista para Aplicar?</h2>
-  <p class="en">Send your resume and a short note about your experience.</p>
-  <p class="es">Envía tu currículum y una nota breve sobre tu experiencia.</p>
-  <a href="mailto:m@mikek.ai?subject=House%20Manager%20Application" class="btn en">Apply by Email →</a>
-  <a href="mailto:m@mikek.ai?subject=Aplicaci%C3%B3n%20Encargada%20de%20Hogar" class="btn es">Aplicar por Correo →</a>
-  <div class="apply-email">
-    <a href="mailto:m@mikek.ai">m@mikek.ai</a>
-  </div>
-</section>
-
-</main>
-
-<footer>
-  Private Residence · Brickell, Miami
-</footer>
-
-<script>
-  function setLang(lang) {
-    if (lang === 'es') {
-      document.body.classList.add('lang-es');
-      document.documentElement.lang = 'es';
-      document.getElementById('btn-es').classList.add('active');
-      document.getElementById('btn-en').classList.remove('active');
-    } else {
-      document.body.classList.remove('lang-es');
-      document.documentElement.lang = 'en';
-      document.getElementById('btn-en').classList.add('active');
-      document.getElementById('btn-es').classList.remove('active');
-    }
-    try { localStorage.setItem('hm_lang', lang); } catch(e) {}
+/* ------------------------- resume upload ------------------------- */
+const CLOUD_NAME = "da4p5qui8";
+const UPLOAD_PRESET = "HouseManager";
+document.getElementById("q-resume-file").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const btnEn = document.getElementById("resumeBtnEn");
+  const btnEs = document.getElementById("resumeBtnEs");
+  btnEn.textContent = "Uploading…"; btnEs.textContent = "Subiendo…";
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", UPLOAD_PRESET);
+    fd.append("folder", "applicant_resumes");
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: fd });
+    if (!res.ok) throw new Error("upload failed " + res.status);
+    const data = await res.json();
+    if (!data.secure_url) throw new Error("no url returned");
+    document.getElementById("q-resume").value = data.secure_url;
+    document.getElementById("resumeOk").style.display = "block";
+  } catch (err) {
+    console.error(err);
+    showErr("form-err", lang === "es"
+      ? "No se pudo subir el archivo. Pega un enlace a tu currículum o escribe NA para continuar."
+      : "Upload failed. Paste a link to your resume instead, or type NA to continue.");
+  } finally {
+    btnEn.textContent = "Upload file"; btnEs.textContent = "Subir archivo";
   }
-  // Restore preference, or auto-detect browser language on first visit
-  (function() {
-    let saved = null;
-    try { saved = localStorage.getItem('hm_lang'); } catch(e) {}
-    if (saved) {
-      setLang(saved);
-    } else if ((navigator.language || '').toLowerCase().startsWith('es')) {
-      setLang('es');
-    }
-  })();
-</script>
+});
 
+/* --------------------------- validation -------------------------- */
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = "block";
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+function hideErr(id) { document.getElementById(id).style.display = "none"; }
+const val = (id) => document.getElementById(id).value.trim();
+
+function validateForm() {
+  const T = (en, es) => (lang === "es" ? es : en);
+  if (!val("q-name")) return T("Please enter your full legal name (question 1).", "Por favor escribe tu nombre legal completo (pregunta 1).");
+  if (!val("q-email") || !val("q-email").includes("@")) return T("Please enter a valid email (question 2).", "Por favor escribe un correo válido (pregunta 2).");
+  if (!val("q-phone")) return T("Please enter your phone number (question 3).", "Por favor escribe tu teléfono (pregunta 3).");
+  if (!picks.goodAtHome) return T("Please answer question 4.", "Por favor responde la pregunta 4.");
+  if (!picks.experienceYears) return T("Please answer question 5.", "Por favor responde la pregunta 5.");
+  if (!val("q-expdesc")) return T("Please describe your experience (question 6).", "Por favor describe tu experiencia (pregunta 6).");
+  if (!picks.backgroundCheck) return T("Please answer question 7.", "Por favor responde la pregunta 7.");
+  if (!val("q-pay")) return T("Please answer question 8 (hourly pay).", "Por favor responde la pregunta 8 (pago por hora).");
+  if (!picks.availableMWF) return T("Please answer question 9.", "Por favor responde la pregunta 9.");
+  if (picks.availableMWF === "no" && !val("q-schedalt")) return T("Please tell us what schedule works best for you (question 9).", "Por favor dinos qué horario te funciona mejor (pregunta 9).");
+  if (!picks.comfortableDuties) return T("Please answer question 10.", "Por favor responde la pregunta 10.");
+  if (!picks.hasReferences) return T("Please answer question 11.", "Por favor responde la pregunta 11.");
+  if (!picks.englishLevel) return T("Please rate your English (question 12).", "Por favor califica tu inglés (pregunta 12).");
+  if (!val("q-resume")) return T("Please upload your resume, paste a link, or type NA (question 13).", "Por favor sube tu currículum, pega un enlace, o escribe NA (pregunta 13).");
+  return null;
+}
+
+/* --------------------------- form submit ------------------------- */
+document.getElementById("submitFormBtn").addEventListener("click", async () => {
+  hideErr("form-err");
+  const v = validateForm();
+  if (v) { showErr("form-err", v); return; }
+
+  const declineReasons = [];
+  if (picks.goodAtHome === "no") declineReasons.push("Not confident in core home skills (Q4)");
+  if (picks.experienceYears === "0-3") declineReasons.push("Experience under 4 years (Q5)");
+  if (picks.backgroundCheck === "no") declineReasons.push("No clean recent background check (Q7)");
+  if (picks.hasReferences === "no") declineReasons.push("No references (Q11)");
+  if (["1-2","3-4","5-6"].includes(picks.englishLevel)) declineReasons.push("English below 7 (Q12)");
+  const status = declineReasons.length ? "declined" : "passed";
+
+  const btn = document.getElementById("submitFormBtn");
+  btn.disabled = true;
+  try {
+    const ref = await addDoc(collection(db, "applications"), {
+      kind: "application",
+      createdAt: new Date().toISOString(),
+      fullName: val("q-name"),
+      email: val("q-email"),
+      phone: val("q-phone"),
+      goodAtHome: picks.goodAtHome,
+      experienceYears: picks.experienceYears,
+      experienceDescription: val("q-expdesc"),
+      backgroundCheck: picks.backgroundCheck,
+      desiredPay: val("q-pay"),
+      availableMWF: picks.availableMWF,
+      scheduleAlt: val("q-schedalt"),
+      comfortableDuties: picks.comfortableDuties,
+      hasReferences: picks.hasReferences,
+      englishLevel: picks.englishLevel,
+      resumeUrl: val("q-resume"),
+      status,
+      declineReasons,
+      sourceLang: lang,
+    });
+    appId = ref.id;
+    goStep(status === "declined" ? "declined" : "references");
+  } catch (err) {
+    console.error(err);
+    showErr("form-err", lang === "es" ? "Algo salió mal al enviar. Por favor intenta de nuevo." : "Something went wrong submitting. Please try again.");
+    btn.disabled = false;
+  }
+});
+
+/* ------------------------ references submit ---------------------- */
+function validateRefs() {
+  const T = (en, es) => (lang === "es" ? es : en);
+  const refs = [
+    ["r1", T("Reference 1", "Referencia 1")],
+    ["r2", T("Reference 2", "Referencia 2")],
+  ];
+  for (const [p, label] of refs) {
+    if (!val(p + "-name")) return label + ": " + T("name is required.", "el nombre es obligatorio.");
+    if (!val(p + "-email")) return label + ": " + T("email is required.", "el correo es obligatorio.");
+    if (!val(p + "-phone")) return label + ": " + T("phone is required.", "el teléfono es obligatorio.");
+    if (!val(p + "-rel")) return label + ": " + T("relationship is required.", "la relación es obligatoria.");
+  }
+  if (!val("q-instagram")) return T("Instagram is required (type NA if you don't have one).", "Instagram es obligatorio (escribe NA si no tienes).");
+  if (!val("q-linkedin")) return T("LinkedIn is required (type NA if you don't have one).", "LinkedIn es obligatorio (escribe NA si no tienes).");
+  return null;
+}
+
+document.getElementById("submitRefsBtn").addEventListener("click", async () => {
+  hideErr("refs-err");
+  const v = validateRefs();
+  if (v) { showErr("refs-err", v); return; }
+  const btn = document.getElementById("submitRefsBtn");
+  btn.disabled = true;
+  try {
+    await addDoc(collection(db, "applications", appId, "extras"), {
+      kind: "references",
+      createdAt: new Date().toISOString(),
+      references: [
+        { name: val("r1-name"), email: val("r1-email"), phone: val("r1-phone"), relationship: val("r1-rel") },
+        { name: val("r2-name"), email: val("r2-email"), phone: val("r2-phone"), relationship: val("r2-rel") },
+      ],
+      instagram: val("q-instagram"),
+      linkedin: val("q-linkedin"),
+    });
+    goStep("instructions");
+  } catch (err) {
+    console.error(err);
+    showErr("refs-err", lang === "es" ? "Algo salió mal. Por favor intenta de nuevo." : "Something went wrong. Please try again.");
+    btn.disabled = false;
+  }
+});
+
+/* ------------------------- completion click ---------------------- */
+document.getElementById("completeBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("completeBtn");
+  btn.disabled = true;
+  try {
+    await addDoc(collection(db, "applications", appId, "extras"), {
+      kind: "completion",
+      createdAt: new Date().toISOString(),
+      note: "Applicant marked group-text intros complete",
+    });
+  } catch (err) {
+    // Never strand the applicant: proceed to scheduling even if this write fails
+    console.error(err);
+  }
+  goStep("done");
+});
+</script>
 </body>
 </html>
