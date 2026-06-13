@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   :root{
     --navy:#0e2235; --navy-soft:#16324a; --turquoise:#19c2c2; --turquoise-deep:#0fa3a3;
@@ -68,6 +69,10 @@
   footer{text-align:center;color:var(--ink-soft);font-size:13px;padding-top:30px}
   .step{display:none}
   .step.active{display:block}
+  .stepbox{display:flex;gap:14px;align-items:flex-start;background:var(--sand);border:2px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+  .stepnum{width:38px;height:38px;flex-shrink:0;border-radius:50%;background:var(--turquoise);color:#fff;font-family:'Schibsted Grotesk',sans-serif;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
+  .stepbody h3{margin:2px 0 6px;font-size:18px}
+  .stepbody p{font-size:14px}
   body[data-lang="en"] .es{display:none!important}
   body[data-lang="es"] .en{display:none!important}
   @media(max-width:520px){ .btn{padding:15px 26px;font-size:16px} section.card{padding:20px 16px} }
@@ -331,20 +336,57 @@
   <!-- ============================ STEP: INSTRUCTIONS ============================ -->
   <div class="step" id="step-instructions">
     <section class="card">
-      <h2><span class="en">One more step: reference intros</span><span class="es">Un paso más: presentar tus referencias</span></h2>
-      <div class="note">
-        <p class="en">Please reach out to your two references first and ask if they're open to a quick chat. Once they say yes, connect us in a group text. Two separate group chats, not one big group. Do a proper intro so we each know who we're talking to. I'll keep it to a few quick questions and be respectful of their time. Thanks in advance!</p>
-        <p class="es">Por favor contacta primero a tus dos referencias y pregúntales si están abiertas a una charla rápida. Cuando digan que sí, conéctanos en un mensaje de texto grupal. Dos chats separados, no un solo grupo grande. Haz una presentación adecuada para que sepamos quién es quién. Serán solo unas preguntas rápidas y respetaré su tiempo. ¡Gracias de antemano!</p>
+      <h2><span class="en">Almost done! 2 quick steps left</span><span class="es">¡Casi listo! Quedan 2 pasos rápidos</span></h2>
+      <p class="small en" style="margin-bottom:4px">Read carefully. Do these in order. You must finish both before you can book your interview.</p>
+      <p class="small es" style="margin-bottom:4px">Lee con cuidado. Hazlo en orden. Debes terminar ambos pasos antes de agendar tu entrevista.</p>
+
+      <!-- STEP 1 -->
+      <div class="stepbox">
+        <div class="stepnum">1</div>
+        <div class="stepbody">
+          <h3 class="en">Text BOTH of your references first</h3>
+          <h3 class="es">Primero, escríbele a TUS DOS referencias</h3>
+          <p class="en">Message each of your two references and ask: <em>"Are you okay being a reference for a job I'm applying to? They'll text you a couple quick questions."</em> Wait until both say yes.</p>
+          <p class="es">Escríbele a cada una de tus dos referencias y pregúntales: <em>"¿Está bien si te pongo como referencia para un trabajo? Te enviarán unas preguntas rápidas por texto."</em> Espera a que ambas digan que sí.</p>
+        </div>
       </div>
+
+      <!-- STEP 2 -->
+      <div class="stepbox">
+        <div class="stepnum">2</div>
+        <div class="stepbody">
+          <h3 class="en">Start TWO separate group texts with Mike</h3>
+          <h3 class="es">Crea DOS mensajes de texto grupales separados con Mike</h3>
+          <p class="en"><strong>Very important:</strong> make <u>two separate</u> group texts. NOT one big group with both references together.</p>
+          <p class="es"><strong>Muy importante:</strong> haz <u>dos grupos separados</u>. NO un solo grupo grande con las dos referencias juntas.</p>
+          <ul class="list en" style="margin-top:6px">
+            <li>Group text #1: you + Mike + Reference 1</li>
+            <li>Group text #2: you + Mike + Reference 2</li>
+            <li>In each one, write a short intro like: <em>"Hi Mike, this is [your name]. Meet [reference name], who I worked with at [place]. [Reference name], this is Mike, who I'm applying to work with."</em></li>
+          </ul>
+          <ul class="list es" style="margin-top:6px">
+            <li>Grupo #1: tú + Mike + Referencia 1</li>
+            <li>Grupo #2: tú + Mike + Referencia 2</li>
+            <li>En cada uno, escribe una breve presentación: <em>"Hola Mike, soy [tu nombre]. Te presento a [nombre de referencia], con quien trabajé en [lugar]. [Nombre de referencia], él es Mike, con quien estoy aplicando para trabajar."</em></li>
+          </ul>
+        </div>
+      </div>
+
       <div class="phonebox">
-        <div class="small" style="color:#cfe3ee;text-transform:uppercase;letter-spacing:1.4px"><span class="en">Text Mike at</span><span class="es">Envía un texto a Mike al</span></div>
+        <div class="small" style="color:#cfe3ee;text-transform:uppercase;letter-spacing:1.4px"><span class="en">Add this number to BOTH group texts</span><span class="es">Agrega este número a AMBOS grupos</span></div>
         <div class="num">+1 617-633-0544</div>
-        <div class="small" style="color:#cfe3ee"><span class="en">Regular text message only (no WhatsApp)</span><span class="es">Solo mensaje de texto normal (no WhatsApp)</span></div>
+        <div class="small" style="color:#cfe3ee"><span class="en">Mike Krilivsky · regular text message only (no WhatsApp)</span><span class="es">Mike Krilivsky · solo mensaje de texto normal (no WhatsApp)</span></div>
       </div>
-      <p class="small en">Once you have completed BOTH group text intros, click the button below to schedule your FaceTime or video call interview.</p>
-      <p class="small es">Cuando hayas completado AMBAS presentaciones por texto grupal, haz clic en el botón de abajo para agendar tu entrevista por FaceTime o videollamada.</p>
-      <button class="btn" id="completeBtn" style="width:100%;margin-top:10px">
-        <span class="en">I've completed both group text intros</span><span class="es">Completé ambas presentaciones grupales</span>
+
+      <div class="note" style="text-align:center">
+        <p class="en" style="font-weight:700;margin-bottom:2px">Done with BOTH group texts?</p>
+        <p class="es" style="font-weight:700;margin-bottom:2px">¿Terminaste AMBOS grupos?</p>
+        <p class="small en">Only click below after you've started both separate group texts and added Mike's number to each.</p>
+        <p class="small es">Haz clic abajo solo después de haber creado ambos grupos separados y agregado el número de Mike a cada uno.</p>
+      </div>
+
+      <button class="btn" id="completeBtn" style="width:100%;margin-top:6px">
+        <span class="en">✓ I started both group texts — take me to booking</span><span class="es">✓ Creé ambos grupos — llévame a agendar</span>
       </button>
     </section>
   </div>
@@ -386,6 +428,61 @@ const app = initializeApp({
   appId: "1:492469088677:web:19ebca54450cab3096784c"
 });
 const db = getFirestore(app);
+
+/* ------------------------------------------------------------------
+   EmailJS: sends confirmation / rejection emails from the browser.
+   FILL IN the 4 values below after creating your EmailJS account.
+   Until then, emails are skipped silently and the funnel still works.
+   Setup guide is in the chat. Free tier = 200 emails/month.
+------------------------------------------------------------------- */
+const EMAILJS_PUBLIC_KEY   = "PASTE_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID   = "PASTE_SERVICE_ID";
+const EMAILJS_TEMPLATE_CONFIRM = "PASTE_CONFIRM_TEMPLATE_ID"; // sent when an applicant PASSES
+const EMAILJS_TEMPLATE_REJECT  = "PASTE_REJECT_TEMPLATE_ID";  // sent when an applicant is DECLINED
+
+const EMAILJS_READY =
+  window.emailjs &&
+  !EMAILJS_PUBLIC_KEY.startsWith("PASTE") &&
+  !EMAILJS_SERVICE_ID.startsWith("PASTE");
+
+if (EMAILJS_READY) {
+  try { window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); }
+  catch (e) { console.error("EmailJS init failed:", e); }
+}
+
+/** Send an email via EmailJS. Never throws — email must not block the funnel. */
+async function sendEmail(templateId, params) {
+  if (!EMAILJS_READY || !templateId || templateId.startsWith("PASTE")) {
+    console.log("[email skipped — EmailJS not configured]", templateId, params);
+    return;
+  }
+  try {
+    await window.emailjs.send(EMAILJS_SERVICE_ID, templateId, params);
+    console.log("Email sent:", templateId);
+  } catch (e) {
+    console.error("Email send failed (funnel continues):", e);
+  }
+}
+
+/** Build a plain-text summary of the application for the rejection email. */
+function buildSummary() {
+  const g = (id) => (document.getElementById(id)?.value || "").trim();
+  return [
+    "Name: " + g("q-name"),
+    "Email: " + g("q-email"),
+    "Phone: " + g("q-phone"),
+    "Good at home work: " + (picks.goodAtHome || "-"),
+    "Years experience: " + (picks.experienceYears || "-"),
+    "Experience: " + g("q-expdesc"),
+    "Clean background check: " + (picks.backgroundCheck || "-"),
+    "Desired pay: " + g("q-pay"),
+    "Available Mon/Wed/Fri 9:30-3:30: " + (picks.availableMWF || "-") + (picks.availableMWF === "no" ? " (prefers: " + g("q-schedalt") + ")" : ""),
+    "Comfortable with duties: " + (picks.comfortableDuties || "-"),
+    "Has references: " + (picks.hasReferences || "-"),
+    "English level: " + (picks.englishLevel || "-"),
+    "Resume: " + g("q-resume"),
+  ].join("\n");
+}
 
 /* ----------------------------- state ----------------------------- */
 let lang = "en";
@@ -522,6 +619,23 @@ document.getElementById("submitFormBtn").addEventListener("click", async () => {
       sourceLang: lang,
     });
     appId = ref.id;
+
+    // Fire the appropriate email (non-blocking — funnel proceeds regardless)
+    if (status === "declined") {
+      sendEmail(EMAILJS_TEMPLATE_REJECT, {
+        to_email: val("q-email"),
+        to_name: val("q-name"),
+        application_summary: buildSummary(),
+      });
+    } else {
+      sendEmail(EMAILJS_TEMPLATE_CONFIRM, {
+        to_email: val("q-email"),
+        to_name: val("q-name"),
+        booking_link: "https://calendly.com/m-pupsnchill/15min",
+        mike_phone: "+1 617-633-0544",
+      });
+    }
+
     goStep(status === "declined" ? "declined" : "references");
   } catch (err) {
     console.error(err);
