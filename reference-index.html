@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Reference Check · House Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#0e2235;--turquoise:#19c2c2;--turquoise-deep:#0fa3a3;--coral:#ff6f61;--yellow:#ffd166;--sand:#fef9f2;--ink:#10222f;--ink-soft:#4c6275;--line:#e4ded2;--ok:#16a085;--bad:#e0564a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Manrope',sans-serif;background:var(--sand);color:var(--ink);line-height:1.6}
+  h1,h2,h3{font-family:'Schibsted Grotesk',sans-serif;line-height:1.2}
+  .wrap{max-width:680px;margin:0 auto;padding:24px 18px 80px}
+  .topbar{display:flex;justify-content:flex-end;padding:6px 0 14px}
+  .lang-toggle{display:flex;border:2px solid var(--navy);border-radius:999px;overflow:hidden;font-weight:700;font-size:13px}
+  .lang-toggle button{border:none;background:transparent;padding:7px 16px;cursor:pointer;font-family:inherit;font-weight:700;color:var(--navy)}
+  .lang-toggle button.active{background:var(--navy);color:#fff}
+  section.card{background:#fff;border:2px solid var(--line);border-radius:18px;padding:26px 22px;margin:8px 0}
+  h1{color:var(--navy);font-size:26px;margin-bottom:6px}
+  .who{display:inline-block;background:var(--turquoise);color:#fff;font-weight:700;border-radius:999px;padding:4px 14px;font-size:14px;margin:8px 0}
+  .field{margin-bottom:20px}
+  .field label{display:block;font-weight:700;color:var(--navy);margin-bottom:7px;font-size:15px}
+  .field input,.field textarea{width:100%;padding:13px 14px;border:2px solid var(--line);border-radius:12px;font-family:inherit;font-size:15px;background:#fff;color:var(--ink)}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--turquoise)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .btn-pick{background:#fff;color:var(--navy);border:2px solid var(--line);font-size:15px;padding:12px 22px;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit;flex:1}
+  .btn-pick.sel{border-color:var(--turquoise);background:var(--turquoise);color:#fff}
+  .btn{display:block;width:100%;border:none;cursor:pointer;font-family:'Schibsted Grotesk',sans-serif;font-weight:800;font-size:17px;padding:16px;border-radius:999px;background:var(--coral);color:#fff;box-shadow:0 6px 18px rgba(255,111,97,.35)}
+  .btn:disabled{opacity:.55}
+  .err{background:#fdecea;border:2px solid var(--bad);color:#a3271c;border-radius:12px;padding:12px 14px;margin:14px 0;font-weight:600;display:none}
+  .small{font-size:13px;color:var(--ink-soft)}
+  .step{display:none}.step.active{display:block}
+  body[data-lang="en"] .es{display:none!important}
+  body[data-lang="es"] .en{display:none!important}
+</style>
+</head>
+<body data-lang="en">
+<div class="wrap">
+  <div class="topbar">
+    <div class="lang-toggle">
+      <button id="langEn" class="active" onclick="setLang('en')">English</button>
+      <button id="langEs" onclick="setLang('es')">Español</button>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="step active" id="step-form">
+    <section class="card">
+      <h1><span class="en">Reference Check</span><span class="es">Verificación de Referencia</span></h1>
+      <p class="small en">Mike Krilivsky is hiring a House Manager and you were listed as a reference. Thanks for taking a couple of minutes. Your answers go directly to Mike.</p>
+      <p class="small es">Mike Krilivsky está contratando una Encargada de Hogar y fuiste incluida como referencia. Gracias por tomarte un par de minutos. Tus respuestas van directamente a Mike.</p>
+      <div class="who" id="candidateBadge"></div>
+
+      <div class="field" style="margin-top:10px">
+        <label><span class="en">Your name</span><span class="es">Tu nombre</span></label>
+        <input id="f-refname">
+      </div>
+      <div class="field">
+        <label><span class="en">1. How long did they work with you, and what were their responsibilities?</span><span class="es">1. ¿Cuánto tiempo trabajaron contigo y cuáles eran sus responsabilidades?</span></label>
+        <textarea id="f-duration" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label><span class="en">2. Were they generally reliable and on time?</span><span class="es">2. ¿Eran generalmente confiables y puntuales?</span></label>
+        <textarea id="f-reliable" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <label><span class="en">3. How were their cooking, cleaning, organization, and attention to detail?</span><span class="es">3. ¿Cómo eran su cocina, limpieza, organización y atención al detalle?</span></label>
+        <textarea id="f-skills" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label><span class="en">4. Did they communicate well and handle things independently?</span><span class="es">4. ¿Se comunicaban bien y manejaban las cosas de forma independiente?</span></label>
+        <textarea id="f-comm" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <label><span class="en">5. Did you trust them in your home and around personal belongings?</span><span class="es">5. ¿Confiabas en ellos en tu hogar y con tus pertenencias personales?</span></label>
+        <textarea id="f-trust" rows="2"></textarea>
+      </div>
+      <div class="field">
+        <label><span class="en">6. Anything else you think Mike should know before hiring them?</span><span class="es">6. ¿Algo más que crees que Mike debería saber antes de contratarlos?</span></label>
+        <textarea id="f-additional" rows="3"></textarea>
+      </div>
+      <div class="field">
+        <label><span class="en">Would you hire them again?</span><span class="es">¿Los contratarías de nuevo?</span></label>
+        <div class="row" data-pick="rehire">
+          <button type="button" class="btn-pick" data-val="yes"><span class="en">Yes</span><span class="es">Sí</span></button>
+          <button type="button" class="btn-pick" data-val="maybe"><span class="en">Maybe</span><span class="es">Quizás</span></button>
+          <button type="button" class="btn-pick" data-val="no">No</button>
+        </div>
+      </div>
+
+      <div class="err" id="form-err"></div>
+      <button class="btn" id="submitBtn"><span class="en">Submit reference</span><span class="es">Enviar referencia</span></button>
+    </section>
+  </div>
+
+  <!-- DONE -->
+  <div class="step" id="step-done">
+    <section class="card" style="text-align:center;padding:50px 24px">
+      <h1><span class="en">Thank you!</span><span class="es">¡Gracias!</span></h1>
+      <p class="en" style="color:var(--ink-soft);margin-top:10px">Your reference has been sent to Mike. We really appreciate your time and honesty.</p>
+      <p class="es" style="color:var(--ink-soft);margin-top:10px">Tu referencia ha sido enviada a Mike. Agradecemos mucho tu tiempo y honestidad.</p>
+    </section>
+  </div>
+
+  <!-- BAD LINK -->
+  <div class="step" id="step-badlink">
+    <section class="card" style="text-align:center;padding:50px 24px">
+      <h1><span class="en">Link issue</span><span class="es">Problema con el enlace</span></h1>
+      <p class="en" style="color:var(--ink-soft);margin-top:10px">This reference link looks incomplete. Please ask Mike to resend it.</p>
+      <p class="es" style="color:var(--ink-soft);margin-top:10px">Este enlace de referencia parece incompleto. Por favor pídele a Mike que lo reenvíe.</p>
+    </section>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBmv9J2OJ4XstnypN3z25GJH4f0zMOGqkY",
+  authDomain: "house-manager-3506.firebaseapp.com",
+  projectId: "house-manager-3506",
+  storageBucket: "house-manager-3506.firebasestorage.app",
+  messagingSenderId: "492469088677",
+  appId: "1:492469088677:web:19ebca54450cab3096784c"
+});
+const db = getFirestore(app);
+
+const params = new URLSearchParams(location.search);
+const appId = params.get("app") || "";
+const candidate = (params.get("c") || "").trim();
+const refNameParam = (params.get("r") || "").trim();
+let lang = "en";
+const picks = {};
+
+window.setLang = (l) => {
+  lang = l;
+  document.body.dataset.lang = l;
+  document.getElementById("langEn").classList.toggle("active", l === "en");
+  document.getElementById("langEs").classList.toggle("active", l === "es");
+};
+
+// No appId = broken link
+if (!appId) {
+  document.getElementById("step-form").classList.remove("active");
+  document.getElementById("step-badlink").classList.add("active");
+}
+
+// Show candidate name + prefill reference name
+const badge = document.getElementById("candidateBadge");
+badge.textContent = candidate
+  ? (lang === "es" ? "Referencia para: " : "Reference for: ") + candidate
+  : "";
+if (candidate) {
+  badge.textContent = "Reference for: " + candidate;
+}
+if (refNameParam) document.getElementById("f-refname").value = refNameParam;
+
+document.querySelectorAll("[data-pick]").forEach((row) => {
+  const key = row.dataset.pick;
+  row.querySelectorAll(".btn-pick").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      picks[key] = btn.dataset.val;
+      row.querySelectorAll(".btn-pick").forEach((b) => b.classList.remove("sel"));
+      btn.classList.add("sel");
+    });
+  });
+});
+
+const val = (id) => document.getElementById(id).value.trim();
+function showErr(m){ const e=document.getElementById("form-err"); e.textContent=m; e.style.display="block"; e.scrollIntoView({behavior:"smooth",block:"center"}); }
+
+document.getElementById("submitBtn").addEventListener("click", async () => {
+  document.getElementById("form-err").style.display = "none";
+  const T=(en,es)=>lang==="es"?es:en;
+  if (!val("f-refname")) return showErr(T("Please enter your name.","Por favor escribe tu nombre."));
+  if (!val("f-duration") && !val("f-reliable") && !val("f-skills"))
+    return showErr(T("Please answer at least the first few questions.","Por favor responde al menos las primeras preguntas."));
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  try {
+    await addDoc(collection(db, "applications", appId, "extras"), {
+      kind: "reference_feedback",
+      source: "form",
+      createdAt: new Date().toISOString(),
+      referenceName: val("f-refname"),
+      candidateName: candidate,
+      answers: {
+        duration: val("f-duration"),
+        reliable: val("f-reliable"),
+        skills: val("f-skills"),
+        communication: val("f-comm"),
+        trust: val("f-trust"),
+        additional: val("f-additional"),
+      },
+      wouldHireAgain: picks.rehire || "",
+      freeNotes: "",
+    });
+    document.getElementById("step-form").classList.remove("active");
+    document.getElementById("step-done").classList.add("active");
+    window.scrollTo({top:0});
+  } catch (err) {
+    console.error(err);
+    showErr(T("Something went wrong. Please try again.","Algo salió mal. Por favor intenta de nuevo."));
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
