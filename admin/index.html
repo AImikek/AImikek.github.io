@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Referral Inbox — mikek.ai</title>
+<meta name="robots" content="noindex,nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#06060a; --bg-2:#0a0a12; --card:#0e0e18; --card-hover:#121220;
+    --line:rgba(123,159,255,.14); --line-strong:rgba(123,159,255,.30);
+    --text:#f3f4f9; --muted:#8b8fa3; --muted-2:#666a7e;
+    --accent:#7b9fff; --accent-ink:#06060a; --accent-soft:rgba(123,159,255,.12);
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;font-weight:450;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(640px 380px at 12% -10%,rgba(123,159,255,.13),transparent 70%)}
+  a{color:inherit}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 clamp(22px,4.5vw,52px);position:relative;z-index:1}
+
+  /* header */
+  header{border-bottom:1px solid var(--line);padding:22px 0;
+    background:linear-gradient(to bottom,rgba(6,6,10,.9),rgba(6,6,10,.6));position:sticky;top:0;z-index:20;backdrop-filter:blur(12px)}
+  .head-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .h-left{display:flex;align-items:baseline;gap:14px}
+  .brand{font-family:'Space Grotesk';font-weight:700;font-size:1.18rem;letter-spacing:-.02em}
+  .brand .dot{color:var(--accent)}
+  .h-title{font-family:'Space Grotesk';font-weight:600;color:var(--muted);font-size:.95rem}
+  .total{color:var(--accent);font-weight:600}
+  .h-actions{display:flex;gap:10px}
+  .btn{font-family:'Space Grotesk';font-weight:600;font-size:.88rem;border-radius:10px;
+    padding:9px 16px;cursor:pointer;border:1px solid var(--line-strong);
+    background:transparent;color:var(--text);transition:all .18s var(--ease)}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn.solid{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn.solid:hover{filter:brightness(1.08)}
+  .btn.subtle{color:var(--muted);border-color:var(--line)}
+
+  /* toolbar */
+  .toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:24px 0 16px}
+  .search{position:relative;flex:1;min-width:220px}
+  .search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--muted-2)}
+  .search input{width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);
+    font-family:inherit;font-size:.95rem;padding:12px 14px 12px 44px;border-radius:11px;outline:none;transition:border-color .2s,box-shadow .2s}
+  .search input:focus{border-color:var(--line-strong);box-shadow:0 0 0 4px var(--accent-soft)}
+  select.filter{background:var(--card);border:1px solid var(--line);color:var(--text);font-family:inherit;
+    font-size:.92rem;padding:12px 36px 12px 14px;border-radius:11px;outline:none;cursor:pointer;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238b8fa3' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center}
+
+  /* table */
+  .tablewrap{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:60px;background:var(--card)}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:880px}
+  thead th{text-align:left;font-family:'Space Grotesk';font-weight:600;color:var(--muted);
+    font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;padding:15px 18px;
+    border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--bg-2)}
+  thead th:hover{color:var(--text)}
+  thead th .ind{color:var(--accent);margin-left:5px;font-size:.7rem}
+  tbody td{padding:15px 18px;border-bottom:1px solid rgba(123,159,255,.07);vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr{transition:background .15s}
+  tbody tr:hover{background:var(--card-hover)}
+  .biz{display:inline-flex;align-items:center;gap:7px;font-weight:600}
+  .biz .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  td.name{font-weight:600}
+  td a{color:var(--accent);text-decoration:none}
+  td a:hover{text-decoration:underline}
+  .when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .details{color:var(--muted);font-size:.86rem;max-width:260px}
+  .details span{display:block}
+
+  .state{padding:70px 24px;text-align:center;color:var(--muted-2)}
+  .state b{color:var(--text);font-family:'Space Grotesk';display:block;margin-bottom:6px;font-size:1.1rem}
+
+  /* gate */
+  .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1}
+  .gate-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line-strong);border-radius:20px;padding:34px}
+  .gate-card .brand{font-size:1.4rem;margin-bottom:6px;display:block}
+  .gate-card p{color:var(--muted);font-size:.92rem;margin:0 0 22px}
+  .gate-card input{width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--text);
+    font-family:inherit;font-size:1rem;padding:13px 15px;border-radius:11px;outline:none;margin-bottom:14px;transition:border-color .2s,box-shadow .2s}
+  .gate-card input:focus{border-color:var(--line-strong);box-shadow:0 0 0 4px var(--accent-soft)}
+  .gate-card .btn.solid{width:100%;padding:13px}
+  .err{color:#ff8b8b;font-size:.85rem;margin:10px 0 0;min-height:1em}
+  .hide{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN GATE ============ -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <span class="brand">mikek<span class="dot">.</span>ai</span>
+    <p>Referral inbox — enter your access key to continue.</p>
+    <input id="key" type="password" placeholder="Access key" autocomplete="current-password" />
+    <button class="btn solid" id="unlock">Unlock</button>
+    <p class="err" id="gateErr"></p>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="app" class="hide">
+  <header>
+    <div class="wrap head-inner">
+      <div class="h-left">
+        <span class="brand">mikek<span class="dot">.</span>ai</span>
+        <span class="h-title">Referral inbox · <span class="total" id="total">0</span></span>
+      </div>
+      <div class="h-actions">
+        <button class="btn subtle" id="refresh">Refresh</button>
+        <button class="btn" id="export">Export CSV</button>
+        <button class="btn subtle" id="signout">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="text" placeholder="Search name, email, phone, location…" autocomplete="off"/>
+      </div>
+      <select class="filter" id="bizFilter"><option value="">All businesses</option></select>
+    </div>
+
+    <div class="tablewrap">
+      <div class="scroll">
+        <table>
+          <thead><tr id="headrow"></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="state hide" id="state"></div>
+    </div>
+  </main>
+</div>
+
+<script src="/config.js"></script>
+<script>
+/* =====================================================================
+   CONFIG — paste your Supabase function URL (ends in /functions/v1/referrals)
+   ===================================================================== */
+const FUNCTION_URL = (window.MIKEK_ENDPOINT || ""); // set in /config.js
+
+/* ---- columns ---- */
+const COLS = [
+  { key:"created_at", label:"Date" },
+  { key:"business",   label:"Business" },
+  { key:"name",       label:"Name" },
+  { key:"email",      label:"Email" },
+  { key:"phone",      label:"Phone" },
+  { key:"location",   label:"Location" },
+  { key:"details",    label:"Details" }
+];
+
+const $ = s => document.querySelector(s);
+let ADMIN_KEY = "";       // held in memory only
+let DATA = [];            // all rows
+let sortKey = "created_at", sortDir = "desc";
+
+/* ---- gate ---- */
+function unlock(){
+  const k = $("#key").value.trim();
+  if(!k){ $("#gateErr").textContent = "Enter your access key."; return; }
+  ADMIN_KEY = k;
+  $("#gateErr").textContent = "Checking…";
+  load(true);
+}
+$("#unlock").onclick = unlock;
+$("#key").addEventListener("keydown", e=>{ if(e.key==="Enter") unlock(); });
+
+$("#signout").onclick = ()=>{ ADMIN_KEY=""; DATA=[]; $("#app").classList.add("hide"); $("#gate").classList.remove("hide"); $("#key").value=""; };
+$("#refresh").onclick = ()=>load(false);
+$("#export").onclick = exportCSV;
+$("#q").addEventListener("input", render);
+$("#bizFilter").addEventListener("change", render);
+
+/* ---- fetch ---- */
+async function load(firstTime){
+  if(!FUNCTION_URL){
+    enterApp();
+    showState("Backend not connected yet", "Paste your Supabase function URL into FUNCTION_URL at the top of this file.");
+    return;
+  }
+  try{
+    const r = await fetch(FUNCTION_URL, { headers:{ "x-admin-key": ADMIN_KEY } });
+    if(r.status === 401){
+      if(firstTime){ $("#gateErr").textContent = "Wrong access key."; ADMIN_KEY=""; }
+      else alert("Access key rejected. Sign out and back in.");
+      return;
+    }
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    DATA = await r.json();
+    enterApp();
+    buildHead();
+    buildBizFilter();
+    render();
+  }catch(err){
+    if(firstTime){ $("#gateErr").textContent = "Couldn't reach the backend."; }
+    else { enterApp(); showState("Couldn't load submissions", String(err)); }
+  }
+}
+function enterApp(){ $("#gate").classList.add("hide"); $("#app").classList.remove("hide"); }
+
+/* ---- head with sorting ---- */
+function buildHead(){
+  $("#headrow").innerHTML = COLS.map(c=>{
+    const ind = c.key===sortKey ? `<span class="ind">${sortDir==="asc"?"▲":"▼"}</span>` : "";
+    return `<th data-key="${c.key}">${c.label}${ind}</th>`;
+  }).join("");
+  $("#headrow").querySelectorAll("th").forEach(th=>{
+    th.onclick = ()=>{
+      const k = th.dataset.key;
+      if(k===sortKey) sortDir = sortDir==="asc" ? "desc" : "asc";
+      else { sortKey=k; sortDir = k==="created_at" ? "desc" : "asc"; }
+      buildHead(); render();
+    };
+  });
+}
+
+function buildBizFilter(){
+  const cur = $("#bizFilter").value;
+  const all = Array.from(new Set(DATA.map(r=>r.business).filter(Boolean))).sort();
+  $("#bizFilter").innerHTML = `<option value="">All businesses</option>` + all.map(b=>`<option${b===cur?" selected":""}>${b}</option>`).join("");
+}
+
+/* ---- render ---- */
+function fmtDate(s){ if(!s) return ""; const d=new Date(s); return d.toLocaleString(undefined,{month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"}); }
+function detailsText(d){ if(!d||typeof d!=="object") return ""; return Object.entries(d).map(([k,v])=>`${k}: ${v}`).join(" · "); }
+
+function filtered(){
+  const q = $("#q").value.trim().toLowerCase();
+  const biz = $("#bizFilter").value;
+  let rows = DATA.filter(r=>{
+    if(biz && r.business!==biz) return false;
+    if(!q) return true;
+    return [r.business,r.name,r.email,r.phone,r.location,detailsText(r.details)].join(" ").toLowerCase().includes(q);
+  });
+  rows.sort((a,b)=>{
+    let x=a[sortKey], y=b[sortKey];
+    if(sortKey==="created_at"){ x=new Date(x||0); y=new Date(y||0); }
+    else { x=(x||"").toString().toLowerCase(); y=(y||"").toString().toLowerCase(); }
+    return (x<y?-1:x>y?1:0) * (sortDir==="asc"?1:-1);
+  });
+  return rows;
+}
+
+function render(){
+  const rows = filtered();
+  $("#total").textContent = DATA.length;
+  if(!DATA.length){ showState("No submissions yet","They'll show up here the moment someone fills out a form."); return; }
+  if(!rows.length){ showState("No matches","Try a different search or business filter."); return; }
+  hideState();
+  $("#rows").innerHTML = rows.map(r=>`
+    <tr>
+      <td class="when">${fmtDate(r.created_at)}</td>
+      <td><span class="biz"><span class="dot"></span>${r.business||""}</span></td>
+      <td class="name">${esc(r.name)}</td>
+      <td>${r.email?`<a href="mailto:${esc(r.email)}">${esc(r.email)}</a>`:""}</td>
+      <td>${r.phone?`<a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>`:""}</td>
+      <td>${esc(r.location)}</td>
+      <td class="details">${detailsRows(r.details)}</td>
+    </tr>`).join("");
+}
+function detailsRows(d){ if(!d||typeof d!=="object"||!Object.keys(d).length) return "—"; return Object.entries(d).map(([k,v])=>`<span>${esc(k)}: ${esc(v)}</span>`).join(""); }
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function showState(title,msg){ const el=$("#state"); el.innerHTML=`<b>${title}</b>${msg||""}`; el.classList.remove("hide"); $("#rows").innerHTML=""; }
+function hideState(){ $("#state").classList.add("hide"); }
+
+/* ---- CSV export (respects current filter + sort) ---- */
+function exportCSV(){
+  const rows = filtered();
+  if(!rows.length){ alert("Nothing to export."); return; }
+  const cols = ["created_at","business","name","email","phone","location","details"];
+  const head = cols.join(",");
+  const body = rows.map(r=>cols.map(c=>{
+    let v = c==="details" ? detailsText(r.details) : (r[c]||"");
+    v = String(v).replace(/"/g,'""');
+    return `"${v}"`;
+  }).join(",")).join("\n");
+  const blob = new Blob([head+"\n"+body], { type:"text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `referrals-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+$("#key").focus();
+</script>
+</body>
+</html>

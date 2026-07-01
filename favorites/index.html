@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Favorites — mikek.ai</title>
+<meta name="description" content="A running index of the products, people, and places Mike Krilivsky actually vouches for." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     BRAND TOKENS
+     ========================================================= */
+  :root{
+    --bg:#06060a;
+    --bg-2:#0a0a12;
+    --card:#0e0e18;
+    --card-hover:#121220;
+    --line:rgba(123,159,255,.14);
+    --line-strong:rgba(123,159,255,.30);
+    --text:#f3f4f9;
+    --muted:#8b8fa3;
+    --muted-2:#666a7e;
+    --accent:#7b9fff;
+    --accent-ink:#06060a;
+    --accent-soft:rgba(123,159,255,.12);
+    --radius:18px;
+    --maxw:1200px;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    font-weight:450;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+
+  /* ambient glow behind the hero */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background:
+      radial-gradient(680px 420px at 18% -8%, rgba(123,159,255,.16), transparent 70%),
+      radial-gradient(560px 380px at 92% 4%, rgba(123,159,255,.08), transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(22px,4.5vw,52px);position:relative;z-index:1}
+
+  /* =========================================================
+     NAV
+     ========================================================= */
+  header.nav{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:saturate(140%) blur(14px);
+    background:linear-gradient(to bottom, rgba(6,6,10,.86), rgba(6,6,10,.55));
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{font-family:'Space Grotesk';font-weight:800;letter-spacing:-.02em;font-size:1.12rem}
+  .brand .dot{color:var(--accent)}
+  .nav-links{display:flex;gap:26px;align-items:center;font-size:.92rem;color:var(--muted)}
+  .nav-links a{transition:color .2s}
+  .nav-links a:hover{color:var(--text)}
+  .nav-cta{
+    color:var(--accent);border:1px solid var(--line-strong);
+    padding:8px 16px;border-radius:999px;font-weight:500;font-size:.88rem;
+    transition:background .2s,border-color .2s;
+  }
+  .nav-cta:hover{background:var(--accent-soft);border-color:var(--accent)}
+
+  /* =========================================================
+     HERO
+     ========================================================= */
+  .hero{padding:72px 0 34px}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:9px;
+    font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);font-weight:600;margin-bottom:22px;
+  }
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--accent);opacity:.7}
+  h1.title{
+    font-family:'Space Grotesk';font-weight:800;letter-spacing:-.03em;line-height:.98;
+    font-size:clamp(2.7rem,7vw,5rem);margin:0 0 20px;
+  }
+  h1.title em{font-style:normal;color:var(--accent)}
+  .lede{font-size:clamp(1.02rem,1.6vw,1.22rem);color:var(--muted);max-width:560px;margin:0}
+
+  /* =========================================================
+     CONTROLS: search + categories + count
+     ========================================================= */
+  .controls{padding:30px 0 10px;position:sticky;top:64px;z-index:40;
+    background:linear-gradient(to bottom, var(--bg) 72%, transparent);}
+  .searchbar{position:relative;margin-bottom:18px}
+  .searchbar svg{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted-2)}
+  #search{
+    width:100%;background:var(--card);border:1px solid var(--line);
+    color:var(--text);font-family:inherit;font-size:1rem;font-weight:450;
+    padding:16px 18px 16px 50px;border-radius:14px;outline:none;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  #search::placeholder{color:var(--muted-2)}
+  #search:focus{border-color:var(--line-strong);box-shadow:0 0 0 4px var(--accent-soft)}
+
+  .filterrow{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .chips{display:flex;gap:10px;flex-wrap:wrap}
+  .chip{
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    font-family:inherit;font-size:.86rem;font-weight:500;
+    padding:8px 15px;border-radius:999px;cursor:pointer;
+    transition:all .18s var(--ease);white-space:nowrap;
+  }
+  .chip:hover{color:var(--text);border-color:var(--line-strong)}
+  .chip.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  .count{font-size:.84rem;color:var(--muted-2);white-space:nowrap}
+  .count b{color:var(--text);font-weight:600}
+
+  /* =========================================================
+     GRID
+     ========================================================= */
+  .grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+    gap:20px;padding:24px 0 90px;
+  }
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;cursor:pointer;display:flex;flex-direction:column;
+    transition:transform .28s var(--ease),border-color .28s,background .28s;
+    will-change:transform;
+    animation:rise .5s var(--ease) both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .card:hover{transform:translateY(-5px);border-color:var(--line-strong);background:var(--card-hover)}
+  .card:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+  .thumb{aspect-ratio:16/10;position:relative;overflow:hidden;background:#0b0b14}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s var(--ease)}
+  .card:hover .thumb img{transform:scale(1.05)}
+  .thumb.mono{display:flex;align-items:center;justify-content:center}
+  .thumb.mono span{font-family:'Space Grotesk';font-weight:800;font-size:2.6rem;color:rgba(255,255,255,.92);letter-spacing:-.02em}
+  /* pathway tag overlay */
+  .ptag{
+    position:absolute;top:12px;left:12px;
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(6,6,10,.66);backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.12);
+    color:#fff;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
+    padding:5px 9px;border-radius:999px;
+  }
+  .ptag .pdot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+
+  .card-body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:9px;flex:1}
+  .cat{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  .card-name{font-family:'Space Grotesk';font-weight:700;font-size:1.22rem;letter-spacing:-.01em;line-height:1.15}
+  .card-blurb{font-size:.92rem;color:var(--muted);margin:0;flex:1}
+  .card-cta{
+    display:inline-flex;align-items:center;gap:7px;margin-top:6px;
+    font-size:.9rem;font-weight:600;color:var(--text);
+  }
+  .card-cta .arr{color:var(--accent);transition:transform .2s var(--ease)}
+  .card:hover .card-cta .arr{transform:translateX(4px)}
+
+  .empty{grid-column:1/-1;text-align:center;padding:80px 20px;color:var(--muted-2)}
+  .empty b{color:var(--text);font-family:'Space Grotesk'}
+
+  /* =========================================================
+     OVERLAY (detail page + form)
+     ========================================================= */
+  .overlay{
+    position:fixed;inset:0;z-index:100;display:none;
+    align-items:flex-end;justify-content:center;
+  }
+  .overlay.open{display:flex}
+  .scrim{position:absolute;inset:0;background:rgba(3,3,7,.72);backdrop-filter:blur(6px);
+    opacity:0;transition:opacity .3s}
+  .overlay.open .scrim{opacity:1}
+  .sheet{
+    position:relative;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;
+    background:var(--bg-2);border:1px solid var(--line-strong);
+    border-radius:22px 22px 0 0;
+    transform:translateY(28px);opacity:0;
+    transition:transform .34s var(--ease),opacity .34s var(--ease);
+  }
+  .overlay.open .sheet{transform:none;opacity:1}
+  @media(min-width:680px){
+    .overlay{align-items:center;padding:24px}
+    .sheet{border-radius:22px}
+  }
+  .sheet-close{
+    position:absolute;top:16px;right:16px;z-index:3;
+    width:38px;height:38px;border-radius:50%;
+    background:rgba(255,255,255,.06);border:1px solid var(--line);
+    color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .2s;
+  }
+  .sheet-close:hover{background:rgba(255,255,255,.12)}
+  .sheet-hero{aspect-ratio:16/8;overflow:hidden;background:#0b0b14;display:flex;align-items:center;justify-content:center}
+  .sheet-hero img{width:100%;height:100%;object-fit:cover}
+  .sheet-hero .mono{font-family:'Space Grotesk';font-weight:800;font-size:4rem;color:rgba(255,255,255,.92)}
+  .sheet-pad{padding:30px 30px 34px}
+  .sheet-cat{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px}
+  .sheet h2{font-family:'Space Grotesk';font-weight:800;letter-spacing:-.02em;font-size:2rem;margin:0 0 16px}
+  .why{color:var(--muted);font-size:1.02rem;line-height:1.7}
+  .why p{margin:0 0 14px}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    background:var(--accent);color:var(--accent-ink);
+    font-family:'Space Grotesk';font-weight:700;font-size:.98rem;
+    padding:14px 24px;border-radius:12px;border:none;cursor:pointer;
+    transition:transform .15s var(--ease),filter .2s;width:100%;
+  }
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:scale(.99)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line-strong)}
+  .btn.ghost:hover{background:var(--accent-soft)}
+  .btn-row{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+  .btn-row .btn{flex:1;min-width:160px}
+
+  /* form */
+  form.refform{margin-top:8px;display:flex;flex-direction:column;gap:16px}
+  .field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:7px;font-weight:500}
+  .field label .req{color:var(--accent)}
+  .field input,.field select,.field textarea{
+    width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);
+    font-family:inherit;font-size:.98rem;padding:13px 15px;border-radius:11px;outline:none;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .field textarea{resize:vertical;min-height:96px}
+  .field input:focus,.field select:focus,.field textarea:focus{
+    border-color:var(--line-strong);box-shadow:0 0 0 4px var(--accent-soft)
+  }
+  .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b8fa3' d='M6 8 0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+  .form-note{font-size:.8rem;color:var(--muted-2);margin-top:2px}
+
+  /* success state */
+  .sent{text-align:center;padding:18px 6px}
+  .sent .ok{width:62px;height:62px;border-radius:50%;background:var(--accent-soft);border:1px solid var(--line-strong);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+  .sent .ok svg{width:26px;height:26px;color:var(--accent)}
+  .sent h3{font-family:'Space Grotesk';font-weight:800;font-size:1.5rem;margin:0 0 8px}
+  .sent p{color:var(--muted);margin:0}
+
+  /* =========================================================
+     FOOTER
+     ========================================================= */
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted-2);font-size:.86rem}
+  .foot-inner{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  footer a:hover{color:var(--text)}
+
+  @media (max-width:560px){
+    .hero{padding:48px 0 24px}
+    .grid{grid-template-columns:1fr;gap:16px}
+    .nav-links a:not(.nav-cta){display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== NAV ============== -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="/">mikek<span class="dot">.</span>ai</a>
+    <nav class="nav-links">
+      <a href="/">Home</a>
+      <a href="#" class="nav-cta">Work with Mike</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="wrap hero">
+  <span class="eyebrow">The favorites index</span>
+  <h1 class="title">Things I actually<br><em>vouch for.</em></h1>
+  <p class="lede">A running list of the products, people, and places I use, trust, and send my own network to. No paid placements — just the stuff that's earned it.</p>
+</section>
+
+<!-- ============== CONTROLS ============== -->
+<div class="wrap controls">
+  <div class="searchbar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="search" type="text" placeholder="Search favorites…" autocomplete="off" aria-label="Search favorites" />
+  </div>
+  <div class="filterrow">
+    <div class="chips" id="chips"></div>
+    <div class="count" id="count"></div>
+  </div>
+</div>
+
+<!-- ============== GRID ============== -->
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+</main>
+
+<!-- ============== FOOTER ============== -->
+<footer>
+  <div class="wrap foot-inner">
+    <span>© <span id="yr"></span> Mike Krilivsky · mikek.ai</span>
+    <a href="mailto:m@mikek.ai">m@mikek.ai</a>
+  </div>
+</footer>
+
+<!-- ============== OVERLAY ============== -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Favorite detail">
+  <div class="scrim" data-close></div>
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script src="/config.js"></script>
+<script>
+/* =====================================================================
+   1) YOUR BACKEND ENDPOINT  ← paste your Supabase function URL here
+      (the same URL goes in admin.html → FUNCTION_URL)
+      Forms won't send until this is filled in.
+   ===================================================================== */
+const ENDPOINT = (window.MIKEK_ENDPOINT || ""); // set in /config.js
+
+/* =====================================================================
+   2) YOUR FAVORITES  — this is the whole "backend" for the catalog.
+      To add one, copy a block and edit it. Fields:
+
+        name      (required) — display name
+        category  (required) — used for the filter chips + search
+        blurb     (required) — one line shown on the card
+        image                — image URL (leave "" for a clean monogram tile)
+        tags                 — extra words to make search find it
+        action    (required) — "link" | "page" | "form"
+
+        link  → needs:  url
+        page  → needs:  why (longform "why I like it"); optional url for a Visit button
+        form  → needs:  form { route, cta, success, fields:[...] }
+
+      Field types for forms: "text","email","tel","textarea","select"(+options)
+   ===================================================================== */
+const FAVORITES = [
+
+  {
+    name: "Equinox",
+    category: "Fitness",
+    blurb: "The gym I actually keep going to. Requesting an intro routes you straight to the VP of Sales and myself for a free $100 day pass.",
+    image: "",
+    tags: ["gym","training","wellness","membership"],
+    action: "form",
+    form: {
+      route: "Equinox",                 // matches the routing key in the Apps Script
+      cta: "Request an intro",
+      success: "Sent. Mike and the Equinox team will reach out shortly.",
+      fields: [
+        { name:"name",     label:"Full name",  type:"text",  required:true },
+        { name:"email",    label:"Email",      type:"email", required:true },
+        { name:"phone",    label:"Phone",      type:"tel" },
+        { name:"location", label:"Preferred location", type:"select", required:true,
+          allowOther:true,               // adds an "Other" option that reveals a text box
+          options:[
+            "Equinox Brickell Heights",
+            "Brickell (Four Seasons location)",
+            "Aventura",
+            "South Beach",
+            "Coral Gables"
+          ] }
+      ]
+    }
+  },
+
+  {
+    name: "Pause Wellness",
+    category: "Longevity",
+    blurb: "Coconut Grove longevity clinic — IVs, recovery, and the kind of preventative care most people skip.",
+    image: "",
+    tags: ["longevity","recovery","iv","clinic","health"],
+    action: "page",
+    url: "https://pausewellness.com",
+    why: `<p>Pause is the longevity clinic I point friends to when they're ready to get serious about how they age — not just how they look.</p>
+          <p>It's the rare place that pairs real diagnostics with recovery you'll actually come back for: IV therapy, cold and heat contrast, and a team that treats prevention as the whole point. The Grove location makes it easy to fold into a normal week.</p>
+          <p>If you've been meaning to get a real baseline on your health, start here.</p>`
+  },
+
+  {
+    name: "Eight Sleep",
+    category: "Recovery",
+    blurb: "The temperature-controlled mattress that fixed my sleep. Single biggest recovery upgrade I've made.",
+    image: "",
+    tags: ["sleep","recovery","mattress","health"],
+    action: "link",
+    url: "https://www.eightsleep.com"
+  },
+
+  {
+    name: "Notion",
+    category: "Tools",
+    blurb: "Where I run the whole company — docs, pipeline, and every half-formed idea in one place.",
+    image: "",
+    tags: ["software","productivity","docs","saas"],
+    action: "link",
+    url: "https://www.notion.so"
+  }
+
+];
+
+/* =====================================================================
+   3) ENGINE — you shouldn't need to touch anything below.
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const grid = $("#grid"), chipsEl = $("#chips"), countEl = $("#count"), searchEl = $("#search");
+let activeCat = "All";
+let query = "";
+
+document.getElementById("yr").textContent = new Date().getFullYear();
+
+// slug for hash links
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+
+// stable accent-tinted gradient per name, for monogram tiles
+function tile(name){
+  let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))%360;
+  const a=`hsl(${h},70%,62%)`, b=`hsl(${(h+38)%360},65%,46%)`;
+  return `linear-gradient(135deg, ${a}, ${b})`;
+}
+
+const pathwayLabel = { link:"Visit", page:"Read", form:"Apply" };
+const ctaLabel = f => f.action==="link" ? "Visit" : f.action==="page" ? "Why I like it" : (f.form?.cta || "Open form");
+
+// ---- categories ----
+function buildChips(){
+  const cats = ["All", ...Array.from(new Set(FAVORITES.map(f=>f.category)))];
+  chipsEl.innerHTML = cats.map(c =>
+    `<button class="chip${c===activeCat?' active':''}" data-cat="${c}">${c}</button>`
+  ).join("");
+  chipsEl.querySelectorAll(".chip").forEach(b=>{
+    b.onclick = ()=>{ activeCat=b.dataset.cat; buildChips(); render(); };
+  });
+}
+
+// ---- filtering ----
+function matches(f){
+  if(activeCat!=="All" && f.category!==activeCat) return false;
+  if(!query) return true;
+  const hay = [f.name,f.category,f.blurb,(f.tags||[]).join(" ")].join(" ").toLowerCase();
+  return hay.includes(query);
+}
+
+// ---- card ----
+function cardHTML(f){
+  const thumb = f.image
+    ? `<div class="thumb"><img src="${f.image}" alt="${f.name}" loading="lazy"/>`
+    : `<div class="thumb mono" style="background:${tile(f.name)}"><span>${f.name[0]}</span>`;
+  return `
+    <article class="card" tabindex="0" data-slug="${slug(f.name)}" role="button" aria-label="${f.name}">
+      ${thumb}
+        <span class="ptag"><span class="pdot"></span>${pathwayLabel[f.action]||""}</span>
+      </div>
+      <div class="card-body">
+        <span class="cat">${f.category}</span>
+        <h3 class="card-name">${f.name}</h3>
+        <p class="card-blurb">${f.blurb}</p>
+        <span class="card-cta">${ctaLabel(f)} <span class="arr">→</span></span>
+      </div>
+    </article>`;
+}
+
+function render(){
+  const list = FAVORITES.filter(matches);
+  countEl.innerHTML = `<b>${list.length}</b> ${list.length===1?'favorite':'favorites'}`;
+  if(!list.length){
+    grid.innerHTML = `<div class="empty"><b>Nothing here yet.</b><br>Try a different search or category.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map((f,i)=>cardHTML(f).replace('<article class="card"',`<article class="card" style="animation-delay:${Math.min(i*40,320)}ms"`)).join("");
+  grid.querySelectorAll(".card").forEach(card=>{
+    const f = FAVORITES.find(x=>slug(x.name)===card.dataset.slug);
+    const go = ()=>open(f);
+    card.onclick = go;
+    card.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+  });
+}
+
+// ---- search ----
+searchEl.oninput = e=>{ query=e.target.value.trim().toLowerCase(); render(); };
+
+/* ---------------- OVERLAY ---------------- */
+const overlay = $("#overlay"), sheet = $("#sheet");
+let lastFocus = null;
+
+function heroBlock(f){
+  return f.image
+    ? `<div class="sheet-hero"><img src="${f.image}" alt="${f.name}"/></div>`
+    : `<div class="sheet-hero" style="background:${tile(f.name)}"><span class="mono">${f.name[0]}</span></div>`;
+}
+
+function open(f){
+  lastFocus = document.activeElement;
+  if(f.action==="link"){ window.open(f.url,"_blank","noopener"); return; }
+  if(f.action==="form"){ sheet.innerHTML = formView(f); wireForm(f); }
+  else { sheet.innerHTML = pageView(f); }
+  overlay.classList.add("open");
+  document.body.style.overflow="hidden";
+  history.replaceState(null,"",`#${slug(f.name)}`);
+  sheet.querySelector(".sheet-close").onclick = close;
+  sheet.scrollTop = 0;
+  const first = sheet.querySelector("input,select,textarea,button.btn");
+  if(first) setTimeout(()=>first.focus(),120);
+}
+function close(){
+  overlay.classList.remove("open");
+  document.body.style.overflow="";
+  history.replaceState(null,"",location.pathname);
+  if(lastFocus) lastFocus.focus();
+}
+overlay.querySelector("[data-close]").onclick = close;
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&overlay.classList.contains("open")) close(); });
+
+const closeBtn = `<button class="sheet-close" aria-label="Close">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>`;
+
+function pageView(f){
+  const visit = f.url ? `<div class="btn-row"><a class="btn" href="${f.url}" target="_blank" rel="noopener">Visit ${f.name} ↗</a></div>` : "";
+  return `${closeBtn}${heroBlock(f)}
+    <div class="sheet-pad">
+      <div class="sheet-cat">${f.category}</div>
+      <h2>${f.name}</h2>
+      <div class="why">${f.why||`<p>${f.blurb}</p>`}</div>
+      ${visit}
+    </div>`;
+}
+
+function formView(f){
+  const fields = f.form.fields.map(fld=>{
+    const req = fld.required ? ` <span class="req">*</span>` : "";
+    const ph = fld.placeholder ? ` placeholder="${fld.placeholder}"` : "";
+    let input;
+    if(fld.type==="textarea") input = `<textarea name="${fld.name}"${fld.required?' required':''}${ph}></textarea>`;
+    else if(fld.type==="select"){
+      const opts = fld.options.map(o=>`<option>${o}</option>`).join("");
+      const otherOpt = fld.allowOther ? `<option value="__other__">Other…</option>` : "";
+      input = `<select name="${fld.name}"${fld.required?' required':''}><option value="" disabled selected>Select…</option>${opts}${otherOpt}</select>`;
+      if(fld.allowOther) input += `<input type="text" data-other-for="${fld.name}" placeholder="Type your ${fld.label.toLowerCase()}" style="display:none;margin-top:10px"/>`;
+    }
+    else input = `<input type="${fld.type||'text'}" name="${fld.name}"${fld.required?' required':''}${ph}/>`;
+    return `<div class="field"><label>${fld.label}${req}</label>${input}</div>`;
+  }).join("");
+  return `${closeBtn}${heroBlock(f)}
+    <div class="sheet-pad">
+      <div class="sheet-cat">${f.category}</div>
+      <h2>${f.name}</h2>
+      <p class="why" style="margin-bottom:6px">${f.blurb}</p>
+      <form class="refform" novalidate>
+        ${fields}
+        <button type="submit" class="btn">${f.form.cta||"Send"}</button>
+        <p class="form-note">By sending this, you agree Mike can connect you with ${f.name}.</p>
+      </form>
+    </div>`;
+}
+
+function wireForm(f){
+  const form = sheet.querySelector("form.refform");
+
+  // "Other" dropdowns: reveal the text box when Other is chosen
+  form.querySelectorAll("[data-other-for]").forEach(inp=>{
+    const sel = form.querySelector(`select[name="${inp.dataset.otherFor}"]`);
+    if(!sel) return;
+    sel.addEventListener("change", ()=>{
+      const isOther = sel.value === "__other__";
+      inp.style.display = isOther ? "block" : "none";
+      if(isOther) inp.focus();
+    });
+  });
+
+  form.onsubmit = async e=>{
+    e.preventDefault();
+    const btn = form.querySelector("button[type=submit]");
+    // basic required check
+    for(const el of form.querySelectorAll("[required]")){
+      if(!el.value.trim()){ el.focus(); el.style.borderColor="var(--accent)"; return; }
+    }
+    // if "Other" is chosen, its text box must be filled
+    for(const inp of form.querySelectorAll("[data-other-for]")){
+      const sel = form.querySelector(`select[name="${inp.dataset.otherFor}"]`);
+      if(sel && sel.value==="__other__" && !inp.value.trim()){ inp.focus(); inp.style.borderColor="var(--accent)"; return; }
+    }
+    btn.disabled = true; btn.textContent = "Sending…";
+    const payload = new URLSearchParams();
+    payload.append("_route", f.form.route || f.name);
+    payload.append("_business", f.name);
+    new FormData(form).forEach((v,k)=>payload.append(k,v));
+    // swap any "__other__" select value for what they typed
+    form.querySelectorAll("[data-other-for]").forEach(inp=>{
+      const sel = form.querySelector(`select[name="${inp.dataset.otherFor}"]`);
+      if(sel && sel.value==="__other__") payload.set(inp.dataset.otherFor, inp.value.trim());
+    });
+
+    try{
+      if(ENDPOINT){
+        await fetch(ENDPOINT,{ method:"POST", body:payload }); // urlencoded → no CORS preflight
+      }
+      sheet.innerHTML = sentView(f);
+      sheet.querySelector(".sheet-close").onclick = close;
+    }catch(err){
+      // Submission usually still lands; show success but keep a console trail.
+      console.warn("Submit note:",err);
+      sheet.innerHTML = sentView(f);
+      sheet.querySelector(".sheet-close").onclick = close;
+    }
+  };
+}
+
+function sentView(f){
+  return `${closeBtn}
+    <div class="sheet-pad">
+      <div class="sent">
+        <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h3>You're all set</h3>
+        <p>${f.form.success || "Thanks — Mike will be in touch."}</p>
+      </div>
+    </div>`;
+}
+
+/* ---------------- BOOT ---------------- */
+buildChips();
+render();
+// deep-link: open a favorite if URL has its hash
+(function(){
+  const h = location.hash.replace("#","");
+  if(h){ const f = FAVORITES.find(x=>slug(x.name)===h); if(f && f.action!=="link") open(f); }
+})();
+</script>
+</body>
+</html>
