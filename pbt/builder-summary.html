@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournament Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --pink:#FF2D78; --cyan:#00F0FF; --yellow:#FFE000; --purple:#9B5DE5;
+    --blue:#0090FF; --bg:#04060F; --surface:#080E1E; --surface2:#0D1728;
+    --white:#FFFFFF; --muted:#5A7A99; --aqua:#00F5C4; --danger:#FF4F6B;
+    --border:rgba(0,240,255,0.15); --pborder:rgba(255,45,120,0.25);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--white);
+    min-height:100vh; padding-bottom:40px;
+    background-image:radial-gradient(ellipse 100% 50% at 50% -5%,rgba(0,144,255,0.15) 0%,transparent 60%); }
+
+  nav { background:rgba(8,14,30,0.97); backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border); display:flex; align-items:center;
+    position:sticky; top:0; z-index:100; overflow-x:auto; scrollbar-width:none; min-height:52px; }
+  nav::-webkit-scrollbar { display:none; }
+  .tab { font-family:\'Russo One\',sans-serif; font-size:13px; letter-spacing:2px;
+    text-transform:uppercase; padding:14px 14px; white-space:nowrap; border:none;
+    border-bottom:3px solid transparent; cursor:pointer; color:var(--muted);
+    background:none; text-decoration:none; display:block; }
+  .tab.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+  .tab:hover:not(.active) { color:var(--white); }
+  .tab-icon { font-size:18px; padding:8px 12px; border-bottom:none !important; }
+  .nav-spacer { flex:1; }
+  .sync-pill { display:flex; align-items:center; gap:5px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:99px; padding:4px 10px;
+    font-family:'Exo 2',sans-serif; font-size:11px; font-weight:700; color:var(--muted);
+    flex-shrink:0; margin-right:8px; }
+  .sync-pill.live { color:var(--aqua); border-color:rgba(0,245,196,0.35); }
+  .sdot { width:6px; height:6px; border-radius:50%; background:var(--muted); }
+  .sync-pill.live .sdot { background:var(--aqua); box-shadow:0 0 6px var(--aqua); animation:pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  #loader { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:70vh; gap:16px; }
+  .loader-ball { font-size:48px; animation:bounce 0.8s ease-in-out infinite alternate; }
+  @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-16px)}}
+  .loader-text { font-family:\'Russo One\',sans-serif; font-size:13px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; }
+
+  #summary { padding:20px; max-width:800px; margin:0 auto; }
+
+  .hero { text-align:center; padding:28px 20px 20px; border-bottom:1px solid var(--border); margin-bottom:22px; }
+  .hero-eye { font-family:\'Russo One\',sans-serif; font-size:10px; letter-spacing:4px; color:var(--pink); text-transform:uppercase; margin-bottom:6px; }
+  .hero-title { font-family:\'Russo One\',sans-serif; font-size:36px; letter-spacing:2px;
+    background:linear-gradient(135deg,var(--cyan),var(--blue),var(--purple));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-transform:uppercase; margin-bottom:4px; }
+  .hero-sub { font-size:13px; font-weight:600; color:var(--muted); letter-spacing:1px; }
+  .mode-tag { display:inline-block; margin-top:8px; background:rgba(0,240,255,0.08);
+    border:1px solid var(--border); border-radius:6px; padding:4px 12px;
+    font-size:12px; font-weight:700; color:var(--cyan); letter-spacing:1px; }
+
+  .champbox { position:relative; border-radius:20px; padding:32px 20px; text-align:center;
+    margin-bottom:24px; overflow:hidden;
+    background:linear-gradient(135deg,rgba(255,45,120,0.15),rgba(155,93,229,0.12),rgba(0,144,255,0.08));
+    border:2px solid rgba(255,45,120,0.4);
+    animation:champPulse 2.5s ease-in-out infinite; }
+  @keyframes champPulse{0%,100%{box-shadow:0 0 40px rgba(255,45,120,0.2)}50%{box-shadow:0 0 70px rgba(255,45,120,0.4)}}
+  .champbox::before { content:''; position:absolute; inset:0;
+    background:radial-gradient(ellipse at 50% 30%,rgba(255,224,0,0.1) 0%,transparent 70%);
+    animation:ig 2s ease-in-out infinite alternate; }
+  @keyframes ig{from{opacity:0.3}to{opacity:1}}
+  .confetti-wrap { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+  .confetti-wrap span { position:absolute; top:-20px; animation:cfall linear infinite; }
+  @keyframes cfall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110%) rotate(720deg);opacity:0}}
+  .c-emoji { font-size:56px; margin-bottom:10px; position:relative; z-index:1;
+    filter:drop-shadow(0 0 24px rgba(255,224,0,0.7)); animation:tb 1.4s ease-in-out infinite; }
+  @keyframes tb{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.1)}}
+  .c-lbl { font-family:\'Russo One\',sans-serif; font-size:11px; letter-spacing:6px;
+    color:var(--yellow); margin-bottom:8px; text-transform:uppercase;
+    position:relative; z-index:1; text-shadow:0 0 20px rgba(255,224,0,0.6); }
+  .c-name { font-family:\'Russo One\',sans-serif; font-size:44px; letter-spacing:2px;
+    background:linear-gradient(135deg,var(--yellow),var(--pink),var(--cyan));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    line-height:1.2; position:relative; z-index:1; animation:shimmer 2s ease-in-out infinite alternate; }
+  @keyframes shimmer{from{filter:brightness(1)}to{filter:brightness(1.4)}}
+  .c-pts { font-family:'Exo 2',sans-serif; font-size:14px; font-weight:700;
+    color:var(--muted); margin-top:8px; letter-spacing:1px; position:relative; z-index:1; }
+
+  .stitle { font-family:\'Russo One\',sans-serif; font-size:13px; letter-spacing:3px;
+    color:var(--cyan); text-transform:uppercase; margin-bottom:12px;
+    padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .stbl { width:100%; border-collapse:collapse; margin-bottom:28px; }
+  .stbl th { font-family:\'Russo One\',sans-serif; font-size:13px; letter-spacing:2px;
+    color:var(--muted); padding:10px 8px; text-align:center;
+    border-bottom:1px solid var(--border); text-transform:uppercase; }
+  .stbl th:first-child { text-align:left; }
+  .stbl td { padding:13px 8px; text-align:center;
+    border-bottom:1px solid rgba(255,255,255,0.03); font-size:15px; font-weight:700; }
+  .stbl td:first-child { text-align:left; }
+  .stbl tr:last-child td { border-bottom:none; }
+  .snum { font-family:\'Russo One\',sans-serif; font-size:19px; color:var(--muted); margin-right:6px; }
+  .snum.gold { background:linear-gradient(135deg,var(--yellow),var(--pink));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .pname { font-family:'Exo 2',sans-serif; font-size:16px; font-weight:900; text-transform:uppercase; }
+  .ptsf { color:var(--cyan); font-weight:800; }
+  .dpos { color:var(--aqua); } .dneg { color:var(--danger); }
+
+  .games-wrap { margin-bottom:28px; }
+  .games-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media(max-width:500px){.games-grid{grid-template-columns:1fr;}}
+  .gtile { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .gtile.done { border-color:rgba(0,240,255,0.3); }
+  .gtile-lbl { font-family:\'Russo One\',sans-serif; font-size:10px; letter-spacing:2px; color:var(--cyan); text-transform:uppercase; margin-bottom:8px; }
+  .gtile-matchup { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .gtile-team { font-family:'Exo 2',sans-serif; font-size:13px; font-weight:900; text-transform:uppercase; flex:1; line-height:1.2; }
+  .gtile-team.r { text-align:right; }
+  .gscore { font-family:\'Russo One\',sans-serif; font-size:20px; white-space:nowrap; }
+  .gscore .w { color:var(--cyan); } .gscore .sep { color:var(--muted); font-size:14px; margin:0 3px; }
+  .gtile-pending { font-size:11px; color:var(--muted); font-style:italic; text-align:center; padding:4px 0; }
+  .matchup-block { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:14px; overflow:hidden; }
+  .matchup-hdr { padding:9px 14px; background:linear-gradient(90deg,rgba(0,144,255,0.1),transparent);
+    border-bottom:1px solid var(--border); font-family:\'Russo One\',sans-serif; font-size:11px;
+    letter-spacing:2px; color:var(--cyan); text-transform:uppercase;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; }
+  .mwins { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:700; color:var(--white); }
+  .mwtag { background:linear-gradient(135deg,var(--pink),var(--purple)); color:var(--white);
+    font-size:10px; padding:2px 8px; border-radius:4px; letter-spacing:1px; margin-left:6px; }
+  .matchup-game { display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.03); }
+  .matchup-game:last-child { border-bottom:none; }
+  .mg-num { font-family:\'Russo One\',sans-serif; font-size:11px; letter-spacing:1px; color:var(--muted); width:50px; }
+  .mg-teams { flex:1; font-family:'Exo 2',sans-serif; font-size:14px; font-weight:900; text-transform:uppercase; }
+  .mg-score { font-family:\'Russo One\',sans-serif; font-size:20px; }
+  .mg-score .w { color:var(--cyan); } .mg-score .sep { color:var(--muted); font-size:14px; margin:0 3px; }
+  .sum-footer { text-align:center; padding-top:16px; border-top:1px solid var(--border); margin-bottom:24px; }
+  .sum-footer p { font-size:12px; color:var(--muted); }
+
+  .save-btn-wrap { padding:0 0 20px; }
+  .save-btn-big { display:block; width:100%; padding:18px;
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    color:var(--white); border:none; border-radius:16px;
+    font-family:\'Russo One\',sans-serif; font-size:20px; letter-spacing:2px;
+    text-transform:uppercase; cursor:pointer;
+    box-shadow:0 4px 24px rgba(255,45,120,0.45); transition:all 0.2s; }
+  .save-btn-big:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(255,45,120,0.6); }
+  .save-btn-big:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="tab tab-icon" href="./#setup" style="text-decoration:none;">🏓</a>
+  <a class="tab" href="./#games">🎮 Games</a>
+  <a class="tab" href="./#standings">📊 Stats</a>
+  <button class="tab active">📋 Summary</button>
+  <a class="tab tab-icon" href="./#setup" style="text-decoration:none;">⚙</a>
+  <span class="nav-spacer"></span>
+  <div class="sync-pill" id="syncPill"><div class="sdot"></div><span id="syncLbl">···</span></div>
+</nav>
+
+<div id="loader">
+  <div class="loader-ball">🏓</div>
+  <div class="loader-text">Loading Results...</div>
+  <p id="loaderTimeout" style="display:none;font-size:12px;color:var(--muted);text-align:center;padding:0 30px;margin-top:8px;">
+    Taking longer than expected...<br>
+    <a href="./" style="color:var(--cyan);">← Back to App</a>
+  </p>
+</div>
+
+<div id="summary" style="display:none;">
+  <div id="captureArea"></div>
+  <div class="save-btn-wrap" id="saveBtnWrap" style="display:none;">
+    <button class="save-btn-big" id="saveBtn" onclick="handleSave()">📸 Save Image</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const FB = {
+  apiKey:"AIzaSyBtq_zSwn1KgALGhxoiEJQeiSaNEuH6yeo",
+  authDomain:"pickle-tourney.firebaseapp.com",
+  databaseURL:"https://pickle-tourney-default-rtdb.firebaseio.com",
+  projectId:"pickle-tourney",
+  storageBucket:"pickle-tourney.firebasestorage.app",
+  messagingSenderId:"285299739591",
+  appId:"1:285299739591:web:a1e5f34844d28e6274e7e2"
+};
+const app  = initializeApp(FB);
+const db   = getDatabase(app);
+const auth = getAuth(app);
+const toArr = d => !d?[]:Array.isArray(d)?d:Object.values(d);
+
+function addConfetti(el) {
+  const wrap = document.createElement('div');
+  wrap.className = 'confetti-wrap';
+  const items = ['🏆','⭐','✨','🎉','🌟','💥','🎊','🏅','🥇','🔥'];
+  for (let i=0; i<20; i++) {
+    const s = document.createElement('span');
+    s.textContent = items[i%items.length];
+    s.style.cssText = 'left:'+Math.random()*100+'%;font-size:'+(10+Math.random()*16)+'px;'
+      +'animation-duration:'+(1.8+Math.random()*2.5)+'s;animation-delay:'+Math.random()*3+'s;';
+    wrap.appendChild(s);
+  }
+  el.prepend(wrap);
+}
+
+// Win sound — created fresh inside first user tap
+// Use AudioContext — must be called from within a user gesture on iOS
+window._playWin = function() {
+  try {
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    var ctx = new AudioCtx();
+    var notes = [[523,0],[659,0.13],[784,0.26],[1047,0.39],[1319,0.52]];
+    notes.forEach(function(x) {
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type='sine'; o.frequency.value=x[0];
+      var t = ctx.currentTime + x[1];
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.4, t+0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, t+0.5);
+      o.start(t); o.stop(t+0.55);
+    });
+    // Keep ctx alive long enough to finish
+    setTimeout(function(){ ctx.close(); }, 2000);
+  } catch(e) { console.log('sound err', e); }
+};
+
+// Show timeout message if Firebase doesn't connect in 5s
+const loaderTimeout = setTimeout(function() {
+  document.getElementById('loaderTimeout').style.display = 'block';
+}, 5000);
+
+onAuthStateChanged(auth, function(user) {
+const uid = user ? user.uid : null;
+if (!uid) {
+  clearTimeout(loaderTimeout);
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('captureArea').innerHTML =
+    '<div style="text-align:center;padding:60px 20px;">'
+    +'<div style="font-size:48px;margin-bottom:16px;">🔒</div>'
+    +'<div style="font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Please sign in first</div>'
+    +'<a href="./" style="display:inline-block;margin-top:20px;color:var(--cyan);font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;border:1px solid var(--cyan);border-radius:8px;padding:10px 20px;">→ Go to App</a>'
+    +'</div>';
+  document.getElementById('summary').style.display = 'block';
+} else {
+  onValue(ref(db, 'users/' + uid + '/tournament'), snap => {
+  clearTimeout(loaderTimeout);
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('syncPill').classList.add('live');
+  document.getElementById('syncLbl').textContent = 'Live';
+
+  const d = snap.val();
+  if (!d?.cfg) {
+    document.getElementById('summary').style.display = 'block';
+    document.getElementById('captureArea').innerHTML =
+      '<div style="text-align:center;padding:60px 20px;">'
+      +'<div style="font-size:48px;margin-bottom:16px;">🏓</div>'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">No tournament data yet</div>'
+      +'<a href="./" style="display:inline-block;margin-top:20px;color:var(--cyan);font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;border:1px solid var(--cyan);border-radius:8px;padding:10px 20px;">→ Go to App</a>'
+      +'</div>';
+    return;
+  }
+
+  let cfg = d.cfg;
+  cfg.schedule = toArr(cfg.schedule).map(g=>({...g,t1:toArr(g.t1),t2:toArr(g.t2)}));
+  cfg.players  = toArr(cfg.players);
+  const scores = d.scores || {};
+  const today  = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const modeLabel = cfg.mode==='4p' ? '⚡ 4-Player Rotation' : '🔄 Round Robin';
+
+  // Standings
+  const stats={};
+  cfg.players.forEach(p=>{stats[p]={wins:0,ptsFor:0,ptsAgainst:0};});
+  cfg.schedule.forEach(g=>{
+    const s=scores[g.key];if(!s||s.s1===null||s.s2===null)return;
+    g.t1.forEach(p=>{stats[p].ptsFor+=s.s1;stats[p].ptsAgainst+=s.s2;if(s.s1>s.s2)stats[p].wins++;});
+    g.t2.forEach(p=>{stats[p].ptsFor+=s.s2;stats[p].ptsAgainst+=s.s1;if(s.s2>s.s1)stats[p].wins++;});
+  });
+  const list = cfg.players.map(p=>({name:p,...stats[p],diff:stats[p].ptsFor-stats[p].ptsAgainst}))
+    .sort((a,b)=>b.ptsFor-a.ptsFor||b.wins-a.wins||b.diff-a.diff);
+  const champ = list[0];
+
+  let sHtml = '<table class="stbl"><thead><tr><th>Player</th><th>W</th><th>Pts</th><th>Ag</th><th>+/-</th></tr></thead><tbody>';
+  list.forEach((p,i)=>{
+    const dc=p.diff>0?'dpos':p.diff<0?'dneg':'';
+    sHtml+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
+      +'<td>'+p.wins+'</td><td class="ptsf">'+p.ptsFor+'</td><td>'+p.ptsAgainst+'</td>'
+      +'<td class="'+dc+'">'+(p.diff>0?'+':'')+p.diff+'</td></tr>';
+  });
+  sHtml += '</tbody></table>';
+
+  // Games
+  let gHtml = '';
+  if (cfg.mode==='4p') {
+    const matchups=[...new Set(cfg.schedule.map(g=>g.matchup))].sort((a,b)=>a-b);
+    matchups.forEach(mi=>{
+      const games=cfg.schedule.filter(g=>g.matchup===mi);
+      let w1=0,w2=0;
+      games.forEach(g=>{const s=scores[g.key];if(!s||s.s1===null||s.s2===null)return;if(s.s1>s.s2)w1++;else if(s.s2>s.s1)w2++;});
+      const t1l=games[0].t1.join(' & '),t2l=games[0].t2.join(' & ');
+      const mw=w1>=2?t1l:w2>=2?t2l:null;
+      gHtml+='<div class="matchup-block"><div class="matchup-hdr"><span>Matchup '+mi+': '+t1l+' vs '+t2l+'</span>'
+        +'<span><span class="mwins">'+w1+'—'+w2+'</span>'+(mw?'<span class="mwtag">'+mw+' wins</span>':'')+'</span></div>';
+      games.forEach((g,gi)=>{
+        const s=scores[g.key]||{s1:null,s2:null},done=s.s1!==null&&s.s2!==null;
+        gHtml+='<div class="matchup-game"><div class="mg-num">Game '+(gi+1)+'</div>'
+          +'<div class="mg-teams">'+g.t1.join(' & ')+' vs '+g.t2.join(' & ')+'</div>'
+          +'<div class="mg-score">'+(done?'<span class="'+(s.s1>s.s2?'w':'')+'">'+s.s1+'</span><span class="sep">—</span><span class="'+(s.s2>s.s1?'w':'')+'">'+s.s2+'</span>':'<span style="color:var(--muted)">—</span>')+'</div></div>';
+      });
+      gHtml+='</div>';
+    });
+  } else {
+    const byRound={};
+    cfg.schedule.forEach(g=>{if(!byRound[g.round])byRound[g.round]=[];byRound[g.round].push(g);});
+    gHtml='<div class="games-grid">';
+    Object.keys(byRound).sort((a,b)=>+a-+b).forEach(r=>{
+      byRound[r].forEach(g=>{
+        const s=scores[g.key]||{s1:null,s2:null},done=s.s1!==null&&s.s2!==null;
+        gHtml+='<div class="gtile'+(done?' done':'')+'"><div class="gtile-lbl">Rd '+r+'</div>'
+          +'<div class="gtile-matchup"><div class="gtile-team">'+g.t1.join(' & ')+'</div>'
+          +(done?'<div class="gscore"><span class="'+(s.s1>s.s2?'w':'')+'">'+s.s1+'</span><span class="sep">—</span><span class="'+(s.s2>s.s1?'w':'')+'">'+s.s2+'</span></div>'
+            :'<div class="gscore" style="color:var(--muted)">—</div>')
+          +'<div class="gtile-team r">'+g.t2.join(' & ')+'</div></div>'
+          +(!done?'<div class="gtile-pending">Not played</div>':'')+'</div>';
+      });
+    });
+    gHtml+='</div>';
+  }
+
+  document.getElementById('captureArea').innerHTML =
+    '<div class="hero">'
+    +'<div class="hero-eye">🏓 Pickleball Tournament</div>'
+    +'<div class="hero-title">'+(cfg.name||'Tournament')+'</div>'
+    +'<div class="hero-sub">'+today+'</div>'
+    +'<div class="mode-tag">'+modeLabel+'</div>'
+    +'</div>'
+    +(champ&&champ.ptsFor>0?'<div class="champbox" id="champBox"><div class="c-emoji">🏆</div>'
+      +'<div class="c-lbl">Champion</div><div class="c-name">'+champ.name+'</div>'
+      +'<div class="c-pts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.diff>0?'+':'')+champ.diff+' diff</div>'
+      +'</div>':'')
+    +'<div style="margin-bottom:28px;"><div class="stitle">📊 Final Standings</div>'+sHtml+'</div>'
+    +'<div class="games-wrap"><div class="stitle">'+(cfg.mode==='4p'?'⚡ Matchup Results':'🎮 All Game Scores')+'</div>'+gHtml+'</div>'
+    +'<div class="sum-footer"><p>🏓 picklebuilder.netlify.app</p></div>';
+
+  document.getElementById('summary').style.display = 'block';
+  document.getElementById('saveBtnWrap').style.display = 'block';
+
+  if (champ && champ.ptsFor>0) {
+    const cb = document.getElementById('champBox');
+    if (cb) addConfetti(cb);
+    // Play on first user interaction — required by iOS
+    let played = false;
+    function tryPlay(e) {
+      if (played) return;
+      played = true;
+      if (window._playWin) window._playWin();
+    }
+    document.addEventListener('touchstart', tryPlay, {once:true, passive:true});
+    document.addEventListener('click', tryPlay, {once:true});
+  }
+    }, {onlyOnce:true}); // end onValue
+  } // end uid check
+}); // end onAuthStateChanged
+
+window._saveImage = async function() {
+  const btn = document.getElementById('saveBtn');
+  btn.disabled=true; btn.textContent='⏳ Capturing...';
+  try {
+    const el = document.getElementById('captureArea');
+    const canvas = await html2canvas(el, {
+      backgroundColor:'#04060F', scale:2, useCORS:true, logging:false,
+      scrollY:0, height:el.scrollHeight,
+      ignoreElements: e => e.classList?.contains('confetti-wrap')
+    });
+    canvas.toBlob(async function(blob) {
+      const file = new File([blob],'tournament-summary.jpg',{type:'image/jpeg'});
+      if (navigator.canShare && navigator.canShare({files:[file]})) {
+        try { await navigator.share({files:[file],title:'Tournament Summary'}); }
+        catch(e) { if(e.name!=='AbortError') fallbackDownload(blob); }
+      } else { fallbackDownload(blob); }
+      btn.disabled=false; btn.textContent='📸 Save Image';
+    }, 'image/jpeg', 0.93);
+  } catch(e) {
+    alert('Could not capture — try a screenshot!');
+    btn.disabled=false; btn.textContent='📸 Save Image';
+  }
+};
+
+function fallbackDownload(blob) {
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download='tournament-summary.jpg'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+</script>
+
+<script>
+function handleSave() {
+  const btn = document.getElementById('saveBtn');
+  btn.disabled=true; btn.textContent='⏳ Capturing...';
+  if (window._saveImage) window._saveImage();
+}
+</script>
+</body>
+</html>

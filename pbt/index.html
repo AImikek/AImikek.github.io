@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pickleball Tournament Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:#FF2D78; --cyan:#00F0FF; --yellow:#FFE000; --purple:#9B5DE5;
+    --blue:#0090FF; --bg:#04060F; --surface:#080E1E; --surface2:#0D1728;
+    --white:#FFFFFF; --muted:#5A7A99; --aqua:#00F5C4; --danger:#FF4F6B;
+    --border:rgba(0,240,255,0.15); --pborder:rgba(255,45,120,0.25);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--white);
+    min-height:100vh; padding-bottom:80px;
+    background-image:radial-gradient(ellipse 100% 50% at 50% -5%,rgba(0,144,255,0.15) 0%,transparent 60%); }
+
+  nav { background:rgba(8,14,30,0.97); backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border); display:flex; align-items:center;
+    position:sticky; top:0; z-index:200; overflow-x:auto; scrollbar-width:none; min-height:52px; }
+  nav::-webkit-scrollbar { display:none; }
+  .tab { font-family:'Russo One',sans-serif; font-size:13px; letter-spacing:2px;
+    text-transform:uppercase; padding:14px 14px; white-space:nowrap; border:none;
+    border-bottom:3px solid transparent; cursor:pointer; color:var(--muted);
+    transition:all 0.2s; background:none; flex-shrink:0; text-decoration:none; display:block; }
+  .tab.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+  .tab:hover:not(.active) { color:var(--white); }
+  .tab-home { font-size:20px; padding:8px 12px; border-bottom:none !important; }
+  .tab-settings { font-size:18px; padding:8px 12px; border-bottom:none !important; }
+  .nav-spacer { flex:1; }
+  .sync-pill { display:flex; align-items:center; gap:5px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:99px; padding:4px 10px;
+    font-family:'Exo 2',sans-serif; font-size:11px; font-weight:700; color:var(--muted);
+    flex-shrink:0; margin-right:8px; }
+  .sync-pill.live { color:var(--aqua); border-color:rgba(0,245,196,0.35); }
+  .sdot { width:6px; height:6px; border-radius:50%; background:var(--muted); }
+  .sync-pill.live .sdot { background:var(--aqua); box-shadow:0 0 6px var(--aqua); animation:pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  .settings-menu { position:fixed; inset:0; z-index:400; }
+  .settings-menu.hidden { display:none; }
+  .settings-overlay { position:absolute; inset:0; background:rgba(4,6,15,0.7); backdrop-filter:blur(4px); }
+  .settings-panel { position:absolute; top:54px; right:8px; background:var(--surface);
+    border:1px solid var(--border); border-radius:16px; padding:8px; min-width:230px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.6); animation:slideDown 0.15s ease-out; }
+  @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .settings-title { font-family:'Russo One',sans-serif; font-size:11px; letter-spacing:3px;
+    color:var(--muted); text-transform:uppercase; padding:8px 12px 10px; }
+  .settings-item { display:block; width:100%; text-align:left; padding:13px 14px;
+    background:transparent; border:none; border-radius:10px; font-family:'DM Sans',sans-serif;
+    font-size:15px; font-weight:600; color:var(--white); cursor:pointer;
+    transition:background 0.15s; text-decoration:none; }
+  .settings-item:hover { background:rgba(255,255,255,0.07); }
+  .settings-item.danger { color:var(--danger); }
+  .settings-item.fun { color:var(--aqua); }
+  .settings-item.fb { color:var(--cyan); }
+  .settings-divider { height:1px; background:var(--border); margin:4px 8px; }
+
+  .page { display:none; padding:16px; max-width:860px; margin:0 auto; }
+  .page.active { display:block; }
+
+  .overlay { position:fixed; left:0; right:0; bottom:0; top:52px;
+    background:rgba(4,6,15,0.94); backdrop-filter:blur(8px); z-index:300;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:20px; overflow-y:auto; }
+  .overlay.hidden { display:none; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:28px 22px; width:100%; max-width:520px; margin:auto; }
+  .mtitle { font-family:'Russo One',sans-serif; font-size:20px; letter-spacing:2px;
+    background:linear-gradient(135deg,var(--cyan),var(--blue)); -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent; text-transform:uppercase; margin-bottom:4px; }
+  .msub { font-size:13px; color:var(--muted); margin-bottom:22px; font-weight:600; }
+  .flabel { font-family:'Russo One',sans-serif; font-size:11px; letter-spacing:2px;
+    color:var(--cyan); text-transform:uppercase; margin-bottom:7px; display:block; }
+  .finput { width:100%; background:var(--surface2); border:2px solid var(--border);
+    border-radius:10px; color:var(--white); font-family:'DM Sans',sans-serif;
+    font-size:15px; font-weight:600; padding:11px 14px; outline:none;
+    transition:border-color 0.2s; margin-bottom:16px; }
+  .finput:focus { border-color:var(--cyan); }
+  .finput::placeholder { color:var(--muted); }
+  .mtoggle { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .mcard { background:var(--surface2); border:2px solid var(--border); border-radius:12px;
+    padding:14px 10px; cursor:pointer; transition:all 0.2s; text-align:center; }
+  .mcard.active { border-color:var(--cyan); background:rgba(0,240,255,0.07); }
+  .micon { font-size:26px; margin-bottom:6px; }
+  .mname { font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:1px;
+    color:var(--white); text-transform:uppercase; }
+  .mdesc { font-size:11px; color:var(--muted); margin-top:4px; font-weight:600; line-height:1.4; }
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+  .pwrap { position:relative; }
+  .pinput { background:var(--surface2); border:2px solid var(--border); border-radius:10px;
+    color:var(--white); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+    padding:11px 12px; outline:none; transition:border-color 0.2s; width:100%; }
+  .pinput:focus { border-color:var(--pink); }
+  .pinput::placeholder { color:var(--muted); font-weight:500; }
+  .prmbtn { position:absolute; top:-6px; right:-6px; width:20px; height:20px;
+    border-radius:50%; background:var(--danger); border:none; color:white;
+    font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .addbtn { grid-column:1/-1; background:transparent; border:1px dashed rgba(0,240,255,0.22);
+    color:var(--muted); border-radius:10px; padding:10px; cursor:pointer;
+    font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:1px;
+    text-transform:uppercase; transition:all 0.2s; width:100%; }
+  .addbtn:hover { border-color:var(--cyan); color:var(--cyan); }
+  .startbtn { width:100%; padding:16px; background:linear-gradient(135deg,var(--pink),var(--purple));
+    color:var(--white); border:none; border-radius:12px; font-family:'Russo One',sans-serif;
+    font-size:17px; letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+    transition:all 0.2s; box-shadow:0 4px 20px rgba(255,45,120,0.35); margin-top:16px; }
+  .startbtn:hover { transform:translateY(-1px); }
+  .startbtn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+
+  .rhdr { font-family:'Russo One',sans-serif; font-size:13px; letter-spacing:4px;
+    color:var(--muted); text-transform:uppercase; padding:8px 0 5px;
+    border-bottom:1px solid var(--border); margin-bottom:12px; margin-top:8px; }
+  .gcard { background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    margin-bottom:12px; overflow:hidden; }
+  .gcard.done { border-color:rgba(0,240,255,0.35); }
+  .ghdr { display:flex; justify-content:space-between; align-items:center; padding:9px 14px;
+    background:linear-gradient(90deg,rgba(0,144,255,0.1),transparent); border-bottom:1px solid var(--border); }
+  .glbl { font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:2px;
+    color:var(--cyan); text-transform:uppercase; }
+  .gbody { padding:14px; }
+  .matchup { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .team { flex:1; font-family:'Exo 2',sans-serif; font-size:16px; font-weight:900;
+    line-height:1.2; text-transform:uppercase; }
+  .team.r { text-align:right; }
+  .vs { font-family:'Russo One',sans-serif; font-size:11px; letter-spacing:2px; color:var(--muted); }
+  .wtag { display:inline-block; font-family:'Russo One',sans-serif; font-size:9px;
+    letter-spacing:1px; background:linear-gradient(135deg,var(--pink),var(--purple));
+    color:var(--white); padding:2px 7px; border-radius:4px; text-transform:uppercase;
+    margin-left:4px; vertical-align:middle; }
+  .srow { display:flex; align-items:center; gap:12px; justify-content:center; }
+  .sinput { width:84px; height:62px; background:var(--surface2); border:2px solid var(--border);
+    border-radius:12px; color:var(--white); font-family:'Russo One',sans-serif; font-size:36px;
+    text-align:center; outline:none; transition:border-color 0.2s; -moz-appearance:textfield; }
+  .sinput::-webkit-inner-spin-button,.sinput::-webkit-outer-spin-button { -webkit-appearance:none; }
+  .sinput:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,240,255,0.12); }
+  .sdash { color:var(--muted); font-size:24px; font-family:'Russo One',sans-serif; }
+  .savebtn { display:block; width:100%; margin-top:14px; padding:15px;
+    background:linear-gradient(135deg,var(--pink),var(--purple)); color:var(--white);
+    border:none; border-radius:12px; font-family:'Russo One',sans-serif; font-size:18px;
+    letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+    box-shadow:0 4px 16px rgba(255,45,120,0.3); transition:all 0.2s; }
+  .savebtn:hover { opacity:0.9; }
+  .savebtn.saved { background:var(--surface2); color:var(--cyan);
+    border:1px solid rgba(0,240,255,0.3); box-shadow:none; }
+  .editbtn { display:block; width:100%; margin-top:8px; padding:12px; background:transparent;
+    border:1px solid rgba(0,240,255,0.15); color:var(--muted); border-radius:12px;
+    font-family:'Russo One',sans-serif; font-size:14px; letter-spacing:2px;
+    text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+  .editbtn:hover { border-color:var(--cyan); color:var(--cyan); }
+  .addrbtn { display:block; width:100%; padding:14px; background:transparent;
+    border:2px dashed rgba(0,240,255,0.2); color:var(--cyan); border-radius:14px;
+    font-family:'Russo One',sans-serif; font-size:14px; letter-spacing:2px;
+    text-transform:uppercase; cursor:pointer; transition:all 0.2s; margin-top:8px; }
+  .addrbtn:hover { border-color:var(--cyan); background:rgba(0,240,255,0.05); }
+  .infopill { display:inline-block; background:rgba(0,240,255,0.07); border:1px solid var(--border);
+    border-radius:8px; padding:10px 16px; font-size:15px; font-weight:600;
+    color:var(--muted); margin-bottom:16px; }
+  .infopill strong { color:var(--cyan); }
+  .stbl { width:100%; border-collapse:collapse; }
+  .stbl th { font-family:'Russo One',sans-serif; font-size:13px; letter-spacing:2px;
+    color:var(--muted); padding:11px 8px; text-align:center;
+    border-bottom:1px solid var(--border); text-transform:uppercase; }
+  .stbl th:first-child { text-align:left; }
+  .stbl td { padding:14px 8px; text-align:center;
+    border-bottom:1px solid rgba(255,255,255,0.03); font-size:16px; font-weight:700; }
+  .stbl td:first-child { text-align:left; }
+  .stbl tr:last-child td { border-bottom:none; }
+  .stbl tbody tr:hover td { background:rgba(0,240,255,0.03); }
+  .snum { font-family:'Russo One',sans-serif; font-size:20px; color:var(--muted); margin-right:8px; }
+  .snum.gold { background:linear-gradient(135deg,var(--yellow),var(--pink));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .pname { font-family:'Exo 2',sans-serif; font-size:17px; font-weight:900; text-transform:uppercase; }
+  .ptsf { color:var(--cyan); font-weight:800; }
+  .dpos { color:var(--aqua); } .dneg { color:var(--danger); }
+  .champbox { background:linear-gradient(135deg,rgba(255,45,120,0.12),rgba(155,93,229,0.1));
+    border:1px solid var(--pborder); border-radius:20px; padding:28px 20px;
+    text-align:center; margin-bottom:24px; }
+  .clbl { font-family:'Russo One',sans-serif; font-size:11px; letter-spacing:5px;
+    color:var(--yellow); margin-bottom:8px; text-transform:uppercase; }
+  .cname { font-family:'Russo One',sans-serif; font-size:34px; letter-spacing:2px;
+    background:linear-gradient(135deg,var(--yellow),var(--pink),var(--cyan));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .cpts { font-family:'Exo 2',sans-serif; font-size:14px; font-weight:700;
+    color:var(--muted); margin-top:6px; }
+  .tieinfo { margin-top:14px; font-size:12px; color:var(--muted); font-weight:600;
+    padding:10px 14px; background:var(--surface); border-radius:10px; border:1px solid var(--border); }
+  .empty { text-align:center; padding:60px 20px; }
+
+  /* ── RANK TOGGLE ── */
+  .rank-toggle { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  .rtbtn { flex:1; min-width:80px; padding:9px 6px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:10px; font-family:'Russo One',sans-serif;
+    font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase;
+    cursor:pointer; transition:all 0.2s; text-align:center; }
+  .rtbtn.active { background:rgba(0,240,255,0.1); border-color:var(--cyan); color:var(--cyan); }
+  .rtbtn.auto { border-color:rgba(255,224,0,0.3); color:var(--yellow); background:rgba(255,224,0,0.05); }
+
+  /* ── GAME CONTROLS ── */
+  .delbtn { display:block; width:100%; margin-top:6px; padding:10px; background:transparent;
+    border:1px solid rgba(255,79,107,0.2); color:rgba(255,79,107,0.5); border-radius:12px;
+    font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:2px;
+    text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+  .delbtn:hover { border-color:var(--danger); color:var(--danger); background:rgba(255,79,107,0.05); }
+  .gcard.cancelled { opacity:0.35; border-color:rgba(255,255,255,0.06); }
+  .cancelled-lbl { font-family:'Russo One',sans-serif; font-size:10px; letter-spacing:2px;
+    color:var(--danger); text-transform:uppercase; text-align:center; padding:8px 0 4px; }
+
+  /* ── ADD GAME OVERLAY ── */
+  #addGameOverlay { position:fixed; inset:0; z-index:450; background:rgba(4,6,15,0.95);
+    backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
+  #addGameOverlay.hidden { display:none; }
+  .team-picker { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+  .player-chip { padding:10px 12px; background:var(--surface2); border:2px solid var(--border);
+    border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:700;
+    cursor:pointer; text-align:center; transition:all 0.2s; color:var(--muted); }
+  .player-chip.t1 { border-color:var(--cyan); color:var(--cyan); background:rgba(0,240,255,0.07); }
+  .player-chip.t2 { border-color:var(--pink); color:var(--pink); background:rgba(255,45,120,0.07); }
+  .team-labels { display:flex; gap:10px; margin-bottom:8px; }
+  .tlbl { flex:1; font-family:'Russo One',sans-serif; font-size:10px; letter-spacing:2px;
+    text-transform:uppercase; text-align:center; }
+  .tlbl.c { color:var(--cyan); } .tlbl.p { color:var(--pink); }
+
+  /* ── GENDER CARDS ── */
+  .gender-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .gender-card { background:var(--surface2); border:2px solid var(--border); border-radius:14px;
+    padding:18px 10px; cursor:pointer; transition:all 0.2s; text-align:center; }
+  .gender-card.active { border-color:var(--pink); background:rgba(255,45,120,0.08); }
+  .gender-icon { font-size:32px; margin-bottom:6px; }
+  .gender-label { font-family:'Russo One',sans-serif; font-size:13px; letter-spacing:2px;
+    color:var(--white); text-transform:uppercase; }
+
+  /* ── PROFILE ONBOARDING OVERLAY ── */
+  #profileOverlay { position:fixed; inset:0; z-index:600; background:var(--bg);
+    background-image:radial-gradient(ellipse 100% 60% at 50% 0%,rgba(155,93,229,0.2) 0%,transparent 60%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:32px 24px; overflow-y:auto; }
+  #profileOverlay.hidden { display:none; }
+
+  /* ── PROFILE EDIT PAGE ── */
+  #pageProfile { display:none; position:fixed; inset:0; z-index:350; background:var(--bg);
+    overflow-y:auto; padding:16px 16px 40px; }
+  #pageProfile .profile-inner { max-width:520px; margin:0 auto; padding-top:8px; }
+  .profile-avatar { width:80px; height:80px; border-radius:50%;
+    background:linear-gradient(135deg,var(--pink),var(--purple));
+    display:flex; align-items:center; justify-content:center;
+    font-size:36px; margin:0 auto 16px; }
+  .profile-phone { font-size:13px; color:var(--muted); font-weight:600; text-align:center; margin-bottom:24px; }
+
+  /* ── LOGIN SCREEN ── */
+  #loginScreen {
+    position:fixed; inset:0; z-index:500;
+    background:var(--bg);
+    background-image:radial-gradient(ellipse 100% 60% at 50% 0%,rgba(0,144,255,0.2) 0%,transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 20%,rgba(155,93,229,0.15) 0%,transparent 50%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:40px 24px; text-align:center;
+  }
+  .login-logo { font-size:72px; margin-bottom:16px; filter:drop-shadow(0 0 24px rgba(0,240,255,0.4)); animation:tb 2s ease-in-out infinite; }
+  @keyframes tb{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .login-title { font-family:'Russo One',sans-serif; font-size:36px; letter-spacing:2px;
+    background:linear-gradient(135deg,var(--cyan),var(--blue),var(--purple));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    text-transform:uppercase; margin-bottom:8px; }
+  .login-sub { font-size:16px; font-weight:600; color:var(--muted); margin-bottom:48px; letter-spacing:0.5px; }
+  .google-btn {
+    display:flex; align-items:center; gap:14px; justify-content:center;
+    background:var(--white); color:#1a1a1a; border:none; border-radius:14px;
+    padding:16px 32px; font-family:'DM Sans',sans-serif; font-size:17px; font-weight:700;
+    cursor:pointer; transition:all 0.2s; width:100%; max-width:320px;
+    box-shadow:0 4px 20px rgba(255,255,255,0.15);
+  }
+  .google-btn:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(255,255,255,0.25); }
+  .google-btn:active { transform:scale(0.98); }
+  .google-icon { width:24px; height:24px; flex-shrink:0; }
+  .login-footer { margin-top:32px; font-size:12px; color:var(--muted); max-width:280px; line-height:1.6; }
+  .auth-divider { display:flex; align-items:center; gap:10px; margin:18px 0 14px; color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+  .auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+  .alt-auth-btn { width:100%; padding:14px 16px; border-radius:14px; border:1px solid var(--border);
+    background:var(--surface); color:var(--white); font-family:'DM Sans',sans-serif; font-size:16px; font-weight:700;
+    cursor:pointer; margin-top:10px; }
+  .alt-auth-btn:hover { background:var(--surface2); }
+  .alt-auth-btn:disabled { opacity:0.55; cursor:not-allowed; }
+  .tiny-help-btn { width:100%; margin-top:10px; padding:10px; background:transparent; border:1px solid var(--border);
+    color:var(--muted); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
+  .empty-icon { font-size:48px; margin-bottom:12px; }
+  .empty-t { font-family:'Russo One',sans-serif; font-size:15px; letter-spacing:2px;
+    color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+  .empty-s { font-size:13px; color:var(--muted); font-weight:500; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" style="display:none;">
+  <div class="login-logo">🏓</div>
+  <div class="login-title">PB Tourney</div>
+  <div class="login-sub">Enter your phone number to get started</div>
+
+  <!-- Step 1: Phone number -->
+  <div id="stepPhone" style="width:100%;max-width:320px;">
+    <input id="phoneInput" type="tel" placeholder="(305) 555-0100"
+      autocomplete="tel"
+      name="phone"
+      inputmode="tel"
+      style="width:100%;background:var(--surface2);border:2px solid var(--border);
+      border-radius:14px;color:var(--white);font-family:'DM Sans',sans-serif;
+      font-size:22px;font-weight:600;padding:16px 18px;outline:none;
+      margin-bottom:14px;text-align:center;letter-spacing:2px;"
+      onkeydown="if(event.key==='Enter')sendCode()">
+    <button id="sendCodeBtn" onclick="sendCode()"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
+      color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;
+      font-size:18px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+      box-shadow:0 4px 20px rgba(255,45,120,0.4);transition:all 0.2s;">
+      Send Code 📱
+    </button>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6;">
+      US numbers auto-formatted. Include country code for international.<br>e.g. +44 for UK
+    </div>
+  </div>
+
+  <!-- Step 2: Verify code -->
+  <div id="stepCode" style="display:none;width:100%;max-width:320px;">
+    <div style="font-size:14px;font-weight:600;color:var(--muted);text-align:center;margin-bottom:16px;">
+      Enter the 6-digit code sent to your phone
+    </div>
+    <input id="codeInput" type="number" placeholder="000000" inputmode="numeric"
+      style="width:100%;background:var(--surface2);border:2px solid var(--border);
+      border-radius:14px;color:var(--white);font-family:'Russo One',sans-serif;
+      font-size:32px;font-weight:700;padding:16px 18px;outline:none;
+      margin-bottom:14px;text-align:center;letter-spacing:8px;
+      -moz-appearance:textfield;"
+      onkeydown="if(event.key==='Enter')verifyCode()">
+    <button id="verifyBtn" onclick="verifyCode()"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
+      color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;
+      font-size:18px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+      box-shadow:0 4px 20px rgba(255,45,120,0.4);margin-bottom:10px;">
+      Verify & Play 🏓
+    </button>
+    <button onclick="editPhone()"
+      style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);
+      color:var(--muted);border-radius:12px;font-family:'DM Sans',sans-serif;
+      font-size:14px;font-weight:600;cursor:pointer;">
+      ← Change number
+    </button>
+  </div>
+
+  <!-- invisible reCAPTCHA container -->
+  <div id="recaptchaContainer"></div>
+
+  <div class="auth-divider">or</div>
+  <button class="alt-auth-btn" id="googleLoginBtn" onclick="signInGoogle()">Continue with Google 🔵</button>
+
+  <button class="tiny-help-btn" onclick="window.location.reload()">Refresh if stuck</button>
+  <div class="login-footer">Use phone number or Google to sign in. Standard SMS rates may apply.</div>
+</div>
+
+<!-- ADD GAME OVERLAY -->
+<div id="addGameOverlay" class="hidden">
+  <div class="modal" style="max-width:460px;">
+    <div class="mtitle">+ Add Game</div>
+    <div class="msub">Pick 2 players per team, then enter the score</div>
+
+    <div class="team-labels">
+      <div class="tlbl c">Team 1 (cyan)</div>
+      <div class="tlbl p">Team 2 (pink)</div>
+    </div>
+    <div class="team-picker" id="agPlayerPicker"></div>
+
+    <div id="agNewPlayerWrap" style="margin-bottom:14px;">
+      <input class="finput" id="agNewName" placeholder="+ Type new player name & press Add"
+        style="margin-bottom:6px;" onkeydown="if(event.key==='Enter')addNewPlayerToGame()">
+      <button onclick="addNewPlayerToGame()" style="width:100%;padding:10px;background:transparent;
+        border:1px dashed rgba(0,240,255,0.25);color:var(--muted);border-radius:10px;
+        font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+        Add New Player
+      </button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <div style="flex:1;text-align:center;">
+        <label class="flabel" style="color:var(--cyan);">Team 1 Score</label>
+        <input class="sinput" type="number" inputmode="numeric" id="agS1" placeholder="0" style="width:100%;">
+      </div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:6px;color:var(--muted);font-size:24px;font-family:'Russo One',sans-serif;">—</div>
+      <div style="flex:1;text-align:center;">
+        <label class="flabel" style="color:var(--pink);">Team 2 Score</label>
+        <input class="sinput" type="number" inputmode="numeric" id="agS2" placeholder="0" style="width:100%;">
+      </div>
+    </div>
+
+    <div id="agTeamPreview" style="text-align:center;font-size:13px;color:var(--muted);
+      font-weight:600;margin-bottom:14px;min-height:20px;"></div>
+
+    <button onclick="saveAddedGame()"
+      style="width:100%;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));
+      color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;
+      font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+      box-shadow:0 4px 16px rgba(255,45,120,0.3);margin-bottom:10px;">
+      ✓ Save Game
+    </button>
+    <button onclick="document.getElementById('addGameOverlay').classList.add('hidden')"
+      style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);
+      color:var(--muted);border-radius:12px;font-family:'DM Sans',sans-serif;
+      font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+  </div>
+</div>
+
+<!-- PROFILE ONBOARDING — shown once after first login -->
+<div id="profileOverlay" class="hidden">
+  <div style="width:100%;max-width:360px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:56px;margin-bottom:10px;">👤</div>
+      <div class="login-title" style="font-size:26px;">One quick thing</div>
+      <div class="login-sub" style="margin-bottom:0;">Tell us a little about yourself</div>
+    </div>
+    <label class="flabel">Your Name</label>
+    <input class="finput" id="profileNameInput" placeholder="First name or nickname" maxlength="30"
+      style="font-size:18px;font-weight:700;text-align:center;">
+    <label class="flabel">I am</label>
+    <div class="gender-row">
+      <div class="gender-card" id="gMale" onclick="selectGender('M')">
+        <div class="gender-icon">👨</div><div class="gender-label">Male</div>
+      </div>
+      <div class="gender-card" id="gFemale" onclick="selectGender('F')">
+        <div class="gender-icon">👩</div><div class="gender-label">Female</div>
+      </div>
+    </div>
+    <button onclick="saveProfile()"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
+      color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;
+      font-size:18px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+      box-shadow:0 4px 20px rgba(255,45,120,0.4);">Let's Play 🏓</button>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center;">
+      You can update this anytime in your profile
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE EDIT PAGE -->
+<div id="pageProfile">
+<div class="profile-inner">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-top:4px;">
+    <button onclick="closeProfile()"
+      style="background:transparent;border:1px solid var(--border);color:var(--muted);
+      border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;
+      font-weight:600;cursor:pointer;">← Back</button>
+    <div style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:2px;
+      color:var(--white);text-transform:uppercase;">My Profile</div>
+  </div>
+  <div class="profile-avatar" id="profileAvatarDisplay">👤</div>
+  <div class="profile-phone" id="profilePhoneDisplay"></div>
+  <label class="flabel">Name</label>
+  <input class="finput" id="editName" placeholder="Your name" maxlength="30">
+  <label class="flabel">I am</label>
+  <div class="gender-row">
+    <div class="gender-card" id="editGMale" onclick="editSelectGender('M')">
+      <div class="gender-icon">👨</div><div class="gender-label">Male</div>
+    </div>
+    <div class="gender-card" id="editGFemale" onclick="editSelectGender('F')">
+      <div class="gender-icon">👩</div><div class="gender-label">Female</div>
+    </div>
+  </div>
+  <label class="flabel">Email</label>
+  <input class="finput" id="editEmail" type="email" placeholder="you@email.com" inputmode="email" autocomplete="email">
+  <label class="flabel">City</label>
+  <input class="finput" id="editCity" placeholder="e.g. Fort Lauderdale" maxlength="40">
+  <label class="flabel">Date of Birth</label>
+  <input class="finput" id="editDob" type="date" style="color-scheme:dark;">
+  <div style="font-size:12px;color:var(--muted);margin-top:-10px;margin-bottom:16px;font-weight:600;">
+    Used to calculate your age for leaderboards
+  </div>
+  <button onclick="saveProfileEdits()"
+    style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
+    color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;
+    font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+    box-shadow:0 4px 20px rgba(255,45,120,0.35);">💾 Save Profile</button>
+  <div id="profileSavedMsg" style="display:none;text-align:center;margin-top:14px;
+    font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;
+    color:var(--aqua);text-transform:uppercase;">✓ Profile Saved!</div>
+</div>
+</div>
+
+<!-- iOS Audio Unlock — fires on very first touch -->
+<script>
+var _audioCtx = null;
+function _unlockAudio() {
+  if (_audioCtx) return;
+  try {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var buf = _audioCtx.createBuffer(1,1,22050);
+    var src = _audioCtx.createBufferSource();
+    src.buffer = buf; src.connect(_audioCtx.destination);
+    src.start(0);
+    _audioCtx.resume();
+  } catch(e) {}
+}
+document.addEventListener('touchstart', _unlockAudio, true);
+document.addEventListener('touchend',   _unlockAudio, true);
+</script>
+
+<nav>
+  <button class="tab tab-home" id="navHome" onclick="openSetup()" style="display:none;">🏓</button>
+  <button class="tab" id="tabGames" onclick="document.getElementById('setupOverlay').classList.add('hidden');showPage('games')" style="display:none;">
+    🎮 Games <span id="gamesBadge" style="display:none;background:var(--pink);color:white;font-size:10px;border-radius:99px;padding:1px 6px;margin-left:3px;font-family:'DM Sans',sans-serif;font-weight:700;vertical-align:middle;"></span>
+  </button>
+  <button class="tab" id="tabStats" onclick="document.getElementById('setupOverlay').classList.add('hidden');showPage('standings')" style="display:none;">📊 Stats</button>
+  <a class="tab" id="tabSummary" href="builder-summary.html" style="display:none;text-decoration:none;">📋 Summary</a>
+  <a class="tab" id="tabFeedback" href="https://forms.gle/XK7gzGYRb7wjTvTr7" target="_blank" style="display:none;text-decoration:none;color:var(--aqua);">💬 Feedback</a>
+  <span class="nav-spacer"></span>
+  <div class="sync-pill" id="syncPill"><div class="sdot"></div><span id="syncLbl">···</span></div>
+  <button class="tab tab-settings" id="navSettings" onclick="openSettings()" style="display:none;">⚙</button>
+</nav>
+
+<div id="settingsMenu" class="settings-menu hidden">
+  <div class="settings-overlay" onclick="closeSettings()"></div>
+  <div class="settings-panel">
+    <div class="settings-title">⚙ Options</div>
+    <button class="settings-item" onclick="closeSettings();openProfile();">👤 My Profile</button>
+    <div class="settings-divider"></div>
+    <button class="settings-item" onclick="closeSettings();openSetup();">🏠 New Tournament</button>
+    <button class="settings-item" onclick="closeSettings();openAddGame();">➕ Add Game</button>
+    <button class="settings-item" onclick="closeSettings();document.getElementById('setupOverlay').classList.add('hidden');showPage('games');">🎮 Edit Scores</button>
+    <button class="settings-item danger" onclick="closeSettings();resetScores();">🔄 Reset Scores</button>
+    <div class="settings-divider"></div>
+    <button class="settings-item fun" id="soundBtn" onclick="playFunSound();">🎵 Play Fun Sound</button>
+    <div class="settings-divider"></div>
+    <a class="settings-item fb" href="https://forms.gle/XK7gzGYRb7wjTvTr7" target="_blank" onclick="closeSettings();">💬 Give Feedback</a>
+    <div class="settings-divider"></div>
+    <button class="settings-item" id="userInfo" style="color:var(--muted);font-size:13px;cursor:default;"></button>
+    <button class="settings-item danger" onclick="closeSettings();doSignOut();">🚪 Sign Out</button>
+  </div>
+</div>
+
+<div class="page active" id="pageGames"></div>
+<div class="page" id="pageStandings"></div>
+
+<div class="overlay hidden" id="setupOverlay">
+  <div class="modal">
+    <div class="mtitle">🏓 Tournament Setup</div>
+    <div class="msub">Configure players and format — schedule auto-generates</div>
+    <label class="flabel">Tournament Name</label>
+    <input class="finput" id="tName" placeholder="e.g. Sunday Dinko" maxlength="40">
+    <label class="flabel">Format</label>
+    <div class="mtoggle">
+      <div class="mcard active" id="mRR" onclick="selMode('rr')">
+        <div class="micon">🔄</div><div class="mname">Round Robin</div>
+        <div class="mdesc">8+ players · Everyone partners once · Standings by points</div>
+      </div>
+      <div class="mcard" id="m4P" onclick="selMode('4p')">
+        <div class="micon">⚡</div><div class="mname">4-Player Rotation</div>
+        <div class="mdesc">Best of 3 per matchup · Partners rotate · Points wins</div>
+      </div>
+    </div>
+
+    <label class="flabel">Players <span id="pcnt" style="color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0;font-size:11px;text-transform:none;"></span></label>
+    <div class="pgrid" id="pgrid"></div>
+    <div class="pgrid"><button class="addbtn" onclick="addPF()">+ Add Player</button></div>
+    <button class="startbtn" id="startBtn" onclick="doStart()">🚀 Start Tournament</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  onAuthStateChanged,
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const FB = {
+  apiKey:"AIzaSyBtq_zSwn1KgALGhxoiEJQeiSaNEuH6yeo",
+  authDomain:"pickle-tourney.firebaseapp.com",
+  databaseURL:"https://pickle-tourney-default-rtdb.firebaseio.com",
+  projectId:"pickle-tourney",
+  storageBucket:"pickle-tourney.firebasestorage.app",
+  messagingSenderId:"285299739591",
+  appId:"1:285299739591:web:a1e5f34844d28e6274e7e2"
+};
+const app  = initializeApp(FB);
+const db   = getDatabase(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+
+let cfg=null, scores={}, curPage='games', selMode_='rr', skip=false, firstLoad=true;
+let currentUser = null;
+let confirmResult = null;
+let _tournamentUnsub = null;
+let userProfile = {};
+let selectedGender = null;
+let editSelectedGender = null;
+const toArr = d => !d?[]:Array.isArray(d)?d:Object.values(d);
+const push  = () => { if(!currentUser)return; skip=true; set(ref(db,'users/'+currentUser.uid+'/tournament'),{cfg,scores}); };
+
+const startHash = window.location.hash.replace('#','');
+if (startHash) window.location.hash = '';
+
+document.getElementById('pageGames').style.display = 'block';
+document.getElementById('pageStandings').style.display = 'none';
+
+// ── AUTH STATE ──
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById('loginScreen').style.display = 'none';
+    bootApp();
+  } else {
+    currentUser = null;
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('setupOverlay').classList.add('hidden');
+    cfg = null; scores = {};
+    if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
+    updateNav();
+  }
+});
+
+function bootApp() {
+  const uid = currentUser.uid;
+  firstLoad = true;
+  if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
+
+  // Load profile — show onboarding if first time
+  onValue(ref(db, 'users/' + uid + '/profile'), snap => {
+    const wasNew = !userProfile.name;
+    userProfile = snap.val() || {};
+    updateProfileDisplay();
+    if (wasNew && !userProfile.name) {
+      document.getElementById('profileOverlay').classList.remove('hidden');
+    }
+  });
+
+  _tournamentUnsub = onValue(ref(db, 'users/' + uid + '/tournament'), snap => {
+    document.getElementById('syncPill').classList.add('live');
+    document.getElementById('syncLbl').textContent = 'Live';
+    const d = snap.val();
+    if (d?.cfg) {
+      if (firstLoad || !skip) {
+        cfg = d.cfg;
+        cfg.schedule = toArr(cfg.schedule).map(g=>({...g,t1:toArr(g.t1),t2:toArr(g.t2)}));
+        cfg.players  = toArr(cfg.players);
+      }
+      scores = d.scores || {};
+      if (firstLoad) {
+        firstLoad = false;
+        closeSetup();
+        updateNav();
+        if (startHash==='setup') { openSetup(); return; }
+        if (startHash==='games'||startHash==='standings') { showPage(startHash); }
+        else renderCurrent();
+      } else if (skip) {
+        skip = false;
+        renderCurrent(); updateNav();
+      } else {
+        cfg = d.cfg;
+        cfg.schedule = toArr(cfg.schedule).map(g=>({...g,t1:toArr(g.t1),t2:toArr(g.t2)}));
+        cfg.players  = toArr(cfg.players);
+        renderCurrent(); updateNav();
+      }
+    } else {
+      firstLoad = false;
+      cfg=null; scores={};
+      updateNav(); openSetup();
+    }
+  });
+}
+
+function updateNav() {
+  const has = !!cfg;
+  updateProfileDisplay();
+  document.getElementById('navHome').style.display     = has?'':'none';
+  document.getElementById('navSettings').style.display = has?'':'none';
+  document.getElementById('tabGames').style.display    = has?'':'none';
+  document.getElementById('tabStats').style.display    = has?'':'none';
+  document.getElementById('tabFeedback').style.display = has?'':'none';
+  if (has) {
+    const total = cfg.schedule?.length||0;
+    const done  = Object.values(scores).filter(s=>s&&s.s1!==null&&s.s2!==null).length;
+    const b = document.getElementById('gamesBadge');
+    b.textContent = done+'/'+total; b.style.display='';
+    const allDone = total>0 && done===total;
+    document.getElementById('tabSummary').style.display = allDone?'':'none';
+  } else {
+    document.getElementById('gamesBadge').style.display = 'none';
+    document.getElementById('tabSummary').style.display = 'none';
+  }
+}
+
+window.showPage = window._showPage = function(page) {
+  curPage = page;
+  document.getElementById('pageGames').style.display     = page==='games'?'block':'none';
+  document.getElementById('pageStandings').style.display = page==='standings'?'block':'none';
+  document.getElementById('tabGames').classList.toggle('active', page==='games');
+  document.getElementById('tabStats').classList.toggle('active', page==='standings');
+  renderCurrent();
+};
+
+function renderCurrent() {
+  if (!cfg) return;
+  if (curPage==='games') renderGames();
+  if (curPage==='standings') renderStandings();
+  updateNav();
+}
+
+window.openSetup = window._openSetup = function() {
+  document.getElementById('setupOverlay').classList.remove('hidden');
+  if (cfg) {
+    document.getElementById('tName').value = cfg.name||'';
+    selMode(cfg.mode==='4p'?'4p':'rr');
+    buildPFields(cfg.players||[]);
+  } else {
+    selMode('rr');
+    buildPFields(['','','','','','','','']);
+  }
+  updPCnt();
+};
+function closeSetup() { document.getElementById('setupOverlay').classList.add('hidden'); }
+
+window.selMode = window._selMode = function(m) {
+  selMode_=m;
+  document.getElementById('mRR').classList.toggle('active',m==='rr');
+  document.getElementById('m4P').classList.toggle('active',m==='4p');
+};
+
+function buildPFields(arr) { document.getElementById('pgrid').innerHTML=''; arr.forEach(v=>addPFVal(v)); }
+window.addPF = window._addPF = ()=>addPFVal('');
+function addPFVal(val) {
+  const g=document.getElementById('pgrid'), idx=g.querySelectorAll('.pwrap').length;
+  const w=document.createElement('div'); w.className='pwrap';
+  w.innerHTML='<input class="pinput" placeholder="Player '+(idx+1)+'" value="'+val+'" oninput="updPCnt()">'
+    +(idx>=2?'<button class="prmbtn" onclick="this.parentNode.remove();updPCnt()">×</button>':'');
+  g.appendChild(w); updPCnt();
+}
+window.updPCnt = window._updPCnt = function() {
+  const inputs=[...document.querySelectorAll('.pinput')];
+  const filled=inputs.filter(i=>i.value.trim()).length;
+  document.getElementById('pcnt').textContent='('+inputs.length+' slots · '+filled+' named)';
+  document.getElementById('startBtn').disabled=filled<2;
+};
+
+window.doStart = window._doStart = function() {
+  const name=document.getElementById('tName').value.trim()||'Pickleball Tournament';
+  const players=[...document.querySelectorAll('.pinput')].map(i=>i.value.trim()).filter(Boolean);
+  if (players.length<2){alert('Need at least 2 players!');return;}
+  const mode=selMode_;
+  if (mode==='4p'&&players.length!==4){alert('4-Player Rotation needs exactly 4 players!');return;}
+  const schedule=mode==='4p'?make4PSchedule(players):makeRRSchedule(players);
+  cfg={name,mode,players,schedule}; scores={};
+  push(); closeSetup(); showPage('games');
+};
+
+window.resetScores = window._resetScores = function() {
+  if (!confirm('Reset all scores? Player setup is kept.')) return;
+  scores={}; push(); renderGames(); updateNav();
+};
+window.newTournament = window._newTournament = function() {
+  if (!confirm('Start completely fresh? Everything will be cleared.')) return;
+  cfg=null; scores={}; if(currentUser) set(ref(db,'users/'+currentUser.uid+'/tournament'),null); updateNav(); openSetup();
+};
+
+function make4PSchedule(players) {
+  const [a,b,c,d]=players;
+  return [
+    {key:'m1g1',matchup:1,game:1,t1:[a,b],t2:[c,d]},{key:'m1g2',matchup:1,game:2,t1:[a,b],t2:[c,d]},
+    {key:'m2g1',matchup:2,game:1,t1:[a,c],t2:[b,d]},{key:'m2g2',matchup:2,game:2,t1:[a,c],t2:[b,d]},
+    {key:'m3g1',matchup:3,game:1,t1:[a,d],t2:[b,c]},{key:'m3g2',matchup:3,game:2,t1:[a,d],t2:[b,c]},
+  ];
+}
+
+function makeRRSchedule(players) {
+  const n=players.length;
+  if (n===8) {
+    const p=players;
+    return [
+      {r:1,t1:[p[0],p[1]],t2:[p[2],p[3]]},{r:1,t1:[p[4],p[5]],t2:[p[6],p[7]]},
+      {r:2,t1:[p[0],p[2]],t2:[p[4],p[6]]},{r:2,t1:[p[1],p[3]],t2:[p[5],p[7]]},
+      {r:3,t1:[p[0],p[3]],t2:[p[5],p[6]]},{r:3,t1:[p[1],p[2]],t2:[p[4],p[7]]},
+      {r:4,t1:[p[0],p[4]],t2:[p[1],p[5]]},{r:4,t1:[p[2],p[6]],t2:[p[3],p[7]]},
+      {r:5,t1:[p[0],p[5]],t2:[p[3],p[6]]},{r:5,t1:[p[1],p[4]],t2:[p[2],p[7]]},
+      {r:6,t1:[p[0],p[6]],t2:[p[1],p[7]]},{r:6,t1:[p[2],p[5]],t2:[p[3],p[4]]},
+      {r:7,t1:[p[0],p[7]],t2:[p[2],p[4]]},{r:7,t1:[p[1],p[6]],t2:[p[3],p[5]]},
+    ].map((g,i)=>({key:'g'+(i+1),round:g.r,t1:g.t1,t2:g.t2}));
+  }
+  const pairKey=(a,b)=>[a,b].sort().join('||');
+  const PC={},OC={};
+  const gP=(a,b)=>PC[pairKey(a,b)]||0, gO=(a,b)=>OC[pairKey(a,b)]||0;
+  const iP=(a,b)=>{const k=pairKey(a,b);PC[k]=(PC[k]||0)+1;};
+  const iO=(a,b)=>{const k=pairKey(a,b);OC[k]=(OC[k]||0)+1;};
+  const gScore=(t1a,t1b,t2a,t2b)=>(gP(t1a,t1b)+gP(t2a,t2b))*100+(gO(t1a,t2a)+gO(t1a,t2b)+gO(t1b,t2a)+gO(t1b,t2b))*10;
+  const list=[...players]; if(list.length%2!==0)list.push(null);
+  const sched=[]; let gN=0; const arr=[...list];
+  for(let r=0;r<list.length-1;r++){
+    const avail=arr.filter(p=>p!==null),used=new Set(),rg=[];
+    while(avail.filter(p=>!used.has(p)).length>=4){
+      const free=avail.filter(p=>!used.has(p));
+      let best=Infinity,bestG=null;
+      for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)
+      for(let k=j+1;k<free.length;k++)for(let l=k+1;l<free.length;l++){
+        const [a,b,c,d]=[free[i],free[j],free[k],free[l]];
+        for(const [t1a,t1b,t2a,t2b] of [[a,b,c,d],[a,c,b,d],[a,d,b,c]]){
+          const s=gScore(t1a,t1b,t2a,t2b);if(s<best){best=s;bestG={t1a,t1b,t2a,t2b};}
+        }
+      }
+      if(!bestG)break;
+      const{t1a,t1b,t2a,t2b}=bestG;
+      used.add(t1a);used.add(t1b);used.add(t2a);used.add(t2b);
+      iP(t1a,t1b);iP(t2a,t2b);iO(t1a,t2a);iO(t1a,t2b);iO(t1b,t2a);iO(t1b,t2b);
+      rg.push({key:'g'+(++gN),round:r+1,t1:[t1a,t1b],t2:[t2a,t2b]});
+    }
+    sched.push(...rg);
+    const rot=arr.slice(1);rot.unshift(rot.pop());arr.splice(0,arr.length,arr[0],...rot);
+  }
+  return sched;
+}
+
+function getMatchupWins(mi) {
+  const games=cfg.schedule.filter(g=>g.matchup===mi);
+  let w1=0,w2=0;
+  games.forEach(g=>{const s=scores[g.key];if(!s||s.s1===null||s.s2===null)return;if(s.s1>s.s2)w1++;else if(s.s2>s.s1)w2++;});
+  return {w1,w2,games};
+}
+
+function gameCard(g, s, done, w, label) {
+  if (g.deleted) return '<div class="gcard cancelled"><div class="cancelled-lbl">✕ Cancelled</div>'
+    +'<div style="padding:8px 14px;font-size:13px;color:var(--muted);font-weight:600;">'+g.t1.join(' & ')+' vs '+g.t2.join(' & ')+'</div>'
+    +'<div style="padding:0 14px 10px;"><button class="delbtn" style="color:var(--cyan);border-color:rgba(0,240,255,0.2);" onclick="restoreGame(\''+g.key+'\')">↩ Restore</button></div>'
+    +'</div>';
+
+  return '<div class="gcard'+(done?' done':'')+'"><div class="ghdr"><span class="glbl">⚡ '+label+'</span><span>'+(done?'✅':'')+'</span></div>'
+    +'<div class="gbody"><div class="matchup">'
+    +'<div class="team">'+g.t1.join(' & ')+(w==='t1'?'<span class="wtag" style="margin-left:8px;">W</span>':'')+'</div>'
+    +'<div class="vs">vs</div>'
+    +'<div class="team r">'+(w==='t2'?'<span class="wtag" style="margin-right:8px;margin-left:0;">W</span>':'')+g.t2.join(' & ')+'</div>'
+    +'</div><div class="srow">'
+    +'<input class="sinput" type="number" inputmode="numeric" min="0" max="99" id="s1_'+g.key+'" value="'+(s.s1!==null?s.s1:'')+'" placeholder="0">'
+    +'<span class="sdash">—</span>'
+    +'<input class="sinput" type="number" inputmode="numeric" min="0" max="99" id="s2_'+g.key+'" value="'+(s.s2!==null?s.s2:'')+'" placeholder="0">'
+    +'</div>'
+    +'<button class="savebtn'+(done?' saved':'')+'" onclick="saveScore(\''+g.key+'\')">'+(done?'✓ Saved':'Save Score')+'</button>'
+    +(done?'<button class="editbtn" onclick="editScore(\''+g.key+'\')">✏ Edit Score</button>':'')
+    +'<button class="delbtn" onclick="deleteGame(\''+g.key+'\')">✕ Remove Game</button>'
+    +'</div></div>';
+}
+
+function renderGames() {
+  const el=document.getElementById('pageGames');
+  if (!cfg?.schedule?.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏓</div><div class="empty-t">No Tournament Yet</div><div class="empty-s">Tap ⚙ to set one up</div></div>';return;}
+  let html='';
+  if (cfg.mode==='4p') {
+    html+='<div class="infopill">⚡ Best of 3 per matchup · Partners rotate · Most total points wins</div>';
+    const matchups=[...new Set(cfg.schedule.filter(g=>!g.added&&g.matchup).map(g=>g.matchup))].sort((a,b)=>a-b);
+    matchups.forEach(mi=>{
+      const{w1,w2,games}=getMatchupWins(mi);
+      const t1l=games[0].t1.join(' & '),t2l=games[0].t2.join(' & ');
+      const mDone=w1>=2||w2>=2, mWin=w1>=2?t1l:w2>=2?t2l:null;
+      html+='<div style="margin-bottom:6px;"><div class="rhdr">Matchup '+mi+': '+t1l+' vs '+t2l
+        +' &nbsp;<span style="font-family:\'DM Sans\';font-weight:700;font-size:12px;color:var(--cyan);">'+w1+'—'+w2+'</span>'
+        +(mWin?'<span class="wtag" style="margin-left:6px;">'+mWin+' wins!</span>':'')+'</div>';
+      games.forEach((g,gi)=>{
+        const s=scores[g.key]||{s1:null,s2:null};
+        const done=s.s1!==null&&s.s2!==null;
+        const w=done?(s.s1>s.s2?'t1':s.s2>s.s1?'t2':null):null;
+        if(mDone&&!done)return;
+        html+=gameCard(g,s,done,w,'Game '+(gi+1));
+      });
+      if(w1===1&&w2===1&&games.length<3) html+='<button class="addrbtn" style="margin-bottom:8px;" onclick="addDecider('+mi+')">+ Tied 1–1 · Add Game 3</button>';
+      html+='</div>';
+    });
+  } else {
+    const byRound={};
+    cfg.schedule.forEach(g=>{if(g.added)return;if(!byRound[g.round])byRound[g.round]=[];byRound[g.round].push(g);});
+    Object.keys(byRound).sort((a,b)=>+a-+b).forEach(r=>{
+      html+='<div class="rhdr">Round '+r+'</div>';
+      byRound[r].forEach((g,gi)=>{
+        const s=scores[g.key]||{s1:null,s2:null};
+        const done=s.s1!==null&&s.s2!==null;
+        const w=done?(s.s1>s.s2?'t1':s.s2>s.s1?'t2':null):null;
+        html+=gameCard(g,s,done,w,'Game '+(g.key.startsWith('g')?g.key.slice(1):(gi+1)));
+      });
+    });
+  }
+  // Extra added games
+  const extraGames = cfg.schedule.filter(g => g.added);
+  if (extraGames.length) {
+    html += '<div class="rhdr">Extra Games</div>';
+    extraGames.forEach((g, i) => {
+      const s = scores[g.key] || {s1:null,s2:null};
+      const done = s.s1!==null && s.s2!==null;
+      const w = done ? (s.s1>s.s2?'t1':s.s2>s.s1?'t2':null) : null;
+      html += gameCard(g, s, done, w, 'Extra '+(i+1));
+    });
+  }
+
+  el.innerHTML = html + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>';
+}
+
+window.saveScore = window._saveScore = function(key) {
+  const v1=document.getElementById('s1_'+key)?.value.trim();
+  const v2=document.getElementById('s2_'+key)?.value.trim();
+  if(!v1||!v2){alert('Enter both scores!');return;}
+  const n1=parseInt(v1),n2=parseInt(v2);
+  if(isNaN(n1)||isNaN(n2)){alert('Numbers only!');return;}
+  scores[key]={s1:n1,s2:n2}; push(); renderGames(); updateNav();
+};
+window.editScore = window._editScore = function(key) {
+  scores[key]={s1:null,s2:null}; push(); renderGames(); updateNav();
+  setTimeout(()=>{const e=document.getElementById('s1_'+key);if(e){e.scrollIntoView({behavior:'smooth',block:'center'});e.focus();}},100);
+};
+window.addDecider = window._addDecider = function(mi) {
+  const games=cfg.schedule.filter(g=>g.matchup===mi);
+  if(games.length>=3)return;
+  cfg.schedule.push({key:'m'+mi+'g3',matchup:mi,game:3,t1:games[0].t1,t2:games[0].t2});
+  push(); renderGames();
+};
+
+window.deleteGame = function(key) {
+  const g = cfg.schedule.find(g=>g.key===key); if(!g) return;
+  g.deleted = true;
+  if (scores[key]) { scores[key] = {s1:null,s2:null}; }
+  push(); renderGames(); renderCurrent();
+};
+
+window.restoreGame = function(key) {
+  const g = cfg.schedule.find(g=>g.key===key); if(!g) return;
+  g.deleted = false;
+  push(); renderGames();
+};
+
+// ── ADD GAME ──
+let agT1 = [], agT2 = [], agExtraPlayers = [];
+
+window.openAddGame = function() {
+  agT1 = []; agT2 = []; agExtraPlayers = [];
+  document.getElementById('agS1').value = '';
+  document.getElementById('agS2').value = '';
+  document.getElementById('agNewName').value = '';
+  renderAgPicker();
+  document.getElementById('addGameOverlay').classList.remove('hidden');
+};
+
+function renderAgPicker() {
+  const allPlayers = [...new Set([...(cfg?.players||[]), ...agExtraPlayers])];
+  const picker = document.getElementById('agPlayerPicker');
+  picker.innerHTML = allPlayers.map(p => {
+    const inT1 = agT1.includes(p), inT2 = agT2.includes(p);
+    const cls = inT1 ? 'player-chip t1' : inT2 ? 'player-chip t2' : 'player-chip';
+    return '<div class="'+cls+'" onclick="toggleAgPlayer(\''+p+'\')">'
+      +(inT1?'<span style="font-size:10px;display:block;color:var(--cyan);">T1</span>':'')
+      +(inT2?'<span style="font-size:10px;display:block;color:var(--pink);">T2</span>':'')
+      +p+'</div>';
+  }).join('');
+  const t1l = agT1.join(' & ') || '?', t2l = agT2.join(' & ') || '?';
+  document.getElementById('agTeamPreview').textContent =
+    agT1.length || agT2.length ? t1l + ' vs ' + t2l : '';
+}
+
+window.toggleAgPlayer = function(p) {
+  if (agT1.includes(p)) { agT1 = agT1.filter(x=>x!==p); }
+  else if (agT2.includes(p)) { agT2 = agT2.filter(x=>x!==p); }
+  else if (agT1.length < 2) { agT1.push(p); }
+  else if (agT2.length < 2) { agT2.push(p); }
+  renderAgPicker();
+};
+
+window.addNewPlayerToGame = function() {
+  const name = document.getElementById('agNewName').value.trim();
+  if (!name) return;
+  if (![...(cfg?.players||[]), ...agExtraPlayers].includes(name)) {
+    agExtraPlayers.push(name);
+    // Also add to tournament roster
+    if (cfg.players && !cfg.players.includes(name)) cfg.players.push(name);
+  }
+  document.getElementById('agNewName').value = '';
+  renderAgPicker();
+};
+
+window.saveAddedGame = function() {
+  if (agT1.length !== 2 || agT2.length !== 2) { alert('Pick exactly 2 players per team'); return; }
+  const s1 = parseInt(document.getElementById('agS1').value);
+  const s2 = parseInt(document.getElementById('agS2').value);
+  if (isNaN(s1) || isNaN(s2)) { alert('Enter both scores'); return; }
+  const key = 'ag' + Date.now();
+  cfg.schedule.push({ key, t1:[...agT1], t2:[...agT2], round:'Extra', added:true });
+  scores[key] = { s1, s2 };
+  push(); renderGames(); updateNav();
+  document.getElementById('addGameOverlay').classList.add('hidden');
+};
+
+let rankMode = 'avg'; // 'avg' | 'wins' | 'pts'
+
+function calcStandings() {
+  const stats = {};
+  // Include all players — from cfg.players + any extra from ad-hoc games
+  const allPlayers = new Set(cfg.players || []);
+  cfg.schedule.forEach(g => { if (!g.deleted) { g.t1.forEach(p=>allPlayers.add(p)); g.t2.forEach(p=>allPlayers.add(p)); } });
+  allPlayers.forEach(p => { stats[p] = { wins:0, ptsFor:0, ptsAgainst:0, games:0 }; });
+
+  cfg.schedule.forEach(g => {
+    if (g.deleted) return;
+    const s = scores[g.key]; if (!s||s.s1===null||s.s2===null) return;
+    g.t1.forEach(p => { stats[p].ptsFor+=s.s1; stats[p].ptsAgainst+=s.s2; stats[p].games++; if(s.s1>s.s2) stats[p].wins++; });
+    g.t2.forEach(p => { stats[p].ptsFor+=s.s2; stats[p].ptsAgainst+=s.s1; stats[p].games++; if(s.s2>s.s1) stats[p].wins++; });
+  });
+
+  // Detect uneven game counts
+  const gameCounts = Object.values(stats).map(s=>s.games).filter(n=>n>0);
+  const uneven = gameCounts.length > 1 && (Math.max(...gameCounts) - Math.min(...gameCounts)) >= 2;
+  if (uneven && rankMode === 'pts') {} // keep user choice
+  const effectiveMode = (uneven && rankMode === 'pts') ? 'avg' : rankMode;
+
+  return {
+    uneven,
+    effectiveMode,
+    list: [...allPlayers].map(p => {
+      const st = stats[p];
+      const diff = st.ptsFor - st.ptsAgainst;
+      const avgDiff = st.games > 0 ? diff / st.games : 0;
+      return { name:p, ...st, diff, avgDiff };
+    }).sort((a,b) => {
+      if (effectiveMode === 'wins') return b.wins-a.wins || b.avgDiff-a.avgDiff || b.ptsFor-a.ptsFor;
+      if (effectiveMode === 'pts')  return b.ptsFor-a.ptsFor || b.wins-a.wins || b.avgDiff-a.avgDiff;
+      // avg (default)
+      return b.avgDiff-a.avgDiff || b.wins-a.wins || b.ptsFor-a.ptsFor;
+    })
+  };
+}
+
+function renderStandings() {
+  const el = document.getElementById('pageStandings');
+  if (!cfg?.players) { el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-t">No Tournament Yet</div></div>'; return; }
+
+  const { list, uneven, effectiveMode } = calcStandings();
+  const champ = list[0];
+  const total = cfg.schedule?.filter(g=>!g.deleted).length || 0;
+  const done = cfg.schedule?.filter(g=>!g.deleted).reduce((n,g)=>{ const s=scores[g.key]; return n+(s&&s.s1!==null?1:0); },0) || 0;
+
+  let html = '';
+
+  // Champion box
+  if (done === total && total > 0 && champ) {
+    html += '<div class="champbox"><div style="font-size:48px;margin-bottom:8px;">🏆</div>'
+      +'<div class="clbl">Champion</div><div class="cname">'+champ.name+'</div>'
+      +'<div class="cpts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.avgDiff>=0?'+':'')+champ.avgDiff.toFixed(1)+' avg diff</div></div>';
+  }
+
+  // Rank toggle
+  html += '<div class="rank-toggle">'
+    +'<button class="rtbtn'+(rankMode==='avg'?' active':'')+'" onclick="setRankMode(\'avg\')">Avg Diff</button>'
+    +'<button class="rtbtn'+(rankMode==='wins'?' active':'')+'" onclick="setRankMode(\'wins\')">Most Wins</button>'
+    +'<button class="rtbtn'+(rankMode==='pts'?' active':'')+'" onclick="setRankMode(\'pts\')">Most Points</button>'
+    +'</div>';
+
+  if (uneven) {
+    html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">⚠ Uneven games played — Avg Diff recommended</div>';
+  }
+
+  // Table
+  html += '<table class="stbl"><thead><tr>'
+    +'<th>Player</th><th>W</th><th>PTS</th><th>AG</th><th>G</th>'
+    +'<th>'+(effectiveMode==='avg'?'Avg Diff':effectiveMode==='wins'?'+/-':'Pts')+'</th>'
+    +'</tr></thead><tbody>';
+
+  list.forEach((p,i) => {
+    const dc = p.diff>0?'dpos':p.diff<0?'dneg':'';
+    const highlight = effectiveMode==='avg'
+      ? `<span class="${dc}">${p.avgDiff>=0?'+':''}${p.avgDiff.toFixed(1)}</span>`
+      : effectiveMode==='wins'
+      ? `<span class="${dc}">${p.diff>=0?'+':''}${p.diff}</span>`
+      : `<span class="ptsf">${p.ptsFor}</span>`;
+    html += '<tr>'
+      +'<td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
+      +'<td>'+p.wins+'</td><td class="ptsf">'+p.ptsFor+'</td><td>'+p.ptsAgainst+'</td>'
+      +'<td style="color:var(--muted);">'+p.games+'</td>'
+      +'<td>'+highlight+'</td></tr>';
+  });
+
+  html += '</tbody></table>';
+  const modeLabel = effectiveMode==='avg'?'Avg Point Differential':effectiveMode==='wins'?'Most Wins':'Most Points';
+  html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong></div>';
+  html += '<button onclick="newTournament()" style="display:block;margin:24px auto 0;padding:11px 28px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">⚠ New Tournament</button>';
+  el.innerHTML = html;
+}
+
+window.setRankMode = function(mode) {
+  rankMode = mode;
+  renderStandings();
+};
+
+function updateProfileDisplay() {
+  const ui = document.getElementById('userInfo');
+  const phone = currentUser?.phoneNumber || currentUser?.email || '';
+  const name = userProfile?.name || '';
+  if (ui) ui.textContent = (name ? '👤 ' + name + '  ' : '') + (phone ? '📱 ' + phone : '');
+  const pd = document.getElementById('profilePhoneDisplay');
+  if (pd) pd.textContent = phone;
+  const av = document.getElementById('profileAvatarDisplay');
+  if (av) av.textContent = userProfile?.gender==='M' ? '👨' : userProfile?.gender==='F' ? '👩' : '👤';
+}
+
+// ── PROFILE FUNCTIONS ──
+window.selectGender = function(g) {
+  selectedGender = g;
+  document.getElementById('gMale').classList.toggle('active', g==='M');
+  document.getElementById('gFemale').classList.toggle('active', g==='F');
+};
+
+window.saveProfile = async function() {
+  const name = document.getElementById('profileNameInput').value.trim();
+  if (!name) { document.getElementById('profileNameInput').focus(); return; }
+  userProfile = { ...userProfile, name, gender: selectedGender || userProfile.gender || null };
+  await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
+  document.getElementById('profileOverlay').classList.add('hidden');
+  updateProfileDisplay();
+};
+
+window.openProfile = function() {
+  document.getElementById('editName').value  = userProfile.name  || '';
+  document.getElementById('editEmail').value = userProfile.email || '';
+  document.getElementById('editCity').value  = userProfile.city  || '';
+  document.getElementById('editDob').value   = userProfile.dob   || '';
+  editSelectedGender = userProfile.gender || null;
+  document.getElementById('editGMale').classList.toggle('active', editSelectedGender==='M');
+  document.getElementById('editGFemale').classList.toggle('active', editSelectedGender==='F');
+  document.getElementById('profileSavedMsg').style.display = 'none';
+  updateProfileDisplay();
+  document.getElementById('pageProfile').style.display = 'block';
+};
+
+window.closeProfile = function() {
+  document.getElementById('pageProfile').style.display = 'none';
+  // Restore the correct underlying page
+  document.getElementById('pageGames').style.display     = curPage==='games'?'block':'none';
+  document.getElementById('pageStandings').style.display = curPage==='standings'?'block':'none';
+  document.getElementById('tabGames').classList.toggle('active', curPage==='games');
+  document.getElementById('tabStats').classList.toggle('active', curPage==='standings');
+  document.getElementById('setupOverlay').classList.add('hidden');
+};
+
+window.editSelectGender = function(g) {
+  editSelectedGender = g;
+  document.getElementById('editGMale').classList.toggle('active', g==='M');
+  document.getElementById('editGFemale').classList.toggle('active', g==='F');
+};
+
+window.saveProfileEdits = async function() {
+  const name  = document.getElementById('editName').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const city  = document.getElementById('editCity').value.trim();
+  const dob   = document.getElementById('editDob').value;
+  userProfile = { ...userProfile,
+    name: name || userProfile.name || null,
+    gender: editSelectedGender || userProfile.gender || null,
+    email: email || null, city: city || null, dob: dob || null };
+  await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
+  updateProfileDisplay();
+  const msg = document.getElementById('profileSavedMsg');
+  msg.style.display = 'block';
+  setTimeout(() => msg.style.display = 'none', 2500);
+};
+
+// ── PHONE AUTH FUNCTIONS ──
+window._sendCode = async function() {
+  const raw = document.getElementById('phoneInput').value.trim();
+  if (!raw) { alert('Enter your phone number'); return; }
+
+  const digits = raw.replace(/\D/g,'');
+  const phone = raw.startsWith('+') ? raw : '+1' + digits;
+
+  if (digits.length < 10) {
+    alert('Enter a valid 10-digit number');
+    return;
+  }
+
+  const btn = document.getElementById('sendCodeBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    if (window._recaptcha) {
+      try { window._recaptcha.clear(); } catch(e) {}
+      window._recaptcha = null;
+    }
+
+    window._recaptcha = new RecaptchaVerifier(auth, 'recaptchaContainer', { size:'invisible' });
+    await window._recaptcha.render();
+
+    confirmResult = await signInWithPhoneNumber(auth, phone, window._recaptcha);
+
+    document.getElementById('stepPhone').style.display = 'none';
+    document.getElementById('stepCode').style.display  = 'block';
+    document.getElementById('codeInput').focus();
+  } catch(e) {
+    console.log('SMS ERROR:', e);
+    btn.disabled = false;
+    btn.textContent = 'Send Code 📱';
+
+    const msg = (e && e.code === 'auth/too-many-requests')
+      ? 'Too many attempts. Wait a bit, then try again.'
+      : (e && e.code === 'auth/unauthorized-domain')
+      ? 'This domain is not authorized in Firebase.'
+      : 'Could not send code. Try again or use Google.';
+    alert(msg);
+
+    if (window._recaptcha) {
+      try { window._recaptcha.clear(); } catch(x) {}
+      window._recaptcha = null;
+    }
+  }
+};
+
+window._verifyCode = async function() {
+  const code = document.getElementById('codeInput').value.trim();
+  if (code.length < 6) { alert('Enter the 6-digit code'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled=true; btn.textContent='Verifying...';
+  try {
+    await confirmResult.confirm(code);
+  } catch(e) {
+    console.log('VERIFY ERROR:', e);
+    btn.disabled=false; btn.textContent='Verify & Play 🏓';
+    alert('Incorrect code — please try again');
+  }
+};
+
+window._editPhone = function() {
+  document.getElementById('stepPhone').style.display='block';
+  document.getElementById('stepCode').style.display='none';
+  document.getElementById('sendCodeBtn').disabled=false;
+  document.getElementById('sendCodeBtn').textContent='Send Code 📱';
+  if (window._recaptcha){try{window._recaptcha.clear();}catch(x){} window._recaptcha=null;}
+};
+
+window._signInGoogle = async function() {
+  const btn = document.getElementById('googleLoginBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening Google...'; }
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (e) {
+    console.log('GOOGLE ERROR:', e);
+    if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google 🔵'; }
+    if (e?.code !== 'auth/popup-closed-by-user' && e?.code !== 'auth/cancelled-popup-request') {
+      alert(e?.code === 'auth/unauthorized-domain'
+        ? 'Domain not authorized in Firebase. Contact support.'
+        : 'Google sign-in failed. Please try phone login instead.');
+    }
+  }
+};
+
+window._doSignOut = async function() {
+  if (!confirm('Sign out?')) return;
+  cfg=null; scores={};
+  await signOut(auth);
+};
+</script>
+
+<script>
+// Hide sound button on touch/mobile devices
+(function() {
+  var isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  if (isMobile) {
+    document.addEventListener('DOMContentLoaded', function() {
+      var btn = document.getElementById('soundBtn');
+      if (btn) btn.style.display = 'none';
+    });
+    // Also hide immediately in case DOM already loaded
+    window.addEventListener('load', function() {
+      var btn = document.getElementById('soundBtn');
+      if (btn) btn.style.display = 'none';
+    });
+  }
+})();
+
+// Settings + Sound — plain script so onclick works from HTML
+function openSettings()  { document.getElementById('settingsMenu').classList.remove('hidden'); }
+function closeSettings() { document.getElementById('settingsMenu').classList.add('hidden'); }
+function openSetup()     { if(window._openSetup) window._openSetup(); }
+function showPage(p)     { if(window._showPage) window._showPage(p); }
+function selMode(m)      { if(window._selMode) window._selMode(m); }
+function addPF()         { if(window._addPF) window._addPF(); }
+function updPCnt()       { if(window._updPCnt) window._updPCnt(); }
+function doStart()       { if(window._doStart) window._doStart(); }
+function resetScores()   { if(window._resetScores) window._resetScores(); }
+function newTournament() { if(window._newTournament) window._newTournament(); }
+function saveScore(k)    { if(window._saveScore) window._saveScore(k); }
+function editScore(k)    { if(window._editScore) window._editScore(k); }
+function addDecider(m)   { if(window._addDecider) window._addDecider(m); }
+function doSignIn()    { if(window._doSignIn) window._doSignIn(); }
+function doSignOut()   { if(window._doSignOut) window._doSignOut(); }
+function sendCode()    { if(window._sendCode) window._sendCode(); }
+function verifyCode()  { if(window._verifyCode) window._verifyCode(); }
+function editPhone()   { if(window._editPhone) window._editPhone(); }
+function signInGoogle() { if(window._signInGoogle) window._signInGoogle(); }
+function selectGender(g)    { if(window.selectGender) window.selectGender(g); }
+function editSelectGender(g){ if(window.editSelectGender) window.editSelectGender(g); }
+function saveProfile()      { if(window.saveProfile) window.saveProfile(); }
+function openProfile()      { if(window.openProfile) window.openProfile(); }
+function closeProfile()     { if(window.closeProfile) window.closeProfile(); }
+function saveProfileEdits() { if(window.saveProfileEdits) window.saveProfileEdits(); }
+function setRankMode(m)     { if(window.setRankMode) window.setRankMode(m); }
+function openAddGame()      { if(window.openAddGame) window.openAddGame(); }
+function toggleAgPlayer(p)  { if(window.toggleAgPlayer) window.toggleAgPlayer(p); }
+function addNewPlayerToGame(){ if(window.addNewPlayerToGame) window.addNewPlayerToGame(); }
+function saveAddedGame()    { if(window.saveAddedGame) window.saveAddedGame(); }
+function deleteGame(k)      { if(window.deleteGame) window.deleteGame(k); }
+function restoreGame(k)     { if(window.restoreGame) window.restoreGame(k); }
+
+// ── SOUNDS ──
+// iOS requires AudioContext created INSIDE a user gesture handler.
+// We use a fresh ctx every time to guarantee it works.
+function _note(ctx, freq, start, dur, type, vol) {
+  try {
+    var o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.001, start);
+    g.gain.linearRampToValueAtTime(vol||0.3, start+0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, start+dur);
+    o.start(start); o.stop(start+dur+0.05);
+  } catch(e) {}
+}
+
+function playFunSound() {
+  closeSettings();
+  var AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  try {
+    var ctx = new AudioCtx();
+    var fns = [sndJingle, sndBoing, sndPickleball, sndCrowd, sndArcade];
+    var fn = fns[Math.floor(Math.random()*fns.length)];
+    fn(ctx);
+    setTimeout(function(){ try{ctx.close();}catch(e){} }, 3000);
+  } catch(e) { console.log('sound err', e); }
+}
+
+function sndJingle(ctx) {
+  [523,659,784,1047,1319].forEach(function(f,i){ _note(ctx,f,ctx.currentTime+i*0.1,0.35); });
+}
+function sndBoing(ctx) {
+  var o=ctx.createOscillator(),g=ctx.createGain();
+  o.connect(g); g.connect(ctx.destination); o.type='sine';
+  o.frequency.setValueAtTime(80,ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(700,ctx.currentTime+0.15);
+  o.frequency.exponentialRampToValueAtTime(200,ctx.currentTime+0.55);
+  g.gain.setValueAtTime(0.5,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
+  o.start(); o.stop(ctx.currentTime+0.65);
+}
+function sndPickleball(ctx) {
+  // "I love pickleball" melody
+  var notes=[440,494,523,587,659,698,784,880,988,1047,988,880,1175,1319,1047,1175];
+  notes.forEach(function(f,i){
+    _note(ctx,f,ctx.currentTime+i*0.1,0.12,i%2===0?'sine':'triangle',0.25);
+  });
+  // Big finish
+  [523,659,784,1047].forEach(function(f){_note(ctx,f,ctx.currentTime+1.8,0.7,'sine',0.3);});
+}
+function sndCrowd(ctx) {
+  var buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.7),ctx.sampleRate);
+  var d=buf.getChannelData(0);
+  for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.25;
+  var src=ctx.createBufferSource(); src.buffer=buf;
+  var f=ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=900; f.Q.value=0.5;
+  var g=ctx.createGain();
+  g.gain.setValueAtTime(0,ctx.currentTime);
+  g.gain.linearRampToValueAtTime(1,ctx.currentTime+0.08);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.7);
+  src.connect(f); f.connect(g); g.connect(ctx.destination);
+  src.start(); src.stop(ctx.currentTime+0.75);
+}
+function sndArcade(ctx) {
+  [784,988,1175,1568,1175,1568,2093].forEach(function(f,i){
+    _note(ctx,f,ctx.currentTime+i*0.08,0.09,'square',0.15);
+  });
+}
+</script>
+</body>
+</html>
