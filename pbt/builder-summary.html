@@ -167,13 +167,14 @@
 <div id="summary" style="display:none;">
   <div id="captureArea"></div>
   <div class="save-btn-wrap" id="saveBtnWrap" style="display:none;">
+    <button class="save-btn-big" id="shareBtn" onclick="handleShareLink()" style="margin-bottom:10px;background:linear-gradient(135deg,var(--cyan),var(--blue));box-shadow:0 4px 24px rgba(0,144,255,0.45);">🔗 Share Link</button>
     <button class="save-btn-big" id="saveBtn" onclick="handleSave()">📸 Save Image</button>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const FB = {
@@ -267,6 +268,7 @@ if (!uid) {
   cfg.schedule = toArr(cfg.schedule).map(g=>({...g,t1:toArr(g.t1),t2:toArr(g.t2)}));
   cfg.players  = toArr(cfg.players);
   const scores = d.scores || {};
+  window._shareData = { cfg, scores }; // for Share Link
   const today  = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const modeLabel = cfg.mode==='4p' ? '⚡ 4-Player Rotation' : '🔄 Round Robin';
 
@@ -364,6 +366,35 @@ if (!uid) {
   } // end uid check
 }); // end onAuthStateChanged
 
+window._shareLink = async function() {
+  const btn = document.getElementById('shareBtn');
+  if (!window._shareData) { alert('No tournament data to share yet.'); return; }
+  btn.disabled = true; btn.textContent = '⏳ Creating link...';
+  try {
+    const { cfg, scores } = window._shareData;
+    // Strip deleted games from the snapshot
+    const cleanSchedule = cfg.schedule.filter(g => !g.deleted);
+    const shareId = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+    await set(ref(db, 'shares/' + shareId), {
+      cfg: { name: cfg.name||'Tournament', mode: cfg.mode, players: cfg.players, schedule: cleanSchedule },
+      scores,
+      createdAt: Date.now()
+    });
+    const url = window.location.origin + window.location.pathname.replace('builder-summary.html','') + 'results.html?id=' + shareId;
+    if (navigator.share) {
+      try { await navigator.share({ title: (cfg.name||'Tournament')+' Results 🏓', url }); }
+      catch(e) { if (e.name !== 'AbortError') { await navigator.clipboard.writeText(url); alert('Link copied!\n' + url); } }
+    } else {
+      await navigator.clipboard.writeText(url);
+      alert('Link copied to clipboard!\n' + url);
+    }
+  } catch(e) {
+    console.log('share error', e);
+    alert('Could not create share link. Check that Firebase rules allow shares/ writes.');
+  }
+  btn.disabled = false; btn.textContent = '🔗 Share Link';
+};
+
 window._saveImage = async function() {
   const btn = document.getElementById('saveBtn');
   btn.disabled=true; btn.textContent='⏳ Capturing...';
@@ -400,6 +431,9 @@ function handleSave() {
   const btn = document.getElementById('saveBtn');
   btn.disabled=true; btn.textContent='⏳ Capturing...';
   if (window._saveImage) window._saveImage();
+}
+function handleShareLink() {
+  if (window._shareLink) window._shareLink();
 }
 </script>
 </body>
