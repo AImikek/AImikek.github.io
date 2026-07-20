@@ -359,6 +359,42 @@
   <div class="login-footer">Use phone number or Google to sign in. Standard SMS rates may apply.</div>
 </div>
 
+<!-- CITY/EMAIL PROMPT (before first tournament) -->
+<div id="cityEmailOverlay" class="hidden" style="position:fixed;inset:0;z-index:550;background:rgba(4,6,15,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div class="modal" style="max-width:400px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:40px;margin-bottom:8px;">📍</div>
+      <div class="mtitle">Almost Ready!</div>
+      <div class="msub">A couple quick details to track your stats</div>
+    </div>
+    <label class="flabel">Email</label>
+    <input class="finput" id="ceEmail" type="email" placeholder="you@email.com" inputmode="email" autocomplete="email">
+    <label class="flabel">City</label>
+    <input class="finput" id="ceCity" placeholder="e.g. Fort Lauderdale" maxlength="40">
+    <button onclick="saveCityEmail()"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.35);margin-top:4px;">
+      🚀 Start Tournament
+    </button>
+    <button onclick="skipCityEmail()"
+      style="width:100%;margin-top:10px;padding:12px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">
+      Skip for now
+    </button>
+  </div>
+</div>
+
+<!-- PAST TOURNAMENTS PAGE -->
+<div id="pageHistory" style="display:none;position:fixed;inset:0;z-index:350;background:var(--bg);overflow-y:auto;padding:16px 16px 40px;">
+  <div style="max-width:600px;margin:0 auto;padding-top:8px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-top:4px;">
+      <button onclick="closeHistory()"
+        style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">📜 Past Tournaments</div>
+    </div>
+    <div id="historyList"></div>
+    <div id="historyDetail" style="display:none;"></div>
+  </div>
+</div>
+
 <!-- ADD GAME OVERLAY -->
 <div id="addGameOverlay" class="hidden">
   <div class="modal" style="max-width:460px;">
@@ -524,6 +560,8 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <div class="settings-divider"></div>
     <button class="settings-item" onclick="closeSettings();openSetup();">🏠 New Tournament</button>
     <button class="settings-item" onclick="closeSettings();openAddGame();">➕ Add Game</button>
+    <button class="settings-item" onclick="closeSettings();shareTournamentLink();">🔗 Invite Players to Edit Scores</button>
+    <button class="settings-item" onclick="closeSettings();openHistory();">📜 Past Tournaments</button>
     <button class="settings-item" onclick="closeSettings();document.getElementById('setupOverlay').classList.add('hidden');showPage('games');">🎮 Edit Scores</button>
     <button class="settings-item danger" onclick="closeSettings();resetScores();">🔄 Reset Scores</button>
     <div class="settings-divider"></div>
@@ -566,7 +604,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import {
   getAuth,
   RecaptchaVerifier,
@@ -598,11 +636,18 @@ let _tournamentUnsub = null;
 let userProfile = {};
 let selectedGender = null;
 let editSelectedGender = null;
+let activeTid = null; // shared tournament id
 const toArr = d => !d?[]:Array.isArray(d)?d:Object.values(d);
-const push  = () => { if(!currentUser)return; skip=true; set(ref(db,'users/'+currentUser.uid+'/tournament'),{cfg,scores}); };
+const makeTid = () => 't' + Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-5);
+const push = () => {
+  if (!currentUser || !activeTid) return;
+  skip = true;
+  set(ref(db, 'tournaments/' + activeTid), { cfg, scores, updatedAt: Date.now() });
+};
 
 const startHash = window.location.hash.replace('#','');
 if (startHash) window.location.hash = '';
+const urlTid = new URLSearchParams(window.location.search).get('t');
 
 document.getElementById('pageGames').style.display = 'block';
 document.getElementById('pageStandings').style.display = 'none';
@@ -617,28 +662,17 @@ onAuthStateChanged(auth, user => {
     currentUser = null;
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('setupOverlay').classList.add('hidden');
-    cfg = null; scores = {};
+    cfg = null; scores = {}; activeTid = null;
     if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
     updateNav();
   }
 });
 
-function bootApp() {
-  const uid = currentUser.uid;
-  firstLoad = true;
+function subscribeTournament(tid) {
   if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
-
-  // Load profile — show onboarding if first time
-  onValue(ref(db, 'users/' + uid + '/profile'), snap => {
-    const wasNew = !userProfile.name;
-    userProfile = snap.val() || {};
-    updateProfileDisplay();
-    if (wasNew && !userProfile.name) {
-      document.getElementById('profileOverlay').classList.remove('hidden');
-    }
-  });
-
-  _tournamentUnsub = onValue(ref(db, 'users/' + uid + '/tournament'), snap => {
+  activeTid = tid;
+  firstLoad = true;
+  _tournamentUnsub = onValue(ref(db, 'tournaments/' + tid), snap => {
     document.getElementById('syncPill').classList.add('live');
     document.getElementById('syncLbl').textContent = 'Live';
     const d = snap.val();
@@ -670,7 +704,57 @@ function bootApp() {
       cfg=null; scores={};
       updateNav(); openSetup();
     }
+  }, err => {
+    console.log('tournament read error', err);
+    alert('Could not load tournament. Firebase rules may need the tournaments/ path enabled.');
   });
+}
+
+async function bootApp() {
+  const uid = currentUser.uid;
+  if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
+
+  // Load profile — show onboarding if first time
+  onValue(ref(db, 'users/' + uid + '/profile'), snap => {
+    const wasNew = !userProfile.name;
+    userProfile = snap.val() || {};
+    updateProfileDisplay();
+    if (wasNew && !userProfile.name) {
+      document.getElementById('profileOverlay').classList.remove('hidden');
+    }
+  });
+
+  // 1. Joining via shared link? That wins.
+  if (urlTid) {
+    await set(ref(db, 'users/' + uid + '/activeTournamentId'), urlTid);
+    history.replaceState({}, '', window.location.pathname); // clean URL
+    subscribeTournament(urlTid);
+    return;
+  }
+
+  // 2. Existing pointer to a shared tournament?
+  const ptrSnap = await get(ref(db, 'users/' + uid + '/activeTournamentId'));
+  if (ptrSnap.exists() && ptrSnap.val()) {
+    subscribeTournament(ptrSnap.val());
+    return;
+  }
+
+  // 3. Legacy private tournament? Migrate it to shared.
+  const legacySnap = await get(ref(db, 'users/' + uid + '/tournament'));
+  const legacy = legacySnap.val();
+  if (legacy?.cfg) {
+    const tid = makeTid();
+    await set(ref(db, 'tournaments/' + tid), { cfg: legacy.cfg, scores: legacy.scores||{}, ownerUid: uid, updatedAt: Date.now() });
+    await set(ref(db, 'users/' + uid + '/activeTournamentId'), tid);
+    await set(ref(db, 'users/' + uid + '/tournament'), null);
+    subscribeTournament(tid);
+    return;
+  }
+
+  // 4. Nothing — fresh start
+  firstLoad = false;
+  cfg = null; scores = {}; activeTid = null;
+  updateNav(); openSetup();
 }
 
 function updateNav() {
@@ -682,12 +766,11 @@ function updateNav() {
   document.getElementById('tabStats').style.display    = has?'':'none';
   document.getElementById('tabFeedback').style.display = has?'':'none';
   if (has) {
-    const total = cfg.schedule?.length||0;
-    const done  = Object.values(scores).filter(s=>s&&s.s1!==null&&s.s2!==null).length;
+    const total = cfg.schedule?.filter(g=>!g.deleted).length||0;
+    const done  = cfg.schedule?.filter(g=>!g.deleted).reduce((n,g)=>{const s=scores[g.key];return n+(s&&s.s1!==null&&s.s2!==null?1:0);},0)||0;
     const b = document.getElementById('gamesBadge');
     b.textContent = done+'/'+total; b.style.display='';
-    const allDone = total>0 && done===total;
-    document.getElementById('tabSummary').style.display = allDone?'':'none';
+    document.getElementById('tabSummary').style.display = '';
   } else {
     document.getElementById('gamesBadge').style.display = 'none';
     document.getElementById('tabSummary').style.display = 'none';
@@ -752,18 +835,73 @@ window.doStart = window._doStart = function() {
   if (players.length<2){alert('Need at least 2 players!');return;}
   const mode=selMode_;
   if (mode==='4p'&&players.length!==4){alert('4-Player Rotation needs exactly 4 players!');return;}
+  window._pendingSetup = { name, players, mode };
+  // Archive any existing tournament before replacing it
+  archiveCurrentTournament().then(() => {
+    if (!userProfile.email || !userProfile.city) {
+      if (userProfile.email) document.getElementById('ceEmail').value = userProfile.email;
+      if (userProfile.city)  document.getElementById('ceCity').value  = userProfile.city;
+      document.getElementById('cityEmailOverlay').classList.remove('hidden');
+      return;
+    }
+    _finalizeTournament();
+  });
+};
+
+function _finalizeTournament() {
+  const { name, players, mode } = window._pendingSetup;
   const schedule=mode==='4p'?make4PSchedule(players):makeRRSchedule(players);
   cfg={name,mode,players,schedule}; scores={};
-  push(); closeSetup(); showPage('games');
-};
+  const tid = makeTid();
+  activeTid = tid;
+  set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
+  set(ref(db, 'tournaments/' + tid), { cfg, scores, ownerUid: currentUser.uid, updatedAt: Date.now() })
+    .then(() => subscribeTournament(tid));
+  closeSetup(); showPage('games');
+}
+
+// ── TOURNAMENT ARCHIVING ──
+async function archiveCurrentTournament() {
+  if (!currentUser || !cfg || !cfg.schedule) return;
+  // Only archive if at least one score was recorded
+  const hasScores = Object.values(scores).some(s => s && s.s1 !== null);
+  if (!hasScores) return;
+  const tid = 't' + Date.now();
+  try {
+    await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), {
+      cfg, scores, finishedAt: Date.now()
+    });
+  } catch(e) { console.log('archive error', e); }
+}
 
 window.resetScores = window._resetScores = function() {
   if (!confirm('Reset all scores? Player setup is kept.')) return;
   scores={}; push(); renderGames(); updateNav();
 };
 window.newTournament = window._newTournament = function() {
-  if (!confirm('Start completely fresh? Everything will be cleared.')) return;
-  cfg=null; scores={}; if(currentUser) set(ref(db,'users/'+currentUser.uid+'/tournament'),null); updateNav(); openSetup();
+  if (!confirm('Start completely fresh? The current tournament will be saved to Past Tournaments.')) return;
+  archiveCurrentTournament().then(() => {
+    cfg=null; scores={};
+    if (currentUser) {
+      set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), null);
+      if (activeTid) set(ref(db, 'tournaments/' + activeTid), null);
+    }
+    activeTid = null;
+    if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
+    updateNav(); openSetup();
+  });
+};
+
+window.shareTournamentLink = async function() {
+  if (!activeTid) { alert('Start a tournament first!'); return; }
+  const url = window.location.origin + window.location.pathname + '?t=' + activeTid;
+  const txt = 'Join our pickleball tournament! Open this link, sign in, and you can see + edit all the scores live: ' + url;
+  if (navigator.share) {
+    try { await navigator.share({ title: (cfg?.name||'Pickleball Tournament'), text: txt, url }); return; }
+    catch(e) { if (e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(url); alert('Tournament link copied!\n\nAnyone who opens it and signs in can view and edit scores live.\n\n' + url); }
+  catch(e) { prompt('Copy this link:', url); }
 };
 
 function make4PSchedule(players) {
@@ -883,7 +1021,8 @@ function renderGames() {
         const s=scores[g.key]||{s1:null,s2:null};
         const done=s.s1!==null&&s.s2!==null;
         const w=done?(s.s1>s.s2?'t1':s.s2>s.s1?'t2':null):null;
-        html+=gameCard(g,s,done,w,'Game '+(g.key.startsWith('g')?g.key.slice(1):(gi+1)));
+        const court = byRound[r].length>1 ? ' · 🏟 Court '+String.fromCharCode(65+gi) : '';
+        html+=gameCard(g,s,done,w,'Game '+(g.key.startsWith('g')?g.key.slice(1):(gi+1))+court);
       });
     });
   }
@@ -899,7 +1038,9 @@ function renderGames() {
     });
   }
 
-  el.innerHTML = html + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>';
+  el.innerHTML = html
+    + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
+    + '<a href="builder-summary.html" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏁 Done — View Summary</a>';
 }
 
 window.saveScore = window._saveScore = function(key) {
@@ -1010,11 +1151,10 @@ function calcStandings() {
     g.t2.forEach(p => { stats[p].ptsFor+=s.s2; stats[p].ptsAgainst+=s.s1; stats[p].games++; if(s.s2>s.s1) stats[p].wins++; });
   });
 
-  // Detect uneven game counts
+  // Detect uneven game counts (informational only — user's sort choice is always respected)
   const gameCounts = Object.values(stats).map(s=>s.games).filter(n=>n>0);
   const uneven = gameCounts.length > 1 && (Math.max(...gameCounts) - Math.min(...gameCounts)) >= 2;
-  if (uneven && rankMode === 'pts') {} // keep user choice
-  const effectiveMode = (uneven && rankMode === 'pts') ? 'avg' : rankMode;
+  const effectiveMode = rankMode;
 
   return {
     uneven,
@@ -1062,24 +1202,26 @@ function renderStandings() {
     html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">⚠ Uneven games played — Avg Diff recommended</div>';
   }
 
-  // Table
+  // Table — active sort column highlighted
+  const hW = effectiveMode==='wins', hP = effectiveMode==='pts', hA = effectiveMode==='avg';
+  const hl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
   html += '<table class="stbl"><thead><tr>'
-    +'<th>Player</th><th>W</th><th>PTS</th><th>AG</th><th>G</th>'
-    +'<th>'+(effectiveMode==='avg'?'Avg Diff':effectiveMode==='wins'?'+/-':'Pts')+'</th>'
+    +'<th>Player</th>'
+    +'<th '+(hW?hl:'')+'>W</th>'
+    +'<th '+(hP?hl:'')+'>PTS</th>'
+    +'<th>AG</th><th>G</th>'
+    +'<th '+(hA?hl:'')+'>Avg</th>'
     +'</tr></thead><tbody>';
 
   list.forEach((p,i) => {
-    const dc = p.diff>0?'dpos':p.diff<0?'dneg':'';
-    const highlight = effectiveMode==='avg'
-      ? `<span class="${dc}">${p.avgDiff>=0?'+':''}${p.avgDiff.toFixed(1)}</span>`
-      : effectiveMode==='wins'
-      ? `<span class="${dc}">${p.diff>=0?'+':''}${p.diff}</span>`
-      : `<span class="ptsf">${p.ptsFor}</span>`;
+    const dc = p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
     html += '<tr>'
       +'<td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
-      +'<td>'+p.wins+'</td><td class="ptsf">'+p.ptsFor+'</td><td>'+p.ptsAgainst+'</td>'
+      +'<td '+(hW?hl:'')+'>'+p.wins+'</td>'
+      +'<td '+(hP?hl:'')+' class="ptsf">'+p.ptsFor+'</td>'
+      +'<td>'+p.ptsAgainst+'</td>'
       +'<td style="color:var(--muted);">'+p.games+'</td>'
-      +'<td>'+highlight+'</td></tr>';
+      +'<td '+(hA?hl:'')+' class="'+dc+'">'+(p.avgDiff>=0?'+':'')+p.avgDiff.toFixed(1)+'</td></tr>';
   });
 
   html += '</tbody></table>';
@@ -1164,6 +1306,148 @@ window.saveProfileEdits = async function() {
   const msg = document.getElementById('profileSavedMsg');
   msg.style.display = 'block';
   setTimeout(() => msg.style.display = 'none', 2500);
+};
+
+// ── CITY/EMAIL PROMPT ──
+window.saveCityEmail = async function() {
+  const email = document.getElementById('ceEmail').value.trim();
+  const city  = document.getElementById('ceCity').value.trim();
+  userProfile = { ...userProfile, email: email||userProfile.email||null, city: city||userProfile.city||null };
+  try { await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch(e) {}
+  document.getElementById('cityEmailOverlay').classList.add('hidden');
+  _finalizeTournament();
+};
+window.skipCityEmail = function() {
+  document.getElementById('cityEmailOverlay').classList.add('hidden');
+  _finalizeTournament();
+};
+
+// ── PAST TOURNAMENTS ──
+const ADMIN_UIDS = ['4VIYfWzAOsWwp6e2j7f0U2vUurh2'];
+const ADMIN_IDS = ['+16176330544', 'm@pupsnchill.com', 'intensifymail@yahoo.com'];
+function isAdmin() {
+  if (!currentUser) return false;
+  return ADMIN_UIDS.includes(currentUser.uid)
+    || ADMIN_IDS.includes(currentUser.phoneNumber) || ADMIN_IDS.includes(currentUser.email);
+}
+
+window.openHistory = function() {
+  document.getElementById('pageHistory').style.display = 'block';
+  document.getElementById('historyDetail').style.display = 'none';
+  document.getElementById('historyList').style.display = 'block';
+  const listEl = document.getElementById('historyList');
+  listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading...</div>';
+  onValue(ref(db, 'users/' + currentUser.uid + '/history'), snap => {
+    const data = snap.val();
+    if (!data) {
+      listEl.innerHTML = '<div class="empty"><div class="empty-icon">📜</div><div class="empty-t">No Past Tournaments</div><div class="empty-s">Finished tournaments will appear here automatically</div></div>';
+      return;
+    }
+    window._historyData = data;
+    const entries = Object.entries(data).sort((a,b)=>(b[1].finishedAt||0)-(a[1].finishedAt||0));
+    listEl.innerHTML = entries.map(([tid, t]) => {
+      const date = t.finishedAt ? new Date(t.finishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      const nGames = t.cfg?.schedule ? (Array.isArray(t.cfg.schedule)?t.cfg.schedule:Object.values(t.cfg.schedule)).filter(g=>!g.deleted).length : 0;
+      const players = t.cfg?.players ? (Array.isArray(t.cfg.players)?t.cfg.players:Object.values(t.cfg.players)) : [];
+      return '<div onclick="viewHistoryDetail(\''+tid+'\')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;">'
+        +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;margin-bottom:4px;">'+(t.cfg?.name||'Tournament')+'</div>'
+        +'<div style="font-size:13px;color:var(--muted);font-weight:600;">'+date+' · '+players.length+' players · '+nGames+' games</div>'
+        +'</div>';
+    }).join('');
+  }, {onlyOnce:true});
+};
+
+window.viewHistoryDetail = function(tid) {
+  const t = window._historyData?.[tid];
+  if (!t) return;
+  const tCfg = t.cfg;
+  tCfg.schedule = (Array.isArray(tCfg.schedule)?tCfg.schedule:Object.values(tCfg.schedule||{})).map(g=>({...g,
+    t1:Array.isArray(g.t1)?g.t1:Object.values(g.t1||{}), t2:Array.isArray(g.t2)?g.t2:Object.values(g.t2||{})}));
+  tCfg.players = Array.isArray(tCfg.players)?tCfg.players:Object.values(tCfg.players||{});
+  const tScores = t.scores || {};
+  const date = t.finishedAt ? new Date(t.finishedAt).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}) : '';
+
+  // Standings
+  const stats={}; const allP = new Set(tCfg.players);
+  tCfg.schedule.forEach(g=>{if(g.deleted)return;g.t1.forEach(p=>allP.add(p));g.t2.forEach(p=>allP.add(p));});
+  allP.forEach(p=>{stats[p]={wins:0,ptsFor:0,ptsAgainst:0,games:0};});
+  tCfg.schedule.forEach(g=>{
+    if(g.deleted)return;
+    const s=tScores[g.key];if(!s||s.s1===null||s.s2===null)return;
+    g.t1.forEach(p=>{stats[p].ptsFor+=s.s1;stats[p].ptsAgainst+=s.s2;stats[p].games++;if(s.s1>s.s2)stats[p].wins++;});
+    g.t2.forEach(p=>{stats[p].ptsFor+=s.s2;stats[p].ptsAgainst+=s.s1;stats[p].games++;if(s.s2>s.s1)stats[p].wins++;});
+  });
+  const list=[...allP].map(p=>{const st=stats[p];const diff=st.ptsFor-st.ptsAgainst;
+    return {name:p,...st,diff,avgDiff:st.games>0?diff/st.games:0};})
+    .sort((a,b)=>b.avgDiff-a.avgDiff||b.wins-a.wins||b.ptsFor-a.ptsFor);
+
+  let html = '<button onclick="openHistory()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:\'DM Sans\',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:16px;">← All Tournaments</button>';
+  html += '<div style="font-family:\'Russo One\',sans-serif;font-size:22px;letter-spacing:1px;color:var(--white);text-transform:uppercase;margin-bottom:2px;">'+(tCfg.name||'Tournament')+'</div>';
+  html += '<div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:18px;">'+date+'</div>';
+  html += '<table class="stbl"><thead><tr><th>Player</th><th>W</th><th>Pts</th><th>Ag</th><th>G</th><th>Avg</th></tr></thead><tbody>';
+  list.forEach((p,i)=>{
+    const dc=p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
+    html+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
+      +'<td>'+p.wins+'</td><td class="ptsf">'+p.ptsFor+'</td><td>'+p.ptsAgainst+'</td><td style="color:var(--muted);">'+p.games+'</td>'
+      +'<td class="'+dc+'">'+(p.avgDiff>0?'+':'')+p.avgDiff.toFixed(1)+'</td></tr>';
+  });
+  html += '</tbody></table>';
+
+  // Game list
+  html += '<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:20px 0 10px;">All Games</div>';
+  tCfg.schedule.forEach(g=>{
+    if(g.deleted)return;
+    const s=tScores[g.key]||{s1:null,s2:null};
+    const done=s.s1!==null&&s.s2!==null;
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:6px;">'
+      +'<div style="font-family:\'Exo 2\',sans-serif;font-size:13px;font-weight:900;text-transform:uppercase;flex:1;">'+g.t1.join(' & ')+' vs '+g.t2.join(' & ')+'</div>'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;white-space:nowrap;margin-left:10px;">'+(done?'<span style="color:'+(s.s1>s.s2?'var(--cyan)':'var(--white)')+'">'+s.s1+'</span><span style="color:var(--muted);font-size:12px;margin:0 3px;">—</span><span style="color:'+(s.s2>s.s1?'var(--cyan)':'var(--white)')+'">'+s.s2+'</span>':'<span style="color:var(--muted)">—</span>')+'</div>'
+      +'</div>';
+  });
+
+  // Admin restore + delete
+  if (isAdmin()) {
+    html += '<button onclick="restoreTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:20px;padding:14px;background:transparent;border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🛠 Admin: Load Into App to Edit</button>';
+    html += '<div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-weight:600;">Current active tournament will be archived first</div>';
+    html += '<button onclick="deleteHistoryTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🗑 Admin: Delete Forever</button>';
+  }
+
+  document.getElementById('historyList').style.display = 'none';
+  const det = document.getElementById('historyDetail');
+  det.innerHTML = html;
+  det.style.display = 'block';
+};
+
+window.restoreTournament = async function(tid) {
+  if (!isAdmin()) return;
+  const t = window._historyData?.[tid];
+  if (!t) return;
+  if (!confirm('Load this tournament into the app for editing? Your current active tournament will be archived first.')) return;
+  await archiveCurrentTournament();
+  cfg = t.cfg; scores = t.scores || {};
+  cfg.schedule = (Array.isArray(cfg.schedule)?cfg.schedule:Object.values(cfg.schedule||{})).map(g=>({...g,
+    t1:Array.isArray(g.t1)?g.t1:Object.values(g.t1||{}), t2:Array.isArray(g.t2)?g.t2:Object.values(g.t2||{})}));
+  cfg.players = Array.isArray(cfg.players)?cfg.players:Object.values(cfg.players||{});
+  await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), null);
+  const newTid = makeTid();
+  await set(ref(db, 'tournaments/' + newTid), { cfg, scores, ownerUid: currentUser.uid, updatedAt: Date.now() });
+  await set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), newTid);
+  subscribeTournament(newTid);
+  closeHistory();
+  showPage('games');
+};
+
+window.deleteHistoryTournament = async function(tid) {
+  if (!isAdmin()) return;
+  const t = window._historyData?.[tid];
+  const name = t?.cfg?.name || 'this tournament';
+  if (!confirm('Permanently delete "'+name+'"? This cannot be undone.')) return;
+  await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), null);
+  openHistory(); // refresh list
+};
+
+window.closeHistory = function() {
+  document.getElementById('pageHistory').style.display = 'none';
 };
 
 // ── PHONE AUTH FUNCTIONS ──
@@ -1311,6 +1595,14 @@ function addNewPlayerToGame(){ if(window.addNewPlayerToGame) window.addNewPlayer
 function saveAddedGame()    { if(window.saveAddedGame) window.saveAddedGame(); }
 function deleteGame(k)      { if(window.deleteGame) window.deleteGame(k); }
 function restoreGame(k)     { if(window.restoreGame) window.restoreGame(k); }
+function saveCityEmail()    { if(window.saveCityEmail) window.saveCityEmail(); }
+function skipCityEmail()    { if(window.skipCityEmail) window.skipCityEmail(); }
+function openHistory()      { if(window.openHistory) window.openHistory(); }
+function closeHistory()     { if(window.closeHistory) window.closeHistory(); }
+function viewHistoryDetail(t){ if(window.viewHistoryDetail) window.viewHistoryDetail(t); }
+function restoreTournament(t){ if(window.restoreTournament) window.restoreTournament(t); }
+function deleteHistoryTournament(t){ if(window.deleteHistoryTournament) window.deleteHistoryTournament(t); }
+function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
 
 // ── SOUNDS ──
 // iOS requires AudioContext created INSIDE a user gesture handler.

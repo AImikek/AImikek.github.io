@@ -174,7 +174,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const FB = {
@@ -233,7 +233,7 @@ const loaderTimeout = setTimeout(function() {
   document.getElementById('loaderTimeout').style.display = 'block';
 }, 5000);
 
-onAuthStateChanged(auth, function(user) {
+onAuthStateChanged(auth, async function(user) {
 const uid = user ? user.uid : null;
 if (!uid) {
   clearTimeout(loaderTimeout);
@@ -246,7 +246,11 @@ if (!uid) {
     +'</div>';
   document.getElementById('summary').style.display = 'block';
 } else {
-  onValue(ref(db, 'users/' + uid + '/tournament'), snap => {
+  // Shared model: get the user's active tournament id, then read tournaments/{tid}
+  const ptrSnap = await get(ref(db, 'users/' + uid + '/activeTournamentId'));
+  const tid = ptrSnap.exists() ? ptrSnap.val() : null;
+  const dataRef = tid ? ref(db, 'tournaments/' + tid) : ref(db, 'users/' + uid + '/tournament');
+  onValue(dataRef, snap => {
   clearTimeout(loaderTimeout);
   document.getElementById('loader').style.display = 'none';
   document.getElementById('syncPill').classList.add('live');
