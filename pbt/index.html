@@ -904,20 +904,50 @@ window.shareTournamentLink = async function() {
   catch(e) { prompt('Copy this link:', url); }
 };
 
+// Randomize schedule: shuffle court order within each round, and randomly
+// flip which team is t1 (North) vs t2 (South) so serving/side isn't biased
+// toward players listed first. Runs once at creation; stored so all phones match.
+function randomizeSchedule(sched) {
+  const byRound = {};
+  sched.forEach(g => { const r = g.round ?? g.matchup ?? 0; if (!byRound[r]) byRound[r] = []; byRound[r].push(g); });
+  const out = [];
+  Object.keys(byRound).sort((a,b)=>+a-+b).forEach(r => {
+    const games = byRound[r];
+    // Shuffle order within the round (court assignment)
+    for (let i = games.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [games[i], games[j]] = [games[j], games[i]];
+    }
+    // Random side flip per game
+    games.forEach(g => {
+      if (Math.random() < 0.5) { const t = g.t1; g.t1 = g.t2; g.t2 = t; }
+      out.push(g);
+    });
+  });
+  return out;
+}
+
 function make4PSchedule(players) {
   const [a,b,c,d]=players;
-  return [
+  const sched = [
     {key:'m1g1',matchup:1,game:1,t1:[a,b],t2:[c,d]},{key:'m1g2',matchup:1,game:2,t1:[a,b],t2:[c,d]},
     {key:'m2g1',matchup:2,game:1,t1:[a,c],t2:[b,d]},{key:'m2g2',matchup:2,game:2,t1:[a,c],t2:[b,d]},
     {key:'m3g1',matchup:3,game:1,t1:[a,d],t2:[b,c]},{key:'m3g2',matchup:3,game:2,t1:[a,d],t2:[b,c]},
   ];
+  // Random side flip per MATCHUP (both games together, so matchup win counting stays consistent)
+  [1,2,3].forEach(mi => {
+    if (Math.random() < 0.5) {
+      sched.filter(g=>g.matchup===mi).forEach(g => { const t=g.t1; g.t1=g.t2; g.t2=t; });
+    }
+  });
+  return sched;
 }
 
 function makeRRSchedule(players) {
   const n=players.length;
   if (n===8) {
     const p=players;
-    return [
+    const perfect8 = [
       {r:1,t1:[p[0],p[1]],t2:[p[2],p[3]]},{r:1,t1:[p[4],p[5]],t2:[p[6],p[7]]},
       {r:2,t1:[p[0],p[2]],t2:[p[4],p[6]]},{r:2,t1:[p[1],p[3]],t2:[p[5],p[7]]},
       {r:3,t1:[p[0],p[3]],t2:[p[5],p[6]]},{r:3,t1:[p[1],p[2]],t2:[p[4],p[7]]},
@@ -926,6 +956,7 @@ function makeRRSchedule(players) {
       {r:6,t1:[p[0],p[6]],t2:[p[1],p[7]]},{r:6,t1:[p[2],p[5]],t2:[p[3],p[4]]},
       {r:7,t1:[p[0],p[7]],t2:[p[2],p[4]]},{r:7,t1:[p[1],p[6]],t2:[p[3],p[5]]},
     ].map((g,i)=>({key:'g'+(i+1),round:g.r,t1:g.t1,t2:g.t2}));
+    return randomizeSchedule(perfect8);
   }
   const pairKey=(a,b)=>[a,b].sort().join('||');
   const PC={},OC={};
@@ -956,7 +987,7 @@ function makeRRSchedule(players) {
     sched.push(...rg);
     const rot=arr.slice(1);rot.unshift(rot.pop());arr.splice(0,arr.length,arr[0],...rot);
   }
-  return sched;
+  return randomizeSchedule(sched);
 }
 
 function getMatchupWins(mi) {
@@ -974,9 +1005,9 @@ function gameCard(g, s, done, w, label) {
 
   return '<div class="gcard'+(done?' done':'')+'"><div class="ghdr"><span class="glbl">⚡ '+label+'</span><span>'+(done?'✅':'')+'</span></div>'
     +'<div class="gbody"><div class="matchup">'
-    +'<div class="team">'+g.t1.join(' & ')+(w==='t1'?'<span class="wtag" style="margin-left:8px;">W</span>':'')+'</div>'
+    +'<div class="team"><span style="display:block;font-size:9px;letter-spacing:2px;color:var(--muted);font-family:\'Russo One\',sans-serif;margin-bottom:2px;">⬆ NORTH</span>'+g.t1.join(' & ')+(w==='t1'?'<span class="wtag" style="margin-left:8px;">W</span>':'')+'</div>'
     +'<div class="vs">vs</div>'
-    +'<div class="team r">'+(w==='t2'?'<span class="wtag" style="margin-right:8px;margin-left:0;">W</span>':'')+g.t2.join(' & ')+'</div>'
+    +'<div class="team r"><span style="display:block;font-size:9px;letter-spacing:2px;color:var(--muted);font-family:\'Russo One\',sans-serif;margin-bottom:2px;">SOUTH ⬇</span>'+(w==='t2'?'<span class="wtag" style="margin-right:8px;margin-left:0;">W</span>':'')+g.t2.join(' & ')+'</div>'
     +'</div><div class="srow">'
     +'<input class="sinput" type="number" inputmode="numeric" min="0" max="99" id="s1_'+g.key+'" value="'+(s.s1!==null?s.s1:'')+'" placeholder="0">'
     +'<span class="sdash">—</span>'
