@@ -214,7 +214,7 @@
     backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
   #addGameOverlay.hidden { display:none; }
 
-  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden { display:none !important; }
+  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden { display:none !important; }
 
   /* City/Email overlay — display controlled ONLY by CSS class */
   #cityEmailOverlay { display:flex; }
@@ -630,6 +630,22 @@
   </div>
 </div>
 
+<!-- LEADERBOARD -->
+<div id="leaderboardPage" class="hidden" style="position:fixed;inset:0;z-index:340;background:var(--bg);overflow-y:auto;padding:16px 16px 60px;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-top:4px;">
+      <button onclick="closeLeaderboard()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">🏆 Leaderboard</div>
+    </div>
+    <div class="rank-toggle" id="lbTimeRow" style="margin-bottom:8px;"></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <select class="finput" id="lbCity" onchange="renderLeaderboard()" style="margin-bottom:0;flex:1;color-scheme:dark;font-size:13px;padding:10px 12px;"><option value="">🌎 All Cities</option></select>
+    </div>
+    <div class="rank-toggle" id="lbSortRow" style="margin-bottom:14px;"></div>
+    <div id="lbContent"><div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading...</div></div>
+  </div>
+</div>
+
 <!-- iOS Audio Unlock — fires on very first touch -->
 <script>
 var _audioCtx = null;
@@ -655,6 +671,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
   </button>
   <button class="tab" id="tabStats" onclick="document.getElementById('setupOverlay').classList.add('hidden');showPage('standings')" style="display:none;">📊 Stats</button>
   <a class="tab" id="tabSummary" href="builder-summary.html" style="display:none;text-decoration:none;">📋 Summary</a>
+  <button class="tab" id="tabLeaderboard" onclick="openLeaderboard()">🏆 Leaders</button>
   <button class="tab" id="tabFeedback" onclick="openFeedback()" style="display:none;color:var(--aqua);">💬 Feedback</button>
   <span class="nav-spacer"></span>
 
@@ -1236,6 +1253,137 @@ window.deleteFeedback = async function(id) {
     await set(ref(db, 'feedback/' + id), null);
     openFeedbackInbox(); // refresh
   } catch(e) { alert('Could not delete: ' + (e.message||e)); }
+};
+
+// ── LEADERBOARD ──
+let lbTime = 'all', lbSort = 'avg', lbData = null;
+const LB_MIN_GAMES = 3;
+
+window.openLeaderboard = async function() {
+  document.getElementById('leaderboardPage').classList.remove('hidden');
+  setActiveTab(null);
+  if (!lbData) await loadLeaderboardData();
+  renderLeaderboard();
+};
+window.closeLeaderboard = function() {
+  document.getElementById('leaderboardPage').classList.add('hidden');
+  if (!cfg) { openSetup(); return; }
+  setActiveTab(curPage);
+};
+window.setLbTime = function(t) { lbTime = t; renderLeaderboard(); };
+window.setLbSort = function(s) { lbSort = s; renderLeaderboard(); };
+
+async function loadLeaderboardData() {
+  try {
+    const [tSnap, dSnap] = await Promise.all([ get(ref(db, 'tournaments')), get(ref(db, 'directory')) ]);
+    const tournaments = tSnap.val() || {};
+    const dir = dSnap.val() || {};
+    const cityByName = {};
+    Object.values(dir).forEach(p => { if (p.name && p.city && !cityByName[p.name.toLowerCase()]) cityByName[p.name.toLowerCase()] = p.city; });
+    // Flatten all completed games with timestamps
+    const games = [];
+    Object.values(tournaments).forEach(t => {
+      if (!t?.cfg?.schedule) return;
+      const when = t.updatedAt || Date.now();
+      const sched = Array.isArray(t.cfg.schedule) ? t.cfg.schedule : Object.values(t.cfg.schedule);
+      sched.forEach(g => {
+        if (g.deleted) return;
+        const s = t.scores?.[g.key];
+        if (!s || s.s1 === null || s.s2 === null || s.s1 === undefined) return;
+        const t1 = Array.isArray(g.t1)?g.t1:Object.values(g.t1||{});
+        const t2 = Array.isArray(g.t2)?g.t2:Object.values(g.t2||{});
+        games.push({ t1, t2, s1: s.s1, s2: s.s2, when });
+      });
+    });
+    games.sort((a,b) => a.when - b.when);
+    lbData = { games, cityByName };
+    // Populate city dropdown
+    const cities = [...new Set(Object.values(cityByName))].sort();
+    document.getElementById('lbCity').innerHTML = '<option value="">🌎 All Cities</option>'
+      + cities.map(c => '<option>'+c+'</option>').join('');
+  } catch(e) { console.log('lb load err', e); lbData = { games: [], cityByName: {} }; }
+}
+
+window.renderLeaderboard = function() {
+  if (!lbData) return;
+  const now = Date.now();
+  const cutoff = lbTime==='week' ? now - 7*86400000 : lbTime==='month' ? now - 30*86400000 : 0;
+  const cityFilter = document.getElementById('lbCity').value;
+
+  // Toggle rows
+  document.getElementById('lbTimeRow').innerHTML =
+    [['all','All Time'],['month','This Month'],['week','This Week']].map(([v,l]) =>
+      '<button class="rtbtn'+(lbTime===v?' active':'')+'" onclick="setLbTime(\''+v+'\')">'+l+'</button>').join('');
+  document.getElementById('lbSortRow').innerHTML =
+    [['avg','Avg Diff'],['wins','Wins'],['pts','Points']].map(([v,l]) =>
+      '<button class="rtbtn'+(lbSort===v?' active':'')+'" onclick="setLbSort(\''+v+'\')">'+l+'</button>').join('');
+
+  // Aggregate
+  const stats = {};
+  lbData.games.forEach(g => {
+    if (g.when < cutoff) return;
+    const credit = (players, pf, pa, won) => players.forEach(p => {
+      const k = p.trim(); if (!k) return;
+      if (!stats[k]) stats[k] = { name:k, wins:0, losses:0, ptsFor:0, ptsAgainst:0, games:0, streak:0 };
+      const st = stats[k];
+      st.ptsFor += pf; st.ptsAgainst += pa; st.games++;
+      if (won) { st.wins++; st.streak = st.streak >= 0 ? st.streak + 1 : 1; }
+      else { st.losses++; st.streak = st.streak <= 0 ? st.streak - 1 : -1; }
+    });
+    credit(g.t1, g.s1, g.s2, g.s1 > g.s2);
+    credit(g.t2, g.s2, g.s1, g.s2 > g.s1);
+  });
+
+  let list = Object.values(stats).map(p => ({
+    ...p,
+    city: lbData.cityByName[p.name.toLowerCase()] || null,
+    avgDiff: p.games ? (p.ptsFor - p.ptsAgainst) / p.games : 0
+  }));
+  if (cityFilter) list = list.filter(p => p.city === cityFilter);
+
+  const qualified = list.filter(p => p.games >= LB_MIN_GAMES);
+  const unqualified = list.filter(p => p.games < LB_MIN_GAMES);
+  const sortFn = lbSort==='wins' ? (a,b)=>b.wins-a.wins||b.avgDiff-a.avgDiff
+    : lbSort==='pts' ? (a,b)=>b.ptsFor-a.ptsFor||b.avgDiff-a.avgDiff
+    : (a,b)=>b.avgDiff-a.avgDiff||b.wins-a.wins;
+  qualified.sort(sortFn);
+  unqualified.sort((a,b)=>b.games-a.games);
+
+  const myName = (userProfile?.name||'').toLowerCase();
+  let h = '';
+  if (!qualified.length && !unqualified.length) {
+    h = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-t">No Games Yet</div><div style="color:var(--muted);font-size:13px;font-weight:600;margin-top:8px;">Play some games and the leaderboard comes alive!</div></div>';
+  } else {
+    h += '<table class="stbl"><thead><tr><th></th><th>Player</th><th>W-L</th><th>G</th><th>'+(lbSort==='pts'?'Pts':'Avg')+'</th></tr></thead><tbody>';
+    qualified.forEach((p, i) => {
+      const isMe = p.name.toLowerCase() === myName;
+      const medal = i===0?'👑':i===1?'🥈':i===2?'🥉':(i+1);
+      const streakBadge = p.streak >= 3 ? ' <span style="font-size:11px;">🔥'+p.streak+'</span>' : '';
+      const gap = i>0 && lbSort==='avg' ? '<div style="font-size:10px;color:var(--muted);font-weight:600;">'+(qualified[i-1].avgDiff - p.avgDiff).toFixed(1)+' behind '+qualified[i-1].name+'</div>' : '';
+      const metric = lbSort==='pts' ? '<span class="ptsf">'+p.ptsFor+'</span>'
+        : '<span class="'+(p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'')+'">'+(p.avgDiff>=0?'+':'')+p.avgDiff.toFixed(1)+'</span>';
+      h += '<tr'+(isMe?' style="background:rgba(0,240,255,0.07);box-shadow:inset 3px 0 0 var(--cyan);"':'')+'>'
+        +'<td style="font-size:'+(i<3?'18':'14')+'px;">'+medal+'</td>'
+        +'<td><span class="pname">'+p.name+'</span>'+streakBadge
+        +(p.city?'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+p.city+'</div>':'')+gap+'</td>'
+        +'<td>'+p.wins+'-'+p.losses+'</td><td style="color:var(--muted);">'+p.games+'</td>'
+        +'<td>'+metric+'</td></tr>';
+    });
+    h += '</tbody></table>';
+    if (unqualified.length) {
+      h += '<div style="margin-top:16px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Almost There</div>';
+      unqualified.forEach(p => {
+        const need = LB_MIN_GAMES - p.games;
+        h += '<div style="display:flex;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;opacity:0.7;">'
+          +'<span style="font-weight:700;color:var(--white);font-size:14px;">'+p.name+'</span>'
+          +'<span style="font-size:12px;color:var(--yellow);font-weight:600;">'+need+' more game'+(need>1?'s':'')+' to qualify 🎯</span></div>';
+      });
+    }
+    if (qualified.length) {
+      h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(cityFilter?cityFilter:'')+' champ · min '+LB_MIN_GAMES+' games to rank</div>';
+    }
+  }
+  document.getElementById('lbContent').innerHTML = h;
 };
 
 // ── ADMIN IMPORT ──
@@ -2071,6 +2219,11 @@ function submitFeedback()   { if(window.submitFeedback) window.submitFeedback();
 function openFeedbackInbox(){ if(window.openFeedbackInbox) window.openFeedbackInbox(); }
 function deleteFeedback(id)  { if(window.deleteFeedback) window.deleteFeedback(id); }
 function openImport()        { if(window.openImport) window.openImport(); }
+function openLeaderboard()   { if(window.openLeaderboard) window.openLeaderboard(); }
+function closeLeaderboard()  { if(window.closeLeaderboard) window.closeLeaderboard(); }
+function setLbTime(t)        { if(window.setLbTime) window.setLbTime(t); }
+function setLbSort(s)        { if(window.setLbSort) window.setLbSort(s); }
+function renderLeaderboard() { if(window.renderLeaderboard) window.renderLeaderboard(); }
 function runImport()         { if(window.runImport) window.runImport(); }
 
 // ── SOUNDS ──
