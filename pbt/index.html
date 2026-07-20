@@ -866,7 +866,11 @@ function _finalizeTournament() {
   activeTid = tid;
   set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
   set(ref(db, 'tournaments/' + tid), { cfg, scores, ownerUid: currentUser.uid, updatedAt: Date.now() })
-    .then(() => subscribeTournament(tid));
+    .then(() => subscribeTournament(tid))
+    .catch(e => {
+      console.log('tournament write error', e);
+      alert('⚠️ Could not save the tournament to the server.\n\nThis usually means the Firebase rules need the "tournaments" section added. The tournament is showing locally but will NOT sync or save until rules are updated.');
+    });
   closeSetup(); showPage('games');
 }
 
