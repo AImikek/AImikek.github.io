@@ -853,6 +853,9 @@ function subscribeTournament(tid) {
         closeSetup();
         updateNav();
         if (startHash==='setup') { openSetup(); return; }
+        if (startHash==='leaderboard') { renderCurrent(); openLeaderboard(); return; }
+        if (startHash==='leaderboard') { renderCurrent(); setTimeout(()=>openLeaderboard(),0); return; }
+        if (startHash==='feedback') { renderCurrent(); setTimeout(()=>window.openFeedback&&window.openFeedback(),0); return; }
         if (startHash==='settings') {
           renderCurrent();
           setTimeout(() => { if (window.openSettings) window.openSettings(); else if (typeof openSettings==='function') openSettings(); }, 0);
@@ -872,7 +875,9 @@ function subscribeTournament(tid) {
     } else {
       firstLoad = false;
       cfg=null; scores={};
-      updateNav(); openSetup();
+      updateNav();
+      if (startHash==='leaderboard') { openLeaderboard(); }
+      else openSetup();
     }
   }, err => {
     console.log('tournament read error', err);
@@ -930,7 +935,9 @@ async function bootApp() {
   // 4. Nothing — fresh start
   firstLoad = false;
   cfg = null; scores = {}; activeTid = null;
-  updateNav(); openSetup();
+  updateNav();
+  if (startHash==='leaderboard') { openLeaderboard(); return; }
+  openSetup();
 }
 
 function updateNav() {
@@ -1248,6 +1255,40 @@ window.openFeedbackInbox = function() {
   }, {onlyOnce:true});
 };
 
+window.saveHistoryDate = async function(tid) {
+  if (!isAdmin()) return;
+  const v = document.getElementById('histDateEdit').value;
+  if (!v) return;
+  const ts = new Date(v + 'T18:00:00').getTime();
+  try {
+    await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid + '/finishedAt'), ts);
+    if (window._historyData?.[tid]) window._historyData[tid].finishedAt = ts;
+    alert('✓ Date updated to ' + new Date(ts).toLocaleDateString());
+    lbData = null; // force leaderboard refresh
+  } catch(e) { alert('Could not save date: ' + (e.message||e)); }
+};
+
+window.shareHistoryTournament = async function(tid) {
+  const t = window._historyData?.[tid];
+  if (!t?.cfg) return;
+  try {
+    const cleanSchedule = (Array.isArray(t.cfg.schedule)?t.cfg.schedule:Object.values(t.cfg.schedule||{})).filter(g=>!g.deleted);
+    const shareId = Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+    await set(ref(db, 'shares/' + shareId), {
+      cfg: { name: t.cfg.name||'Tournament', mode: t.cfg.mode, players: t.cfg.players, schedule: cleanSchedule },
+      scores: t.scores || {},
+      createdAt: t.finishedAt || Date.now()
+    });
+    const url = window.location.origin + window.location.pathname.replace(/index\.html$/,'') + 'results.html?id=' + shareId;
+    if (navigator.share) {
+      try { await navigator.share({ title: (t.cfg.name||'Tournament')+' Results 🏓', url }); return; }
+      catch(e) { if (e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(url); alert('Link copied!\n' + url); }
+    catch(e) { prompt('Copy this link:', url); }
+  } catch(e) { alert('Could not create share link: ' + (e.message||e)); }
+};
+
 window.deleteFeedback = async function(id) {
   if (!isAdmin()) return;
   if (!confirm('Delete this feedback entry?')) return;
@@ -1262,6 +1303,7 @@ let lbTime = 'all', lbSort = 'avg', lbData = null;
 const LB_MIN_GAMES = 3;
 
 window.openLeaderboard = async function() {
+  try { history.replaceState({}, '', '#leaderboard'); } catch(e) {}
   document.getElementById('leaderboardPage').classList.remove('hidden');
   setActiveTab(null);
   document.getElementById('lbContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading...</div>';
@@ -1269,6 +1311,7 @@ window.openLeaderboard = async function() {
   renderLeaderboard();
 };
 window.closeLeaderboard = function() {
+  try { history.replaceState({}, '', window.location.pathname); } catch(e) {}
   document.getElementById('leaderboardPage').classList.add('hidden');
   if (!cfg) { openSetup(); return; }
   setActiveTab(curPage);
@@ -1278,12 +1321,16 @@ window.setLbSort = function(s) { lbSort = s; renderLeaderboard(); };
 
 async function loadLeaderboardData() {
   try {
-    const [tSnap, dSnap, hSnap] = await Promise.all([
+    const results = await Promise.allSettled([
       get(ref(db, 'tournaments')),
       get(ref(db, 'directory')),
       currentUser ? get(ref(db, 'users/' + currentUser.uid + '/history')) : Promise.resolve({ val: () => null })
     ]);
-    const tournaments = tSnap.val() || {};
+    const val = (i) => results[i].status === 'fulfilled' ? (results[i].value.val() || {}) : {};
+    const tournaments = val(0);
+    const dSnap = { val: () => val(1) };
+    const hSnap = { val: () => val(2) };
+    if (results[0].status === 'rejected') console.log('tournaments read denied — update rules to allow ".read" on the tournaments node');
     // Merge in own archived tournaments (covers pre-shared-era + imported data)
     const hist = hSnap.val() || {};
     Object.entries(hist).forEach(([tid, t]) => {
@@ -2023,10 +2070,27 @@ window.viewHistoryDetail = function(tid) {
       +'</div>';
   });
 
+  html += '<button onclick="shareHistoryTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:18px;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🔗 Share Results Link</button>';
+  html += '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;font-weight:600;">Opens the public results page — screenshot it for an image</div>';
+
   // Admin restore + delete
   if (isAdmin()) {
-    html += '<button onclick="restoreTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:20px;padding:14px;background:transparent;border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🛠 Admin: Load Into App to Edit</button>';
+    const d = t.finishedAt ? new Date(t.finishedAt) : new Date();
+    const dstr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    html += '<div style="margin-top:20px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;">'
+      +'<label class="flabel">Tournament Date (admin)</label>'
+      +'<input class="finput" type="date" id="histDateInput" value="'+dstr+'" style="color-scheme:dark;margin-bottom:8px;">'
+      +'<button onclick="saveHistoryDate(\''+tid+'\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">💾 Save Date</button></div>';
+    html += '<div style="display:flex;gap:8px;margin-top:14px;">'
+      +'<button onclick="shareHistoryTournament(\''+tid+'\')" style="flex:1;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🔗 Share Link</button>'
+      +'<button onclick="copyHistoryJson(\''+tid+'\')" style="flex:1;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📋 Copy JSON</button>'
+      +'</div>';
+    html += '<button onclick="restoreTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🛠 Admin: Load Into App to Edit</button>';
     html += '<div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-weight:600;">Current active tournament will be archived first</div>';
+    const dVal = t.finishedAt ? new Date(t.finishedAt).toISOString().slice(0,10) : '';
+    html += '<div style="margin-top:16px;"><label class="flabel">📅 Tournament Date (Admin)</label>'
+      +'<div style="display:flex;gap:8px;"><input class="finput" type="date" id="histDateEdit" value="'+dVal+'" style="margin-bottom:0;flex:1;color-scheme:dark;">'
+      +'<button onclick="saveHistoryDate(\''+tid+'\')" style="padding:0 18px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Save</button></div></div>';
     html += '<button onclick="deleteHistoryTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🗑 Admin: Delete Forever</button>';
   }
 
@@ -2062,6 +2126,50 @@ window.deleteHistoryTournament = async function(tid) {
   if (!confirm('Permanently delete "'+name+'"? This cannot be undone.')) return;
   await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), null);
   openHistory(); // refresh list
+};
+
+window.saveHistoryDate = async function(tid) {
+  if (!isAdmin()) return;
+  const v = document.getElementById('histDateInput').value;
+  if (!v) return;
+  const ts = new Date(v + 'T18:00:00').getTime();
+  try {
+    await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid + '/finishedAt'), ts);
+    if (window._historyData?.[tid]) window._historyData[tid].finishedAt = ts;
+    alert('✓ Date saved: ' + new Date(ts).toLocaleDateString());
+  } catch(e) { alert('Could not save date: ' + (e.message||e)); }
+};
+
+window.shareHistoryTournament = async function(tid) {
+  const t = window._historyData?.[tid];
+  if (!t?.cfg) return;
+  try {
+    const shareId = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+    const sched = (Array.isArray(t.cfg.schedule)?t.cfg.schedule:Object.values(t.cfg.schedule||{})).filter(g=>!g.deleted);
+    await set(ref(db, 'shares/' + shareId), { cfg: {...t.cfg, schedule: sched}, scores: t.scores||{}, createdAt: t.finishedAt || Date.now() });
+    const url = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + 'results.html?id=' + shareId;
+    if (navigator.share) { try { await navigator.share({ title: (t.cfg.name||'Tournament')+' Results 🏓', url }); return; } catch(e) { if (e.name==='AbortError') return; } }
+    await navigator.clipboard.writeText(url); alert('Link copied!\n' + url);
+  } catch(e) { alert('Share failed: ' + (e.message||e)); }
+};
+
+window.copyHistoryJson = async function(tid) {
+  const t = window._historyData?.[tid];
+  if (!t?.cfg) return;
+  const sched = (Array.isArray(t.cfg.schedule)?t.cfg.schedule:Object.values(t.cfg.schedule||{})).filter(g=>!g.deleted);
+  const d = t.finishedAt ? new Date(t.finishedAt) : new Date();
+  const json = {
+    name: t.cfg.name || 'Tournament',
+    date: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'),
+    mode: t.cfg.mode || 'rr',
+    games: sched.map(g => {
+      const s = t.scores?.[g.key] || {};
+      return { t1: Array.isArray(g.t1)?g.t1:Object.values(g.t1||{}), t2: Array.isArray(g.t2)?g.t2:Object.values(g.t2||{}),
+        s1: s.s1 ?? null, s2: s.s2 ?? null, ...(g.matchup?{matchup:g.matchup,game:g.game||1}:{}) };
+    })
+  };
+  try { await navigator.clipboard.writeText(JSON.stringify(json, null, 2)); alert('✓ Tournament JSON copied — paste it anywhere!'); }
+  catch(e) { prompt('Copy this JSON:', JSON.stringify(json)); }
 };
 
 window.closeHistory = function() {
@@ -2220,6 +2328,9 @@ function closeHistory()     { if(window.closeHistory) window.closeHistory(); }
 function viewHistoryDetail(t){ if(window.viewHistoryDetail) window.viewHistoryDetail(t); }
 function restoreTournament(t){ if(window.restoreTournament) window.restoreTournament(t); }
 function deleteHistoryTournament(t){ if(window.deleteHistoryTournament) window.deleteHistoryTournament(t); }
+function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
+function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
+function copyHistoryJson(t)      { if(window.copyHistoryJson) window.copyHistoryJson(t); }
 function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
 function joinTournamentPrompt(){ if(window.joinTournamentPrompt) window.joinTournamentPrompt(); }
 function openFeedback()     { if(window.openFeedback) window.openFeedback(); }
@@ -2236,6 +2347,8 @@ function closeLeaderboard()  { if(window.closeLeaderboard) window.closeLeaderboa
 function setLbTime(t)        { if(window.setLbTime) window.setLbTime(t); }
 function setLbSort(s)        { if(window.setLbSort) window.setLbSort(s); }
 function renderLeaderboard() { if(window.renderLeaderboard) window.renderLeaderboard(); }
+function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
+function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
 function runImport()         { if(window.runImport) window.runImport(); }
 
 // ── SOUNDS ──
