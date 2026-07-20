@@ -141,6 +141,13 @@
     box-shadow:0 4px 24px rgba(255,45,120,0.45); transition:all 0.2s; }
   .save-btn-big:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(255,45,120,0.6); }
   .save-btn-big:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .rank-toggle { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .rtbtn { flex:1; min-width:70px; padding:9px 6px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:10px; font-family:'Russo One',sans-serif;
+    font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase;
+    cursor:pointer; transition:all 0.2s; text-align:center; }
+  .rtbtn.active { background:rgba(0,240,255,0.1); border-color:var(--cyan); color:var(--cyan); }
 </style>
 </head>
 <body>
@@ -276,26 +283,61 @@ if (!uid) {
   const today  = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const modeLabel = cfg.mode==='4p' ? '⚡ 4-Player Rotation' : '🔄 Round Robin';
 
-  // Standings
+  // Standings — include all players (incl. ad-hoc game players), avg diff default
   const stats={};
-  cfg.players.forEach(p=>{stats[p]={wins:0,ptsFor:0,ptsAgainst:0};});
+  const allPlayers = new Set(cfg.players);
+  cfg.schedule.forEach(g=>{if(g.deleted)return;g.t1.forEach(p=>allPlayers.add(p));g.t2.forEach(p=>allPlayers.add(p));});
+  allPlayers.forEach(p=>{stats[p]={wins:0,ptsFor:0,ptsAgainst:0,games:0};});
   cfg.schedule.forEach(g=>{
+    if(g.deleted)return;
     const s=scores[g.key];if(!s||s.s1===null||s.s2===null)return;
-    g.t1.forEach(p=>{stats[p].ptsFor+=s.s1;stats[p].ptsAgainst+=s.s2;if(s.s1>s.s2)stats[p].wins++;});
-    g.t2.forEach(p=>{stats[p].ptsFor+=s.s2;stats[p].ptsAgainst+=s.s1;if(s.s2>s.s1)stats[p].wins++;});
+    g.t1.forEach(p=>{stats[p].ptsFor+=s.s1;stats[p].ptsAgainst+=s.s2;stats[p].games++;if(s.s1>s.s2)stats[p].wins++;});
+    g.t2.forEach(p=>{stats[p].ptsFor+=s.s2;stats[p].ptsAgainst+=s.s1;stats[p].games++;if(s.s2>s.s1)stats[p].wins++;});
   });
-  const list = cfg.players.map(p=>({name:p,...stats[p],diff:stats[p].ptsFor-stats[p].ptsAgainst}))
-    .sort((a,b)=>b.ptsFor-a.ptsFor||b.wins-a.wins||b.diff-a.diff);
-  const champ = list[0];
+  const baseList = [...allPlayers].map(p=>{
+    const st=stats[p]; const diff=st.ptsFor-st.ptsAgainst;
+    return {name:p,...st,diff,avgDiff:st.games>0?diff/st.games:0};
+  });
+  // Champion always by avg diff (fairest)
+  const champ = [...baseList].sort((a,b)=>b.avgDiff-a.avgDiff||b.wins-a.wins||b.ptsFor-a.ptsFor)[0];
 
-  let sHtml = '<table class="stbl"><thead><tr><th>Player</th><th>W</th><th>Pts</th><th>Ag</th><th>+/-</th></tr></thead><tbody>';
-  list.forEach((p,i)=>{
-    const dc=p.diff>0?'dpos':p.diff<0?'dneg':'';
-    sHtml+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
-      +'<td>'+p.wins+'</td><td class="ptsf">'+p.ptsFor+'</td><td>'+p.ptsAgainst+'</td>'
-      +'<td class="'+dc+'">'+(p.diff>0?'+':'')+p.diff+'</td></tr>';
-  });
-  sHtml += '</tbody></table>';
+  window._sumStats = baseList; // for re-sorting
+  window._renderSummaryTable = function(mode) {
+    mode = mode || 'avg';
+    const list = [...window._sumStats].sort((a,b)=>{
+      if (mode==='wins') return b.wins-a.wins||b.avgDiff-a.avgDiff||b.ptsFor-a.ptsFor;
+      if (mode==='pts')  return b.ptsFor-a.ptsFor||b.wins-a.wins||b.avgDiff-a.avgDiff;
+      if (mode==='ag')   return a.ptsAgainst-b.ptsAgainst||b.avgDiff-a.avgDiff;
+      return b.avgDiff-a.avgDiff||b.wins-a.wins||b.ptsFor-a.ptsFor;
+    });
+    const hl='style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
+    const hW=mode==='wins',hP=mode==='pts',hAg=mode==='ag',hA=mode==='avg';
+    let h = '<div class="rank-toggle" style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">'
+      +'<button class="rtbtn'+(hA?' active':'')+'" onclick="sortSummary(\'avg\')">Avg Diff</button>'
+      +'<button class="rtbtn'+(hW?' active':'')+'" onclick="sortSummary(\'wins\')">Wins</button>'
+      +'<button class="rtbtn'+(hP?' active':'')+'" onclick="sortSummary(\'pts\')">Points</button>'
+      +'<button class="rtbtn'+(hAg?' active':'')+'" onclick="sortSummary(\'ag\')">Against</button>'
+      +'</div>';
+    h += '<table class="stbl"><thead><tr><th>Player</th>'
+      +'<th '+(hW?hl:'')+' onclick="sortSummary(\'wins\')" style="cursor:pointer;">W</th>'
+      +'<th '+(hP?hl:'')+' onclick="sortSummary(\'pts\')" style="cursor:pointer;">Pts</th>'
+      +'<th '+(hAg?hl:'')+' onclick="sortSummary(\'ag\')" style="cursor:pointer;">Ag</th>'
+      +'<th>G</th>'
+      +'<th '+(hA?hl:'')+' onclick="sortSummary(\'avg\')" style="cursor:pointer;">Avg</th></tr></thead><tbody>';
+    list.forEach((p,i)=>{
+      const dc=p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
+      h+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
+        +'<td '+(hW?hl:'')+'>'+p.wins+'</td>'
+        +'<td '+(hP?hl:'')+' class="ptsf">'+p.ptsFor+'</td>'
+        +'<td '+(hAg?hl:'')+'>'+p.ptsAgainst+'</td>'
+        +'<td style="color:var(--muted);">'+p.games+'</td>'
+        +'<td '+(hA?hl:'')+' class="'+dc+'">'+(p.avgDiff>=0?'+':'')+p.avgDiff.toFixed(1)+'</td></tr>';
+    });
+    h += '</tbody></table>';
+    const el = document.getElementById('summaryStandings');
+    if (el) el.innerHTML = h;
+  };
+  window.sortSummary = function(mode) { window._renderSummaryTable(mode); };
 
   // Games
   let gHtml = '';
@@ -344,11 +386,13 @@ if (!uid) {
     +'</div>'
     +(champ&&champ.ptsFor>0?'<div class="champbox" id="champBox"><div class="c-emoji">🏆</div>'
       +'<div class="c-lbl">Champion</div><div class="c-name">'+champ.name+'</div>'
-      +'<div class="c-pts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.diff>0?'+':'')+champ.diff+' diff</div>'
+      +'<div class="c-pts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.avgDiff>=0?'+':'')+champ.avgDiff.toFixed(1)+' avg diff</div>'
       +'</div>':'')
-    +'<div style="margin-bottom:28px;"><div class="stitle">📊 Final Standings</div>'+sHtml+'</div>'
+    +'<div style="margin-bottom:28px;"><div class="stitle">📊 Final Standings</div><div id="summaryStandings"></div></div>'
     +'<div class="games-wrap"><div class="stitle">'+(cfg.mode==='4p'?'⚡ Matchup Results':'🎮 All Game Scores')+'</div>'+gHtml+'</div>'
     +'';
+
+  window._renderSummaryTable('avg');
 
   document.getElementById('summary').style.display = 'block';
   document.getElementById('saveBtnWrap').style.display = 'block';

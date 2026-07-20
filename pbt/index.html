@@ -753,6 +753,11 @@ const push = () => {
   if (!currentUser || !activeTid) return;
   skip = true;
   set(ref(db, 'tournaments/' + activeTid), { cfg, scores, updatedAt: Date.now() });
+  // If this tournament is already in Past Tournaments, keep that copy in sync with edits
+  if (window._archivedTids && window._archivedTids.has(activeTid)) {
+    const hasScores = Object.values(scores).some(s => s && s.s1 !== null);
+    if (hasScores) set(ref(db, 'users/' + currentUser.uid + '/history/' + activeTid), { cfg, scores, finishedAt: Date.now() });
+  }
 };
 
 const startHash = window.location.hash.replace('#','');
@@ -829,6 +834,12 @@ async function bootApp() {
   const uid = currentUser.uid;
   if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
 
+  // Track which tournaments are already archived (so edits after "Done" keep syncing)
+  try {
+    const histSnap = await get(ref(db, 'users/' + uid + '/history'));
+    window._archivedTids = new Set(histSnap.exists() ? Object.keys(histSnap.val()) : []);
+  } catch(e) { window._archivedTids = new Set(); }
+
   // Load profile — show onboarding if first time
   onValue(ref(db, 'users/' + uid + '/profile'), snap => {
     const wasNew = !userProfile.name;
@@ -877,11 +888,13 @@ function updateNav() {
   updateProfileDisplay();
   const afb = document.getElementById('adminFeedbackBtn');
   if (afb) afb.style.display = (typeof isAdmin==='function' && isAdmin()) ? '' : 'none';
-  document.getElementById('navHome').style.display     = has?'':'none';
-  document.getElementById('navSettings').style.display = has?'':'none';
+  // Home + Settings + Feedback always available (setup screen keeps full nav)
+  document.getElementById('navHome').style.display     = '';
+  document.getElementById('navSettings').style.display = '';
+  document.getElementById('tabFeedback').style.display = '';
+  // Games/Stats/Summary only when a tournament exists
   document.getElementById('tabGames').style.display    = has?'':'none';
   document.getElementById('tabStats').style.display    = has?'':'none';
-  document.getElementById('tabFeedback').style.display = has?'':'none';
   if (has) {
     const total = cfg.schedule?.filter(g=>!g.deleted).length||0;
     const done  = cfg.schedule?.filter(g=>!g.deleted).reduce((n,g)=>{const s=scores[g.key];return n+(s&&s.s1!==null&&s.s2!==null?1:0);},0)||0;
@@ -1016,17 +1029,23 @@ function _finalizeTournament() {
 
 // ── TOURNAMENT ARCHIVING ──
 async function archiveCurrentTournament() {
-  if (!currentUser || !cfg || !cfg.schedule) return;
-  // Only archive if at least one score was recorded
+  if (!currentUser || !cfg || !cfg.schedule || !activeTid) return;
   const hasScores = Object.values(scores).some(s => s && s.s1 !== null);
   if (!hasScores) return;
-  const tid = 't' + Date.now();
   try {
-    await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), {
+    await set(ref(db, 'users/' + currentUser.uid + '/history/' + activeTid), {
       cfg, scores, finishedAt: Date.now()
     });
+    if (!window._archivedTids) window._archivedTids = new Set();
+    window._archivedTids.add(activeTid);
   } catch(e) { console.log('archive error', e); }
 }
+
+// "Done" — archive to Past Tournaments now, keep the tournament active for viewing/editing.
+window.markDone = async function() {
+  await archiveCurrentTournament();
+  window.location.href = 'builder-summary.html';
+};
 
 window.resetScores = window._resetScores = function() {
   if (!confirm('Reset all scores? Player setup is kept.')) return;
@@ -1038,7 +1057,7 @@ window.newTournament = window._newTournament = function() {
     cfg=null; scores={};
     if (currentUser) {
       set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), null);
-      if (activeTid) set(ref(db, 'tournaments/' + activeTid), null);
+      // NOTE: we no longer delete the tournaments/ node so shared viewers keep access
     }
     activeTid = null;
     if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
@@ -1352,7 +1371,7 @@ function renderGames() {
 
   el.innerHTML = html
     + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
-    + '<a href="builder-summary.html" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏁 Done — View Summary</a>';
+    + '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏁 Done — View Summary</a>';
 }
 
 window.saveScore = window._saveScore = function(key) {
