@@ -212,6 +212,10 @@
   #addGameOverlay { position:fixed; inset:0; z-index:450; background:rgba(4,6,15,0.95);
     backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
   #addGameOverlay.hidden { display:none; }
+
+  /* City/Email overlay — display controlled ONLY by CSS class */
+  #cityEmailOverlay { display:flex; }
+  #cityEmailOverlay.hidden { display:none !important; }
   .team-picker { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
   .player-chip { padding:10px 12px; background:var(--surface2); border:2px solid var(--border);
     border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:700;
@@ -360,7 +364,7 @@
 </div>
 
 <!-- CITY/EMAIL PROMPT (before first tournament) -->
-<div id="cityEmailOverlay" class="hidden" style="position:fixed;inset:0;z-index:550;background:rgba(4,6,15,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:24px;">
+<div id="cityEmailOverlay" class="hidden" style="position:fixed;inset:0;z-index:550;background:rgba(4,6,15,0.95);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:24px;">
   <div class="modal" style="max-width:400px;">
     <div style="text-align:center;margin-bottom:20px;">
       <div style="font-size:40px;margin-bottom:8px;">📍</div>
@@ -873,6 +877,19 @@ window.doStart = window._doStart = function() {
 };
 
 function _finalizeTournament() {
+  // Resilience: if _pendingSetup was lost (e.g. page reloaded), rebuild from the setup form
+  if (!window._pendingSetup) {
+    const players = [...document.querySelectorAll('.pinput')].map(i=>i.value.trim()).filter(Boolean);
+    if (players.length < 2) {
+      document.getElementById('cityEmailOverlay').classList.add('hidden');
+      openSetup();
+      return;
+    }
+    window._pendingSetup = {
+      name: document.getElementById('tName').value.trim() || 'Pickleball Tournament',
+      players, mode: selMode_
+    };
+  }
   const { name, players, mode } = window._pendingSetup;
   const schedule=mode==='4p'?make4PSchedule(players):makeRRSchedule(players);
   cfg={name,mode,players,schedule}; scores={};
