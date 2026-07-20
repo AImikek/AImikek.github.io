@@ -944,6 +944,8 @@ function updateNav() {
   document.getElementById('navHome').style.display     = '';
   document.getElementById('navSettings').style.display = '';
   document.getElementById('tabFeedback').style.display = '';
+  const lbt = document.getElementById('tabLeaderboard');
+  if (lbt) lbt.style.display = '';
   // Games/Stats/Summary only when a tournament exists
   document.getElementById('tabGames').style.display    = has?'':'none';
   document.getElementById('tabStats').style.display    = has?'':'none';
@@ -1262,7 +1264,8 @@ const LB_MIN_GAMES = 3;
 window.openLeaderboard = async function() {
   document.getElementById('leaderboardPage').classList.remove('hidden');
   setActiveTab(null);
-  if (!lbData) await loadLeaderboardData();
+  document.getElementById('lbContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading...</div>';
+  await loadLeaderboardData();
   renderLeaderboard();
 };
 window.closeLeaderboard = function() {
@@ -1275,8 +1278,17 @@ window.setLbSort = function(s) { lbSort = s; renderLeaderboard(); };
 
 async function loadLeaderboardData() {
   try {
-    const [tSnap, dSnap] = await Promise.all([ get(ref(db, 'tournaments')), get(ref(db, 'directory')) ]);
+    const [tSnap, dSnap, hSnap] = await Promise.all([
+      get(ref(db, 'tournaments')),
+      get(ref(db, 'directory')),
+      currentUser ? get(ref(db, 'users/' + currentUser.uid + '/history')) : Promise.resolve({ val: () => null })
+    ]);
     const tournaments = tSnap.val() || {};
+    // Merge in own archived tournaments (covers pre-shared-era + imported data)
+    const hist = hSnap.val() || {};
+    Object.entries(hist).forEach(([tid, t]) => {
+      if (!tournaments[tid]) tournaments[tid] = { ...t, updatedAt: t.finishedAt || t.updatedAt || Date.now() };
+    });
     const dir = dSnap.val() || {};
     const cityByName = {};
     Object.values(dir).forEach(p => { if (p.name && p.city && !cityByName[p.name.toLowerCase()]) cityByName[p.name.toLowerCase()] = p.city; });
