@@ -176,11 +176,28 @@
       <div style="font-size:40px;margin-bottom:10px;">🏓</div>
       <div class="cta-title">Build Your Own Tournament</div>
       <div class="cta-sub">Free real-time score tracking, live standings,<br>and shareable results — just like this one.</div>
-      <a class="cta-btn" href="./">🚀 Try It Free</a>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <a class="cta-btn" href="./">🚀 Try It Free</a>
+        <button class="cta-btn" onclick="shareThisPage()"
+          style="background:linear-gradient(135deg,var(--cyan),var(--blue));box-shadow:0 4px 24px rgba(0,144,255,0.45);border:none;">
+          📤 Share It
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
+<script>
+async function shareThisPage() {
+  const url = window.location.href;
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Pickleball Tournament Results 🏓', url }); return; }
+    catch(e) { if (e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(url); alert('Link copied!'); }
+  catch(e) { prompt('Copy this link:', url); }
+}
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";

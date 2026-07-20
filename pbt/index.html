@@ -28,6 +28,7 @@
   .tab.active { color:var(--cyan); border-bottom-color:var(--cyan); }
   .tab:hover:not(.active) { color:var(--white); }
   .tab-home { font-size:20px; padding:8px 12px; border-bottom:none !important; }
+  .tab-home.active { border-bottom:2px solid var(--cyan) !important; filter:drop-shadow(0 0 6px rgba(0,240,255,0.5)); }
   .tab-settings { font-size:18px; padding:8px 12px; border-bottom:none !important; }
   .nav-spacer { flex:1; }
   .sync-pill { display:flex; align-items:center; gap:5px; background:var(--surface2);
@@ -604,6 +605,12 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <div class="pgrid" id="pgrid"></div>
     <div class="pgrid"><button class="addbtn" onclick="addPF()">+ Add Player</button></div>
     <button class="startbtn" id="startBtn" onclick="doStart()">🚀 Start Tournament</button>
+    <div style="text-align:center;margin:14px 0 4px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:1px;">— OR —</div>
+    <button onclick="joinTournamentPrompt()"
+      style="width:100%;padding:14px;background:transparent;border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:12px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+      🔗 Join a Friend's Tournament
+    </button>
+    <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--muted);font-weight:600;">Got an invite link? Just open it — you'll join automatically.</div>
   </div>
 </div>
 
@@ -707,6 +714,11 @@ function subscribeTournament(tid) {
         closeSetup();
         updateNav();
         if (startHash==='setup') { openSetup(); return; }
+        if (startHash==='settings') {
+          renderCurrent();
+          setTimeout(() => { if (window.openSettings) window.openSettings(); else if (typeof openSettings==='function') openSettings(); }, 0);
+          return;
+        }
         if (startHash==='games'||startHash==='standings') { showPage(startHash); }
         else renderCurrent();
       } else if (skip) {
@@ -796,12 +808,17 @@ function updateNav() {
   }
 }
 
+function setActiveTab(t) {
+  document.getElementById('navHome').classList.toggle('active', t==='home');
+  document.getElementById('tabGames').classList.toggle('active', t==='games');
+  document.getElementById('tabStats').classList.toggle('active', t==='standings');
+}
+
 window.showPage = window._showPage = function(page) {
   curPage = page;
   document.getElementById('pageGames').style.display     = page==='games'?'block':'none';
   document.getElementById('pageStandings').style.display = page==='standings'?'block':'none';
-  document.getElementById('tabGames').classList.toggle('active', page==='games');
-  document.getElementById('tabStats').classList.toggle('active', page==='standings');
+  setActiveTab(page);
   renderCurrent();
 };
 
@@ -814,17 +831,22 @@ function renderCurrent() {
 
 window.openSetup = window._openSetup = function() {
   document.getElementById('setupOverlay').classList.remove('hidden');
+  setActiveTab('home');
   if (cfg) {
     document.getElementById('tName').value = cfg.name||'';
     selMode(cfg.mode==='4p'?'4p':'rr');
     buildPFields(cfg.players||[]);
   } else {
     selMode('rr');
-    buildPFields(['','','','','','','','']);
+    // Prefill Player 1 with the signed-in user's name — they're probably playing!
+    buildPFields([userProfile?.name||'','','','','','','','']);
   }
   updPCnt();
 };
-function closeSetup() { document.getElementById('setupOverlay').classList.add('hidden'); }
+function closeSetup() {
+  document.getElementById('setupOverlay').classList.add('hidden');
+  setActiveTab(curPage);
+}
 
 window.selMode = window._selMode = function(m) {
   selMode_=m;
@@ -935,6 +957,20 @@ window.newTournament = window._newTournament = function() {
     if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
     updateNav(); openSetup();
   });
+};
+
+window.joinTournamentPrompt = async function() {
+  const input = prompt("Paste the invite link (or tournament code) your friend sent you:");
+  if (!input) return;
+  let tid = input.trim();
+  const m = tid.match(/[?&]t=([A-Za-z0-9]+)/);
+  if (m) tid = m[1];
+  if (!/^[A-Za-z0-9]{8,}$/.test(tid)) { alert("That doesn't look like a valid invite link or code. Ask your friend to tap Settings → Invite Players and send you the link."); return; }
+  try {
+    await set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
+    document.getElementById('setupOverlay').classList.add('hidden');
+    subscribeTournament(tid);
+  } catch(e) { alert('Could not join: ' + (e.message||e)); }
 };
 
 window.shareTournamentLink = async function() {
@@ -1354,12 +1390,14 @@ window.openProfile = function() {
 
 window.closeProfile = function() {
   document.getElementById('pageProfile').style.display = 'none';
-  // Restore the correct underlying page
+  if (!cfg) {
+    // No active tournament — return to setup, never a blank screen
+    openSetup();
+    return;
+  }
   document.getElementById('pageGames').style.display     = curPage==='games'?'block':'none';
   document.getElementById('pageStandings').style.display = curPage==='standings'?'block':'none';
-  document.getElementById('tabGames').classList.toggle('active', curPage==='games');
-  document.getElementById('tabStats').classList.toggle('active', curPage==='standings');
-  document.getElementById('setupOverlay').classList.add('hidden');
+  setActiveTab(curPage);
 };
 
 window.editSelectGender = function(g) {
@@ -1690,6 +1728,7 @@ function viewHistoryDetail(t){ if(window.viewHistoryDetail) window.viewHistoryDe
 function restoreTournament(t){ if(window.restoreTournament) window.restoreTournament(t); }
 function deleteHistoryTournament(t){ if(window.deleteHistoryTournament) window.deleteHistoryTournament(t); }
 function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
+function joinTournamentPrompt(){ if(window.joinTournamentPrompt) window.joinTournamentPrompt(); }
 
 // ── SOUNDS ──
 // iOS requires AudioContext created INSIDE a user gesture handler.
