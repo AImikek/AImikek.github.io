@@ -365,11 +365,12 @@
     <div style="text-align:center;margin-bottom:20px;">
       <div style="font-size:40px;margin-bottom:8px;">📍</div>
       <div class="mtitle">Almost Ready!</div>
-      <div class="msub">A couple quick details to track your stats</div>
+      <div class="msub">Optional — helps track your stats &amp; leaderboards</div>
     </div>
-    <label class="flabel">Email</label>
-    <input class="finput" id="ceEmail" type="email" placeholder="you@email.com" inputmode="email" autocomplete="email">
-    <label class="flabel">City</label>
+    <label class="flabel">Email or Phone <span style="color:var(--muted);text-transform:none;letter-spacing:0;">(optional)</span></label>
+    <input class="finput" id="ceEmail" type="text" placeholder="you@email.com or (305) 555-1234" inputmode="email" autocomplete="email">
+    <div id="ceAuthNote" style="font-size:11px;color:var(--muted);font-weight:600;margin-top:-8px;margin-bottom:12px;"></div>
+    <label class="flabel">City <span style="color:var(--muted);text-transform:none;letter-spacing:0;">(optional)</span></label>
     <input class="finput" id="ceCity" placeholder="e.g. Fort Lauderdale" maxlength="40">
     <button onclick="saveCityEmail()"
       style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.35);margin-top:4px;">
@@ -838,9 +839,18 @@ window.doStart = window._doStart = function() {
   window._pendingSetup = { name, players, mode };
   // Archive any existing tournament before replacing it
   archiveCurrentTournament().then(() => {
-    if (!userProfile.email || !userProfile.city) {
-      if (userProfile.email) document.getElementById('ceEmail').value = userProfile.email;
-      if (userProfile.city)  document.getElementById('ceCity').value  = userProfile.city;
+    // We already have contact info if they signed in with Google (email) or phone.
+    const authEmail = currentUser?.email || null;
+    const authPhone = currentUser?.phoneNumber || null;
+    const haveContact = userProfile.email || authEmail || authPhone;
+    if (!haveContact || !userProfile.city) {
+      // Prefill from profile or auth account
+      const known = userProfile.email || authEmail || authPhone || '';
+      if (known) document.getElementById('ceEmail').value = known;
+      if (userProfile.city) document.getElementById('ceCity').value = userProfile.city;
+      const note = document.getElementById('ceAuthNote');
+      if (note) note.textContent = authPhone ? '✓ Your phone from login is already saved — email optional'
+        : authEmail ? '✓ Your email from Google login is already saved' : '';
       document.getElementById('cityEmailOverlay').classList.remove('hidden');
       return;
     }
@@ -1341,16 +1351,27 @@ window.saveProfileEdits = async function() {
 
 // ── CITY/EMAIL PROMPT ──
 window.saveCityEmail = async function() {
-  const email = document.getElementById('ceEmail').value.trim();
+  const contact = document.getElementById('ceEmail').value.trim();
   const city  = document.getElementById('ceCity').value.trim();
-  userProfile = { ...userProfile, email: email||userProfile.email||null, city: city||userProfile.city||null };
-  try { await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch(e) {}
+  const isPhone = contact && /^[\d\s()+\-\.]+$/.test(contact);
+  userProfile = { ...userProfile,
+    email: (!isPhone && contact) ? contact : (userProfile.email || currentUser?.email || null),
+    phone: isPhone ? contact : (userProfile.phone || currentUser?.phoneNumber || null),
+    city: city || userProfile.city || null };
+  try { await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch(e) { console.log('profile save err', e); }
   document.getElementById('cityEmailOverlay').classList.add('hidden');
-  _finalizeTournament();
+  try { _finalizeTournament(); } catch(e) { console.log('finalize err', e); alert('Something went wrong starting the tournament. Please try again.'); }
 };
 window.skipCityEmail = function() {
+  // Still silently capture what we know from their login
+  const authEmail = currentUser?.email || null;
+  const authPhone = currentUser?.phoneNumber || null;
+  if ((authEmail && !userProfile.email) || (authPhone && !userProfile.phone)) {
+    userProfile = { ...userProfile, email: userProfile.email||authEmail||null, phone: userProfile.phone||authPhone||null };
+    try { set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch(e) {}
+  }
   document.getElementById('cityEmailOverlay').classList.add('hidden');
-  _finalizeTournament();
+  try { _finalizeTournament(); } catch(e) { console.log('finalize err', e); alert('Something went wrong starting the tournament. Please try again.'); }
 };
 
 // ── PAST TOURNAMENTS ──
