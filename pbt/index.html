@@ -40,7 +40,8 @@
   .sync-pill.live .sdot { background:var(--aqua); box-shadow:0 0 6px var(--aqua); animation:pulse 1.5s ease-in-out infinite; }
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
-  .settings-menu { position:fixed; inset:0; z-index:400; }
+  .settings-menu { position:fixed; inset:0; z-index:400; display:flex; align-items:center; justify-content:center; }
+  .settings-menu .settings-panel, .settings-menu > .settings-box { }
   .settings-menu.hidden { display:none; }
   .settings-overlay { position:absolute; inset:0; background:rgba(4,6,15,0.7); backdrop-filter:blur(4px); }
   .settings-panel { position:absolute; top:54px; right:8px; background:var(--surface);
@@ -269,7 +270,7 @@
   #topBar .tab { border:none; background:transparent; padding:6px 10px; cursor:pointer; color:var(--white); }
 
   /* ── BOTTOM BAR ── */
-  #bottomBar { position:fixed; bottom:0; left:0; right:0; z-index:300;
+  #bottomBar { position:fixed; bottom:0; left:0; right:0; z-index:380;
     display:flex; justify-content:space-around; align-items:stretch;
     background:rgba(4,6,15,0.94); backdrop-filter:blur(14px);
     border-top:1px solid var(--border);
@@ -284,6 +285,21 @@
   .bbtn.active .blbl { color:var(--cyan); }
 
   body { padding-top:52px !important; padding-bottom:76px !important; }
+
+  /* Drawer: centered + scrollable */
+  #settingsMenu { display:flex !important; align-items:center; justify-content:center; }
+  #settingsMenu.hidden { display:none !important; }
+  #settingsMenu .settings-box, #settingsMenu .settings-panel {
+    max-height:80vh; overflow-y:auto; overscroll-behavior:contain;
+    margin:auto !important; width:min(340px, calc(100vw - 40px)); }
+  html, body { overflow-x:hidden; width:100%; }
+  #pageProfile, #leaderboardPage, #feedbackOverlay, #feedbackInbox, #importOverlay, #playerDetail, #pageHistory { overscroll-behavior:contain; }
+
+  /* Confetti (stats celebration) */
+  .confetti-wrap { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+  .confetti-wrap span { position:absolute; top:-24px; animation:cfall linear infinite; }
+  @keyframes cfall { to { transform:translateY(420px) rotate(360deg); opacity:0; } }
+  .champbox { position:relative; overflow:hidden; }
 
   /* ── LOGIN SCREEN ── */
   #loginScreen {
@@ -542,6 +558,12 @@
   <input class="finput" id="editEmail" type="email" placeholder="you@email.com" inputmode="email" autocomplete="email">
   <label class="flabel">City</label>
   <input class="finput" id="editCity" placeholder="e.g. Fort Lauderdale" maxlength="40">
+  <label class="flabel">Instagram</label>
+  <input class="finput" id="editInsta" placeholder="@yourhandle" maxlength="40">
+  <label class="flabel">DUPR Rating</label>
+  <input class="finput" id="editDupr" type="number" inputmode="decimal" step="0.01" min="1" max="8" placeholder="e.g. 3.75 (leave blank if none)">
+  <label class="flabel">Home Court</label>
+  <input class="finput" id="editCourt" placeholder="e.g. Margaret Pace Park" maxlength="60">
   <label class="flabel">Date of Birth</label>
   <input class="finput" id="editDob" type="date" style="color-scheme:dark;">
   <div style="font-size:12px;color:var(--muted);margin-top:-10px;margin-bottom:16px;font-weight:600;">
@@ -660,7 +682,7 @@
 </div>
 
 <!-- LEADERBOARD -->
-<div id="leaderboardPage" class="hidden" style="position:fixed;inset:0;z-index:340;background:var(--bg);overflow-y:auto;padding:16px 16px 60px;">
+<div id="leaderboardPage" class="hidden" style="position:fixed;inset:0;z-index:340;background:var(--bg);overflow-y:auto;padding:60px 16px 100px;">
   <div style="max-width:560px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-top:4px;">
       <button onclick="closeLeaderboard()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
@@ -729,7 +751,6 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item" onclick="closeSettings();openProfile();">👤 My Profile</button>
     <div class="settings-divider"></div>
     <button class="settings-item" onclick="closeSettings();openSetup();">🏠 New Tournament</button>
-    <button class="settings-item" onclick="closeSettings();openAddGame();">➕ Add Game</button>
     <button class="settings-item" onclick="closeSettings();shareTournamentLink();">🔗 Invite Players to Edit Scores</button>
     <button class="settings-item" onclick="closeSettings();openHistory();">📜 Past Tournaments</button>
     <button class="settings-item" onclick="closeSettings();document.getElementById('setupOverlay').classList.add('hidden');showPage('games');">🎮 Edit Scores</button>
@@ -737,7 +758,6 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <div class="settings-divider"></div>
     <button class="settings-item fun" id="soundBtn" onclick="playFunSound();">🎵 Play Fun Sound</button>
     <div class="settings-divider"></div>
-    <a class="settings-item" href="builder-summary.html" style="text-decoration:none;display:block;">📋 Summary</a>
     <button class="settings-item fb" onclick="closeSettings();openFeedback();">💬 Give Feedback</button>
     <button class="settings-item" id="adminFeedbackBtn" style="display:none;" onclick="closeSettings();openFeedbackInbox();">📬 Feedback Inbox (Admin)</button>
     <button class="settings-item" id="adminImportBtn" style="display:none;" onclick="closeSettings();openImport();">📥 Import Tournament (Admin)</button>
@@ -787,6 +807,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 // ═══ EMAILJS CONFIG — fill these 3 values from your EmailJS dashboard ═══
 window.EMAILJS_CONFIG = {
@@ -1154,7 +1175,9 @@ async function archiveCurrentTournament() {
 // "Done" — archive to Past Tournaments now, keep the tournament active for viewing/editing.
 window.markDone = async function() {
   await archiveCurrentTournament();
-  window.location.href = 'builder-summary.html';
+  window._celebrate = true;
+  showPage('standings');
+  try { window.scrollTo(0, 0); } catch(e) {}
 };
 
 window.resetScores = window._resetScores = function() {
@@ -1306,7 +1329,7 @@ window.openFeedbackInbox = function() {
 
 window.saveHistoryDate = async function(tid) {
   if (!isAdmin()) return;
-  const v = document.getElementById('histDateEdit').value;
+  const v = document.getElementById('histDateInput').value;
   if (!v) return;
   const ts = new Date(v + 'T18:00:00').getTime();
   try {
@@ -1915,8 +1938,9 @@ function renderStandings() {
   let html = '';
 
   // Champion box
-  if (done === total && total > 0 && champ) {
-    html += '<div class="champbox"><div style="font-size:48px;margin-bottom:8px;">🏆</div>'
+  const allDone = done === total && total > 0;
+  if (allDone && champ) {
+    html += '<div class="champbox" id="statsChampBox"><div style="font-size:48px;margin-bottom:8px;">🏆</div>'
       +'<div class="clbl">Champion</div><div class="cname">'+champ.name+'</div>'
       +'<div class="cpts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.avgDiff>=0?'+':'')+champ.avgDiff.toFixed(1)+' avg diff</div></div>';
   }
@@ -1957,9 +1981,72 @@ function renderStandings() {
   html += '</tbody></table>';
   const modeLabel = effectiveMode==='avg'?'Avg Point Differential':effectiveMode==='wins'?'Most Wins':'Most Points';
   html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong></div>';
-  html += '<button onclick="newTournament()" style="display:block;margin:24px auto 0;padding:11px 28px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">⚠ New Tournament</button>';
+  html += '<button onclick="shareStatsLink()" style="display:block;width:100%;margin-top:20px;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🔗 Share Results Link</button>';
+  html += '<button onclick="saveStatsImage()" id="saveStatsBtn" style="display:block;width:100%;margin-top:10px;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(255,45,120,0.3);">📸 Save Image</button>';
+  html += '<button onclick="newTournament()" style="display:block;margin:20px auto 0;padding:11px 28px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">⚠ New Tournament</button>';
   el.innerHTML = html;
+  const cb = document.getElementById('statsChampBox');
+  if (cb && (window._celebrate || allDone)) {
+    addStatsConfetti(cb);
+    if (window._celebrate) { try { playSound && playSound('win'); } catch(e) {} window._celebrate = false; }
+  }
 }
+
+function addStatsConfetti(el) {
+  const wrap = document.createElement('div');
+  wrap.className = 'confetti-wrap';
+  const items = ['🏆','⭐','✨','🎉','🌟','💥','🎊','🏅','🥇','🔥'];
+  for (let i=0;i<20;i++) {
+    const s = document.createElement('span');
+    s.textContent = items[i%items.length];
+    s.style.cssText = 'left:'+Math.random()*100+'%;font-size:'+(10+Math.random()*16)+'px;'
+      +'animation-duration:'+(1.8+Math.random()*2.5)+'s;animation-delay:'+Math.random()*3+'s;';
+    wrap.appendChild(s);
+  }
+  el.prepend(wrap);
+}
+
+window.shareStatsLink = async function() {
+  if (!cfg) return;
+  try {
+    const cleanSchedule = cfg.schedule.filter(g => !g.deleted);
+    const shareId = Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+    await set(ref(db, 'shares/' + shareId), {
+      cfg: { name: cfg.name||'Tournament', mode: cfg.mode, players: cfg.players, schedule: cleanSchedule },
+      scores, createdAt: Date.now()
+    });
+    const url = window.location.origin + window.location.pathname.replace(/index\.html$/,'') + 'results.html?id=' + shareId;
+    if (navigator.share) {
+      try { await navigator.share({ title: (cfg.name||'Tournament')+' Results 🏓', url }); return; }
+      catch(e) { if (e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(url); alert('Link copied!\n' + url); }
+    catch(e) { prompt('Copy this link:', url); }
+  } catch(e) { alert('Could not create link: ' + (e.message||e)); }
+};
+
+window.saveStatsImage = async function() {
+  const btn = document.getElementById('saveStatsBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Capturing...'; }
+  try {
+    const area = document.getElementById('pageStandings');
+    const canvas = await html2canvas(area, { backgroundColor:'#04060F', scale:2 });
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'tournament-results.png', { type:'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
+        try { await navigator.share({ files:[file], title:'Tournament Results 🏓' }); }
+        catch(e) {}
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'tournament-results.png'; a.click();
+      }
+      if (btn) { btn.disabled = false; btn.textContent = '📸 Save Image'; }
+    }, 'image/png');
+  } catch(e) {
+    alert('Could not capture image: ' + (e.message||e));
+    if (btn) { btn.disabled = false; btn.textContent = '📸 Save Image'; }
+  }
+};
 
 window.setRankMode = function(mode) {
   rankMode = mode;
@@ -1999,6 +2086,9 @@ window.openProfile = function() {
   document.getElementById('editEmail').value = userProfile.email || '';
   document.getElementById('editCity').value  = userProfile.city  || '';
   document.getElementById('editDob').value   = userProfile.dob   || '';
+  document.getElementById('editInsta').value = userProfile.instagram || '';
+  document.getElementById('editDupr').value  = userProfile.dupr  || '';
+  document.getElementById('editCourt').value = userProfile.homeCourt || '';
   editSelectedGender = userProfile.gender || null;
   document.getElementById('editGMale').classList.toggle('active', editSelectedGender==='M');
   document.getElementById('editGFemale').classList.toggle('active', editSelectedGender==='F');
@@ -2030,10 +2120,14 @@ window.saveProfileEdits = async function() {
   const email = document.getElementById('editEmail').value.trim();
   const city  = document.getElementById('editCity').value.trim();
   const dob   = document.getElementById('editDob').value;
+  const insta = document.getElementById('editInsta').value.trim();
+  const dupr  = document.getElementById('editDupr').value.trim();
+  const court = document.getElementById('editCourt').value.trim();
   userProfile = { ...userProfile,
     name: name || userProfile.name || null,
     gender: editSelectedGender || userProfile.gender || null,
-    email: email || null, city: city || null, dob: dob || null };
+    email: email || null, city: city || null, dob: dob || null,
+    instagram: insta || null, dupr: dupr ? parseFloat(dupr) : null, homeCourt: court || null };
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
   updateProfileDisplay();
@@ -2161,16 +2255,9 @@ window.viewHistoryDetail = function(tid) {
       +'<label class="flabel">Tournament Date (admin)</label>'
       +'<input class="finput" type="date" id="histDateInput" value="'+dstr+'" style="color-scheme:dark;margin-bottom:8px;">'
       +'<button onclick="saveHistoryDate(\''+tid+'\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">💾 Save Date</button></div>';
-    html += '<div style="display:flex;gap:8px;margin-top:14px;">'
-      +'<button onclick="shareHistoryTournament(\''+tid+'\')" style="flex:1;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🔗 Share Link</button>'
-      +'<button onclick="copyHistoryJson(\''+tid+'\')" style="flex:1;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📋 Copy JSON</button>'
-      +'</div>';
+    html += '<button onclick="copyHistoryJson(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📋 Copy JSON (Admin)</button>';
     html += '<button onclick="restoreTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🛠 Admin: Load Into App to Edit</button>';
     html += '<div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-weight:600;">Current active tournament will be archived first</div>';
-    const dVal = t.finishedAt ? new Date(t.finishedAt).toISOString().slice(0,10) : '';
-    html += '<div style="margin-top:16px;"><label class="flabel">📅 Tournament Date (Admin)</label>'
-      +'<div style="display:flex;gap:8px;"><input class="finput" type="date" id="histDateEdit" value="'+dVal+'" style="margin-bottom:0;flex:1;color-scheme:dark;">'
-      +'<button onclick="saveHistoryDate(\''+tid+'\')" style="padding:0 18px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Save</button></div></div>';
     html += '<button onclick="deleteHistoryTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🗑 Admin: Delete Forever</button>';
   }
 
@@ -2428,6 +2515,8 @@ function deleteHistoryTournament(t){ if(window.deleteHistoryTournament) window.d
 function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
 function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
 function openPlayerDetail(n) { if(window.openPlayerDetail) window.openPlayerDetail(n); }
+function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink(); }
+function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
 function copyHistoryJson(t)      { if(window.copyHistoryJson) window.copyHistoryJson(t); }
 function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
 function joinTournamentPrompt(){ if(window.joinTournamentPrompt) window.joinTournamentPrompt(); }
@@ -2448,6 +2537,8 @@ function renderLeaderboard() { if(window.renderLeaderboard) window.renderLeaderb
 function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
 function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
 function openPlayerDetail(n) { if(window.openPlayerDetail) window.openPlayerDetail(n); }
+function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink(); }
+function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
 function runImport()         { if(window.runImport) window.runImport(); }
 
 // ── SOUNDS ──
