@@ -152,7 +152,7 @@
   <button class="tab active">📋 Summary</button>
   <a class="tab tab-icon" href="./#settings" style="text-decoration:none;">⚙</a>
   <span class="nav-spacer"></span>
-  <div class="sync-pill" id="syncPill"><div class="sdot"></div><span id="syncLbl">···</span></div>
+
 </nav>
 
 <div id="loader">
@@ -253,8 +253,8 @@ if (!uid) {
   onValue(dataRef, snap => {
   clearTimeout(loaderTimeout);
   document.getElementById('loader').style.display = 'none';
-  document.getElementById('syncPill').classList.add('live');
-  document.getElementById('syncLbl').textContent = 'Live';
+  document.getElementById('syncPill')?.classList.add('live');
+  if(document.getElementById('syncLbl')) document.getElementById('syncLbl').textContent = 'Live';
 
   const d = snap.val();
   if (!d?.cfg) {
@@ -348,7 +348,7 @@ if (!uid) {
       +'</div>':'')
     +'<div style="margin-bottom:28px;"><div class="stitle">📊 Final Standings</div>'+sHtml+'</div>'
     +'<div class="games-wrap"><div class="stitle">'+(cfg.mode==='4p'?'⚡ Matchup Results':'🎮 All Game Scores')+'</div>'+gHtml+'</div>'
-    +'<div class="sum-footer"><p>🏓 picklebuilder.netlify.app</p></div>';
+    +'';
 
   document.getElementById('summary').style.display = 'block';
   document.getElementById('saveBtnWrap').style.display = 'block';

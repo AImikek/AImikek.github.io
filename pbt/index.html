@@ -214,6 +214,8 @@
     backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
   #addGameOverlay.hidden { display:none; }
 
+  #feedbackOverlay.hidden, #feedbackInbox.hidden { display:none !important; }
+
   /* City/Email overlay — display controlled ONLY by CSS class */
   #cityEmailOverlay { display:flex; }
   #cityEmailOverlay.hidden { display:none !important; }
@@ -527,6 +529,87 @@
 </div>
 </div>
 
+<!-- PLAYER DIRECTORY (autocomplete for setup) -->
+<datalist id="playerDir"></datalist>
+
+<!-- FEEDBACK OVERLAY (native, replaces Google Form) -->
+<div id="feedbackOverlay" class="hidden" style="position:fixed;inset:0;z-index:580;background:var(--bg);overflow-y:auto;padding:16px 16px 60px;">
+  <div style="max-width:520px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-top:4px;">
+      <button onclick="closeFeedback()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">💬 Beta Feedback</div>
+    </div>
+    <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:20px;">Thank you for beta testing! Your feedback is vital for improving the app.</div>
+
+    <label class="flabel">Your name &amp; where you play</label>
+    <input class="finput" id="fbName" placeholder="e.g. Mike — Miami">
+
+    <label class="flabel">What format do you play most often?</label>
+    <select class="finput" id="fbFormat" style="color-scheme:dark;">
+      <option value="">Choose one...</option>
+      <option>Round Robin</option>
+      <option>Best of 3 rotation (4 players)</option>
+      <option>Single elimination bracket</option>
+      <option>Double elimination bracket</option>
+      <option>Other</option>
+    </select>
+
+    <label class="flabel">How do you currently track scores?</label>
+    <select class="finput" id="fbTracking" style="color-scheme:dark;">
+      <option value="">Choose one...</option>
+      <option>Paper / whiteboard</option>
+      <option>Another app</option>
+      <option>We don't track — just play</option>
+      <option>I use this app!</option>
+    </select>
+
+    <label class="flabel">Most frustrating thing about running a tournament today?</label>
+    <textarea class="finput" id="fbFrustration" rows="3" style="resize:vertical;font-family:'DM Sans',sans-serif;"></textarea>
+
+    <label class="flabel">How likely are you to use this app again? (1–5)</label>
+    <div class="rank-toggle" id="fbAgainRow"></div>
+
+    <label class="flabel">How likely to recommend to your pickleball group? (1–5)</label>
+    <div class="rank-toggle" id="fbRecRow"></div>
+
+    <label class="flabel">What features would make you use this MORE? (tap all that apply)</label>
+    <div id="fbFeatures" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;"></div>
+
+    <label class="flabel">Would you pay for a premium version?</label>
+    <select class="finput" id="fbPay" style="color-scheme:dark;">
+      <option value="">Choose one...</option>
+      <option>No, only if it's free</option>
+      <option>Yes, up to $1/month</option>
+      <option>Yes, up to $3/month</option>
+      <option>Yes, up to $5/month</option>
+      <option>Depends on the features</option>
+    </select>
+
+    <label class="flabel">#1 thing we should build next?</label>
+    <textarea class="finput" id="fbNext" rows="2" style="resize:vertical;font-family:'DM Sans',sans-serif;"></textarea>
+
+    <label class="flabel">Instagram (for early access to new features)</label>
+    <input class="finput" id="fbInsta" placeholder="@yourhandle">
+
+    <button onclick="submitFeedback()" id="fbSubmitBtn"
+      style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.35);">
+      📨 Submit Feedback
+    </button>
+    <div id="fbThanks" style="display:none;text-align:center;margin-top:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;">✓ Thank you! Feedback sent.</div>
+  </div>
+</div>
+
+<!-- ADMIN FEEDBACK INBOX -->
+<div id="feedbackInbox" class="hidden" style="position:fixed;inset:0;z-index:580;background:var(--bg);overflow-y:auto;padding:16px 16px 60px;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-top:4px;">
+      <button onclick="document.getElementById('feedbackInbox').classList.add('hidden')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">📬 Feedback Inbox</div>
+    </div>
+    <div id="feedbackInboxList"></div>
+  </div>
+</div>
+
 <!-- iOS Audio Unlock — fires on very first touch -->
 <script>
 var _audioCtx = null;
@@ -552,9 +635,9 @@ document.addEventListener('touchend',   _unlockAudio, true);
   </button>
   <button class="tab" id="tabStats" onclick="document.getElementById('setupOverlay').classList.add('hidden');showPage('standings')" style="display:none;">📊 Stats</button>
   <a class="tab" id="tabSummary" href="builder-summary.html" style="display:none;text-decoration:none;">📋 Summary</a>
-  <a class="tab" id="tabFeedback" href="https://forms.gle/XK7gzGYRb7wjTvTr7" target="_blank" style="display:none;text-decoration:none;color:var(--aqua);">💬 Feedback</a>
+  <button class="tab" id="tabFeedback" onclick="openFeedback()" style="display:none;color:var(--aqua);">💬 Feedback</button>
   <span class="nav-spacer"></span>
-  <div class="sync-pill" id="syncPill"><div class="sdot"></div><span id="syncLbl">···</span></div>
+
   <button class="tab tab-settings" id="navSettings" onclick="openSettings()" style="display:none;">⚙</button>
 </nav>
 
@@ -573,7 +656,8 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <div class="settings-divider"></div>
     <button class="settings-item fun" id="soundBtn" onclick="playFunSound();">🎵 Play Fun Sound</button>
     <div class="settings-divider"></div>
-    <a class="settings-item fb" href="https://forms.gle/XK7gzGYRb7wjTvTr7" target="_blank" onclick="closeSettings();">💬 Give Feedback</a>
+    <button class="settings-item fb" onclick="closeSettings();openFeedback();">💬 Give Feedback</button>
+    <button class="settings-item" id="adminFeedbackBtn" style="display:none;" onclick="closeSettings();openFeedbackInbox();">📬 Feedback Inbox (Admin)</button>
     <div class="settings-divider"></div>
     <button class="settings-item" id="userInfo" style="color:var(--muted);font-size:13px;cursor:default;"></button>
     <button class="settings-item danger" onclick="closeSettings();doSignOut();">🚪 Sign Out</button>
@@ -699,8 +783,8 @@ function subscribeTournament(tid) {
   activeTid = tid;
   firstLoad = true;
   _tournamentUnsub = onValue(ref(db, 'tournaments/' + tid), snap => {
-    document.getElementById('syncPill').classList.add('live');
-    document.getElementById('syncLbl').textContent = 'Live';
+    document.getElementById('syncPill')?.classList.add('live');
+    if(document.getElementById('syncLbl')) document.getElementById('syncLbl').textContent = 'Live';
     const d = snap.val();
     if (d?.cfg) {
       if (firstLoad || !skip) {
@@ -791,6 +875,8 @@ async function bootApp() {
 function updateNav() {
   const has = !!cfg;
   updateProfileDisplay();
+  const afb = document.getElementById('adminFeedbackBtn');
+  if (afb) afb.style.display = (typeof isAdmin==='function' && isAdmin()) ? '' : 'none';
   document.getElementById('navHome').style.display     = has?'':'none';
   document.getElementById('navSettings').style.display = has?'':'none';
   document.getElementById('tabGames').style.display    = has?'':'none';
@@ -832,6 +918,7 @@ function renderCurrent() {
 window.openSetup = window._openSetup = function() {
   document.getElementById('setupOverlay').classList.remove('hidden');
   setActiveTab('home');
+  loadPlayerDirectory();
   if (cfg) {
     document.getElementById('tName').value = cfg.name||'';
     selMode(cfg.mode==='4p'?'4p':'rr');
@@ -859,7 +946,7 @@ window.addPF = window._addPF = ()=>addPFVal('');
 function addPFVal(val) {
   const g=document.getElementById('pgrid'), idx=g.querySelectorAll('.pwrap').length;
   const w=document.createElement('div'); w.className='pwrap';
-  w.innerHTML='<input class="pinput" placeholder="Player '+(idx+1)+'" value="'+val+'" oninput="updPCnt()">'
+  w.innerHTML='<input class="pinput" list="playerDir" placeholder="Player '+(idx+1)+'" value="'+val+'" oninput="updPCnt()">'
     +(idx>=2?'<button class="prmbtn" onclick="this.parentNode.remove();updPCnt()">×</button>':'');
   g.appendChild(w); updPCnt();
 }
@@ -972,6 +1059,119 @@ window.joinTournamentPrompt = async function() {
     subscribeTournament(tid);
   } catch(e) { alert('Could not join: ' + (e.message||e)); }
 };
+
+// ── NATIVE FEEDBACK ──
+let fbAgain = 0, fbRec = 0;
+const FB_FEATURES = ['Player profiles & all-time stats','Find games near me','Skill/rating system','Bracket tournaments','Schedule future games','Push notifications','Chat with other players','Share results to Instagram','Court finder'];
+let fbSelectedFeatures = new Set();
+
+window.openFeedback = function() {
+  // Build 1-5 scales
+  const mk = (rowId, cur, setter) => {
+    document.getElementById(rowId).innerHTML = [1,2,3,4,5].map(n =>
+      '<button class="rtbtn'+(cur===n?' active':'')+'" onclick="'+setter+'('+n+')">'+n+'</button>').join('');
+  };
+  window._mkFbRows = () => { mk('fbAgainRow', fbAgain, 'setFbAgain'); mk('fbRecRow', fbRec, 'setFbRec'); };
+  window._mkFbRows();
+  // Features grid
+  document.getElementById('fbFeatures').innerHTML = FB_FEATURES.map((f,i) =>
+    '<div class="player-chip'+(fbSelectedFeatures.has(f)?' t1':'')+'" style="font-size:12px;" onclick="toggleFbFeature('+i+')">'+f+'</div>').join('');
+  // Prefill name
+  if (!document.getElementById('fbName').value && userProfile?.name) {
+    document.getElementById('fbName').value = userProfile.name + (userProfile.city ? ' — ' + userProfile.city : '');
+  }
+  document.getElementById('fbThanks').style.display = 'none';
+  document.getElementById('feedbackOverlay').classList.remove('hidden');
+};
+window.closeFeedback = function() { document.getElementById('feedbackOverlay').classList.add('hidden'); };
+window.setFbAgain = function(n) { fbAgain = n; window._mkFbRows(); };
+window.setFbRec = function(n) { fbRec = n; window._mkFbRows(); };
+window.toggleFbFeature = function(i) {
+  const f = FB_FEATURES[i];
+  fbSelectedFeatures.has(f) ? fbSelectedFeatures.delete(f) : fbSelectedFeatures.add(f);
+  document.getElementById('fbFeatures').innerHTML = FB_FEATURES.map((f2,j) =>
+    '<div class="player-chip'+(fbSelectedFeatures.has(f2)?' t1':'')+'" style="font-size:12px;" onclick="toggleFbFeature('+j+')">'+f2+'</div>').join('');
+};
+window.submitFeedback = async function() {
+  const btn = document.getElementById('fbSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const entry = {
+    uid: currentUser?.uid || null,
+    email: userProfile?.email || currentUser?.email || null,
+    phone: userProfile?.phone || currentUser?.phoneNumber || null,
+    name: document.getElementById('fbName').value.trim() || null,
+    format: document.getElementById('fbFormat').value || null,
+    tracking: document.getElementById('fbTracking').value || null,
+    frustration: document.getElementById('fbFrustration').value.trim() || null,
+    useAgain: fbAgain || null,
+    recommend: fbRec || null,
+    features: [...fbSelectedFeatures],
+    wouldPay: document.getElementById('fbPay').value || null,
+    buildNext: document.getElementById('fbNext').value.trim() || null,
+    instagram: document.getElementById('fbInsta').value.trim() || null,
+    submittedAt: Date.now()
+  };
+  try {
+    await set(ref(db, 'feedback/fb' + Date.now()), entry);
+    document.getElementById('fbThanks').style.display = 'block';
+    setTimeout(() => { closeFeedback(); }, 1500);
+  } catch(e) {
+    alert('Could not send feedback: ' + (e.message||e));
+  }
+  btn.disabled = false; btn.textContent = '📨 Submit Feedback';
+};
+
+window.openFeedbackInbox = function() {
+  if (!isAdmin()) return;
+  const list = document.getElementById('feedbackInboxList');
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading...</div>';
+  document.getElementById('feedbackInbox').classList.remove('hidden');
+  onValue(ref(db, 'feedback'), snap => {
+    const data = snap.val();
+    if (!data) { list.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-t">No Feedback Yet</div></div>'; return; }
+    const entries = Object.entries(data).sort((a,b)=>(b[1].submittedAt||0)-(a[1].submittedAt||0));
+    list.innerHTML = entries.map(([id, f]) => {
+      const date = f.submittedAt ? new Date(f.submittedAt).toLocaleString() : '';
+      const row = (lbl, val) => val ? '<div style="margin-bottom:4px;"><span style="color:var(--cyan);font-size:11px;text-transform:uppercase;letter-spacing:1px;">'+lbl+':</span> <span style="color:var(--white);font-size:13px;">'+(Array.isArray(val)?val.join(', '):val)+'</span></div>' : '';
+      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;">'
+        +'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;">'+date+'</div>'
+        + row('Name', f.name) + row('Contact', f.email||f.phone)
+        + row('Format', f.format) + row('Tracks scores', f.tracking)
+        + row('Frustration', f.frustration)
+        + row('Use again', f.useAgain ? f.useAgain+'/5' : null)
+        + row('Recommend', f.recommend ? f.recommend+'/5' : null)
+        + row('Wants', f.features) + row('Would pay', f.wouldPay)
+        + row('Build next', f.buildNext) + row('IG', f.instagram)
+        +'</div>';
+    }).join('');
+  }, {onlyOnce:true});
+};
+
+// ── PLAYER DIRECTORY (autocomplete) ──
+async function saveDirectoryEntry() {
+  if (!currentUser || !userProfile?.name) return;
+  try {
+    await set(ref(db, 'directory/' + currentUser.uid), {
+      name: userProfile.name,
+      city: userProfile.city || null,
+      email: userProfile.email || currentUser.email || null,
+      phone: userProfile.phone || currentUser.phoneNumber || null
+    });
+  } catch(e) { console.log('directory save err', e); }
+}
+let _dirLoaded = false;
+async function loadPlayerDirectory() {
+  if (_dirLoaded) return;
+  try {
+    const snap = await get(ref(db, 'directory'));
+    const data = snap.val();
+    if (!data) return;
+    const dl = document.getElementById('playerDir');
+    dl.innerHTML = Object.values(data).map(p =>
+      '<option value="'+(p.name||'')+'" label="'+[p.city,p.email,p.phone].filter(Boolean).join(' · ')+'"></option>').join('');
+    _dirLoaded = true;
+  } catch(e) { console.log('directory load err', e); }
+}
 
 window.shareTournamentLink = async function() {
   if (!activeTid) { alert('Start a tournament first!'); return; }
@@ -1371,6 +1571,7 @@ window.saveProfile = async function() {
   if (!name) { document.getElementById('profileNameInput').focus(); return; }
   userProfile = { ...userProfile, name, gender: selectedGender || userProfile.gender || null };
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
+  saveDirectoryEntry();
   document.getElementById('profileOverlay').classList.add('hidden');
   updateProfileDisplay();
 };
@@ -1416,6 +1617,7 @@ window.saveProfileEdits = async function() {
     gender: editSelectedGender || userProfile.gender || null,
     email: email || null, city: city || null, dob: dob || null };
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
+  saveDirectoryEntry();
   updateProfileDisplay();
   const msg = document.getElementById('profileSavedMsg');
   msg.style.display = 'block';
@@ -1729,6 +1931,13 @@ function restoreTournament(t){ if(window.restoreTournament) window.restoreTourna
 function deleteHistoryTournament(t){ if(window.deleteHistoryTournament) window.deleteHistoryTournament(t); }
 function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
 function joinTournamentPrompt(){ if(window.joinTournamentPrompt) window.joinTournamentPrompt(); }
+function openFeedback()     { if(window.openFeedback) window.openFeedback(); }
+function closeFeedback()    { if(window.closeFeedback) window.closeFeedback(); }
+function setFbAgain(n)      { if(window.setFbAgain) window.setFbAgain(n); }
+function setFbRec(n)        { if(window.setFbRec) window.setFbRec(n); }
+function toggleFbFeature(i) { if(window.toggleFbFeature) window.toggleFbFeature(i); }
+function submitFeedback()   { if(window.submitFeedback) window.submitFeedback(); }
+function openFeedbackInbox(){ if(window.openFeedbackInbox) window.openFeedbackInbox(); }
 
 // ── SOUNDS ──
 // iOS requires AudioContext created INSIDE a user gesture handler.
