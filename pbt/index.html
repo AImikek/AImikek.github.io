@@ -603,6 +603,20 @@ document.addEventListener('touchend',   _unlockAudio, true);
   </div>
 </div>
 
+<script>
+window.addEventListener('error', function(ev) {
+  if (window.__errShown) return; window.__errShown = true;
+  alert('App error: ' + (ev.message || 'unknown') + '\nLine: ' + (ev.lineno || '?'));
+});
+window.addEventListener('unhandledrejection', function(ev) {
+  var r = ev.reason || {};
+  var msg = r.message || r.code || String(r);
+  if (msg && msg.toLowerCase().indexOf('permission') !== -1) {
+    if (window.__permShown) return; window.__permShown = true;
+    alert('🔒 FIREBASE PERMISSION DENIED\n\nThe database rules are blocking this. Double-check you edited rules under REALTIME DATABASE (not Cloud Firestore) and hit Publish.');
+  }
+});
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -1364,7 +1378,7 @@ window.saveCityEmail = async function() {
     city: city || userProfile.city || null };
   try { await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch(e) { console.log('profile save err', e); }
   document.getElementById('cityEmailOverlay').classList.add('hidden');
-  try { _finalizeTournament(); } catch(e) { console.log('finalize err', e); alert('Something went wrong starting the tournament. Please try again.'); }
+  try { _finalizeTournament(); } catch(e) { console.log('finalize err', e); alert('Error starting tournament:\n\n' + (e && (e.message || e.code) || e)); }
 };
 window.skipCityEmail = function() {
   // Still silently capture what we know from their login
@@ -1375,7 +1389,7 @@ window.skipCityEmail = function() {
     try { set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch(e) {}
   }
   document.getElementById('cityEmailOverlay').classList.add('hidden');
-  try { _finalizeTournament(); } catch(e) { console.log('finalize err', e); alert('Something went wrong starting the tournament. Please try again.'); }
+  try { _finalizeTournament(); } catch(e) { console.log('finalize err', e); alert('Error starting tournament:\n\n' + (e && (e.message || e.code) || e)); }
 };
 
 // ── PAST TOURNAMENTS ──
