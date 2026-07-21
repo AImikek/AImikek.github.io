@@ -2196,6 +2196,11 @@ window.openHistory = function() {
   }, {onlyOnce:true});
 };
 
+let histSort = 'avg';
+window.sortHistoryDetail = function(tid, mode) {
+  histSort = mode;
+  viewHistoryDetail(tid);
+};
 window.viewHistoryDetail = function(tid) {
   const t = window._historyData?.[tid];
   if (!t) return;
@@ -2216,19 +2221,34 @@ window.viewHistoryDetail = function(tid) {
     g.t1.forEach(p=>{stats[p].ptsFor+=s.s1;stats[p].ptsAgainst+=s.s2;stats[p].games++;if(s.s1>s.s2)stats[p].wins++;});
     g.t2.forEach(p=>{stats[p].ptsFor+=s.s2;stats[p].ptsAgainst+=s.s1;stats[p].games++;if(s.s2>s.s1)stats[p].wins++;});
   });
+  const hs = histSort;
+  const sortFns = {
+    wins: (a,b)=>b.wins-a.wins||b.avgDiff-a.avgDiff,
+    pts:  (a,b)=>b.ptsFor-a.ptsFor||b.avgDiff-a.avgDiff,
+    ag:   (a,b)=>a.ptsAgainst-b.ptsAgainst||b.avgDiff-a.avgDiff,
+    g:    (a,b)=>b.games-a.games||b.avgDiff-a.avgDiff,
+    avg:  (a,b)=>b.avgDiff-a.avgDiff||b.wins-a.wins||b.ptsFor-a.ptsFor
+  };
   const list=[...allP].map(p=>{const st=stats[p];const diff=st.ptsFor-st.ptsAgainst;
     return {name:p,...st,diff,avgDiff:st.games>0?diff/st.games:0};})
-    .sort((a,b)=>b.avgDiff-a.avgDiff||b.wins-a.wins||b.ptsFor-a.ptsFor);
+    .sort(sortFns[hs] || sortFns.avg);
 
   let html = '<button onclick="openHistory()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:\'DM Sans\',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:16px;">← All Tournaments</button>';
   html += '<div style="font-family:\'Russo One\',sans-serif;font-size:22px;letter-spacing:1px;color:var(--white);text-transform:uppercase;margin-bottom:2px;">'+(tCfg.name||'Tournament')+'</div>';
   html += '<div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:18px;">'+date+'</div>';
-  html += '<table class="stbl"><thead><tr><th>Player</th><th>W</th><th>Pts</th><th>Ag</th><th>G</th><th>Avg</th></tr></thead><tbody>';
+  const hl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);cursor:pointer;"';
+  const nh = 'style="cursor:pointer;"';
+  const th = (mode, lbl) => '<th onclick="sortHistoryDetail(\''+tid+'\',\''+mode+'\')" '+(hs===mode?hl:nh)+'>'+lbl+'</th>';
+  html += '<table class="stbl"><thead><tr><th>Player</th>'+th('wins','W')+th('pts','Pts')+th('ag','Ag')+th('g','G')+th('avg','Avg')+'</tr></thead><tbody>';
+  const cellHl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
   list.forEach((p,i)=>{
     const dc=p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
     html+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
-      +'<td>'+p.wins+'</td><td class="ptsf">'+p.ptsFor+'</td><td>'+p.ptsAgainst+'</td><td style="color:var(--muted);">'+p.games+'</td>'
-      +'<td class="'+dc+'">'+(p.avgDiff>0?'+':'')+p.avgDiff.toFixed(1)+'</td></tr>';
+      +'<td '+(hs==='wins'?cellHl:'')+'>'+p.wins+'</td>'
+      +'<td '+(hs==='pts'?cellHl:'')+' class="ptsf">'+p.ptsFor+'</td>'
+      +'<td '+(hs==='ag'?cellHl:'')+'>'+p.ptsAgainst+'</td>'
+      +'<td '+(hs==='g'?cellHl:'')+' style="color:var(--muted);">'+p.games+'</td>'
+      +'<td '+(hs==='avg'?cellHl:'')+' class="'+dc+'">'+(p.avgDiff>0?'+':'')+p.avgDiff.toFixed(1)+'</td></tr>';
   });
   html += '</tbody></table>';
 
@@ -2510,6 +2530,7 @@ function skipCityEmail()    { if(window.skipCityEmail) window.skipCityEmail(); }
 function openHistory()      { if(window.openHistory) window.openHistory(); }
 function closeHistory()     { if(window.closeHistory) window.closeHistory(); }
 function viewHistoryDetail(t){ if(window.viewHistoryDetail) window.viewHistoryDetail(t); }
+function sortHistoryDetail(t,m){ if(window.sortHistoryDetail) window.sortHistoryDetail(t,m); }
 function restoreTournament(t){ if(window.restoreTournament) window.restoreTournament(t); }
 function deleteHistoryTournament(t){ if(window.deleteHistoryTournament) window.deleteHistoryTournament(t); }
 function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
