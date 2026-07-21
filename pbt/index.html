@@ -63,10 +63,10 @@
   .page { display:none; padding:16px; max-width:860px; margin:0 auto; }
   .page.active { display:block; }
 
-  .overlay { position:fixed; left:0; right:0; bottom:0; top:52px;
-    background:rgba(4,6,15,0.94); backdrop-filter:blur(8px); z-index:300;
+  .overlay { position:fixed; inset:0;
+    background:var(--bg); z-index:310;
     display:flex; align-items:flex-start; justify-content:center;
-    padding:20px; overflow-y:auto; }
+    padding:72px 20px 100px; overflow-y:auto; overscroll-behavior:contain; }
   .overlay.hidden { display:none; }
   .modal { background:var(--surface); border:1px solid var(--border); border-radius:20px;
     padding:28px 22px; width:100%; max-width:520px; margin:auto; }
@@ -772,37 +772,49 @@ document.addEventListener('touchend',   _unlockAudio, true);
 
 <div class="overlay hidden" id="setupOverlay">
   <div class="modal">
-    <div class="mtitle">🏓 Tournament Setup</div>
-    <div class="msub">Configure players and format — schedule auto-generates</div>
-    <label class="flabel">Tournament Name</label>
-    <input class="finput" id="tName" placeholder="e.g. Sunday Dinko" maxlength="40">
-    <label class="flabel">Format</label>
-    <div class="mtoggle">
-      <div class="mcard active" id="mRR" onclick="selMode('rr')">
-        <div class="micon">🔄</div><div class="mname">Round Robin</div>
-        <div class="mdesc">8+ players · Everyone partners once · Standings by points</div>
+
+    <!-- STEP 1: choose an option -->
+    <div id="setupStep1">
+      <div class="mtitle">🏓 Let's Play</div>
+      <div class="msub">Choose one of these options</div>
+      <div class="mtoggle" style="grid-template-columns:1fr;">
+        <div class="mcard" onclick="chooseFormat('rr')">
+          <div class="micon">🔄</div><div class="mname">Round Robin</div>
+          <div class="mdesc">8+ players · Everyone partners once · Standings by points</div>
+        </div>
+        <div class="mcard" onclick="chooseFormat('4p')">
+          <div class="micon">⚡</div><div class="mname">4-Player Rotation</div>
+          <div class="mdesc">Best of 3 per matchup · Partners rotate · Points wins</div>
+        </div>
+        <div class="mcard" onclick="chooseFormat('log')">
+          <div class="micon">📝</div><div class="mname">Log Games</div>
+          <div class="mdesc">No schedule · Just add games as you play · Great for open play</div>
+        </div>
+        <button onclick="joinTournamentPrompt()"
+          style="width:100%;padding:18px;background:transparent;border:2px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+          🔗 Join a Friend's Tournament
+        </button>
       </div>
-      <div class="mcard" id="m4P" onclick="selMode('4p')">
-        <div class="micon">⚡</div><div class="mname">4-Player Rotation</div>
-        <div class="mdesc">Best of 3 per matchup · Partners rotate · Points wins</div>
-      </div>
-      <div class="mcard" id="mLOG" onclick="selMode('log')" style="grid-column:1/-1;">
-        <div class="mcard-icon">📝</div>
-        <div class="mcard-title">Log Games</div>
-        <div class="mcard-sub">No schedule · Just add games as you play · Great for open play</div>
-      </div>
+      <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);font-weight:600;">Got an invite link? Just open it — you'll join automatically.</div>
     </div>
 
-    <label class="flabel">Players <span id="pcnt" style="color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0;font-size:11px;text-transform:none;"></span></label>
-    <div class="pgrid" id="pgrid"></div>
-    <div class="pgrid"><button class="addbtn" onclick="addPF()">+ Add Player</button></div>
-    <button class="startbtn" id="startBtn" onclick="doStart()">🚀 Start Tournament</button>
-    <div style="text-align:center;margin:14px 0 4px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:1px;">— OR —</div>
-    <button onclick="joinTournamentPrompt()"
-      style="width:100%;padding:14px;background:transparent;border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:12px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
-      🔗 Join a Friend's Tournament
-    </button>
-    <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--muted);font-weight:600;">Got an invite link? Just open it — you'll join automatically.</div>
+    <!-- STEP 2: players (+ name unless Log Games) -->
+    <div id="setupStep2" style="display:none;">
+      <button onclick="setupBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:7px 13px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;">← Back</button>
+      <div class="mtitle" id="step2Title">🏓 Who's Playing?</div>
+      <div class="msub" id="step2Sub">Add your players below</div>
+
+      <div id="tNameWrap">
+        <label class="flabel">Tournament Name</label>
+        <input class="finput" id="tName" placeholder="e.g. Sunday Dinko" maxlength="40">
+      </div>
+
+      <label class="flabel">Players <span id="pcnt" style="color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0;font-size:11px;text-transform:none;"></span></label>
+      <div class="pgrid" id="pgrid"></div>
+      <div class="pgrid"><button class="addbtn" onclick="addPF()">+ Add Player</button></div>
+      <button class="startbtn" id="startBtn" onclick="doStart()" style="opacity:0.35;">🚀 Start Tournament</button>
+    </div>
+
   </div>
 </div>
 
@@ -881,7 +893,7 @@ const push = () => {
   }
 };
 
-const startHash = window.location.hash.replace('#','');
+let startHash = window.location.hash.replace('#','');
 if (startHash) window.location.hash = '';
 const urlTid = new URLSearchParams(window.location.search).get('t');
 
@@ -923,16 +935,17 @@ function subscribeTournament(tid) {
         firstLoad = false;
         closeSetup();
         updateNav();
-        if (startHash==='setup') { openSetup(); return; }
-        if (startHash==='leaderboard') { renderCurrent(); openLeaderboard(); return; }
-        if (startHash==='leaderboard') { renderCurrent(); setTimeout(()=>openLeaderboard(),0); return; }
-        if (startHash==='feedback') { renderCurrent(); setTimeout(()=>window.openFeedback&&window.openFeedback(),0); return; }
-        if (startHash==='settings') {
+        const _h = startHash; startHash = '';
+        if (_h==='setup') { openSetup(); return; }
+        if (_h==='leaderboard') { renderCurrent(); openLeaderboard(); return; }
+        if (_h==='leaderboard') { renderCurrent(); setTimeout(()=>openLeaderboard(),0); return; }
+        if (_h==='feedback') { renderCurrent(); setTimeout(()=>window.openFeedback&&window.openFeedback(),0); return; }
+        if (_h==='settings') {
           renderCurrent();
           setTimeout(() => { if (window.openSettings) window.openSettings(); else if (typeof openSettings==='function') openSettings(); }, 0);
           return;
         }
-        if (startHash==='games'||startHash==='standings') { showPage(startHash); }
+        if (_h==='games'||_h==='standings') { showPage(_h); }
         else renderCurrent();
       } else if (skip) {
         skip = false;
@@ -1064,6 +1077,10 @@ window.openSetup = window._openSetup = function() {
   var ph = document.getElementById('pageHistory'); if (ph && ph.style) ph.style.display='none';
   setActiveTab('home');
   loadPlayerDirectory();
+  // Two-step: fresh setup starts at format choice; editing an existing tournament goes straight to players
+  document.getElementById('setupStep1').style.display = cfg ? 'none' : 'block';
+  document.getElementById('setupStep2').style.display = cfg ? 'block' : 'none';
+  applyModeToStep2();
   if (cfg) {
     document.getElementById('tName').value = cfg.name||'';
     selMode(cfg.mode==='4p'?'4p':'rr');
@@ -1080,13 +1097,38 @@ function closeSetup() {
   setActiveTab(curPage);
 }
 
+function applyModeToStep2() {
+  const isLog = selMode_ === 'log';
+  document.getElementById('tNameWrap').style.display = isLog ? 'none' : 'block';
+  document.getElementById('step2Title').textContent = isLog ? '📝 Who\'s Playing Today?' : '🏓 Who\'s Playing?';
+  document.getElementById('step2Sub').textContent = isLog
+    ? 'Add players — the session name is auto-created (you can rename later)'
+    : 'Add your players below';
+  updPCnt();
+}
+
+window.chooseFormat = function(m) {
+  selMode_ = m;
+  document.getElementById('setupStep1').style.display = 'none';
+  document.getElementById('setupStep2').style.display = 'block';
+  applyModeToStep2();
+  // Prefill Player 1 with user's name on a fresh setup
+  const first = document.querySelector('.pinput');
+  if (first && !first.value && userProfile?.name) { first.value = userProfile.name; updPCnt(); }
+};
+
+window.setupBack = function() {
+  document.getElementById('setupStep2').style.display = 'none';
+  document.getElementById('setupStep1').style.display = 'block';
+};
+
 window.selMode = window._selMode = function(m) {
   selMode_ = m;
-  document.getElementById('mRR').classList.toggle('active', m==='rr');
-  document.getElementById('m4P').classList.toggle('active', m==='4p');
-  const lg = document.getElementById('mLOG');
-  if (lg) lg.classList.toggle('active', m==='log');
-  updPCnt();
+  ['mRR','m4P','mLOG'].forEach(function(id, i){
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('active', m === ['rr','4p','log'][i]);
+  });
+  if (typeof applyModeToStep2 === 'function') applyModeToStep2();
 };
 
 function buildPFields(arr) { document.getElementById('pgrid').innerHTML=''; arr.forEach(v=>addPFVal(v)); }
@@ -1102,7 +1144,10 @@ window.updPCnt = window._updPCnt = function() {
   const inputs=[...document.querySelectorAll('.pinput')];
   const filled=inputs.filter(i=>i.value.trim()).length;
   document.getElementById('pcnt').textContent='('+inputs.length+' slots · '+filled+' named)';
-  document.getElementById('startBtn').disabled=filled<2;
+  const sb = document.getElementById('startBtn');
+  sb.disabled = filled < 2;
+  sb.style.opacity = filled < 2 ? '0.35' : '1';
+  sb.style.boxShadow = filled < 2 ? 'none' : '0 4px 24px rgba(255,45,120,0.45)';
 };
 
 window.doStart = window._doStart = function() {
@@ -1147,7 +1192,13 @@ function _finalizeTournament() {
       players, mode: selMode_
     };
   }
-  const { name, players, mode } = window._pendingSetup;
+  let { name, players, mode } = window._pendingSetup;
+  if (mode === 'log' && (!name || name === 'Pickleball Tournament')) {
+    const firsts = players.slice(0,4).map(p => p.split(' ')[0]);
+    const d = new Date();
+    const month = d.toLocaleDateString('en-US',{month:'long'});
+    name = (firsts.join(' ') + ' ' + month + ' ' + d.getDate()).trim() || 'Open Play';
+  }
   const schedule = mode==='log' ? [] : mode==='4p' ? make4PSchedule(players) : makeRRSchedule(players);
   cfg={name,mode,players,schedule}; scores={};
   const tid = makeTid();
@@ -1846,6 +1897,13 @@ function renderGames() {
   if (!cfg){el.innerHTML='<div class="empty"><div class="empty-icon">🏓</div><div class="empty-t">No Tournament Yet</div><div class="empty-s">Tap Home to set one up</div></div>';return;}
   if (!cfg.schedule) cfg.schedule = [];
   let html='';
+  if (activeTid) {
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.2);border-radius:12px;padding:10px 12px;margin-bottom:14px;">'
+      +'<div style="min-width:0;"><div style="font-size:10px;letter-spacing:2px;color:var(--cyan);font-family:\'Russo One\',sans-serif;text-transform:uppercase;">Invite Code</div>'
+      +'<div style="font-size:13px;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+activeTid+'</div></div>'
+      +'<button onclick="shareTournamentLink()" style="flex-shrink:0;padding:10px 14px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🔗 Copy Link</button>'
+      +'</div>';
+  }
   if (cfg.mode==='4p') {
     html+='<div class="infopill">⚡ Best of 3 per matchup · Partners rotate · Most total points wins</div>';
     const matchups=[...new Set(cfg.schedule.filter(g=>!g.added&&g.matchup).map(g=>g.matchup))].sort((a,b)=>a-b);
@@ -2611,6 +2669,8 @@ function closeSettings() { document.getElementById('settingsMenu').classList.add
 function openSetup()     { if(window._openSetup) window._openSetup(); }
 function showPage(p)     { if(window._showPage) window._showPage(p); }
 function selMode(m)      { if(window._selMode) window._selMode(m); }
+function chooseFormat(m) { if(window.chooseFormat) window.chooseFormat(m); }
+function setupBack()     { if(window.setupBack) window.setupBack(); }
 function closeAllOverlaysAndShow(p) {
   if (document.getElementById('tabGames').disabled) return;
   document.getElementById('setupOverlay').classList.add('hidden');
