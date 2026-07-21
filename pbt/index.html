@@ -44,7 +44,7 @@
   .settings-menu .settings-panel, .settings-menu > .settings-box { }
   .settings-menu.hidden { display:none; }
   .settings-overlay { position:absolute; inset:0; background:rgba(4,6,15,0.7); backdrop-filter:blur(4px); }
-  .settings-panel { position:absolute; top:54px; right:8px; background:var(--surface);
+  .settings-panel { position:relative; margin:auto; background:var(--surface);
     border:1px solid var(--border); border-radius:16px; padding:8px; min-width:230px;
     box-shadow:0 8px 40px rgba(0,0,0,0.6); animation:slideDown 0.15s ease-out; }
   @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
@@ -608,7 +608,7 @@
     <div class="fbstep" id="fbS2" style="display:none;">
       <div class="mtitle" style="font-size:19px;">🏓 How do you play?</div>
       <label class="flabel">What format do you play most often?</label>
-      <select class="finput" id="fbFormat" style="color-scheme:dark;">
+      <select class="finput" id="fbFormat" style="color-scheme:dark;" onchange="document.getElementById('fbFormatOther').style.display=this.value==='Other'?'block':'none'">
         <option value="">Choose one...</option>
         <option>Round Robin</option>
         <option>Best of 3 rotation (4 players)</option>
@@ -616,14 +616,17 @@
         <option>Double elimination bracket</option>
         <option>Other</option>
       </select>
+      <input class="finput" id="fbFormatOther" placeholder="Tell us your format..." style="display:none;">
       <label class="flabel">How do you currently track scores?</label>
-      <select class="finput" id="fbTracking" style="color-scheme:dark;">
+      <select class="finput" id="fbTracking" style="color-scheme:dark;" onchange="document.getElementById('fbTrackingOther').style.display=this.value==='Other'?'block':'none'">
         <option value="">Choose one...</option>
         <option>Paper / whiteboard</option>
         <option>Another app</option>
         <option>We don't track — just play</option>
         <option>I use this app!</option>
+        <option>Other</option>
       </select>
+      <input class="finput" id="fbTrackingOther" placeholder="How do you track scores?" style="display:none;">
     </div>
 
     <!-- STEP 3: pain -->
@@ -788,6 +791,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item fb" onclick="closeSettings();openFeedback();">💬 Give Feedback</button>
     <button class="settings-item" id="adminFeedbackBtn" style="display:none;" onclick="closeSettings();openFeedbackInbox();">📬 Feedback Inbox (Admin)</button>
     <button class="settings-item" id="adminImportBtn" style="display:none;" onclick="closeSettings();openImport();">📥 Import Tournament (Admin)</button>
+    <button class="settings-item" id="adminSyncBtn" style="display:none;" onclick="closeSettings();syncHistoryToGlobal();">🔄 Publish History to Leaderboard (Admin)</button>
     <div class="settings-divider"></div>
     <button class="settings-item" id="userInfo" style="color:var(--muted);font-size:13px;cursor:default;"></button>
     <button class="settings-item danger" onclick="closeSettings();doSignOut();">🚪 Sign Out</button>
@@ -1058,6 +1062,8 @@ function updateNav() {
   if (afb) afb.style.display = (typeof isAdmin==='function' && isAdmin()) ? '' : 'none';
   const aib = document.getElementById('adminImportBtn');
   if (aib) aib.style.display = (typeof isAdmin==='function' && isAdmin()) ? '' : 'none';
+  const asb = document.getElementById('adminSyncBtn');
+  if (asb) asb.style.display = (typeof isAdmin==='function' && isAdmin()) ? '' : 'none';
   // Bottom bar always visible; Games/Stats dim + disable when no tournament
   document.getElementById('tabGames').style.opacity = has?'1':'0.35';
   document.getElementById('tabStats').style.opacity = has?'1':'0.35';
@@ -1331,10 +1337,17 @@ window.openFeedback = function() {
     document.getElementById('fbName').value = userProfile.name + (userProfile.city ? ' — ' + userProfile.city : '');
   }
   document.getElementById('fbThanks').style.display = 'none';
+  window._fbSubmitted = false;
+  clearTimeout(window._fbPartialTimer);
+  window._fbPartialTimer = setTimeout(() => { if (!window._fbSubmitted) submitFeedback(true); }, 5 * 60 * 1000);
   showFbStep(1);
   document.getElementById('feedbackOverlay').classList.remove('hidden');
 };
-window.closeFeedback = function() { document.getElementById('feedbackOverlay').classList.add('hidden'); };
+window.closeFeedback = function() {
+  document.getElementById('feedbackOverlay').classList.add('hidden');
+  clearTimeout(window._fbPartialTimer);
+  if (!window._fbSubmitted) submitFeedback(true);
+};
 window.setFbAgain = function(n) { fbAgain = n; window._mkFbRows(); };
 window.setFbRec = function(n) { fbRec = n; window._mkFbRows(); };
 window.toggleFbFeature = function(i) {
@@ -1343,16 +1356,19 @@ window.toggleFbFeature = function(i) {
   document.getElementById('fbFeatures').innerHTML = FB_FEATURES.map((f2,j) =>
     '<div class="player-chip'+(fbSelectedFeatures.has(f2)?' t1':'')+'" style="font-size:12px;" onclick="toggleFbFeature('+j+')">'+f2+'</div>').join('');
 };
-window.submitFeedback = async function() {
+window.submitFeedback = async function(partial) {
+  if (window._fbSubmitted) return;
   const btn = document.getElementById('fbSubmitBtn');
-  btn.disabled = true; btn.textContent = 'Sending...';
+  if (!partial) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  const fmtVal = document.getElementById('fbFormat').value;
+  const trkVal = document.getElementById('fbTracking').value;
   const entry = {
     uid: currentUser?.uid || null,
     email: userProfile?.email || currentUser?.email || null,
     phone: userProfile?.phone || currentUser?.phoneNumber || null,
     name: document.getElementById('fbName').value.trim() || null,
-    format: document.getElementById('fbFormat').value || null,
-    tracking: document.getElementById('fbTracking').value || null,
+    format: (fmtVal === 'Other' ? ('Other: ' + document.getElementById('fbFormatOther').value.trim()) : fmtVal) || null,
+    tracking: (trkVal === 'Other' ? ('Other: ' + document.getElementById('fbTrackingOther').value.trim()) : trkVal) || null,
     frustration: document.getElementById('fbFrustration').value.trim() || null,
     useAgain: fbAgain || null,
     recommend: fbRec || null,
@@ -1362,6 +1378,17 @@ window.submitFeedback = async function() {
     instagram: document.getElementById('fbInsta').value.trim() || null,
     submittedAt: Date.now()
   };
+  entry.partial = !!partial || null;
+  // Skip completely empty partials
+  if (partial && !entry.name && !entry.frustration && !entry.useAgain && !entry.features.length && !entry.buildNext && !entry.format && !entry.tracking) return;
+  window._fbSubmitted = true;
+  // Sync Instagram to profile if provided
+  if (entry.instagram && currentUser) {
+    try {
+      userProfile = { ...userProfile, instagram: entry.instagram };
+      set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
+    } catch(e) {}
+  }
   try {
     await set(ref(db, 'feedback/fb' + Date.now()), entry);
     // Also email to admin via EmailJS (if configured)
@@ -1391,12 +1418,14 @@ window.submitFeedback = async function() {
         });
       }
     } catch(e) { console.log('emailjs err', e); }
-    document.getElementById('fbThanks').style.display = 'block';
-    setTimeout(() => { closeFeedback(); }, 1500);
+    if (!partial) {
+      document.getElementById('fbThanks').style.display = 'block';
+      setTimeout(() => { closeFeedback(); }, 1500);
+    }
   } catch(e) {
     alert('Could not send feedback: ' + (e.message||e));
   }
-  btn.disabled = false; btn.textContent = '📨 Submit';
+  if (!partial) { btn.disabled = false; btn.textContent = '📨 Submit'; }
 };
 
 window.openFeedbackInbox = function() {
@@ -1775,12 +1804,31 @@ window.runImport = async function() {
       const finishedAt = t.date ? new Date(t.date + 'T18:00:00').getTime() : Date.now();
       const tid = 'imported' + finishedAt + Math.random().toString(36).slice(2,5);
       await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), { cfg, scores, finishedAt, imported: true });
+      try { await set(ref(db, 'tournaments/' + tid), { cfg, scores, ownerUid: currentUser.uid, updatedAt: finishedAt }); } catch(e) {}
       imported++;
     } catch(e) { errors.push((t.name||'?') + ': ' + e.message); }
   }
   out.style.color = errors.length ? 'var(--yellow)' : 'var(--aqua)';
   out.textContent = '✓ Imported ' + imported + ' tournament' + (imported!==1?'s':'') + (errors.length ? ' · Errors: ' + errors.join('; ') : '');
   if (imported) document.getElementById('importJson').value = '';
+};
+
+window.syncHistoryToGlobal = async function() {
+  if (!isAdmin()) return;
+  try {
+    const hSnap = await get(ref(db, 'users/' + currentUser.uid + '/history'));
+    const hist = hSnap.val() || {};
+    const tSnap = await get(ref(db, 'tournaments'));
+    const existing = tSnap.val() || {};
+    let n = 0;
+    for (const [tid, t] of Object.entries(hist)) {
+      if (existing[tid]) continue;
+      await set(ref(db, 'tournaments/' + tid), { cfg: t.cfg, scores: t.scores || {}, ownerUid: currentUser.uid, updatedAt: t.finishedAt || Date.now() });
+      n++;
+    }
+    lbData = null;
+    alert('✓ Published ' + n + ' tournament' + (n!==1?'s':'') + ' to the global leaderboard.');
+  } catch(e) { alert('Sync failed: ' + (e.message||e)); }
 };
 
 // ── PLAYER DIRECTORY (autocomplete) ──
@@ -2194,7 +2242,7 @@ function renderStandings() {
   const cb = document.getElementById('statsChampBox');
   if (cb && (window._celebrate || allDone)) {
     addStatsConfetti(cb);
-    if (window._celebrate) { try { playSound && playSound('win'); } catch(e) {} window._celebrate = false; }
+    if (window._celebrate) { window._celebrate = false; }
   }
 }
 
@@ -2813,75 +2861,9 @@ function deleteLbSource(t)   { if(window.deleteLbSource) window.deleteLbSource(t
 function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink(); }
 function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
 function runImport()         { if(window.runImport) window.runImport(); }
+function syncHistoryToGlobal(){ if(window.syncHistoryToGlobal) window.syncHistoryToGlobal(); }
 
-// ── SOUNDS ──
-// iOS requires AudioContext created INSIDE a user gesture handler.
-// We use a fresh ctx every time to guarantee it works.
-function _note(ctx, freq, start, dur, type, vol) {
-  try {
-    var o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type=type||'sine'; o.frequency.value=freq;
-    g.gain.setValueAtTime(0.001, start);
-    g.gain.linearRampToValueAtTime(vol||0.3, start+0.05);
-    g.gain.exponentialRampToValueAtTime(0.001, start+dur);
-    o.start(start); o.stop(start+dur+0.05);
-  } catch(e) {}
-}
 
-function playFunSound() {
-  closeSettings();
-  var AudioCtx = window.AudioContext || window.webkitAudioContext;
-  if (!AudioCtx) return;
-  try {
-    var ctx = new AudioCtx();
-    var fns = [sndJingle, sndBoing, sndPickleball, sndCrowd, sndArcade];
-    var fn = fns[Math.floor(Math.random()*fns.length)];
-    fn(ctx);
-    setTimeout(function(){ try{ctx.close();}catch(e){} }, 3000);
-  } catch(e) { console.log('sound err', e); }
-}
-
-function sndJingle(ctx) {
-  [523,659,784,1047,1319].forEach(function(f,i){ _note(ctx,f,ctx.currentTime+i*0.1,0.35); });
-}
-function sndBoing(ctx) {
-  var o=ctx.createOscillator(),g=ctx.createGain();
-  o.connect(g); g.connect(ctx.destination); o.type='sine';
-  o.frequency.setValueAtTime(80,ctx.currentTime);
-  o.frequency.exponentialRampToValueAtTime(700,ctx.currentTime+0.15);
-  o.frequency.exponentialRampToValueAtTime(200,ctx.currentTime+0.55);
-  g.gain.setValueAtTime(0.5,ctx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
-  o.start(); o.stop(ctx.currentTime+0.65);
-}
-function sndPickleball(ctx) {
-  // "I love pickleball" melody
-  var notes=[440,494,523,587,659,698,784,880,988,1047,988,880,1175,1319,1047,1175];
-  notes.forEach(function(f,i){
-    _note(ctx,f,ctx.currentTime+i*0.1,0.12,i%2===0?'sine':'triangle',0.25);
-  });
-  // Big finish
-  [523,659,784,1047].forEach(function(f){_note(ctx,f,ctx.currentTime+1.8,0.7,'sine',0.3);});
-}
-function sndCrowd(ctx) {
-  var buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.7),ctx.sampleRate);
-  var d=buf.getChannelData(0);
-  for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.25;
-  var src=ctx.createBufferSource(); src.buffer=buf;
-  var f=ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=900; f.Q.value=0.5;
-  var g=ctx.createGain();
-  g.gain.setValueAtTime(0,ctx.currentTime);
-  g.gain.linearRampToValueAtTime(1,ctx.currentTime+0.08);
-  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.7);
-  src.connect(f); f.connect(g); g.connect(ctx.destination);
-  src.start(); src.stop(ctx.currentTime+0.75);
-}
-function sndArcade(ctx) {
-  [784,988,1175,1568,1175,1568,2093].forEach(function(f,i){
-    _note(ctx,f,ctx.currentTime+i*0.08,0.09,'square',0.15);
-  });
-}
 </script>
 </body>
 </html>
