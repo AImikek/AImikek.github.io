@@ -249,7 +249,7 @@
 
   /* ── PROFILE EDIT PAGE ── */
   #pageProfile { display:none; position:fixed; inset:0; z-index:350; background:var(--bg);
-    overflow-y:auto; padding:16px 16px 40px; }
+    overflow-y:auto; padding:60px 16px 130px; }
   #pageProfile .profile-inner { max-width:520px; margin:0 auto; padding-top:8px; }
   .profile-avatar { width:80px; height:80px; border-radius:50%;
     background:linear-gradient(135deg,var(--pink),var(--purple));
@@ -259,7 +259,7 @@
 
 
   /* ── TOP BAR (FB/IG style) ── */
-  #topBar { position:fixed; top:0; left:0; right:0; z-index:300;
+  #topBar { position:fixed; top:0; left:0; right:0; z-index:390;
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 14px; background:rgba(4,6,15,0.92); backdrop-filter:blur(14px);
     border-bottom:1px solid var(--border);
@@ -586,66 +586,93 @@
 <!-- FEEDBACK OVERLAY (native, replaces Google Form) -->
 <div id="feedbackOverlay" class="hidden" style="position:fixed;inset:0;z-index:580;background:var(--bg);overflow-y:auto;padding:16px 16px 60px;">
   <div style="max-width:520px;margin:0 auto;">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-top:4px;">
-      <button onclick="closeFeedback()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-top:4px;">
+      <button onclick="closeFeedback()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">✕</button>
       <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">💬 Beta Feedback</div>
     </div>
-    <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:20px;">Thank you for beta testing! Your feedback is vital for improving the app.</div>
 
-    <label class="flabel">Your name &amp; where you play</label>
-    <input class="finput" id="fbName" placeholder="e.g. Mike — Miami">
+    <!-- Progress bar -->
+    <div style="background:var(--surface2);border-radius:99px;height:8px;margin-bottom:6px;overflow:hidden;">
+      <div id="fbProgress" style="height:100%;width:16%;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:99px;transition:width 0.35s ease;"></div>
+    </div>
+    <div id="fbStepLbl" style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:20px;">STEP 1 OF 6</div>
 
-    <label class="flabel">What format do you play most often?</label>
-    <select class="finput" id="fbFormat" style="color-scheme:dark;">
-      <option value="">Choose one...</option>
-      <option>Round Robin</option>
-      <option>Best of 3 rotation (4 players)</option>
-      <option>Single elimination bracket</option>
-      <option>Double elimination bracket</option>
-      <option>Other</option>
-    </select>
+    <!-- STEP 1: about you -->
+    <div class="fbstep" id="fbS1">
+      <div class="mtitle" style="font-size:19px;">👋 Who are you?</div>
+      <label class="flabel">Your name &amp; where you play</label>
+      <input class="finput" id="fbName" placeholder="e.g. Mike — Miami">
+    </div>
 
-    <label class="flabel">How do you currently track scores?</label>
-    <select class="finput" id="fbTracking" style="color-scheme:dark;">
-      <option value="">Choose one...</option>
-      <option>Paper / whiteboard</option>
-      <option>Another app</option>
-      <option>We don't track — just play</option>
-      <option>I use this app!</option>
-    </select>
+    <!-- STEP 2: how you play -->
+    <div class="fbstep" id="fbS2" style="display:none;">
+      <div class="mtitle" style="font-size:19px;">🏓 How do you play?</div>
+      <label class="flabel">What format do you play most often?</label>
+      <select class="finput" id="fbFormat" style="color-scheme:dark;">
+        <option value="">Choose one...</option>
+        <option>Round Robin</option>
+        <option>Best of 3 rotation (4 players)</option>
+        <option>Single elimination bracket</option>
+        <option>Double elimination bracket</option>
+        <option>Other</option>
+      </select>
+      <label class="flabel">How do you currently track scores?</label>
+      <select class="finput" id="fbTracking" style="color-scheme:dark;">
+        <option value="">Choose one...</option>
+        <option>Paper / whiteboard</option>
+        <option>Another app</option>
+        <option>We don't track — just play</option>
+        <option>I use this app!</option>
+      </select>
+    </div>
 
-    <label class="flabel">Most frustrating thing about running a tournament today?</label>
-    <textarea class="finput" id="fbFrustration" rows="3" style="resize:vertical;font-family:'DM Sans',sans-serif;"></textarea>
+    <!-- STEP 3: pain -->
+    <div class="fbstep" id="fbS3" style="display:none;">
+      <div class="mtitle" style="font-size:19px;">😤 What's frustrating?</div>
+      <label class="flabel">Most frustrating thing about running a tournament today?</label>
+      <textarea class="finput" id="fbFrustration" rows="4" style="resize:vertical;font-family:'DM Sans',sans-serif;"></textarea>
+    </div>
 
-    <label class="flabel">How likely are you to use this app again? (1–5)</label>
-    <div class="rank-toggle" id="fbAgainRow"></div>
+    <!-- STEP 4: ratings -->
+    <div class="fbstep" id="fbS4" style="display:none;">
+      <div class="mtitle" style="font-size:19px;">⭐ Quick ratings</div>
+      <label class="flabel">How likely are you to use this app again? (1–5)</label>
+      <div class="rank-toggle" id="fbAgainRow"></div>
+      <label class="flabel">How likely to recommend to your pickleball group? (1–5)</label>
+      <div class="rank-toggle" id="fbRecRow"></div>
+    </div>
 
-    <label class="flabel">How likely to recommend to your pickleball group? (1–5)</label>
-    <div class="rank-toggle" id="fbRecRow"></div>
+    <!-- STEP 5: features -->
+    <div class="fbstep" id="fbS5" style="display:none;">
+      <div class="mtitle" style="font-size:19px;">✨ What should we build?</div>
+      <label class="flabel">What features would make you use this MORE? (tap all that apply)</label>
+      <div id="fbFeatures" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;"></div>
+    </div>
 
-    <label class="flabel">What features would make you use this MORE? (tap all that apply)</label>
-    <div id="fbFeatures" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;"></div>
+    <!-- STEP 6: final -->
+    <div class="fbstep" id="fbS6" style="display:none;">
+      <div class="mtitle" style="font-size:19px;">🚀 Last few things</div>
+      <label class="flabel">Would you pay for a premium version?</label>
+      <select class="finput" id="fbPay" style="color-scheme:dark;">
+        <option value="">Choose one...</option>
+        <option>No, only if it's free</option>
+        <option>Yes, up to $1/month</option>
+        <option>Yes, up to $3/month</option>
+        <option>Yes, up to $5/month</option>
+        <option>Depends on the features</option>
+      </select>
+      <label class="flabel">#1 thing we should build next?</label>
+      <textarea class="finput" id="fbNext" rows="2" style="resize:vertical;font-family:'DM Sans',sans-serif;"></textarea>
+      <label class="flabel">Instagram (for early access to new features)</label>
+      <input class="finput" id="fbInsta" placeholder="@yourhandle">
+    </div>
 
-    <label class="flabel">Would you pay for a premium version?</label>
-    <select class="finput" id="fbPay" style="color-scheme:dark;">
-      <option value="">Choose one...</option>
-      <option>No, only if it's free</option>
-      <option>Yes, up to $1/month</option>
-      <option>Yes, up to $3/month</option>
-      <option>Yes, up to $5/month</option>
-      <option>Depends on the features</option>
-    </select>
-
-    <label class="flabel">#1 thing we should build next?</label>
-    <textarea class="finput" id="fbNext" rows="2" style="resize:vertical;font-family:'DM Sans',sans-serif;"></textarea>
-
-    <label class="flabel">Instagram (for early access to new features)</label>
-    <input class="finput" id="fbInsta" placeholder="@yourhandle">
-
-    <button onclick="submitFeedback()" id="fbSubmitBtn"
-      style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.35);">
-      📨 Submit Feedback
-    </button>
+    <!-- Nav buttons -->
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button id="fbBackBtn" onclick="fbStepBack()" style="flex:1;padding:14px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;display:none;">← Back</button>
+      <button id="fbNextBtn" onclick="fbStepNext()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Next →</button>
+      <button id="fbSubmitBtn" onclick="submitFeedback()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.35);display:none;">📨 Submit</button>
+    </div>
     <div id="fbThanks" style="display:none;text-align:center;margin-top:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;">✓ Thank you! Feedback sent.</div>
   </div>
 </div>
@@ -1272,6 +1299,22 @@ let fbAgain = 0, fbRec = 0;
 const FB_FEATURES = ['Player profiles & all-time stats','Find games near me','Skill/rating system','Bracket tournaments','Schedule future games','Push notifications','Chat with other players','Share results to Instagram','Court finder'];
 let fbSelectedFeatures = new Set();
 
+let fbStep = 1;
+const FB_STEPS = 6;
+function showFbStep(n) {
+  fbStep = Math.max(1, Math.min(FB_STEPS, n));
+  for (let i = 1; i <= FB_STEPS; i++) {
+    document.getElementById('fbS'+i).style.display = i === fbStep ? 'block' : 'none';
+  }
+  document.getElementById('fbProgress').style.width = Math.round(fbStep/FB_STEPS*100) + '%';
+  document.getElementById('fbStepLbl').textContent = 'STEP ' + fbStep + ' OF ' + FB_STEPS;
+  document.getElementById('fbBackBtn').style.display = fbStep > 1 ? 'block' : 'none';
+  document.getElementById('fbNextBtn').style.display = fbStep < FB_STEPS ? 'block' : 'none';
+  document.getElementById('fbSubmitBtn').style.display = fbStep === FB_STEPS ? 'block' : 'none';
+}
+window.fbStepNext = function() { showFbStep(fbStep + 1); };
+window.fbStepBack = function() { showFbStep(fbStep - 1); };
+
 window.openFeedback = function() {
   // Build 1-5 scales
   const mk = (rowId, cur, setter) => {
@@ -1288,6 +1331,7 @@ window.openFeedback = function() {
     document.getElementById('fbName').value = userProfile.name + (userProfile.city ? ' — ' + userProfile.city : '');
   }
   document.getElementById('fbThanks').style.display = 'none';
+  showFbStep(1);
   document.getElementById('feedbackOverlay').classList.remove('hidden');
 };
 window.closeFeedback = function() { document.getElementById('feedbackOverlay').classList.add('hidden'); };
@@ -1352,7 +1396,7 @@ window.submitFeedback = async function() {
   } catch(e) {
     alert('Could not send feedback: ' + (e.message||e));
   }
-  btn.disabled = false; btn.textContent = '📨 Submit Feedback';
+  btn.disabled = false; btn.textContent = '📨 Submit';
 };
 
 window.openFeedbackInbox = function() {
@@ -2295,6 +2339,14 @@ window.saveProfileEdits = async function() {
   updateProfileDisplay();
   const msg = document.getElementById('profileSavedMsg');
   msg.style.display = 'block';
+  const toast = document.createElement('div');
+  toast.textContent = '✓ Profile Saved!';
+  toast.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:700;background:rgba(0,245,196,0.15);border:1px solid var(--aqua);color:var(--aqua);padding:10px 22px;border-radius:99px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2200);
+  const sbtn = document.querySelector('#pageProfile button[onclick*="saveProfileEdits"]');
+  if (sbtn) { const orig = sbtn.textContent; sbtn.textContent = '✓ Saved!'; sbtn.style.background = 'linear-gradient(135deg,var(--aqua),var(--cyan))'; setTimeout(() => { sbtn.textContent = orig; sbtn.style.background = ''; }, 2000); }
+  try { msg.scrollIntoView({ behavior:'smooth', block:'nearest' }); } catch(e) {}
   setTimeout(() => msg.style.display = 'none', 2500);
 };
 
@@ -2743,6 +2795,8 @@ function setFbAgain(n)      { if(window.setFbAgain) window.setFbAgain(n); }
 function setFbRec(n)        { if(window.setFbRec) window.setFbRec(n); }
 function toggleFbFeature(i) { if(window.toggleFbFeature) window.toggleFbFeature(i); }
 function submitFeedback()   { if(window.submitFeedback) window.submitFeedback(); }
+function fbStepNext()       { if(window.fbStepNext) window.fbStepNext(); }
+function fbStepBack()       { if(window.fbStepBack) window.fbStepBack(); }
 function openFeedbackInbox(){ if(window.openFeedbackInbox) window.openFeedbackInbox(); }
 function deleteFeedback(id)  { if(window.deleteFeedback) window.deleteFeedback(id); }
 function openImport()        { if(window.openImport) window.openImport(); }
