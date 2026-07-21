@@ -1525,6 +1525,9 @@ const LB_MIN_GAMES = 3;
 
 window.openLeaderboard = async function() {
   try { history.replaceState({}, '', '#leaderboard'); } catch(e) {}
+  var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
+  var ph = document.getElementById('pageHistory'); if (ph) ph.style.display = 'none';
+  document.getElementById('setupOverlay').classList.add('hidden');
   document.getElementById('leaderboardPage').classList.remove('hidden');
   setActiveTab(null);
   document.getElementById('lbContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading...</div>';
@@ -2335,6 +2338,63 @@ window.saveProfile = async function() {
   updateProfileDisplay();
 };
 
+let _profileAutoWired = false;
+function wireProfileAutoSave() {
+  if (_profileAutoWired) return;
+  _profileAutoWired = true;
+  const ids = ['editName','editEmail','editCity','editInsta','editDupr','editCourt','editDob'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', () => autoSaveProfile());
+  });
+}
+let _autoSaveTimer = null;
+async function autoSaveProfile() {
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(async () => {
+    if (!currentUser) return;
+    const name  = document.getElementById('editName').value.trim();
+    if (!name) return; // don't save nameless profiles
+    const email = document.getElementById('editEmail').value.trim();
+    const city  = document.getElementById('editCity').value.trim();
+    const dob   = document.getElementById('editDob').value;
+    const insta = document.getElementById('editInsta').value.trim();
+    const dupr  = document.getElementById('editDupr').value.trim();
+    const court = document.getElementById('editCourt').value.trim();
+    userProfile = { ...userProfile, name,
+      gender: editSelectedGender || userProfile.gender || null,
+      email: email || null, city: city || null, dob: dob || null,
+      instagram: insta || null, dupr: dupr ? parseFloat(dupr) : null, homeCourt: court || null };
+    try {
+      await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
+      saveDirectoryEntry();
+      updateProfileDisplay();
+      const t = document.createElement('div');
+      t.textContent = '✓ Saved';
+      t.style.cssText = 'position:fixed;top:64px;right:16px;z-index:700;background:rgba(0,245,196,0.12);border:1px solid var(--aqua);color:var(--aqua);padding:6px 14px;border-radius:99px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 1400);
+    } catch(e) { console.log('autosave err', e); }
+  }, 400);
+}
+
+let _autosaveTimer = null;
+function scheduleProfileAutosave() {
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(() => { saveProfileEdits(true); }, 900);
+}
+window._wireProfileAutosave = function() {
+  ['editName','editEmail','editCity','editInsta','editDupr','editCourt','editDob'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el._autosaveWired) {
+      el._autosaveWired = true;
+      el.addEventListener('input', scheduleProfileAutosave);
+      el.addEventListener('change', scheduleProfileAutosave);
+    }
+  });
+};
+
 window.openProfile = function() {
   document.getElementById('editName').value  = userProfile.name  || '';
   document.getElementById('editEmail').value = userProfile.email || '';
@@ -2343,6 +2403,8 @@ window.openProfile = function() {
   document.getElementById('editInsta').value = userProfile.instagram || '';
   document.getElementById('editDupr').value  = userProfile.dupr  || '';
   document.getElementById('editCourt').value = userProfile.homeCourt || '';
+  if (window._wireProfileAutosave) window._wireProfileAutosave();
+  wireProfileAutoSave();
   editSelectedGender = userProfile.gender || null;
   document.getElementById('editGMale').classList.toggle('active', editSelectedGender==='M');
   document.getElementById('editGFemale').classList.toggle('active', editSelectedGender==='F');
@@ -2367,9 +2429,10 @@ window.editSelectGender = function(g) {
   editSelectedGender = g;
   document.getElementById('editGMale').classList.toggle('active', g==='M');
   document.getElementById('editGFemale').classList.toggle('active', g==='F');
+  autoSaveProfile();
 };
 
-window.saveProfileEdits = async function() {
+window.saveProfileEdits = async function(silent) {
   const name  = document.getElementById('editName').value.trim();
   const email = document.getElementById('editEmail').value.trim();
   const city  = document.getElementById('editCity').value.trim();
@@ -2385,6 +2448,14 @@ window.saveProfileEdits = async function() {
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
   updateProfileDisplay();
+  if (silent) {
+    const dot = document.createElement('div');
+    dot.textContent = '✓ Saved';
+    dot.style.cssText = 'position:fixed;top:64px;right:14px;z-index:700;background:rgba(0,245,196,0.12);border:1px solid rgba(0,245,196,0.4);color:var(--aqua);padding:5px 12px;border-radius:99px;font-family:\'DM Sans\',sans-serif;font-size:11px;font-weight:700;';
+    document.body.appendChild(dot);
+    setTimeout(() => dot.remove(), 1200);
+    return;
+  }
   const msg = document.getElementById('profileSavedMsg');
   msg.style.display = 'block';
   const toast = document.createElement('div');
@@ -2425,7 +2496,7 @@ window.skipCityEmail = function() {
 
 // ── PAST TOURNAMENTS ──
 const ADMIN_UIDS = ['4VIYfWzAOsWwp6e2j7f0U2vUurh2'];
-const ADMIN_IDS = ['+16176330544', 'm@pupsnchill.com', 'intensifymail@yahoo.com'];
+const ADMIN_IDS = ['+16176330544', 'm@mikek.ai', 'intensifymail@yahoo.com'];
 function isAdmin() {
   if (!currentUser) return false;
   return ADMIN_UIDS.includes(currentUser.uid)
