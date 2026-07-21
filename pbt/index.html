@@ -1121,8 +1121,9 @@ window.openSetup = window._openSetup = function() {
   setActiveTab('home');
   loadPlayerDirectory();
   // Two-step: fresh setup starts at format choice; editing an existing tournament goes straight to players
-  document.getElementById('setupStep1').style.display = cfg ? 'none' : 'block';
-  document.getElementById('setupStep2').style.display = cfg ? 'block' : 'none';
+  const startFresh = (arguments[0] === true) || !cfg;
+  document.getElementById('setupStep1').style.display = startFresh ? 'block' : 'none';
+  document.getElementById('setupStep2').style.display = startFresh ? 'none' : 'block';
   applyModeToStep2();
   if (cfg) {
     document.getElementById('tName').value = cfg.name||'';
@@ -1285,14 +1286,13 @@ window.resetScores = window._resetScores = function() {
 window.newTournament = window._newTournament = function() {
   if (!confirm('Start completely fresh? The current tournament will be saved to Past Tournaments.')) return;
   archiveCurrentTournament().then(() => {
+    if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
     cfg=null; scores={};
     if (currentUser) {
       set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), null);
-      // NOTE: we no longer delete the tournaments/ node so shared viewers keep access
     }
     activeTid = null;
-    if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
-    updateNav(); openSetup();
+    updateNav(); openSetup(true);
   });
 };
 
@@ -1885,6 +1885,27 @@ window.showTournamentQR = function() {
   document.getElementById('qrOverlay').classList.remove('hidden');
 };
 
+window.copyInviteLink = async function() {
+  if (!activeTid) return;
+  const url = window.location.origin + window.location.pathname + '?t=' + activeTid;
+  try { await navigator.clipboard.writeText(url); alert('✓ Link copied! Text it to your friends.'); }
+  catch(e) { prompt('Copy this link:', url); }
+};
+
+window.showQrCode = function() {
+  if (!activeTid) return;
+  const url = window.location.origin + window.location.pathname + '?t=' + activeTid;
+  const box = document.getElementById('qrCanvas');
+  box.innerHTML = '';
+  document.getElementById('qrTName').textContent = (cfg && cfg.name) || 'Pickleball Tournament';
+  try {
+    new QRCode(box, { text: url, width: Math.min(300, window.innerWidth - 120), height: Math.min(300, window.innerWidth - 120), colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
+  } catch(e) {
+    box.innerHTML = '<div style="color:#000;font-weight:700;padding:20px;">QR unavailable — use Copy Link instead</div>';
+  }
+  document.getElementById('qrOverlay').classList.remove('hidden');
+};
+
 window.shareTournamentLink = async function() {
   if (!activeTid) { alert('Start a tournament first!'); return; }
   const url = window.location.origin + window.location.pathname + '?t=' + activeTid;
@@ -2018,13 +2039,15 @@ function renderGames() {
   if (!cfg.schedule) cfg.schedule = [];
   let html='';
   if (activeTid) {
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.2);border-radius:12px;padding:10px 12px;margin-bottom:14px;">'
-      +'<div style="min-width:0;"><div style="font-size:10px;letter-spacing:2px;color:var(--cyan);font-family:\'Russo One\',sans-serif;text-transform:uppercase;">Invite Code</div>'
-      +'<div style="font-size:13px;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+activeTid+'</div></div>'
-      +'<div style="display:flex;gap:6px;flex-shrink:0;">'
-      +'<button onclick="showTournamentQR()" style="padding:10px 12px;background:#FFF;color:#000;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📷 QR</button>'
-      +'<button onclick="shareTournamentLink()" style="padding:10px 14px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🔗 Link</button>'
+    const btnBase = 'flex:1;padding:10px 4px;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;text-align:center;';
+    html += '<div style="background:linear-gradient(135deg,rgba(0,240,255,0.06),rgba(155,93,229,0.06));border:1px solid rgba(0,240,255,0.2);border-radius:14px;padding:12px;margin-bottom:14px;">'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;text-align:center;margin-bottom:10px;">🎉 Get Friends to Join</div>'
+      +'<div style="display:flex;gap:8px;">'
+      +'<button onclick="shareTournamentLink()" style="'+btnBase+'background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;box-shadow:0 3px 12px rgba(255,45,120,0.3);"><span style="display:block;font-size:15px;margin-bottom:3px;">📤</span>Share</button>'
+      +'<button onclick="copyInviteLink()" style="'+btnBase+'background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);"><span style="display:block;font-size:15px;margin-bottom:3px;">🔗</span>Copy Link</button>'
+      +'<button onclick="showQrCode()" style="'+btnBase+'background:transparent;border:1px solid rgba(255,255,255,0.25);color:var(--white);"><span style="display:block;font-size:15px;margin-bottom:3px;">▦</span>QR Code</button>'
       +'</div>'
+      +'<div style="text-align:center;margin-top:8px;font-size:10px;color:var(--muted);font-weight:600;">Code: '+activeTid+'</div>'
       +'</div>';
   }
   if (cfg.mode==='4p') {
@@ -2935,6 +2958,8 @@ function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink()
 function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
 function copyHistoryJson(t)      { if(window.copyHistoryJson) window.copyHistoryJson(t); }
 function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
+function copyInviteLink()    { if(window.copyInviteLink) window.copyInviteLink(); }
+function showQrCode()        { if(window.showQrCode) window.showQrCode(); }
 function showTournamentQR()  { if(window.showTournamentQR) window.showTournamentQR(); }
 function joinTournamentPrompt(){ if(window.joinTournamentPrompt) window.joinTournamentPrompt(); }
 function openFeedback()     { if(window.openFeedback) window.openFeedback(); }
