@@ -215,7 +215,7 @@
     backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
   #addGameOverlay.hidden { display:none; }
 
-  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden { display:none !important; }
+  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden { display:none !important; }
 
   /* City/Email overlay — display controlled ONLY by CSS class */
   #cityEmailOverlay { display:flex; }
@@ -740,6 +740,16 @@
   </div>
 </div>
 
+<!-- QR CODE OVERLAY — max contrast for outdoor scanning -->
+<div id="qrOverlay" class="hidden" style="position:fixed;inset:0;z-index:800;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div style="font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:2px;color:#000;text-transform:uppercase;margin-bottom:6px;">🏓 Scan to Join</div>
+  <div id="qrTName" style="font-size:14px;color:#333;font-weight:700;margin-bottom:18px;text-align:center;"></div>
+  <div id="qrCanvas" style="background:#FFF;padding:12px;"></div>
+  <div style="font-size:12px;color:#555;font-weight:600;margin-top:16px;text-align:center;">Open your camera app and point it here</div>
+  <button onclick="document.getElementById('qrOverlay').classList.add('hidden')"
+    style="margin-top:22px;padding:14px 40px;background:#000;color:#FFF;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">✕ Close</button>
+</div>
+
 <!-- iOS Audio Unlock — fires on very first touch -->
 <script>
 var _audioCtx = null;
@@ -780,13 +790,12 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <div class="settings-title">⚙ Options</div>
     <button class="settings-item" onclick="closeSettings();openProfile();">👤 My Profile</button>
     <div class="settings-divider"></div>
-    <button class="settings-item" onclick="closeSettings();openSetup();">🏠 New Tournament</button>
+    <button class="settings-item" onclick="closeSettings();newTournament();">🏠 New Tournament</button>
     <button class="settings-item" onclick="closeSettings();shareTournamentLink();">🔗 Invite Players to Edit Scores</button>
     <button class="settings-item" onclick="closeSettings();openHistory();">📜 Past Tournaments</button>
     <button class="settings-item" onclick="closeSettings();document.getElementById('setupOverlay').classList.add('hidden');showPage('games');">🎮 Edit Scores</button>
     <button class="settings-item danger" onclick="closeSettings();resetScores();">🔄 Reset Scores</button>
     <div class="settings-divider"></div>
-    <button class="settings-item fun" id="soundBtn" onclick="playFunSound();">🎵 Play Fun Sound</button>
     <div class="settings-divider"></div>
     <button class="settings-item fb" onclick="closeSettings();openFeedback();">💬 Give Feedback</button>
     <button class="settings-item" id="adminFeedbackBtn" style="display:none;" onclick="closeSettings();openFeedbackInbox();">📬 Feedback Inbox (Admin)</button>
@@ -851,6 +860,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
 
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // ═══ EMAILJS CONFIG — fill these 3 values from your EmailJS dashboard ═══
 window.EMAILJS_CONFIG = {
@@ -1860,6 +1870,21 @@ async function loadPlayerDirectory() {
   } catch(e) { console.log('directory load err', e); }
 }
 
+window.showTournamentQR = function() {
+  if (!activeTid) { alert('Start a tournament first!'); return; }
+  const url = window.location.origin + window.location.pathname + '?t=' + activeTid;
+  const canvas = document.getElementById('qrCanvas');
+  canvas.innerHTML = '';
+  const size = Math.min(Math.floor(window.innerWidth * 0.8), 380);
+  if (window.QRCode) {
+    new QRCode(canvas, { text: url, width: size, height: size, colorDark: '#000000', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
+  } else {
+    canvas.innerHTML = '<div style="color:#000;font-weight:700;padding:20px;word-break:break-all;">' + url + '</div>';
+  }
+  document.getElementById('qrTName').textContent = cfg?.name || 'Pickleball Tournament';
+  document.getElementById('qrOverlay').classList.remove('hidden');
+};
+
 window.shareTournamentLink = async function() {
   if (!activeTid) { alert('Start a tournament first!'); return; }
   const url = window.location.origin + window.location.pathname + '?t=' + activeTid;
@@ -1996,7 +2021,10 @@ function renderGames() {
     html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.2);border-radius:12px;padding:10px 12px;margin-bottom:14px;">'
       +'<div style="min-width:0;"><div style="font-size:10px;letter-spacing:2px;color:var(--cyan);font-family:\'Russo One\',sans-serif;text-transform:uppercase;">Invite Code</div>'
       +'<div style="font-size:13px;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+activeTid+'</div></div>'
-      +'<button onclick="shareTournamentLink()" style="flex-shrink:0;padding:10px 14px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🔗 Copy Link</button>'
+      +'<div style="display:flex;gap:6px;flex-shrink:0;">'
+      +'<button onclick="showTournamentQR()" style="padding:10px 12px;background:#FFF;color:#000;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📷 QR</button>'
+      +'<button onclick="shareTournamentLink()" style="padding:10px 14px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🔗 Link</button>'
+      +'</div>'
       +'</div>';
   }
   if (cfg.mode==='4p') {
@@ -2907,6 +2935,7 @@ function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink()
 function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
 function copyHistoryJson(t)      { if(window.copyHistoryJson) window.copyHistoryJson(t); }
 function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
+function showTournamentQR()  { if(window.showTournamentQR) window.showTournamentQR(); }
 function joinTournamentPrompt(){ if(window.joinTournamentPrompt) window.joinTournamentPrompt(); }
 function openFeedback()     { if(window.openFeedback) window.openFeedback(); }
 function closeFeedback()    { if(window.closeFeedback) window.closeFeedback(); }
