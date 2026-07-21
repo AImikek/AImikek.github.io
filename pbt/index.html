@@ -1058,6 +1058,10 @@ function renderCurrent() {
 
 window.openSetup = window._openSetup = function() {
   document.getElementById('setupOverlay').classList.remove('hidden');
+  ['leaderboardPage','pageHistory','playerDetail'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.classList.add('hidden');
+  });
+  var ph = document.getElementById('pageHistory'); if (ph && ph.style) ph.style.display='none';
   setActiveTab('home');
   loadPlayerDirectory();
   if (cfg) {
@@ -1327,6 +1331,27 @@ window.openFeedbackInbox = function() {
   }, {onlyOnce:true});
 };
 
+window.saveHistoryMeta = async function(tid) {
+  if (!isAdmin()) return;
+  const nm = document.getElementById('histNameInput')?.value.trim();
+  const v = document.getElementById('histDateInput')?.value;
+  try {
+    if (nm) {
+      await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid + '/cfg/name'), nm);
+      if (window._historyData?.[tid]?.cfg) window._historyData[tid].cfg.name = nm;
+      try { await set(ref(db, 'tournaments/' + tid + '/cfg/name'), nm); } catch(e) {}
+    }
+    if (v) {
+      const ts = new Date(v + 'T18:00:00').getTime();
+      await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid + '/finishedAt'), ts);
+      if (window._historyData?.[tid]) window._historyData[tid].finishedAt = ts;
+    }
+    lbData = null;
+    alert('✓ Saved');
+    viewHistoryDetail(tid);
+  } catch(e) { alert('Could not save: ' + (e.message||e)); }
+};
+
 window.saveHistoryDate = async function(tid) {
   if (!isAdmin()) return;
   const v = document.getElementById('histDateInput').value;
@@ -1413,8 +1438,9 @@ async function loadLeaderboardData() {
     Object.values(dir).forEach(p => { if (p.name && p.city && !cityByName[p.name.toLowerCase()]) cityByName[p.name.toLowerCase()] = p.city; });
     // Flatten all completed games with timestamps
     const games = [];
-    Object.values(tournaments).forEach(t => {
+    Object.entries(tournaments).forEach(([__tid, t]) => {
       if (!t?.cfg?.schedule) return;
+      t.__tid = __tid;
       const when = t.updatedAt || Date.now();
       const sched = Array.isArray(t.cfg.schedule) ? t.cfg.schedule : Object.values(t.cfg.schedule);
       sched.forEach(g => {
@@ -1423,7 +1449,7 @@ async function loadLeaderboardData() {
         if (!s || s.s1 === null || s.s2 === null || s.s1 === undefined) return;
         const t1 = Array.isArray(g.t1)?g.t1:Object.values(g.t1||{});
         const t2 = Array.isArray(g.t2)?g.t2:Object.values(g.t2||{});
-        games.push({ t1, t2, s1: s.s1, s2: s.s2, when });
+        games.push({ t1, t2, s1: s.s1, s2: s.s2, when, tid: t.__tid || null, tname: (t.cfg && t.cfg.name) || 'Tournament' });
       });
     });
     games.sort((a,b) => a.when - b.when);
@@ -1541,7 +1567,85 @@ window.openPlayerDetail = function(name) {
   document.getElementById('pdStats').innerHTML =
     box('Record', w+'-'+l) + box('Games', games.length) + box('Pts For', pf, 'var(--cyan)') + box('Avg Diff', (diff>=0?'+':'')+diff, diff>=0?'var(--aqua)':'var(--danger)');
   document.getElementById('pdGames').innerHTML = rows || '<div style="color:var(--muted);text-align:center;padding:20px;font-weight:600;">No games found</div>';
+  // Admin tools: rename player + manage source tournaments
+  if (isAdmin()) {
+    const sources = {};
+    games.forEach(g => { if (g.tid) sources[g.tid] = g.tname; });
+    let admin = '<div style="margin-top:20px;padding:14px;background:var(--surface2);border:1px solid rgba(255,224,0,0.25);border-radius:12px;">'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:10px;">🛠 Admin Tools</div>'
+      +'<label class="flabel">Rename player everywhere</label>'
+      +'<div style="display:flex;gap:8px;margin-bottom:12px;">'
+      +'<input class="finput" id="pdRenameInput" value="'+name.replace(/"/g,'&quot;')+'" style="margin-bottom:0;flex:1;">'
+      +'<button onclick="renameLbPlayer(\''+name.replace(/'/g,"\\'")+'\')" style="padding:0 16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Rename</button></div>';
+    const srcIds = Object.keys(sources);
+    if (srcIds.length) {
+      admin += '<label class="flabel">Source tournaments</label>';
+      srcIds.forEach(tid => {
+        admin += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;">'
+          +'<span style="font-size:12px;font-weight:700;color:var(--white);">'+sources[tid]+'</span>'
+          +'<button onclick="deleteLbSource(\''+tid+'\')" style="background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Delete</button></div>';
+      });
+    }
+    admin += '</div>';
+    document.getElementById('pdGames').innerHTML += admin;
+  }
   document.getElementById('playerDetail').classList.remove('hidden');
+};
+
+window.renameLbPlayer = async function(oldName) {
+  if (!isAdmin()) return;
+  const newName = document.getElementById('pdRenameInput').value.trim();
+  if (!newName || newName === oldName) return;
+  if (!confirm('Rename "'+oldName+'" to "'+newName+'" across ALL tournaments?')) return;
+  const fixNames = arr => arr.map(p => p.trim().toLowerCase() === oldName.toLowerCase() ? newName : p);
+  const fixTournament = (t) => {
+    if (!t?.cfg) return false;
+    let changed = false;
+    const sched = Array.isArray(t.cfg.schedule)?t.cfg.schedule:Object.values(t.cfg.schedule||{});
+    sched.forEach(g => {
+      const n1 = fixNames(Array.isArray(g.t1)?g.t1:Object.values(g.t1||{}));
+      const n2 = fixNames(Array.isArray(g.t2)?g.t2:Object.values(g.t2||{}));
+      if (JSON.stringify(n1)!==JSON.stringify(g.t1)||JSON.stringify(n2)!==JSON.stringify(g.t2)) changed = true;
+      g.t1 = n1; g.t2 = n2;
+    });
+    t.cfg.schedule = sched;
+    const np = fixNames(Array.isArray(t.cfg.players)?t.cfg.players:Object.values(t.cfg.players||{}));
+    if (JSON.stringify(np)!==JSON.stringify(t.cfg.players)) changed = true;
+    t.cfg.players = np;
+    return changed;
+  };
+  try {
+    // Own history
+    const hSnap = await get(ref(db, 'users/' + currentUser.uid + '/history'));
+    const hist = hSnap.val() || {};
+    for (const [tid, t] of Object.entries(hist)) {
+      if (fixTournament(t)) await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), t);
+    }
+    // Shared tournaments (any I can write)
+    const tSnap = await get(ref(db, 'tournaments'));
+    const tours = tSnap.val() || {};
+    for (const [tid, t] of Object.entries(tours)) {
+      if (fixTournament(t)) { delete t.__tid; await set(ref(db, 'tournaments/' + tid), t); }
+    }
+    lbData = null;
+    document.getElementById('playerDetail').classList.add('hidden');
+    await loadLeaderboardData();
+    renderLeaderboard();
+    alert('✓ Renamed everywhere');
+  } catch(e) { alert('Rename failed: ' + (e.message||e)); }
+};
+
+window.deleteLbSource = async function(tid) {
+  if (!isAdmin()) return;
+  if (!confirm('Delete this tournament from the leaderboard AND past tournaments? Cannot be undone.')) return;
+  try {
+    await set(ref(db, 'tournaments/' + tid), null);
+    try { await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), null); } catch(e) {}
+    lbData = null;
+    document.getElementById('playerDetail').classList.add('hidden');
+    await loadLeaderboardData();
+    renderLeaderboard();
+  } catch(e) { alert('Delete failed: ' + (e.message||e)); }
 };
 
 // ── ADMIN IMPORT ──
@@ -2272,9 +2376,11 @@ window.viewHistoryDetail = function(tid) {
     const d = t.finishedAt ? new Date(t.finishedAt) : new Date();
     const dstr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     html += '<div style="margin-top:20px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;">'
+      +'<label class="flabel">Tournament Name (admin)</label>'
+      +'<input class="finput" id="histNameInput" value="'+(tCfg.name||'').replace(/"/g,'&quot;')+'" style="margin-bottom:10px;">'
       +'<label class="flabel">Tournament Date (admin)</label>'
       +'<input class="finput" type="date" id="histDateInput" value="'+dstr+'" style="color-scheme:dark;margin-bottom:8px;">'
-      +'<button onclick="saveHistoryDate(\''+tid+'\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">💾 Save Date</button></div>';
+      +'<button onclick="saveHistoryMeta(\''+tid+'\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">💾 Save Name &amp; Date</button></div>';
     html += '<button onclick="copyHistoryJson(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📋 Copy JSON (Admin)</button>';
     html += '<button onclick="restoreTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🛠 Admin: Load Into App to Edit</button>';
     html += '<div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-weight:600;">Current active tournament will be archived first</div>';
@@ -2312,7 +2418,31 @@ window.deleteHistoryTournament = async function(tid) {
   const name = t?.cfg?.name || 'this tournament';
   if (!confirm('Permanently delete "'+name+'"? This cannot be undone.')) return;
   await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), null);
+  // Also remove the shared copy so it disappears from the leaderboard
+  try { await set(ref(db, 'tournaments/' + tid), null); } catch(e) {}
+  lbData = null;
   openHistory(); // refresh list
+};
+
+window.saveHistoryMeta = async function(tid) {
+  if (!isAdmin()) return;
+  const nm = document.getElementById('histNameInput')?.value.trim();
+  const v = document.getElementById('histDateInput')?.value;
+  try {
+    if (nm) {
+      await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid + '/cfg/name'), nm);
+      if (window._historyData?.[tid]?.cfg) window._historyData[tid].cfg.name = nm;
+      try { await set(ref(db, 'tournaments/' + tid + '/cfg/name'), nm); } catch(e) {}
+    }
+    if (v) {
+      const ts = new Date(v + 'T18:00:00').getTime();
+      await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid + '/finishedAt'), ts);
+      if (window._historyData?.[tid]) window._historyData[tid].finishedAt = ts;
+    }
+    lbData = null;
+    alert('✓ Saved');
+    viewHistoryDetail(tid);
+  } catch(e) { alert('Could not save: ' + (e.message||e)); }
 };
 
 window.saveHistoryDate = async function(tid) {
@@ -2484,8 +2614,11 @@ function selMode(m)      { if(window._selMode) window._selMode(m); }
 function closeAllOverlaysAndShow(p) {
   if (document.getElementById('tabGames').disabled) return;
   document.getElementById('setupOverlay').classList.add('hidden');
-  var lb = document.getElementById('leaderboardPage'); if (lb) lb.classList.add('hidden');
+  ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox','importOverlay'].forEach(function(id){
+    var el = document.getElementById(id); if (el) el.classList.add('hidden');
+  });
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display='none';
+  var ph = document.getElementById('pageHistory'); if (ph && ph.style) ph.style.display='none';
   if (window.showPage) window.showPage(p);
 }
 (function() {
@@ -2531,11 +2664,14 @@ function openHistory()      { if(window.openHistory) window.openHistory(); }
 function closeHistory()     { if(window.closeHistory) window.closeHistory(); }
 function viewHistoryDetail(t){ if(window.viewHistoryDetail) window.viewHistoryDetail(t); }
 function sortHistoryDetail(t,m){ if(window.sortHistoryDetail) window.sortHistoryDetail(t,m); }
+function saveHistoryMeta(t)   { if(window.saveHistoryMeta) window.saveHistoryMeta(t); }
 function restoreTournament(t){ if(window.restoreTournament) window.restoreTournament(t); }
 function deleteHistoryTournament(t){ if(window.deleteHistoryTournament) window.deleteHistoryTournament(t); }
 function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
 function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
 function openPlayerDetail(n) { if(window.openPlayerDetail) window.openPlayerDetail(n); }
+function renameLbPlayer(o)   { if(window.renameLbPlayer) window.renameLbPlayer(o); }
+function deleteLbSource(t)   { if(window.deleteLbSource) window.deleteLbSource(t); }
 function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink(); }
 function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
 function copyHistoryJson(t)      { if(window.copyHistoryJson) window.copyHistoryJson(t); }
@@ -2558,6 +2694,8 @@ function renderLeaderboard() { if(window.renderLeaderboard) window.renderLeaderb
 function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
 function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
 function openPlayerDetail(n) { if(window.openPlayerDetail) window.openPlayerDetail(n); }
+function renameLbPlayer(o)   { if(window.renameLbPlayer) window.renameLbPlayer(o); }
+function deleteLbSource(t)   { if(window.deleteLbSource) window.deleteLbSource(t); }
 function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink(); }
 function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
 function runImport()         { if(window.runImport) window.runImport(); }
