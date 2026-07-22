@@ -293,7 +293,7 @@
     max-height:80vh; overflow-y:auto; overscroll-behavior:contain;
     margin:auto !important; width:min(340px, calc(100vw - 40px)); }
   html, body { overflow-x:hidden; width:100%; }
-  #pageProfile, #leaderboardPage, #feedbackOverlay, #feedbackInbox, #importOverlay, #playerDetail, #pageHistory { overscroll-behavior:contain; }
+  #pageProfile, #leaderboardPage, #feedbackOverlay, #feedbackInbox, #importOverlay, #playerDetail, #pageHistory, #guidePage, #adminDash { overscroll-behavior:contain; overflow-x:hidden; touch-action:pan-y; }
 
   /* Confetti (stats celebration) */
   .confetti-wrap { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
@@ -304,9 +304,9 @@
   .guide-card { display:flex; gap:14px; background:var(--surface); border:1px solid var(--border);
     border-radius:14px; padding:16px; margin-bottom:12px; }
   .guide-icon { font-size:26px; flex-shrink:0; line-height:1.2; }
-  .guide-t { font-family:'Russo One',sans-serif; font-size:14px; letter-spacing:1px; color:var(--cyan);
+  .guide-t { font-family:'Russo One',sans-serif; font-size:16px; letter-spacing:1px; color:var(--cyan);
     text-transform:uppercase; margin-bottom:6px; }
-  .guide-s { font-size:13px; color:#B8C4D8; font-weight:500; line-height:1.55; }
+  .guide-s { font-size:15px; color:#C4CFE0; font-weight:500; line-height:1.6; }
   .guide-s b { color:var(--white); }
 
   /* ── LOGIN SCREEN ── */
@@ -758,7 +758,7 @@
     </div>
     <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:22px;">Everything PB Tourney can do — free, no downloads, works on any phone.</div>
 
-    <div class="guide-card"><div class="guide-icon">🚀</div><div><div class="guide-t">Tournaments in 30 Seconds</div><div class="guide-s">Pick a format, type player names, hit Start. The full schedule generates instantly — courts, sides, and matchups included. <b>Round Robin</b> rotates partners so everyone plays with everyone. <b>4-Player Rotation</b> runs best-of-3 matchups with rotating partners — and it flexes to any player count.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">🚀</div><div><div class="guide-t">Tournaments in 30 Seconds</div><div class="guide-s">Pick a format, type player names, hit Start. The full schedule generates instantly — courts, sides, and matchups included. <b>Round Robin</b> rotates partners so everyone plays with everyone. <b>4-Player Rotation</b> runs best-of-3 matchups with rotating partners — and it flexes to any player count. Best part: <b>zero DUPR pressure</b> — play loose, try new partners, and compete hard without anything touching your official rating.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">📝</div><div><div class="guide-t">Log Casual Games</div><div class="guide-s">No schedule? No problem. Log Games mode lets you add games one at a time during open play. The session names itself after the players and date, and every score still counts toward your all-time stats.</div></div></div>
 
@@ -934,6 +934,9 @@ if (window.emailjs && window.EMAILJS_CONFIG.publicKey !== "YOUR_PUBLIC_KEY") {
 }
 </script>
 <script>
+if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+  location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+}
 window.addEventListener('error' , function(ev) {
   if (window.__errShown) return; window.__errShown = true;
   alert('App error: ' + (ev.message || 'unknown') + '\nLine: ' + (ev.lineno || '?'));
@@ -1177,7 +1180,7 @@ function renderCurrent() {
 
 window.openSetup = window._openSetup = function() {
   document.getElementById('setupOverlay').classList.remove('hidden');
-  ['leaderboardPage','pageHistory','playerDetail'].forEach(function(id){
+  ['leaderboardPage','pageHistory','playerDetail','guidePage','adminDash'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.classList.add('hidden');
   });
   var ph = document.getElementById('pageHistory'); if (ph && ph.style) ph.style.display='none';
@@ -1605,6 +1608,7 @@ window.openLeaderboard = async function() {
   try { history.replaceState({}, '', '#leaderboard'); } catch(e) {}
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   var ph = document.getElementById('pageHistory'); if (ph) ph.style.display = 'none';
+  var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
   document.getElementById('setupOverlay').classList.add('hidden');
   document.getElementById('leaderboardPage').classList.remove('hidden');
   setActiveTab(null);
@@ -2107,7 +2111,7 @@ function copyTextRobust(text) {
 function copiedToast(msg) {
   const t = document.createElement('div');
   t.textContent = msg || '✓ Link Copied!';
-  t.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:900;background:rgba(0,245,196,0.15);border:1px solid var(--aqua);color:var(--aqua);padding:10px 22px;border-radius:99px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;';
+  t.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:900;background:#04211C;box-shadow:0 8px 30px rgba(0,0,0,0.7);white-space:nowrap;border:1px solid var(--aqua);color:var(--aqua);padding:10px 22px;border-radius:99px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;';
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 1800);
 }
@@ -2681,6 +2685,7 @@ window._wireProfileAutosave = function() {
 };
 
 window.openProfile = function() {
+  var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
   document.getElementById('editName').value  = userProfile.name  || '';
   document.getElementById('editEmail').value = userProfile.email || '';
   document.getElementById('editCity').value  = userProfile.city  || '';
@@ -2745,7 +2750,7 @@ window.saveProfileEdits = async function(silent) {
   msg.style.display = 'block';
   const toast = document.createElement('div');
   toast.textContent = '✓ Profile Saved!';
-  toast.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:700;background:rgba(0,245,196,0.15);border:1px solid var(--aqua);color:var(--aqua);padding:10px 22px;border-radius:99px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;';
+  toast.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:700;background:#04211C;box-shadow:0 8px 30px rgba(0,0,0,0.7);white-space:nowrap;border:1px solid var(--aqua);color:var(--aqua);padding:10px 22px;border-radius:99px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;';
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2200);
   const sbtn = document.querySelector('#pageProfile button[onclick*="saveProfileEdits"]');
@@ -3130,7 +3135,7 @@ function setupBack()     { if(window.setupBack) window.setupBack(); }
 function closeAllOverlaysAndShow(p) {
   if (document.getElementById('tabGames').disabled) return;
   document.getElementById('setupOverlay').classList.add('hidden');
-  ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox','importOverlay'].forEach(function(id){
+  ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox','importOverlay','guidePage','adminDash'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.classList.add('hidden');
   });
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display='none';
