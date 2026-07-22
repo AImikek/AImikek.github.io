@@ -1141,9 +1141,9 @@ window.openSetup = window._openSetup = function() {
   setActiveTab('home');
   loadPlayerDirectory();
   // Two-step: fresh setup starts at format choice; editing an existing tournament goes straight to players
-  const startFresh = (arguments[0] === true) || !cfg;
-  document.getElementById('setupStep1').style.display = startFresh ? 'block' : 'none';
-  document.getElementById('setupStep2').style.display = startFresh ? 'none' : 'block';
+  // Home ALWAYS lands on the Let's Play screen; step 2 is reached by picking a format
+  document.getElementById('setupStep1').style.display = 'block';
+  document.getElementById('setupStep2').style.display = 'none';
   applyModeToStep2();
   if (cfg) {
     document.getElementById('tName').value = cfg.name||'';
@@ -1175,8 +1175,12 @@ window.chooseFormat = function(m) {
   selMode_ = m;
   document.getElementById('setupStep1').style.display = 'none';
   document.getElementById('setupStep2').style.display = 'block';
+  // Editing the active tournament? Prefill its name + players.
+  if (cfg && (cfg.mode === m || (m === 'rr' && cfg.mode === '4p'))) {
+    document.getElementById('tName').value = cfg.name || '';
+    buildPFields(cfg.players || []);
+  }
   applyModeToStep2();
-  // Prefill Player 1 with user's name on a fresh setup
   const first = document.querySelector('.pinput');
   if (first && !first.value && userProfile?.name) { first.value = userProfile.name; updPCnt(); }
 };
@@ -1217,9 +1221,10 @@ window.updPCnt = window._updPCnt = function() {
 window.doStart = window._doStart = function() {
   const name=document.getElementById('tName').value.trim()||'Pickleball Tournament';
   const players=[...document.querySelectorAll('.pinput')].map(i=>i.value.trim()).filter(Boolean);
-  const mode=selMode_;
+  let mode=selMode_;
   if (mode!=='log' && players.length<2){alert('Need at least 2 players!');return;}
-  if (mode==='4p'&&players.length!==4){alert('4-Player Rotation needs exactly 4 players!');return;}
+  // Rotation format flexes: exactly 4 → best-of-3 matchups; any other count → smart round-robin rotation
+  if (mode==='4p' && players.length!==4) mode='rr';
   window._pendingSetup = { name, players, mode };
   // Archive any existing tournament before replacing it
   archiveCurrentTournament().then(() => {
@@ -2017,11 +2022,42 @@ window.showTournamentQR = function() {
   document.getElementById('qrOverlay').classList.remove('hidden');
 };
 
+function copyTextRobust(text) {
+  // 1. Modern API (needs HTTPS + gesture)
+  return new Promise((resolve) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => resolve(true)).catch(() => resolve(fallbackCopy(text)));
+    } else resolve(fallbackCopy(text));
+  });
+  function fallbackCopy(t) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = t;
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+      ta.setAttribute('readonly', '');
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, t.length);
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch(e) { return false; }
+  }
+}
+function copiedToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg || '✓ Link Copied!';
+  t.style.cssText = 'position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:900;background:rgba(0,245,196,0.15);border:1px solid var(--aqua);color:var(--aqua);padding:10px 22px;border-radius:99px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1800);
+}
+
 window.copyInviteLink = async function() {
   if (!activeTid) return;
   const url = window.location.origin + window.location.pathname + '?t=' + activeTid;
-  try { await navigator.clipboard.writeText(url); alert('✓ Link copied! Text it to your friends.'); }
-  catch(e) { prompt('Copy this link:', url); }
+  const ok = await copyTextRobust(url);
+  if (ok) copiedToast('✓ Link Copied!');
+  else prompt('Copy this link:', url);
 };
 
 window.showQrCode = function() {
@@ -2043,11 +2079,17 @@ window.shareTournamentLink = async function() {
   const url = window.location.origin + window.location.pathname + '?t=' + activeTid;
   const txt = 'Join our pickleball tournament! Open this link, sign in, and you can see + edit all the scores live: ' + url;
   if (navigator.share) {
-    try { await navigator.share({ title: (cfg?.name||'Pickleball Tournament'), text: txt, url }); return; }
-    catch(e) { if (e.name === 'AbortError') return; }
+    try {
+      await navigator.share({ title: (cfg && cfg.name) || 'Pickleball Tournament', text: txt, url });
+      return;
+    } catch(e) {
+      if (e && e.name === 'AbortError') return; // user cancelled
+      // fall through to copy
+    }
   }
-  try { await navigator.clipboard.writeText(url); alert('Tournament link copied!\n\nAnyone who opens it and signs in can view and edit scores live.\n\n' + url); }
-  catch(e) { prompt('Copy this link:', url); }
+  const ok = await copyTextRobust(url);
+  if (ok) copiedToast('✓ Link Copied — paste it anywhere!');
+  else prompt('Copy this link:', url);
 };
 
 // Randomize schedule: shuffle court order within each round, and randomly
