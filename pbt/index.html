@@ -215,7 +215,7 @@
     backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
   #addGameOverlay.hidden { display:none; }
 
-  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden { display:none !important; }
+  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden { display:none !important; }
 
   /* City/Email overlay — display controlled ONLY by CSS class */
   #cityEmailOverlay { display:flex; }
@@ -300,6 +300,14 @@
   .confetti-wrap span { position:absolute; top:-24px; animation:cfall linear infinite; }
   @keyframes cfall { to { transform:translateY(420px) rotate(360deg); opacity:0; } }
   .champbox { position:relative; overflow:hidden; }
+
+  .guide-card { display:flex; gap:14px; background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:16px; margin-bottom:12px; }
+  .guide-icon { font-size:26px; flex-shrink:0; line-height:1.2; }
+  .guide-t { font-family:'Russo One',sans-serif; font-size:14px; letter-spacing:1px; color:var(--cyan);
+    text-transform:uppercase; margin-bottom:6px; }
+  .guide-s { font-size:13px; color:#B8C4D8; font-weight:500; line-height:1.55; }
+  .guide-s b { color:var(--white); }
 
   /* ── LOGIN SCREEN ── */
   #loginScreen {
@@ -741,6 +749,40 @@
 </div>
 
 <!-- QR CODE OVERLAY — max contrast for outdoor scanning -->
+<!-- APP GUIDE -->
+<div id="guidePage" class="hidden" style="position:fixed;inset:0;z-index:345;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+      <button onclick="document.getElementById('guidePage').classList.add('hidden')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">✨ App Guide</div>
+    </div>
+    <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:22px;">Everything PB Tourney can do — free, no downloads, works on any phone.</div>
+
+    <div class="guide-card"><div class="guide-icon">🚀</div><div><div class="guide-t">Tournaments in 30 Seconds</div><div class="guide-s">Pick a format, type player names, hit Start. The full schedule generates instantly — courts, sides, and matchups included. <b>Round Robin</b> rotates partners so everyone plays with everyone. <b>4-Player Rotation</b> runs best-of-3 matchups with rotating partners — and it flexes to any player count.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">📝</div><div><div class="guide-t">Log Casual Games</div><div class="guide-s">No schedule? No problem. Log Games mode lets you add games one at a time during open play. The session names itself after the players and date, and every score still counts toward your all-time stats.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">📲</div><div><div class="guide-t">Everyone Edits Scores Live</div><div class="guide-s">Invite friends with the <b>Share button, link, or QR code</b> right from the Games screen. Anyone who joins sees every score update in real time on their own phone — and can enter scores too. No more shouting the score across four courts.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">👑</div><div><div class="guide-t">The Leaderboard</div><div class="guide-s">Tap the 🏆 anytime to see the all-time rankings — who's the real champ in your city. Sort by Average Point Differential (the fair way), Wins, or Points. Win streaks get 🔥 badges, the #1 spot gets the crown, and every row shows how far you are behind the player above you. Tap any player to see their full match history. Play 3+ games to get ranked.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">🏆</div><div><div class="guide-t">Champions & Stats</div><div class="guide-s">Finish a session and the Stats page crowns your champion with a celebration. Standings auto-calculate wins, points for/against, and average differential. Share a public results link anyone can view without signing in, or save the standings as an image for the group chat.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">📜</div><div><div class="guide-t">Past Tournaments</div><div class="guide-s">Every finished session is archived automatically. Reopen any past tournament to relive the standings, sort the stats, and share the results — your whole pickleball history in one place.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">👤</div><div><div class="guide-t">Your Player Profile</div><div class="guide-s">Add your name, city, Instagram, DUPR rating, and home court. Your profile connects your games to your leaderboard identity — and it auto-saves as you type.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Shape What Gets Built</div><div class="guide-s">This app is built WITH its players. Tap Give Feedback in the menu — feature requests go straight to the builder, and the best ideas ship. Brackets, city battles, and more are on the roadmap.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">🔐</div><div><div class="guide-t">Simple, Secure Sign-In</div><div class="guide-s">Sign in with your phone number or Google — no passwords to remember, ever. Your data is yours: only you can edit your profile and history.</div></div></div>
+
+    <div style="margin-top:24px;">
+      <button onclick="shareAppLink()" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.35);">📤 Share It With Your Pickleball Friends</button>
+      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted);font-weight:600;">mikek.ai/pbt · free forever for players</div>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN DASHBOARD -->
 <div id="adminDash" class="hidden" style="position:fixed;inset:0;z-index:585;background:var(--bg);overflow-y:auto;padding:60px 16px 100px;">
   <div style="max-width:560px;margin:0 auto;">
@@ -805,6 +847,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
   <div class="settings-panel">
     <div class="settings-title">⚙ Options</div>
     <button class="settings-item" onclick="closeSettings();openProfile();">👤 My Profile</button>
+    <button class="settings-item" onclick="closeSettings();openGuide();">✨ App Guide</button>
     <div class="settings-divider"></div>
     <button class="settings-item" onclick="closeSettings();newTournament();">🏠 New Tournament</button>
     <button class="settings-item" onclick="closeSettings();shareTournamentLink();">🔗 Invite Players to Edit Scores</button>
@@ -1849,6 +1892,23 @@ window.runImport = async function() {
   out.style.color = errors.length ? 'var(--yellow)' : 'var(--aqua)';
   out.textContent = '✓ Imported ' + imported + ' tournament' + (imported!==1?'s':'') + (errors.length ? ' · Errors: ' + errors.join('; ') : '');
   if (imported) document.getElementById('importJson').value = '';
+};
+
+window.openGuide = function() {
+  var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
+  document.getElementById('guidePage').classList.remove('hidden');
+};
+
+window.shareAppLink = async function() {
+  const url = 'https://mikek.ai/pbt';
+  const txt = '🏓 Check out PB Tourney — free pickleball tournaments with live scores and an all-time leaderboard. See where you rank: ' + url;
+  if (navigator.share) {
+    try { await navigator.share({ title: 'PB Tourney 🏓', text: txt, url }); return; }
+    catch(e) { if (e && e.name === 'AbortError') return; }
+  }
+  const ok = await copyTextRobust(url);
+  if (ok) copiedToast('✓ Link Copied — share away!');
+  else prompt('Copy this link:', url);
 };
 
 window.openAdminDash = async function() {
@@ -3162,6 +3222,8 @@ function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage()
 function runImport()         { if(window.runImport) window.runImport(); }
 function syncHistoryToGlobal(){ if(window.syncHistoryToGlobal) window.syncHistoryToGlobal(); }
 function openAdminDash()     { if(window.openAdminDash) window.openAdminDash(); }
+function openGuide()         { if(window.openGuide) window.openGuide(); }
+function shareAppLink()      { if(window.shareAppLink) window.shareAppLink(); }
 function adDeleteTournament(t){ if(window.adDeleteTournament) window.adDeleteTournament(t); }
 function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments) window.adDeleteEmptyTournaments(); }
 function adDeletePlayer(u,n) { if(window.adDeletePlayer) window.adDeletePlayer(u,n); }
