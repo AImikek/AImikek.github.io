@@ -883,7 +883,8 @@ document.addEventListener('touchend',   _unlockAudio, true);
 window.EMAILJS_CONFIG = {
   publicKey:  "X2dC3mFeqOruG4n4S",
   serviceId:  "service_gumjfq5",
-  templateId: "template_0w416an"
+  templateId: "template_0w416an",
+  welcomeTemplateId: "YOUR_WELCOME_TEMPLATE_ID"  // create in EmailJS, then paste ID here
 };
 if (window.emailjs && window.EMAILJS_CONFIG.publicKey !== "YOUR_PUBLIC_KEY") {
   emailjs.init({ publicKey: window.EMAILJS_CONFIG.publicKey });
@@ -1882,19 +1883,59 @@ window.openAdminDash = async function() {
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
       +'<div><div style="font-weight:700;color:var(--white);font-size:14px;">'+(p.name||'?')+(p.dupr?' <span style="font-size:10px;color:var(--yellow);">DUPR '+p.dupr+'</span>':'')+'</div>'
       +'<div style="font-size:11px;color:var(--muted);font-weight:600;">'+[p.city, p.email||p.phone].filter(Boolean).join(' · ')+'</div></div>'
-      +'<div style="text-align:right;"><div style="font-size:11px;color:var(--cyan);font-weight:700;">joined '+d+'</div>'
-      +(la?'<div style="font-size:10px;color:var(--muted);font-weight:600;">active '+la+'</div>':'')+'</div></div>';
+      +'<div style="text-align:right;display:flex;align-items:center;gap:10px;"><div><div style="font-size:11px;color:var(--cyan);font-weight:700;">joined '+d+'</div>'
+      +(la?'<div style="font-size:10px;color:var(--muted);font-weight:600;">active '+la+'</div>':'')+'</div>'
+      +'<button onclick="adDeletePlayer(\''+p.uid+'\',\''+(p.name||'?').replace(/'/g,'')+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button></div></div>';
   }).join('') : '<div style="color:var(--muted);font-weight:600;text-align:center;padding:16px;">No registered profiles yet</div>';
 
   // Activity
-  document.getElementById('adActivity').innerHTML = tourList.slice(0, 12).map(t => {
+  const emptyCount = tourList.filter(t => t.played === 0).length;
+  const bulkBtn = emptyCount ? '<button onclick="adDeleteEmptyTournaments()" style="display:block;width:100%;margin-bottom:10px;padding:11px;background:transparent;border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🧹 Delete All '+emptyCount+' Empty (0-Game) Tournaments</button>' : '';
+  window._adTourList = tourList;
+  document.getElementById('adActivity').innerHTML = bulkBtn + (tourList.slice(0, 20).map(t => {
     const d = t.when ? new Date(t.when).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
       +'<div><div style="font-weight:700;color:var(--white);font-size:13px;">'+t.name+'</div>'
       +'<div style="font-size:11px;color:var(--muted);font-weight:600;">'+t.players.slice(0,6).join(', ')+'</div></div>'
-      +'<div style="text-align:right;"><div style="font-size:12px;color:var(--aqua);font-weight:700;">'+t.played+' games</div>'
-      +'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+d+'</div></div></div>';
-  }).join('') || '<div style="color:var(--muted);font-weight:600;text-align:center;padding:16px;">No tournaments yet</div>';
+      +'<div style="text-align:right;display:flex;align-items:center;gap:10px;"><div><div style="font-size:12px;color:'+(t.played?'var(--aqua)':'var(--muted)')+';font-weight:700;">'+t.played+' games</div>'
+      +'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+d+'</div></div>'
+      +'<button onclick="adDeleteTournament(\''+t.tid+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button></div></div>';
+  }).join('') || '<div style="color:var(--muted);font-weight:600;text-align:center;padding:16px;">No tournaments yet</div>');
+};
+
+window.adDeleteTournament = async function(tid) {
+  if (!isAdmin()) return;
+  if (!confirm('Permanently delete this tournament everywhere (leaderboard + past tournaments)?')) return;
+  try {
+    await set(ref(db, 'tournaments/' + tid), null);
+    try { await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), null); } catch(e) {}
+    lbData = null;
+    openAdminDash();
+  } catch(e) { alert('Delete failed: ' + (e.message||e)); }
+};
+
+window.adDeleteEmptyTournaments = async function() {
+  if (!isAdmin()) return;
+  const empties = (window._adTourList||[]).filter(t => t.played === 0);
+  if (!empties.length) return;
+  if (!confirm('Delete all ' + empties.length + ' tournaments with 0 games? Cannot be undone.')) return;
+  for (const t of empties) {
+    try {
+      await set(ref(db, 'tournaments/' + t.tid), null);
+      try { await set(ref(db, 'users/' + currentUser.uid + '/history/' + t.tid), null); } catch(e) {}
+    } catch(e) {}
+  }
+  lbData = null;
+  openAdminDash();
+};
+
+window.adDeletePlayer = async function(uid, name) {
+  if (!isAdmin()) return;
+  if (!confirm('Remove "'+name+'" from the player directory? (Their login still exists — delete that in Firebase Console → Authentication if needed. Their game history by name is unaffected.)')) return;
+  try {
+    await set(ref(db, 'directory/' + uid), null);
+    openAdminDash();
+  } catch(e) { alert('Delete failed — make sure the updated Firebase rules (admin directory write) are published. ' + (e.message||e)); }
 };
 
 window.syncHistoryToGlobal = async function() {
@@ -1920,9 +1961,10 @@ async function saveDirectoryEntry() {
   if (!currentUser || !userProfile?.name) return;
   try {
     let joinedAt = Date.now();
+    let isNewSignup = true;
     try {
       const ex = await get(ref(db, 'directory/' + currentUser.uid));
-      if (ex.exists() && ex.val()?.joinedAt) joinedAt = ex.val().joinedAt;
+      if (ex.exists() && ex.val()?.joinedAt) { joinedAt = ex.val().joinedAt; isNewSignup = false; }
     } catch(e) {}
     await set(ref(db, 'directory/' + currentUser.uid), {
       name: userProfile.name,
@@ -1932,6 +1974,18 @@ async function saveDirectoryEntry() {
       dupr: userProfile.dupr || null,
       joinedAt, lastActive: Date.now()
     });
+    // First-time signup → send welcome email (if template configured)
+    const wEmail = userProfile.email || currentUser.email || null;
+    const C = window.EMAILJS_CONFIG;
+    if (isNewSignup && wEmail && window.emailjs && C && C.welcomeTemplateId && C.welcomeTemplateId !== 'YOUR_WELCOME_TEMPLATE_ID') {
+      try {
+        emailjs.send(C.serviceId, C.welcomeTemplateId, {
+          to_email: wEmail,
+          name: userProfile.name || 'Player',
+          time: new Date().toLocaleString()
+        });
+      } catch(e) { console.log('welcome email err', e); }
+    }
   } catch(e) { console.log('directory save err', e); }
 }
 let _dirLoaded = false;
@@ -3066,6 +3120,9 @@ function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage()
 function runImport()         { if(window.runImport) window.runImport(); }
 function syncHistoryToGlobal(){ if(window.syncHistoryToGlobal) window.syncHistoryToGlobal(); }
 function openAdminDash()     { if(window.openAdminDash) window.openAdminDash(); }
+function adDeleteTournament(t){ if(window.adDeleteTournament) window.adDeleteTournament(t); }
+function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments) window.adDeleteEmptyTournaments(); }
+function adDeletePlayer(u,n) { if(window.adDeletePlayer) window.adDeletePlayer(u,n); }
 
 
 </script>
