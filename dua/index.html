@@ -725,9 +725,10 @@
   /* BUILD OPTIONS */
   .build-options {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
     margin-top: 40px;
+    max-width: 920px;
   }
   @media (max-width: 820px) { .build-options { grid-template-columns: 1fr; } }
 
@@ -743,6 +744,7 @@
     border-color: var(--accent);
     position: relative;
   }
+  .build-opt:not(.recommended) { display: none; }
   .build-opt.recommended::before {
     content: 'RECOMMENDED';
     position: absolute;
@@ -758,6 +760,7 @@
     border-radius: 2px;
     z-index: 2;
   }
+  .budget-toggle { display: none; }
   .build-opt-header {
     padding: 36px 36px 28px;
     background: linear-gradient(180deg, var(--surface) 0%, var(--bg-alt) 100%);
@@ -2675,23 +2678,23 @@
 <!-- HERO -->
 <header class="hero">
   <div class="container">
-    <div class="eyebrow">Confidential · Prepared for Alan · DUA Hotel Brickell</div>
+    <div class="eyebrow">Confidential · Prepared for DUA Ownership · $55M Acquisition Context</div>
     <h1>A rooftop court<br>that lifts the <em>entire</em><br>P&L — and the <span class="accent">valuation.</span></h1>
     <p class="hero-sub">
-      One enclosed, professional-grade pickleball court on the pool deck, integrated with the spa, pool, jacuzzi, cold plunge, saunas, steam, and fitness facilities DUA already owns — repackaged as <strong style="color:var(--ink)">DUA Pickleball & Recovery.</strong> A tiered-membership engine scaling from 30 founding members at launch to 180 at full maturity, driving room nights, F&B, and membership revenue flowing directly to DUA's P&L.
+      One enclosed, climate-controlled, professional-grade pickleball court on the pool deck, integrated with the spa, pool, cold plunge, saunas, steam, and fitness facilities DUA already owns — repackaged as <strong style="color:var(--ink)">DUA Pickleball & Recovery.</strong> A tiered-membership engine scaling from 30 founding members at launch to 180 at full maturity, converting scarce rooftop space into recurring memberships, room nights, F&amp;B, and a more valuable hotel asset.
     </p>
     <div class="hero-stats">
       <div>
-        <div class="num">~$942K</div>
-        <div class="label">3-Yr DUA Cash Benefit<br>(Direct + Halo)</div>
+        <div class="num">~$602K</div>
+        <div class="label">3-Yr Benefit After<br>$340K CapEx + Gross Halo</div>
       </div>
       <div>
         <div class="num">~20mo</div>
         <div class="label">Est. CapEx Payback<br>Roof-From-Day-One</div>
       </div>
       <div>
-        <div class="num">+$7.1M</div>
-        <div class="label">Property Value<br>At 7% Cap Rate</div>
+        <div class="num">$5.8M–$7.1M</div>
+        <div class="label">Base-to-Upside Value Creation<br>At 7% Cap Rate</div>
       </div>
       <div>
         <div class="num">180</div>
@@ -2706,28 +2709,28 @@
   <div class="container">
     <div class="section-head reveal">
       <div class="section-eyebrow"><span class="num">01</span> The Vision</div>
-      <h2>The <em>one amenity</em> Brickell's<br>wellness-luxury market is missing.</h2>
+      <h2>The hard-to-replicate<br><em>all-weather amenity</em> downtown Miami needs.</h2>
       <p class="lede">
-        Brickell has cold plunges. It has steam rooms. It has rooftop pools. Nobody has an enclosed rooftop pickleball court bundled with a full recovery stack. DUA already owns the spa, saunas, jacuzzi, pool, and 3-room gym. Adding one enclosed court flips DUA from "boutique hotel with amenities" to <em style="font-family:'Fraunces',serif;color:var(--accent-warm)">the only pickleball-and-recovery club in Brickell.</em>
+        Within the 2–3 mile Brickell core, there are scattered private rooftop courts and open-air concepts — but we have not identified a professional, climate-controlled, acoustically engineered court integrated with a complete hotel recovery stack. High-rise rooftop land is scarce, and very few assets can pair that court with a hotel-owned pool, 13-person outdoor co-ed cold plunge, world-class co-ed steam room, saunas, gym, spa, and F&amp;B. DUA wins by owning the <em style="font-family:'Fraunces',serif;color:var(--accent-warm)">most complete all-weather play-and-recovery experience.</em>
       </p>
     </div>
 
     <div class="rooftop-viz reveal">
       <div class="placeholder-note">
-        <strong>Architectural rendering placeholder</strong>
-        Final renderings to be commissioned from DUA's architect of record<br>
-        to ensure accuracy against existing pool-deck structural plans and Starck design language.
+        <strong>Architectural concept rendering placeholder</strong>
+        Final rendering must be coordinated with DUA's architect of record,<br>
+        structural engineer, acoustic consultant, and existing pool-deck plans.
       </div>
     </div>
 
     <div class="vision-grid reveal">
       <div>
         <h4>01 · The Court</h4>
-        <p>One enclosed court, 25ft+ high acoustic-dampened walls. Glass on the skyline-facing side, tensioned mesh/polycarbonate on the other three — architectural, beautiful, sound-controlled, weather-protected. <strong style="color:var(--accent)">Smart court tech</strong> with digital scoreboard + instant replay.</p>
+        <p>One fully enclosed court with a roof, climate control, acoustically engineered residence-facing walls, low-glare internal lighting, and a sound-lock entry. This is a hospitality-grade all-weather room — not an exposed rooftop court. <strong style="color:var(--accent)">Smart court tech</strong> adds a digital scoreboard and instant replay.</p>
       </div>
       <div>
         <h4>02 · The Stack</h4>
-        <p>Court + rooftop pool + 13-person outdoor co-ed jacuzzi + cold plunge + men's & women's sauna + steam + 3-room gym + locker rooms + towel service. The full recovery loop — already on-property.</p>
+        <p>Court + rooftop pool + 13-person outdoor co-ed cold plunge + men's &amp; women's saunas + world-class co-ed steam room + 3-room gym + locker rooms + towel service. The full recovery loop — already on-property.</p>
       </div>
       <div>
         <h4>03 · The Engine</h4>
@@ -2753,7 +2756,7 @@
         <div class="phase-header">
           <div class="num-tag">Phase 1 · Launch</div>
           <h3>Founding</h3>
-          <div class="subline">First 30 members · rates locked</div>
+          <div class="subline">First 30 members · 12 months paid in advance · rate locked</div>
         </div>
         <div class="phase-tiers">
           <div class="phase-tier">
@@ -2829,10 +2832,10 @@
       <div class="tag">Why 180 total, and why 60 is the pickleball ceiling</div>
       <h3>The two memberships scale differently — on purpose.</h3>
       <p>
-        <strong>Recovery (120 members at maturity)</strong> uses the pool, jacuzzi, cold plunge, saunas, steam, and gym — none of which consume court time. This tier is scalable. If demand warrants, the soft cap can flex above 120. Exclusivity is maintained through pricing and member curation, not artificial ceilings. By comparison, Equinox Brickell runs thousands of members on comparable wellness facilities. 120 is conservative scarcity.
+        <strong>Recovery (120 members at maturity)</strong> uses the pool, 13-person outdoor co-ed cold plunge, saunas, world-class co-ed steam room, and gym — none of which consume court time. This tier is scalable. If demand warrants, the soft cap can flex above 120. Exclusivity is maintained through pricing and member curation, not artificial ceilings. By comparison, Equinox Brickell runs thousands of members on comparable wellness facilities. 120 is conservative scarcity.
       </p>
       <p>
-        <strong>Club (60 members at maturity)</strong> is the pickleball tier. This number is hard-capped by court availability. Every Club member gets 6 free off-peak booking hours per month — at 60 members that's 360 free hours/month, all concentrated in the off-peak 11am–4pm weekday window, which means peak revenue hours (mornings before 11am, evenings after 4pm, and weekends) stay fully available for non-member paid bookings and events. Going above 60 overwhelms off-peak capacity and starts eating into peak revenue.
+        <strong>Club (60 members at maturity)</strong> is the pickleball tier. This number is hard-capped by court availability. Every Club member receives <strong>one included 60-minute off-peak booking per month</strong> — 60 hours monthly at full maturity, which fits inside the 11am–4pm weekday inventory while leaving paid peak bookings, events, and guest inventory protected. Going above 60 overwhelms the court and starts eating into premium revenue hours.
       </p>
     </div>
 
@@ -2848,10 +2851,9 @@
         </div>
         <ul>
           <li>Full rooftop pool access · 8am–9pm</li>
-          <li>13-person outdoor co-ed jacuzzi</li>
-          <li>Outdoor co-ed cold plunge</li>
+          <li>13-person outdoor co-ed cold plunge</li>
           <li>Men's and women's locker rooms, each with sauna and showers</li>
-          <li>Co-ed steam room</li>
+          <li>World-class co-ed steam room</li>
           <li>3-room state-of-the-art gym</li>
           <li>Towel service included</li>
           <li>Shared locker access (available in locker rooms)</li>
@@ -2859,7 +2861,7 @@
           <li>15% off F&B (Ahu Mar + pool bar) and spa</li>
           <li><strong>Court bookings at $60/hr peak, $30/hr off-peak</strong> (25% off public rate)</li>
           <li>3-day advance booking window</li>
-          <li><strong style="color:var(--accent-warm)">2 guest passes per month</strong> — bring a friend for the full recovery stack (no court required)</li>
+          <li><strong style="color:var(--accent-warm)">2 recovery-only guest passes per month</strong> — no pickleball court time included</li>
           <li>Invitation to all members-only events</li>
         </ul>
       </div>
@@ -2871,12 +2873,12 @@
         </div>
         <ul>
           <li>Everything in Recovery tier, plus:</li>
-          <li><strong style="color:var(--accent)">4 FREE off-peak court bookings per month</strong> · $120/mo value at peak equivalent</li>
+          <li><strong style="color:var(--accent)">1 included 60-minute off-peak court booking per month</strong> · a recurring member credit without overselling one-court capacity</li>
           <li><strong>Court bookings at $45/hr peak</strong> (40% off public · vs. Recovery's 25% off) — best rate in the club</li>
           <li>Off-peak court bookings at $30/hr (same as Recovery)</li>
           <li><strong>7-day advance booking window</strong> · the real perk — reserve before anyone else</li>
           <li><strong>Weekend priority:</strong> Club members book 7 days out · non-members limited to 24-hr advance</li>
-          <li><strong style="color:var(--accent-warm)">4 guest passes per month</strong> · double the Recovery allotment</li>
+          <li><strong style="color:var(--accent-warm)">Bring 1 recovery guest per visit</strong> · all guest court time is purchased separately at the guest rate</li>
           <li>Free entry to members-only events, clinics, and tournaments</li>
           <li>First dibs on Championship Series and special programming</li>
         </ul>
@@ -2885,12 +2887,12 @@
 
     <div class="reality-check accent reveal" style="margin-top:32px">
       <div class="tag">Contract Terms · Industry-Standard Commitment</div>
-      <h3>12-month commitment. Initiation fee. Waived for Founders.</h3>
+      <h3>Founding is paid upfront. Rate locked. Zero initiation fee.</h3>
       <p>
-        All memberships require a <strong>12-month minimum contract</strong> with auto-renewal month-to-month after Year 1. Early termination is only permitted with documented proof of relocation (utility bill or lease at new address 50+ miles from DUA). Same policy Equinox, Life Time, and every premium club in Miami uses — protects the revenue engine and keeps the member roster committed.
+        <strong>Founding members prepay their first 12 months in full</strong> to lock the Founding rate and receive a <strong>$0 initiation fee.</strong> Their monthly-equivalent rate never changes while they remain in good standing. This puts real cash into the launch, protects the roster, and makes the Founding offer materially more valuable than waiting.
       </p>
       <p>
-        A <strong>$299 initiation fee</strong> applies to all new memberships at Intro and Final pricing phases. <strong>Waived in full for Founding members</strong> — one more reason Phase 1 signups feel like a steal. Initiation fees typically generate an additional $20K–$25K in Year 1 alone on top of monthly dues.
+        Intro and Final memberships require a <strong>12-month commitment</strong> with auto-renewal month-to-month after Year 1 and a <strong>$299 initiation fee.</strong> Founding members bypass both the initiation fee and future price increases because they fund the launch before the court opens.
       </p>
     </div>
 
@@ -2925,16 +2927,22 @@
           <div class="m-val">$30/hr <span class="discount">or free</span></div>
           <div class="m-val">7 days · weekend priority</div>
         </div>
+        <div class="matrix-row">
+          <div class="m-label">Club member guest</div>
+          <div class="m-val">$80/hr</div>
+          <div class="m-val">$40/hr</div>
+          <div class="m-val">Booked by member</div>
+        </div>
       </div>
       <div class="matrix-note">
-        <strong>Peak</strong> = weekdays 8–11am + 4pm–close + all weekend hours · <strong>Off-peak</strong> = weekdays 11am–4pm only · 4 free bookings/mo for Club members must be redeemed off-peak
+        <strong>Peak</strong> = weekdays 8–11am + 4pm–close + all weekend hours · <strong>Off-peak</strong> = weekdays 11am–4pm only · 1 included Club booking/mo must be redeemed off-peak · guest court time is always paid
       </div>
     </div>
 
     <div class="mechanic-callout reveal">
       <div>
         <h4>How court bookings actually work</h4>
-        <p><strong>One person reserves, but everyone can pay.</strong> PodPlay's booking software lets the reservation holder invite up to 3 others — the system splits the charge across everyone automatically.<br><br>A Club member booking an off-peak free slot gets it free. If they bring 3 fellow members, everyone plays free. If they bring non-members, those non-members pay guest rate through the split-payment system.<br><br>Members should always be the one reserving — it unlocks the best pricing for the whole group.</p>
+        <p><strong>One person reserves, but everyone can pay.</strong> PodPlay's booking software lets the reservation holder invite players and split charges automatically.<br><br>A Club member's included off-peak booking covers the member's court time only. Any guest on that reservation pays the published guest rate, including when the member uses an included credit. Members should always reserve — it unlocks the best priority and pricing for the member.</p>
       </div>
       <div>
         <h4>Why weekend priority is the real perk</h4>
@@ -2945,11 +2953,11 @@
     <div class="mechanic-callout reveal" style="margin-top:20px">
       <div>
         <h4>The "guest" perk, clarified</h4>
-        <p>There are two different uses of "guest":<br><br><strong>Guests on a court booking</strong> — non-members who join a member's reservation. They play, and unless it's the member's free off-peak slot, they pay their share through split-payment.<br><br><strong>Guest passes</strong> (the actual perk) — Recovery members get <strong>2 passes/month</strong>, Club members get <strong>4 passes/month</strong> to bring a non-member to experience the full recovery stack — no court booking required. This is how referrals happen.</p>
+        <p>There are two different uses of "guest":<br><br><strong>Guests on a court booking</strong> — a Club member may bring <strong>one guest per visit</strong>, but that guest's court time is always paid at the published guest rate. A guest never receives a member's free court credit.<br><br><strong>Recovery guest access</strong> — guest passes are strictly for the recovery stack: pool, cold plunge, sauna, steam, gym, showers, and F&amp;B/spa discovery. They do not include pickleball. This preserves court scarcity and makes the recovery stack the referral engine.</p>
       </div>
       <div>
         <h4>Why Club tier is the obvious upgrade</h4>
-        <p>A Club member playing 3×/week at peak (12 sessions/mo):<br>• 4 free off-peak = $0<br>• 8 peak at $45/hr = $360<br>• + $299 membership<br><strong>= $659/mo for 12 sessions + full recovery</strong><br><br>Same player as non-member: 12 × $80 = <strong>$960 just for courts, no recovery.</strong><br><br>Club member saves $300/mo and gets the recovery stack. That's what makes the upgrade feel like a bargain.</p>
+        <p>A Club member playing 3×/week at peak (12 sessions/mo):<br>• 1 included off-peak credit = $0<br>• 11 peak bookings at $45/hr = $495<br>• + $299 membership<br><strong>= $794/mo for 12 sessions + full recovery</strong><br><br>Same player as non-member: 12 × $80 = <strong>$960 just for courts, no recovery.</strong><br><br>Club member saves on court time and gets the recovery stack, priority booking, and member access. The upgrade is about access when it matters, not unlimited free play.</p>
       </div>
     </div>
 
@@ -2959,10 +2967,9 @@
       <div class="amenity-list">
         <div><span class="amenity-name">Enclosed rooftop pickleball court</span><span class="amenity-perk">Weather-protected</span></div>
         <div><span class="amenity-name">Rooftop pool · 8am–9pm</span><span class="amenity-perk">Daily access</span></div>
-        <div><span class="amenity-name">13-person outdoor co-ed jacuzzi</span><span class="amenity-perk">Social format</span></div>
-        <div><span class="amenity-name">Outdoor co-ed cold plunge</span><span class="amenity-perk">Recovery</span></div>
+        <div><span class="amenity-name">13-person outdoor co-ed cold plunge</span><span class="amenity-perk">Social recovery</span></div>
         <div><span class="amenity-name">Men's & women's saunas (in-locker)</span><span class="amenity-perk">Included</span></div>
-        <div><span class="amenity-name">Co-ed steam room</span><span class="amenity-perk">Included</span></div>
+        <div><span class="amenity-name">World-class co-ed steam room</span><span class="amenity-perk">Included</span></div>
         <div><span class="amenity-name">3-room state-of-the-art gym</span><span class="amenity-perk">Full equipment</span></div>
         <div><span class="amenity-name">Locker rooms + showers</span><span class="amenity-perk">Daily access</span></div>
         <div><span class="amenity-name">Key fob building access</span><span class="amenity-perk">Seamless entry</span></div>
@@ -2979,74 +2986,63 @@
   <div class="container">
     <div class="section-head reveal">
       <div class="section-eyebrow"><span class="num">03</span> The Build</div>
-      <h2>Two paths. <em>Same court.</em><br>Different timing.</h2>
+      <h2>One commitment.<br><em>All-weather</em> from day one.</h2>
       <p class="lede">
-        An enclosed pickleball court in Miami has one real challenge: summer heat. A glass box without climate control becomes unplayable June through September — killing half the revenue year. We present two options: build the full climate-controlled version on Day One, or stage the roof + AC as a Year 2 upgrade once revenue is proven.
+        DUA should build the complete product once: a closed, climate-controlled court with a roof, acoustic envelope, and light-control strategy. In Miami, an enclosed court without cooling is not a premium experience, and a staged version weakens the membership proposition before it has a chance to earn trust.
       </p>
     </div>
 
     <div class="build-options reveal">
       <div class="build-opt recommended">
         <div class="build-opt-header">
-          <div class="build-opt-tag">Option A · Hero Build</div>
+          <div class="build-opt-tag">The DUA All-Weather Build</div>
           <h3>Roof + Climate Control<br>on Day One</h3>
-          <div class="timeline-tag">16–18 WEEKS · PLAYS YEAR-ROUND</div>
+          <div class="timeline-tag">16–18 WEEKS · YEAR-ROUND DESIGN</div>
         </div>
         <div class="build-opt-body">
           <div class="build-opt-price">$340K</div>
           <div class="build-opt-price-sub">Range: $315K–$370K · includes smart court tech</div>
           <ul>
-            <li>Full enclosure · 25ft glass + mesh + polycarbonate</li>
+            <li>Full enclosure · laminated glass + acoustic wall systems</li>
             <li>Fixed-roof structure · steel frame + insulated panels</li>
             <li>Mini-split AC + mechanical ventilation</li>
-            <li>Acoustic baffling throughout</li>
-            <li>Musco/LSI LED sport lighting</li>
-            <li>Plays in any weather, any season</li>
+            <li>Acoustic baffling + vibration isolation throughout</li>
+            <li>Fully shielded, dimmable LED sport lighting + internal blackout shades</li>
+            <li>Designed for any weather and controlled evening use</li>
           </ul>
           <div class="build-opt-tradeoff">
-            <strong>Trade-off:</strong> Higher upfront cost, longer build timeline. But year-round playability protects ~40% of summer revenue that the staged version loses, and the club can market as a true all-weather facility from launch — which drives faster membership sell-through and faster payback.
+            <strong>Why this is the only plan:</strong> The incremental upfront investment protects summer playability, makes Founding presales credible, and gives DUA a differentiated all-weather product rather than another open-air rooftop court. Final operations must be governed by acoustic and photometric sign-off — not by a blanket 24/7 promise.
           </div>
         </div>
       </div>
 
-      <div class="build-opt">
-        <div class="build-opt-header">
-          <div class="build-opt-tag">Option B · Staged Build</div>
-          <h3>Open-Top Enclosure<br>Upgrade in Year 2</h3>
-          <div class="timeline-tag">12–14 WEEKS · ROOF ADDED LATER</div>
-        </div>
-        <div class="build-opt-body">
-          <div class="build-opt-price">$215K</div>
-          <div class="build-opt-price-sub">+ ~$110K for Year 2 roof upgrade · includes smart court tech</div>
-          <ul>
-            <li>Full enclosure · 25ft walls on three sides</li>
-            <li>Open top · wind-protected, sun-exposed</li>
-            <li>Acoustic dampening on walls</li>
-            <li>Musco/LSI LED sport lighting</li>
-            <li>Plays in mild weather (Oct–May peak)</li>
-            <li>Roof + AC upgrade triggered by revenue milestone</li>
-          </ul>
-          <div class="build-opt-tradeoff">
-            <strong>Trade-off:</strong> Lower upfront cost and faster to open. But expect ~15–20% seasonal revenue loss during summer peak heat and ~10% of bookings lost to rain. Total 3-year cost is roughly the same once the Year 2 upgrade is added — so this option mainly spreads CapEx, not reduces it.
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="reality-check info reveal" style="margin-top:40px">
       <div class="tag">Miami Reality Check</div>
-      <h3>Why a roof without AC isn't on the table.</h3>
+      <h3>Why an all-weather enclosure is non-negotiable.</h3>
       <p>
         Miami summer highs average 90°F+ from June through September with 70–80% humidity. A glass enclosure traps heat — unventilated, interior temps hit 110°F+ by midday. That's heat-stroke territory, not a premium club experience. If we're building an enclosure, it needs AC, or it needs no roof.
       </p>
       <p>
-        Option A solves this with mini-split AC + ventilation, allowing year-round play. Option B stays open-top so summer heat escapes, accepting seasonal revenue loss and adding the AC-controlled roof in Year 2 once cashflow justifies it. <strong>There is no middle path — a closed roof without AC breaks the product.</strong>
+        DUA solves this with mini-split AC + ventilation and a fixed insulated roof, protecting year-round play. <strong>There is no staged fallback in this proposal — a closed roof without AC breaks the product, and an open roof weakens the club's premium promise.</strong>
+      </p>
+    </div>
+
+    <div class="reality-check accent reveal" style="margin-top:24px">
+      <div class="tag">Residential-Neighborhood Design Gate</div>
+      <h3>Light can be contained. Pickleball impact noise must be engineered and field-tested.</h3>
+      <p>
+        This court should be designed as an <strong>acoustic enclosure</strong>, not a glass pavilion: residence-facing laminated acoustic glazing and solid wall assemblies, internally absorptive ceiling and wall treatments, sound-lock entry, vibration isolation at the steel and HVAC connections, and USA Pickleball Quiet Category equipment for all recreational play. Mesh alone does not contain impact noise.
+      </p>
+      <p>
+        <strong>Do not promise 24/7 play.</strong> Motorized blackout shades and fully shielded, downward-aimed, dimmable LEDs can control visible light spill, but curtains do not solve paddle/ball impact noise. The responsible base operating model is <strong>7 AM–10 PM</strong>, with any later hours only after an independent acoustical study, photometric study, final permitting, and at-residence field testing confirm compliance. The design target is no measurable nuisance at neighboring residences — not just a beautiful enclosure.
       </p>
     </div>
 
     <!-- TIMELINE -->
     <div class="timeline reveal" style="margin-top:80px">
-      <h3 style="font-family:'Fraunces',serif; font-weight:400; font-size:26px; margin-bottom:32px; letter-spacing:-0.02em">Build Timeline (Option A · Hero)</h3>
+      <h3 style="font-family:'Fraunces',serif; font-weight:400; font-size:26px; margin-bottom:32px; letter-spacing:-0.02em">Build Timeline · All-Weather Enclosure</h3>
       <div class="timeline-track">
         <div class="phase-line">
           <div class="phase-head">
@@ -3090,14 +3086,9 @@
     <!-- BUDGET BREAKDOWN -->
     <div class="budget reveal" style="margin-top:80px">
       <h3>Detailed Build Budget</h3>
-      <div class="total-label">Toggle between Option A (full build) and Option B (staged build)</div>
+      <div class="total-label">Full all-weather build · one committed capital plan</div>
 
-      <div class="budget-toggle">
-        <button class="active" data-opt="A">Option A · Roof + AC</button>
-        <button data-opt="B">Option B · Staged</button>
-      </div>
-
-      <!-- Option A -->
+      <!-- All-weather build -->
       <div class="budget-lines" id="budgetA">
         <div>
           <div>
@@ -3196,7 +3187,7 @@
           <div class="budget-amt">$35,000</div>
         </div>
         <div class="budget-total">
-          <div class="label">Total · Option A midpoint</div>
+          <div class="label">Total · All-weather build midpoint</div>
           <div class="amt">$340,500</div>
         </div>
       </div>
@@ -3304,9 +3295,9 @@
   <div class="container">
     <div class="section-head reveal">
       <div class="section-eyebrow"><span class="num">04</span> The Tech</div>
-      <h2>The <em>only</em> court in Miami<br>with a smart scoreboard<br>and instant replay.</h2>
+      <h2>A hotel court designed for<br><em>smart, shareable</em><br>play.</h2>
       <p class="lede">
-        PodPlay Pro smart court tech — the same system used by Paddle + Par (Beverly Hills, MI), Ace Pickleball Club, and premium clubs across the country. Digital scoreboard visible from anywhere on the court. Instant replay for any great point — saved to players' phones. Members leave with shareable highlights every session. <strong style="color:var(--ink)">No other court in Miami has this.</strong>
+        PodPlay Pro smart court tech — the same system used by Paddle + Par (Beverly Hills, MI), Ace Pickleball Club, and premium clubs across the country. Digital scoreboard visible from anywhere on the court. Instant replay for any great point — saved to players' phones. Members leave with shareable highlights every session.
       </p>
     </div>
 
@@ -3474,7 +3465,7 @@
         <div class="month-row">
           <div class="col-month">M7</div>
           <div class="col-phase phase-ramp">Ramp</div>
-          <div class="col-activity">Intro tier opens · non-member bookings begin · first tournaments · PNC cross-promo event</div>
+          <div class="col-activity">Intro tier opens · non-member bookings begin · first tournaments · wellness-event activation</div>
           <div class="col-members">45</div>
           <div class="col-revenue">~$18K</div>
         </div>
@@ -3534,8 +3525,8 @@
         </div>
         <div class="quarter-card">
           <div class="q-label">Q2 · M16–18</div>
-          <div class="q-title">Summer + Year 2 upgrade decision</div>
-          <div class="q-desc">(Option B only) Roof + AC upgrade installed if revenue targets hit · Final tier growing · summer leagues launch</div>
+          <div class="q-title">Summer all-weather activation</div>
+          <div class="q-desc">All-weather court fully operational · Final tier growing · summer leagues launch</div>
           <div class="q-stats">
             <div><span>Members</span><strong>125</strong></div>
             <div><span>Avg monthly rev</span><strong>$42K</strong></div>
@@ -3599,7 +3590,7 @@
         <div class="quarter-card highlight">
           <div class="q-label">Q4 · M34–36</div>
           <div class="q-title">Valuation maturity</div>
-          <div class="q-desc">Year 3 closes with ~$942K DUA cash benefit (direct + halo) · proven recurring cashflow · transferable asset · +$7.1M property value locked in</div>
+          <div class="q-desc">Year 3 closes with a mature recurring revenue asset · ~$602K cumulative benefit after build CapEx in the simple model · illustrative ~$5.8M valuation creation at a 7% cap</div>
           <div class="q-stats">
             <div><span>Members</span><strong>180</strong></div>
             <div><span>Avg monthly rev</span><strong>$59K</strong></div>
@@ -3616,9 +3607,9 @@
         <strong>Month 6:</strong> Court is live. Founding members activated. Presales collected.<br>
         <strong>Month 8:</strong> Break-even on monthly operations.<br>
         <strong>Month 12:</strong> 90 members active. Intro tier sold out.<br>
-        <strong>Month 20:</strong> Full CapEx payback on Option A ($340K build recovered).<br>
+        <strong>Month 20:</strong> Full CapEx payback on the $340K all-weather build.<br>
         <strong>Month 24:</strong> 170+ members. Club tier at hard cap. Recovery at 100+.<br>
-        <strong>Month 36:</strong> 180 members at Final pricing. Waitlist active. $7.1M property value gain proven on the balance sheet.
+        <strong>Month 36:</strong> 180 members at Final pricing. Waitlist active. Underwritten recurring NOI supports an illustrative valuation increase, subject to hotel buyer and lender underwriting.
       </p>
     </div>
   </div>
@@ -3942,9 +3933,9 @@
       <div class="pnl-year-header">
         <div>
           <div class="pnl-year-tag">3-Year Summary</div>
-          <div class="pnl-year-title">$1.42M revenue · $340K CapEx + $987K OpEx · <span style="color:var(--accent)">$88K net cash after full CapEx recovery</span></div>
+          <div class="pnl-year-title">$1.42M direct revenue · $340K CapEx + $987K OpEx · <span style="color:var(--accent)">$88K direct cash after full CapEx recovery</span></div>
         </div>
-        <div class="pnl-year-note">Direct club numbers including the one-time $340K build investment. CapEx fully recovered within 3 years + $88K net profit. Plus ~$514K halo revenue flowing to DUA's F&B and room business. Property value impact (+$7.1M) captured separately at exit.</div>
+        <div class="pnl-year-note">The $605K operator compensation is already included in operating expenses below. Before the $340K build CapEx, the simple model produces ~$942K of cumulative direct profit plus gross room/F&amp;B halo revenue. After CapEx, it shows ~$602K of cumulative benefit before normal hotel departmental flow-through on the halo revenue. Valuation is modeled separately using a conservative Year 3 NOI bridge.</div>
       </div>
       <div class="pnl-scroll">
       <table class="pnl-table">
@@ -3985,7 +3976,7 @@
             <td class="total-col">$428K</td>
           </tr>
           <tr class="subtotal">
-            <td class="line-label">One-time Build CapEx (Option A)</td>
+            <td class="line-label">One-time All-Weather Build CapEx</td>
             <td>($340K)</td>
             <td>$0</td>
             <td>$0</td>
@@ -4005,7 +3996,7 @@
           <tr class="subtotal"><td class="line-label">Total Halo Revenue</td><td>$85K</td><td>$190K</td><td>$239K</td><td class="total-col">$514K</td></tr>
 
           <tr class="grand-total accent">
-            <td class="line-label">DUA Net Cash Benefit (after CapEx, + Halo)</td>
+            <td class="line-label">DUA Cumulative Benefit (after CapEx + gross halo revenue)</td>
             <td style="color:var(--danger)">($337K)</td>
             <td>$405K</td>
             <td>$534K</td>
@@ -4018,7 +4009,7 @@
       <div class="summary-callout reveal">
         <div class="callout-stat">
           <div class="cs-num">$340K</div>
-          <div class="cs-label">One-time CapEx investment (Option A)</div>
+          <div class="cs-label">One-time all-weather build CapEx</div>
         </div>
         <div class="callout-stat">
           <div class="cs-num">$428K</div>
@@ -4026,11 +4017,11 @@
         </div>
         <div class="callout-stat">
           <div class="cs-num">$514K</div>
-          <div class="cs-label">3-year halo revenue to DUA's existing F&B + room P&L</div>
+          <div class="cs-label">3-year gross halo revenue to DUA's existing F&B + room P&L</div>
         </div>
         <div class="callout-stat">
-          <div class="cs-num">+$7.1M</div>
-          <div class="cs-label">Property value impact at 7% cap rate (exit)</div>
+          <div class="cs-num">~$5.8M</div>
+          <div class="cs-label">Illustrative property value creation at 7% cap rate</div>
         </div>
       </div>
     </div>
@@ -4219,7 +4210,7 @@
       <div class="halo-card">
         <div class="num">60d</div>
         <h4>Halo return window</h4>
-        <p>Same mechanic as PNC: anyone who experiences DUA through pickleball returns within 60 days. Compounding engine.</p>
+        <p>Wellness-event discovery creates the same 60-day return mechanic: guests who experience DUA through play and recovery have a reason to return for F&amp;B, spa, and future bookings.</p>
       </div>
     </div>
   </div>
@@ -4232,22 +4223,21 @@
       <div class="section-eyebrow"><span class="num">08</span> The Valuation</div>
       <h2>The multiplier effect <em>on<br>property value.</em></h2>
       <p class="lede">
-        Brickell boutique hotels trade at 6–8% cap rates. Every dollar of recurring NOI is worth roughly $14 of property value at a 7% cap. A capped membership club with recurring dues and a waitlist isn't just revenue — it's a capitalizable, transferable asset.
+        Brickell boutique hotels trade at 6–8% cap rates. The point is not to capitalize gross revenue; it is to capitalize recurring NOI. The bridge below starts with Year 3 direct operating profit after operator compensation, then applies conservative hotel flow-through to the room and F&amp;B halo.
       </p>
     </div>
 
     <div class="val-feature reveal">
       <div class="val-math">
-        <div class="line"><span class="key">Year 3 total DUA cash benefit (direct + halo)</span><span class="val">$942,000</span></div>
-        <div class="line"><span class="key">Less · direct club operating expenses</span><span class="val">($285,000)</span></div>
-        <div class="line"><span class="key">= Net revenue contribution to DUA</span><span class="val">$915,000</span></div>
-        <div class="line"><span class="key">× NOI margin (blended direct + halo)</span><span class="val">~54%</span></div>
-        <div class="line"><span class="key">= Incremental annual NOI</span><span class="val">~$494,000</span></div>
+        <div class="line"><span class="key">Year 3 direct club operating profit</span><span class="val">$295,000</span></div>
+        <div class="line"><span class="key">+ Room-night halo · 65% flow-through on $122K</span><span class="val">$79,000</span></div>
+        <div class="line"><span class="key">+ F&amp;B/spa halo · 25% flow-through on $117K</span><span class="val">$29,000</span></div>
+        <div class="line"><span class="key">= Illustrative Year 3 incremental NOI</span><span class="val">~$403,000</span></div>
         <div class="line"><span class="key">÷ Applied cap rate (Brickell boutique)</span><span class="val">7.00%</span></div>
         <div class="final">
           <div class="final-label">Estimated increase in property value</div>
-          <div class="final-value">+$7.1M</div>
-          <div class="final-note">Range: $6.2M (at 8% cap) → $8.2M (at 6% cap)<br>Lower cap rate = higher property value. Signed annual membership contracts compress cap rates.</div>
+          <div class="final-value">~$5.8M</div>
+          <div class="final-note">Illustrative range: ~$5.0M (at 8% cap) → ~$6.7M (at 6% cap). Subject to underwriting, final hotel departmental margins, and executed membership performance.</div>
         </div>
       </div>
       <div class="val-right">
@@ -4256,7 +4246,7 @@
           180 memberships with annual contracts, a waitlist, and recurring dues is exactly the kind of asset that compresses cap rates. Buyers underwrite it. Lenders underwrite it. It signals DUA isn't just a 124-key boutique — it's a community with cashflow.
         </p>
         <p>
-          Miami hasn't built this category yet. Being first in Brickell with a capped, curated pickleball-and-recovery club is the kind of moat that shows up in the exit multiple, not just the P&L.
+          Dedicated rooftop pickleball inventory is emerging in Brickell. DUA's advantage is a fully enclosed, climate-controlled court integrated with a hotel-owned recovery stack and hospitality P&amp;L — an operating asset that is materially harder to replicate than a standalone court.
         </p>
       </div>
     </div>
@@ -4265,26 +4255,37 @@
       <h4>Quick note on cap rates</h4>
       <p>
         Cap rate is the yield a buyer demands. Lower cap = buyer is willing to pay more for the same NOI. Higher cap = buyer demands more yield. Brickell boutique hotels trade at the lower end because they're high-demand assets.<br><br>
-        <code>NOI ÷ cap rate = property value</code>. So $494K NOI ÷ 6% = $8.2M. ÷ 7% = $7.1M. ÷ 8% = $6.2M. <strong>Lower cap = higher value.</strong>
+        <code>NOI ÷ cap rate = property value</code>. So ~$403K NOI ÷ 6% = ~$6.7M. ÷ 7% = ~$5.8M. ÷ 8% = ~$5.0M. <strong>Lower cap = higher value.</strong>
+      </p>
+    </div>
+
+    <div class="reality-check accent reveal" style="margin-top:32px">
+      <div class="tag">Owner Upside Case · Not the Base Underwrite</div>
+      <h3>There is a credible path back toward ~$7.1M of value — without overselling court time.</h3>
+      <p>
+        The base case is ~180 members and ~$403K of Year 3 incremental NOI. The upside case adds <strong>30 Recovery-only memberships</strong> (no additional court credits), grows sponsorship from ~$78K to ~$100K, and builds a year-round corporate wellness / group-buyout calendar. Those are high-margin levers that can add roughly <strong>$90K of annual NOI</strong> once mature.
+      </p>
+      <p>
+        That moves the illustrative Year 3 NOI toward <strong>~$494K</strong>, or <strong>~$7.1M at a 7% cap rate.</strong> It is presented as upside because it requires sales execution, recovery-area capacity validation, sponsor demand, and a permitted operating schedule. The base case stays disciplined at ~$5.8M.
       </p>
     </div>
 
     <div class="moat reveal" style="margin-top:60px">
       <div class="moat-card">
-        <h4>Why this stacks with the PNC partnership</h4>
-        <p>PNC drives wellness-crowd awareness. The pickleball club converts that awareness into recurring membership revenue. They reinforce each other — PNC events become member acquisition, members become PNC event regulars. One hotel, two halo systems, compounding.</p>
+        <h4>Why this stacks with wellness events like PNC</h4>
+        <p>Wellness events create discovery, social content, and a qualified audience that already values movement, recovery, and community. The pickleball club converts that event traffic into recurring memberships, F&amp;B, spa bookings, and return visits. PNC is one example; the strategy works with a broader calendar of aligned wellness events.</p>
       </div>
       <div class="moat-card">
-        <h4>Why now, before someone else does it</h4>
-        <p>DETA has 17 courts in West Miami. Dinko has indoor courts in Upper Eastside. Sip & Pickle is in Wynwood. Nobody has a capped, luxury, rooftop, recovery-integrated club in Brickell. That window is open right now. In 18 months, it won't be.</p>
+        <h4>Why the location is still defensible</h4>
+        <p>Within the nearby Brickell core, the existing rooftop courts are private or open-air, not professional climate-controlled venues with real wind, acoustic, and light-control infrastructure. In a dense 2–3 mile high-rise corridor, a new court requires rooftop capacity, structural approvals, an acoustic strategy, light containment, and a hospitality operating platform. DUA already owns the recovery stack that makes this build worth doing.</p>
       </div>
       <div class="moat-card">
-        <h4>Why phased pricing matters</h4>
-        <p>Founding rates create urgency and evangelists. Intro proves demand. Final establishes premium positioning. By the time we're at Final pricing, we have waitlists — which is when Alan realizes the real value isn't the court, it's the recurring revenue asset attached to his building.</p>
+        <h4>Why Founding prepayment matters</h4>
+        <p>Founding rates create urgency, cash before launch, and the first advocates. Members prepay Year 1 to lock the Founding rate and avoid the initiation fee. Later tiers prove willingness to pay at higher pricing. The real value is not the court alone; it is the contracted recurring-revenue asset attached to DUA.</p>
       </div>
       <div class="moat-card">
         <h4>Why the recovery stack is the moat</h4>
-        <p>Any hotel can add a court. Only a handful can bundle a court with pool, outdoor jacuzzi, cold plunge, saunas, steam, gym, towel service — already built, already licensed, already staffed. The amenities DUA already owns make membership worth $299, not $80.</p>
+        <p>Not every hotel can add a court and pair it with a pool, 13-person outdoor co-ed cold plunge, saunas, world-class co-ed steam room, gym, towel service, spa, and F&amp;B — already on-property and already staffed. The amenities DUA already owns make membership worth $299, not $80.</p>
       </div>
     </div>
 
@@ -4386,12 +4387,12 @@
       <div class="scope-card">
         <div class="scope-num">03</div>
         <h3>Marketing & Membership Sales</h3>
-        <p>Founding tier pre-sale campaign. Content production at launch events. Influencer activations through the PNC network. Cold outreach to Brickell residents and Miami pickleball community. Direct selling of all 180 memberships.</p>
+        <p>Founding tier pre-sale campaign. Content production at launch events. Influencer activations through a broader wellness-event network. Cold outreach to Brickell residents and Miami pickleball community. Direct selling of all 180 memberships.</p>
       </div>
       <div class="scope-card">
         <div class="scope-num">04</div>
         <h3>Run the Program · Curate the Experience</h3>
-        <p>Daily operations, staff management, member events, sponsor activations, tournament logistics, PNC integration, content production, monthly reporting to DUA ownership. This is a full operating role — not a side project.</p>
+        <p>Daily operations, staff management, member events, sponsor activations, tournament logistics, wellness-event integration, content production, monthly reporting to DUA ownership. This is a full operating role — not a side project.</p>
       </div>
     </div>
 
@@ -4432,16 +4433,16 @@
 
       <div class="comp-align">
         <div class="align-block">
-          <div class="align-num">~9%</div>
-          <div class="align-label">Of total revenue uplift goes to operator across 3 years</div>
+          <div class="align-num">$602K</div>
+          <div class="align-label">3-year cumulative benefit after build CapEx + gross halo revenue in the current simple model</div>
         </div>
         <div class="align-block">
           <div class="align-num">~$605K</div>
           <div class="align-label">3-year operator comp (Y1 $111K + Y2 $211K + Y3 $283K)</div>
         </div>
         <div class="align-block">
-          <div class="align-num">~91%</div>
-          <div class="align-label">Of revenue uplift + 100% of $7.1M property value goes to DUA</div>
+          <div class="align-num">100%</div>
+          <div class="align-label">Of the hotel asset value created through underwritten NOI belongs to DUA ownership</div>
         </div>
       </div>
     </div>
@@ -4459,19 +4460,19 @@
     <div class="cta-stats reveal">
       <div class="cta-stat">
         <div class="v">$340K</div>
-        <div class="l">Hero build · Option A</div>
+        <div class="l">All-weather build · Day One</div>
       </div>
       <div class="cta-stat">
         <div class="v">~20mo</div>
         <div class="l">Payback window</div>
       </div>
       <div class="cta-stat">
-        <div class="v">~$942K</div>
-        <div class="l">3-Yr DUA cash benefit</div>
+        <div class="v">~$602K</div>
+        <div class="l">3-Yr benefit after build CapEx + gross halo</div>
       </div>
       <div class="cta-stat">
-        <div class="v">+$7.1M</div>
-        <div class="l">Property valuation lift</div>
+        <div class="v">$5.8M–$7.1M</div>
+        <div class="l">Base-to-upside value creation at 7% cap</div>
       </div>
     </div>
   </div>
