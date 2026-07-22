@@ -318,6 +318,18 @@
   #leaderboardPage { padding-left:12px !important; padding-right:12px !important; }
   .gcard, .stbl { max-width:100%; }
 
+  .sinput.await { border-color:var(--pink) !important; box-shadow:0 0 12px rgba(255,45,120,0.35); }
+
+  input[type=date] { width:100%; max-width:100%; box-sizing:border-box; -webkit-appearance:none; appearance:none; min-height:46px; }
+
+  .bbtn .blbl { display:none; }
+  .bbtn .bicon { font-size:24px; }
+  #bottomBar { padding-top:10px; }
+
+  html, body { overflow-x:hidden !important; max-width:100vw; }
+  body { position:relative; touch-action:pan-y; }
+  .gcard * { max-width:100%; }
+
   /* ── LOGIN SCREEN ── */
   #loginScreen {
     position:fixed; inset:0; z-index:500;
@@ -453,7 +465,7 @@
 </div>
 
 <!-- PAST TOURNAMENTS PAGE -->
-<div id="pageHistory" style="display:none;position:fixed;inset:0;z-index:350;background:var(--bg);overflow-y:auto;padding:16px 16px 40px;">
+<div id="pageHistory" style="display:none;position:fixed;inset:0;z-index:350;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;">
   <div style="max-width:600px;margin:0 auto;padding-top:8px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-top:4px;">
       <button onclick="closeHistory()"
@@ -1599,8 +1611,9 @@ window.shareHistoryTournament = async function(tid) {
       try { await navigator.share({ title: (t.cfg.name||'Tournament')+' Results 🏓', url }); return; }
       catch(e) { if (e.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(url); alert('Link copied!\n' + url); }
-    catch(e) { prompt('Copy this link:', url); }
+    const ok = await copyTextRobust(url);
+    if (ok) copiedToast('✓ Results Link Copied!');
+    else prompt('Copy this link:', url);
   } catch(e) { alert('Could not create share link: ' + (e.message||e)); }
 };
 
@@ -2274,11 +2287,11 @@ function gameCard(g, s, done, w, label) {
     +'<div class="vs">vs</div>'
     +'<div class="team r"><span style="display:block;font-size:9px;letter-spacing:2px;color:var(--muted);font-family:\'Russo One\',sans-serif;margin-bottom:2px;">SOUTH ⬇</span>'+(w==='t2'?'<span class="wtag" style="margin-right:8px;margin-left:0;">W</span>':'')+g.t2.join(' & ')+'</div>'
     +'</div><div class="srow">'
-    +'<input class="sinput" type="number" inputmode="numeric" min="0" max="99" id="s1_'+g.key+'" value="'+(s.s1!==null?s.s1:'')+'" placeholder="0">'
+    +'<input class="sinput'+(s.s1===null&&!done?' await':'')+'" type="number" inputmode="numeric" min="0" max="99" id="s1_'+g.key+'" value="'+(s.s1!==null?s.s1:'')+'" placeholder="0" oninput="scoreTyped(\''+g.key+'\')">'
     +'<span class="sdash">—</span>'
-    +'<input class="sinput" type="number" inputmode="numeric" min="0" max="99" id="s2_'+g.key+'" value="'+(s.s2!==null?s.s2:'')+'" placeholder="0">'
+    +'<input class="sinput'+(s.s2===null&&!done?' await':'')+'" type="number" inputmode="numeric" min="0" max="99" id="s2_'+g.key+'" value="'+(s.s2!==null?s.s2:'')+'" placeholder="0" oninput="scoreTyped(\''+g.key+'\')">'
     +'</div>'
-    +'<button class="savebtn'+(done?' saved':'')+'" onclick="saveScore(\''+g.key+'\')">'+(done?'✓ Saved':'Save Score')+'</button>'
+    +'<button class="savebtn'+(done?' saved':'')+'" id="save_'+g.key+'" style="'+(done||(s.s1!==null&&s.s2!==null)?'':'opacity:0.3;')+'" onclick="saveScore(\''+g.key+'\')">'+(done?'✓ Saved':'Save Score')+'</button>'
     +(done?'<button class="editbtn" onclick="editScore(\''+g.key+'\')">✏ Edit Score</button>':'')
     +'<button class="delbtn" onclick="deleteGame(\''+g.key+'\')">✕ Remove Game</button>'
     +'</div></div>';
@@ -2579,8 +2592,9 @@ window.shareStatsLink = async function() {
       try { await navigator.share({ title: (cfg.name||'Tournament')+' Results 🏓', url }); return; }
       catch(e) { if (e.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(url); alert('Link copied!\n' + url); }
-    catch(e) { prompt('Copy this link:', url); }
+    const ok = await copyTextRobust(url);
+    if (ok) copiedToast('✓ Results Link Copied!');
+    else prompt('Copy this link:', url);
   } catch(e) { alert('Could not create link: ' + (e.message||e)); }
 };
 
@@ -3156,20 +3170,31 @@ function closeAllOverlaysAndShow(p) {
   if (window.showPage) window.showPage(p);
 }
 (function() {
-  let lastY = 0;
-  window.addEventListener('scroll', function() {
-    const y = window.scrollY || 0;
+  const lastMap = new WeakMap();
+  const WIN = {};
+  window.addEventListener('scroll', function(e) {
     const tb = document.getElementById('topBar');
     if (!tb) return;
-    if (y > lastY + 8 && y > 60) { tb.classList.add('bar-hidden'); lastY = y; }
-    else if (y < lastY - 8) { tb.classList.remove('bar-hidden'); lastY = y; }
-  }, { passive: true });
+    const el = (e.target === document || e.target === window) ? WIN : e.target;
+    const y = el === WIN ? (window.scrollY || 0) : (el.scrollTop || 0);
+    const last = lastMap.get(el) || 0;
+    if (y > last + 8 && y > 60) { tb.classList.add('bar-hidden'); lastMap.set(el, y); }
+    else if (y < last - 8) { tb.classList.remove('bar-hidden'); lastMap.set(el, y); }
+  }, { passive: true, capture: true });
 })();
 function addPF()         { if(window._addPF) window._addPF(); }
 function updPCnt()       { if(window._updPCnt) window._updPCnt(); }
 function doStart()       { if(window._doStart) window._doStart(); }
 function resetScores()   { if(window._resetScores) window._resetScores(); }
 function newTournament() { if(window._newTournament) window._newTournament(); }
+window.scoreTyped = function(k) {
+  var a = document.getElementById('s1_'+k), b = document.getElementById('s2_'+k);
+  var btn = document.getElementById('save_'+k);
+  var both = a && b && a.value !== '' && b.value !== '';
+  if (btn) btn.style.opacity = both ? '1' : '0.3';
+  if (a) a.classList.toggle('await', a.value === '');
+  if (b) b.classList.toggle('await', b.value === '');
+};
 function saveScore(k)    { if(window._saveScore) window._saveScore(k); }
 function editScore(k)    { if(window._editScore) window._editScore(k); }
 function addDecider(m)   { if(window._addDecider) window._addDecider(m); }
@@ -3212,6 +3237,7 @@ function copyHistoryJson(t)      { if(window.copyHistoryJson) window.copyHistory
 function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
 function copyInviteLink()    { if(window.copyInviteLink) window.copyInviteLink(); }
 function showQrCode()        { if(window.showQrCode) window.showQrCode(); }
+function scoreTyped(k)       { if(window.scoreTyped) window.scoreTyped(k); }
 function showTournamentQR()  { if(window.showTournamentQR) window.showTournamentQR(); }
 function joinTournamentPrompt(){ if(window.joinTournamentPrompt) window.joinTournamentPrompt(); }
 function openFeedback()     { if(window.openFeedback) window.openFeedback(); }
