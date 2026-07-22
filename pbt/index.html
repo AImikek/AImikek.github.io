@@ -309,6 +309,15 @@
   .guide-s { font-size:15px; color:#C4CFE0; font-weight:500; line-height:1.6; }
   .guide-s b { color:var(--white); }
 
+  /* Vertical-only scrolling on main pages; kill sideways wobble + cutoffs */
+  #pageGames, #pageStandings { overflow-x:hidden; touch-action:pan-y; }
+  #lbContent { overflow-x:hidden; }
+  #lbContent table { width:100%; }
+  #lbContent th, #lbContent td { padding-left:6px; padding-right:6px; }
+  #leaderboardPage .rank-toggle { flex-wrap:wrap; }
+  #leaderboardPage { padding-left:12px !important; padding-right:12px !important; }
+  .gcard, .stbl { max-width:100%; }
+
   /* ── LOGIN SCREEN ── */
   #loginScreen {
     position:fixed; inset:0; z-index:500;
@@ -1179,6 +1188,7 @@ function renderCurrent() {
 }
 
 window.openSetup = window._openSetup = function() {
+  var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   document.getElementById('setupOverlay').classList.remove('hidden');
   ['leaderboardPage','pageHistory','playerDetail','guidePage','adminDash'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.classList.add('hidden');
@@ -1294,6 +1304,9 @@ window.doStart = window._doStart = function() {
 };
 
 function _finalizeTournament() {
+  // Never land anywhere but Games after starting
+  try { history.replaceState({}, '', window.location.pathname); } catch(e) {}
+  var lbp = document.getElementById('leaderboardPage'); if (lbp) lbp.classList.add('hidden');
   // Resilience: if _pendingSetup was lost (e.g. page reloaded), rebuild from the setup form
   if (!window._pendingSetup) {
     const players = [...document.querySelectorAll('.pinput')].map(i=>i.value.trim()).filter(Boolean);
