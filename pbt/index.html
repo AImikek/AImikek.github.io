@@ -326,9 +326,13 @@
   .bbtn .bicon { font-size:24px; }
   #bottomBar { padding-top:10px; }
 
-  html, body { overflow-x:hidden !important; max-width:100vw; }
+  html, body { overflow-x:clip !important; max-width:100vw; }
   body { position:relative; touch-action:pan-y; }
   .gcard * { max-width:100%; }
+
+  .matchup, .team { min-width:0; }
+  .team { word-break:break-word; }
+  .mhdr { word-break:break-word; white-space:normal; }
 
   /* ── LOGIN SCREEN ── */
   #loginScreen {
@@ -484,9 +488,14 @@
     <div class="msub">Pick 2 players per team, then enter the score</div>
 
     <div class="team-labels">
-      <div class="tlbl c">Team 1 (cyan)</div>
-      <div class="tlbl p">Team 2 (pink)</div>
+      <div class="tlbl c">Team 1</div>
+      <div class="tlbl p">Team 2</div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div id="agZone1" style="min-height:96px;border:2px dashed rgba(0,240,255,0.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;"></div>
+      <div id="agZone2" style="min-height:96px;border:2px dashed rgba(255,45,120,0.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+    <div style="font-size:11px;letter-spacing:1px;color:var(--muted);font-family:'Russo One',sans-serif;text-transform:uppercase;margin-bottom:6px;">Tap players to add them</div>
     <div class="team-picker" id="agPlayerPicker"></div>
 
     <div id="agNewPlayerWrap" style="margin-bottom:14px;">
@@ -1318,6 +1327,7 @@ window.doStart = window._doStart = function() {
 function _finalizeTournament() {
   // Never land anywhere but Games after starting
   try { history.replaceState({}, '', window.location.pathname); } catch(e) {}
+  try { window.scrollTo(0, 0); } catch(e) {}
   var lbp = document.getElementById('leaderboardPage'); if (lbp) lbp.classList.add('hidden');
   // Resilience: if _pendingSetup was lost (e.g. page reloaded), rebuild from the setup form
   if (!window._pendingSetup) {
@@ -2414,26 +2424,34 @@ window.openAddGame = function() {
 
 function renderAgPicker() {
   const allPlayers = [...new Set([...(cfg?.players||[]), ...agExtraPlayers])];
-  const picker = document.getElementById('agPlayerPicker');
-  picker.innerHTML = allPlayers.map(p => {
-    const inT1 = agT1.includes(p), inT2 = agT2.includes(p);
-    const cls = inT1 ? 'player-chip t1' : inT2 ? 'player-chip t2' : 'player-chip';
-    return '<div class="'+cls+'" onclick="toggleAgPlayer(\''+p+'\')">'
-      +(inT1?'<span style="font-size:10px;display:block;color:var(--cyan);">T1</span>':'')
-      +(inT2?'<span style="font-size:10px;display:block;color:var(--pink);">T2</span>':'')
-      +p+'</div>';
-  }).join('');
+  const pool = allPlayers.filter(p => !agT1.includes(p) && !agT2.includes(p));
+  const chip = (p, team) => '<div class="player-chip '+(team==='t1'?'t1':team==='t2'?'t2':'')+'" '
+    +'style="'+(team?'width:100%;text-align:center;':'')+'" '
+    +'onclick="'+(team?'removeAgPlayer':'addAgPlayer')+'(\''+p.replace(/'/g,"\\'")+'\')">'+p+(team?' ✕':'')+'</div>';
+  const empt = (color) => '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:'+color+';opacity:0.4;font-size:12px;font-weight:700;">tap a player below</div>';
+  document.getElementById('agZone1').innerHTML = agT1.map(p=>chip(p,'t1')).join('') + (agT1.length<2 ? empt('var(--cyan)') : '');
+  document.getElementById('agZone2').innerHTML = agT2.map(p=>chip(p,'t2')).join('') + (agT2.length<2 ? empt('var(--pink)') : '');
+  document.getElementById('agPlayerPicker').innerHTML = pool.map(p=>chip(p,null)).join('')
+    || '<div style="color:var(--muted);font-size:12px;font-weight:600;padding:6px;">All players placed</div>';
   const t1l = agT1.join(' & ') || '?', t2l = agT2.join(' & ') || '?';
   document.getElementById('agTeamPreview').textContent =
     agT1.length || agT2.length ? t1l + ' vs ' + t2l : '';
+  const sb = document.querySelector('#addGameOverlay button[onclick*="saveAddedGame"]');
+  if (sb) sb.style.opacity = (agT1.length===2 && agT2.length===2) ? '1' : '0.35';
 }
 
-window.toggleAgPlayer = function(p) {
-  if (agT1.includes(p)) { agT1 = agT1.filter(x=>x!==p); }
-  else if (agT2.includes(p)) { agT2 = agT2.filter(x=>x!==p); }
-  else if (agT1.length < 2) { agT1.push(p); }
-  else if (agT2.length < 2) { agT2.push(p); }
+window.addAgPlayer = function(p) {
+  if (agT1.length < 2) agT1.push(p);
+  else if (agT2.length < 2) agT2.push(p);
   renderAgPicker();
+};
+window.removeAgPlayer = function(p) {
+  agT1 = agT1.filter(x=>x!==p);
+  agT2 = agT2.filter(x=>x!==p);
+  renderAgPicker();
+};
+window.toggleAgPlayer = function(p) {
+  if (agT1.includes(p) || agT2.includes(p)) removeAgPlayer(p); else addAgPlayer(p);
 };
 
 window.addNewPlayerToGame = function() {
@@ -2449,7 +2467,10 @@ window.addNewPlayerToGame = function() {
 };
 
 window.saveAddedGame = function() {
-  if (agT1.length !== 2 || agT2.length !== 2) { alert('Pick exactly 2 players per team'); return; }
+  if (agT1.length !== 2 || agT2.length !== 2) {
+    alert('Each team needs 2 players.\n\nTeam 1 has ' + agT1.length + ', Team 2 has ' + agT2.length + '. Tap players to fill the empty slots.');
+    return;
+  }
   const s1 = parseInt(document.getElementById('agS1').value);
   const s2 = parseInt(document.getElementById('agS2').value);
   if (isNaN(s1) || isNaN(s2)) { alert('Enter both scores'); return; }
