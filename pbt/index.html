@@ -265,6 +265,7 @@
     border-bottom:1px solid var(--border);
     transition:transform 0.25s ease; }
   #topBar.bar-hidden { transform:translateY(-100%); }
+  #pageHistory [style*='Russo One'][style*='letter-spacing:2px'] { font-size:15px !important; }
   .topbar-title { font-family:'Russo One',sans-serif; font-size:14px; letter-spacing:3px;
     color:var(--cyan); text-transform:uppercase; }
   #topBar .tab { border:none; background:transparent; padding:6px 10px; cursor:pointer; color:var(--white); }
@@ -333,6 +334,15 @@
   .matchup, .team { min-width:0; }
   .team { word-break:break-word; }
   .mhdr { word-break:break-word; white-space:normal; }
+
+  #bottomBar { transition:padding 0.25s ease; }
+  #bottomBar .bicon { transition:font-size 0.25s ease; }
+  #bottomBar.bar-small { padding-top:4px; padding-bottom:calc(4px + env(safe-area-inset-bottom)); }
+  #bottomBar.bar-small .bicon { font-size:17px; }
+
+  #pageHistory, #leaderboardPage, #guidePage, #adminDash, #pageProfile { overflow-x:clip; }
+  #pageHistory > div, #leaderboardPage > div, #guidePage > div, #adminDash > div { max-width:min(560px,100%); box-sizing:border-box; }
+  #pageHistory .finput, #pageHistory input, #pageHistory button { max-width:100%; box-sizing:border-box; }
 
   /* ── LOGIN SCREEN ── */
   #loginScreen {
@@ -499,8 +509,8 @@
     <div class="team-picker" id="agPlayerPicker"></div>
 
     <div id="agNewPlayerWrap" style="margin-bottom:14px;">
-      <input class="finput" id="agNewName" placeholder="+ Type new player name & press Add"
-        style="margin-bottom:6px;" onkeydown="if(event.key==='Enter')addNewPlayerToGame()">
+      <input class="finput" id="agNewName" placeholder="+ Type a new player's name"
+        style="margin-bottom:6px;" onkeydown="if(event.key==='Enter'){this.blur();}" onblur="addNewPlayerToGame()">
       <button onclick="addNewPlayerToGame()" style="width:100%;padding:10px;background:transparent;
         border:1px dashed rgba(0,240,255,0.25);color:var(--muted);border-radius:10px;
         font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
@@ -626,24 +636,37 @@
   <div style="max-width:520px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-top:4px;">
       <button onclick="closeFeedback()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">✕</button>
-      <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">💬 Beta Feedback</div>
+      <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">🆘 Help &amp; Feedback</div>
     </div>
 
     <!-- Progress bar -->
     <div style="background:var(--surface2);border-radius:99px;height:8px;margin-bottom:6px;overflow:hidden;">
       <div id="fbProgress" style="height:100%;width:16%;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:99px;transition:width 0.35s ease;"></div>
     </div>
-    <div id="fbStepLbl" style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:20px;">STEP 1 OF 6</div>
+    <div id="fbStepLbl" style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:20px;">STEP 1 OF 7</div>
 
-    <!-- STEP 1: about you -->
+    <!-- STEP 1: identity (prefilled from profile) -->
     <div class="fbstep" id="fbS1">
       <div class="mtitle" style="font-size:19px;">👋 Who are you?</div>
-      <label class="flabel">Your name &amp; where you play</label>
-      <input class="finput" id="fbName" placeholder="e.g. Mike — Miami">
+      <label class="flabel">Your name</label>
+      <input class="finput" id="fbName" placeholder="Your name">
+      <label class="flabel">Where do you play? (city)</label>
+      <input class="finput" id="fbCity" placeholder="e.g. Miami">
+      <label class="flabel">Email or phone (so we can follow up)</label>
+      <input class="finput" id="fbContact" placeholder="you@email.com or 305-555-1234">
+    </div>
+
+    <!-- STEP 2: help / question / bug -->
+    <div class="fbstep" id="fbS2" style="display:none;">
+      <div class="mtitle" style="font-size:19px;">🆘 How can we help?</div>
+      <label class="flabel">Ask a question, report a bug, or share an idea</label>
+      <textarea class="finput" id="fbHelp" rows="5" style="resize:vertical;font-family:'DM Sans',sans-serif;" placeholder="Type anything — questions, bugs, ideas..."></textarea>
+      <button onclick="fbSubmitNow()" style="display:block;width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">📨 Submit &amp; Finish</button>
+      <div style="text-align:center;font-size:12px;color:var(--muted);font-weight:600;">— or tap Next to answer a few quick beta questions —</div>
     </div>
 
     <!-- STEP 2: how you play -->
-    <div class="fbstep" id="fbS2" style="display:none;">
+    <div class="fbstep" id="fbS3" style="display:none;">
       <div class="mtitle" style="font-size:19px;">🏓 How do you play?</div>
       <label class="flabel">What format do you play most often?</label>
       <select class="finput" id="fbFormat" style="color-scheme:dark;" onchange="document.getElementById('fbFormatOther').style.display=this.value==='Other'?'block':'none'">
@@ -668,14 +691,14 @@
     </div>
 
     <!-- STEP 3: pain -->
-    <div class="fbstep" id="fbS3" style="display:none;">
+    <div class="fbstep" id="fbS4" style="display:none;">
       <div class="mtitle" style="font-size:19px;">😤 What's frustrating?</div>
       <label class="flabel">Most frustrating thing about running a tournament today?</label>
       <textarea class="finput" id="fbFrustration" rows="4" style="resize:vertical;font-family:'DM Sans',sans-serif;"></textarea>
     </div>
 
     <!-- STEP 4: ratings -->
-    <div class="fbstep" id="fbS4" style="display:none;">
+    <div class="fbstep" id="fbS5" style="display:none;">
       <div class="mtitle" style="font-size:19px;">⭐ Quick ratings</div>
       <label class="flabel">How likely are you to use this app again? (1–5)</label>
       <div class="rank-toggle" id="fbAgainRow"></div>
@@ -684,14 +707,14 @@
     </div>
 
     <!-- STEP 5: features -->
-    <div class="fbstep" id="fbS5" style="display:none;">
+    <div class="fbstep" id="fbS6" style="display:none;">
       <div class="mtitle" style="font-size:19px;">✨ What should we build?</div>
       <label class="flabel">What features would make you use this MORE? (tap all that apply)</label>
       <div id="fbFeatures" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;"></div>
     </div>
 
     <!-- STEP 6: final -->
-    <div class="fbstep" id="fbS6" style="display:none;">
+    <div class="fbstep" id="fbS7" style="display:none;">
       <div class="mtitle" style="font-size:19px;">🚀 Last few things</div>
       <label class="flabel">Would you pay for a premium version?</label>
       <select class="finput" id="fbPay" style="color-scheme:dark;">
@@ -886,7 +909,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item danger" onclick="closeSettings();resetScores();">🔄 Reset Scores</button>
     <div class="settings-divider"></div>
     <div class="settings-divider"></div>
-    <button class="settings-item fb" onclick="closeSettings();openFeedback();">💬 Give Feedback</button>
+    <button class="settings-item fb" onclick="closeSettings();openFeedback();">🆘 Help / Feedback</button>
     <button class="settings-item" id="adminFeedbackBtn" style="display:none;" onclick="closeSettings();openFeedbackInbox();">📬 Feedback Inbox (Admin)</button>
     <button class="settings-item" id="adminImportBtn" style="display:none;" onclick="closeSettings();openImport();">📥 Import Tournament (Admin)</button>
     <button class="settings-item" id="adminSyncBtn" style="display:none;" onclick="closeSettings();syncHistoryToGlobal();">🔄 Publish History to Leaderboard (Admin)</button>
@@ -1209,6 +1232,7 @@ function renderCurrent() {
 }
 
 window.openSetup = window._openSetup = function() {
+  if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   document.getElementById('setupOverlay').classList.remove('hidden');
   ['leaderboardPage','pageHistory','playerDetail','guidePage','adminDash'].forEach(function(id){
@@ -1422,7 +1446,7 @@ const FB_FEATURES = ['Player profiles & all-time stats','Find games near me','Sk
 let fbSelectedFeatures = new Set();
 
 let fbStep = 1;
-const FB_STEPS = 6;
+const FB_STEPS = 7;
 function showFbStep(n) {
   fbStep = Math.max(1, Math.min(FB_STEPS, n));
   for (let i = 1; i <= FB_STEPS; i++) {
@@ -1435,6 +1459,7 @@ function showFbStep(n) {
   document.getElementById('fbSubmitBtn').style.display = fbStep === FB_STEPS ? 'block' : 'none';
 }
 window.fbStepNext = function() { showFbStep(fbStep + 1); };
+window.fbSubmitNow = function() { submitFeedback(); };
 window.fbStepBack = function() { showFbStep(fbStep - 1); };
 
 window.openFeedback = function() {
@@ -1450,7 +1475,9 @@ window.openFeedback = function() {
     '<div class="player-chip'+(fbSelectedFeatures.has(f)?' t1':'')+'" style="font-size:12px;" onclick="toggleFbFeature('+i+')">'+f+'</div>').join('');
   // Prefill name
   if (!document.getElementById('fbName').value && userProfile?.name) {
-    document.getElementById('fbName').value = userProfile.name + (userProfile.city ? ' — ' + userProfile.city : '');
+    document.getElementById('fbName').value = userProfile.name || '';
+    document.getElementById('fbCity').value = userProfile.city || '';
+    document.getElementById('fbContact').value = userProfile.email || userProfile.phone || (currentUser && (currentUser.email || currentUser.phoneNumber)) || '';
   }
   document.getElementById('fbThanks').style.display = 'none';
   window._fbSubmitted = false;
@@ -1475,7 +1502,7 @@ window.toggleFbFeature = function(i) {
 window.submitFeedback = async function(partial) {
   if (window._fbSubmitted) return;
   const btn = document.getElementById('fbSubmitBtn');
-  if (!partial) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  if (!partial && btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
   const fmtVal = document.getElementById('fbFormat').value;
   const trkVal = document.getElementById('fbTracking').value;
   const entry = {
@@ -1483,6 +1510,9 @@ window.submitFeedback = async function(partial) {
     email: userProfile?.email || currentUser?.email || null,
     phone: userProfile?.phone || currentUser?.phoneNumber || null,
     name: document.getElementById('fbName').value.trim() || null,
+    city: (document.getElementById('fbCity')?.value || '').trim() || null,
+    contact: (document.getElementById('fbContact')?.value || '').trim() || null,
+    help: (document.getElementById('fbHelp')?.value || '').trim() || null,
     format: (fmtVal === 'Other' ? ('Other: ' + document.getElementById('fbFormatOther').value.trim()) : fmtVal) || null,
     tracking: (trkVal === 'Other' ? ('Other: ' + document.getElementById('fbTrackingOther').value.trim()) : trkVal) || null,
     frustration: document.getElementById('fbFrustration').value.trim() || null,
@@ -1498,6 +1528,19 @@ window.submitFeedback = async function(partial) {
   // Skip completely empty partials
   if (partial && !entry.name && !entry.frustration && !entry.useAgain && !entry.features.length && !entry.buildNext && !entry.format && !entry.tracking) return;
   window._fbSubmitted = true;
+  // Capture identity into profile if newly provided
+  if (currentUser && (entry.city || entry.contact)) {
+    try {
+      const upd = { ...userProfile };
+      if (entry.city && !upd.city) upd.city = entry.city;
+      if (entry.contact && !upd.email && entry.contact.includes('@')) upd.email = entry.contact;
+      if (entry.contact && !upd.phone && !entry.contact.includes('@')) upd.phone = entry.contact;
+      if (JSON.stringify(upd) !== JSON.stringify(userProfile)) {
+        userProfile = upd;
+        set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
+      }
+    } catch(e) {}
+  }
   // Sync Instagram to profile if provided
   if (entry.instagram && currentUser) {
     try {
@@ -1512,6 +1555,9 @@ window.submitFeedback = async function(partial) {
       const C = window.EMAILJS_CONFIG;
       if (window.emailjs && C && C.publicKey !== "YOUR_PUBLIC_KEY") {
         const msg = [
+          entry.help ? 'HELP/QUESTION: ' + entry.help : null,
+          'City: ' + (entry.city || '—'),
+          'Contact given: ' + (entry.contact || '—'),
           'Name: ' + (entry.name || '—'),
           'Contact: ' + (entry.email || entry.phone || '—'),
           'Format: ' + (entry.format || '—'),
@@ -1523,7 +1569,7 @@ window.submitFeedback = async function(partial) {
           'Would pay: ' + (entry.wouldPay || '—'),
           'Build next: ' + (entry.buildNext || '—'),
           'Instagram: ' + (entry.instagram || '—')
-        ].join('\n');
+        ].filter(Boolean).join('\n');
         emailjs.send(C.serviceId, C.templateId, {
           title: 'PB Tourney Feedback',
           name: entry.name || 'Anonymous player',
@@ -1541,7 +1587,7 @@ window.submitFeedback = async function(partial) {
   } catch(e) {
     alert('Could not send feedback: ' + (e.message||e));
   }
-  if (!partial) { btn.disabled = false; btn.textContent = '📨 Submit'; }
+  if (!partial && btn) { btn.disabled = false; btn.textContent = '📨 Submit'; }
 };
 
 window.openFeedbackInbox = function() {
@@ -1641,6 +1687,7 @@ let lbTime = 'all', lbSort = 'avg', lbData = null;
 const LB_MIN_GAMES = 3;
 
 window.openLeaderboard = async function() {
+  if (window.resetBars) resetBars();
   try { history.replaceState({}, '', '#leaderboard'); } catch(e) {}
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   var ph = document.getElementById('pageHistory'); if (ph) ph.style.display = 'none';
@@ -1935,6 +1982,7 @@ window.runImport = async function() {
 };
 
 window.openGuide = function() {
+  if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   document.getElementById('guidePage').classList.remove('hidden');
 };
@@ -1952,6 +2000,7 @@ window.shareAppLink = async function() {
 };
 
 window.openAdminDash = async function() {
+  if (window.resetBars) resetBars();
   if (!isAdmin()) return;
   document.getElementById('adminDash').classList.remove('hidden');
   document.getElementById('adStats').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-weight:600;padding:20px;">Loading...</div>';
@@ -2459,11 +2508,14 @@ window.addNewPlayerToGame = function() {
   if (!name) return;
   if (![...(cfg?.players||[]), ...agExtraPlayers].includes(name)) {
     agExtraPlayers.push(name);
-    // Also add to tournament roster
     if (cfg.players && !cfg.players.includes(name)) cfg.players.push(name);
   }
   document.getElementById('agNewName').value = '';
-  renderAgPicker();
+  if (!agT1.includes(name) && !agT2.includes(name) && (agT1.length < 2 || agT2.length < 2)) {
+    addAgPlayer(name);
+  } else {
+    renderAgPicker();
+  }
 };
 
 window.saveAddedGame = function() {
@@ -2574,8 +2626,12 @@ function renderStandings() {
   html += '</tbody></table>';
   const modeLabel = effectiveMode==='avg'?'Avg Point Differential':effectiveMode==='wins'?'Most Wins':'Most Points';
   html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong></div>';
-  html += '<button onclick="shareStatsLink()" style="display:block;width:100%;margin-top:20px;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🔗 Share Results Link</button>';
-  html += '<button onclick="saveStatsImage()" id="saveStatsBtn" style="display:block;width:100%;margin-top:10px;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(255,45,120,0.3);">📸 Save Image</button>';
+  if (done > 0) {
+    html += '<button onclick="shareStatsLink()" style="display:block;width:100%;margin-top:20px;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🔗 Share Results Link</button>';
+    html += '<button onclick="saveStatsImage()" id="saveStatsBtn" style="display:block;width:100%;margin-top:10px;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(255,45,120,0.3);">📸 Save Image</button>';
+  } else {
+    html += '<div style="text-align:center;margin-top:20px;padding:14px;color:var(--muted);font-size:13px;font-weight:600;border:1px dashed var(--border);border-radius:12px;">📊 Enter your first score and sharing options appear here</div>';
+  }
   html += '<button onclick="newTournament()" style="display:block;margin:20px auto 0;padding:11px 28px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">⚠ New Tournament</button>';
   el.innerHTML = html;
   const cb = document.getElementById('statsChampBox');
@@ -2733,6 +2789,7 @@ window._wireProfileAutosave = function() {
 };
 
 window.openProfile = function() {
+  if (window.resetBars) resetBars();
   var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
   document.getElementById('editName').value  = userProfile.name  || '';
   document.getElementById('editEmail').value = userProfile.email || '';
@@ -2842,6 +2899,7 @@ function isAdmin() {
 }
 
 window.openHistory = function() {
+  if (window.resetBars) resetBars();
   document.getElementById('pageHistory').style.display = 'block';
   document.getElementById('historyDetail').style.display = 'none';
   document.getElementById('historyList').style.display = 'block';
@@ -3181,6 +3239,7 @@ function selMode(m)      { if(window._selMode) window._selMode(m); }
 function chooseFormat(m) { if(window.chooseFormat) window.chooseFormat(m); }
 function setupBack()     { if(window.setupBack) window.setupBack(); }
 function closeAllOverlaysAndShow(p) {
+  if (window.resetBars) resetBars();
   if (document.getElementById('tabGames').disabled) return;
   document.getElementById('setupOverlay').classList.add('hidden');
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox','importOverlay','guidePage','adminDash'].forEach(function(id){
@@ -3193,14 +3252,38 @@ function closeAllOverlaysAndShow(p) {
 (function() {
   const lastMap = new WeakMap();
   const WIN = {};
+  window.resetBars = function() {
+    const tb = document.getElementById('topBar');
+    const bb = document.getElementById('bottomBar');
+    if (tb) tb.classList.remove('bar-hidden');
+    if (bb) bb.classList.remove('bar-small');
+  };
   window.addEventListener('scroll', function(e) {
     const tb = document.getElementById('topBar');
+    const bb = document.getElementById('bottomBar');
     if (!tb) return;
     const el = (e.target === document || e.target === window) ? WIN : e.target;
-    const y = el === WIN ? (window.scrollY || 0) : (el.scrollTop || 0);
+    let y = el === WIN ? (window.scrollY || 0) : (el.scrollTop || 0);
+    // Clamp: ignore iOS rubber-band bounce (negative or past-bottom values)
+    const maxY = el === WIN
+      ? Math.max(0, (document.documentElement.scrollHeight || 0) - window.innerHeight)
+      : Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
+    if (y < 0) y = 0;
+    if (y > maxY) y = maxY;
     const last = lastMap.get(el) || 0;
-    if (y > last + 8 && y > 60) { tb.classList.add('bar-hidden'); lastMap.set(el, y); }
-    else if (y < last - 8) { tb.classList.remove('bar-hidden'); lastMap.set(el, y); }
+    if (y > last + 6 && y > 60) {
+      // Deliberate downward scroll → hide top, shrink bottom (and STAY that way)
+      tb.classList.add('bar-hidden');
+      if (bb) bb.classList.add('bar-small');
+      lastMap.set(el, y);
+    } else if (y < last - 25 || y <= 10) {
+      // Only a deliberate upward scroll (or reaching the top) brings them back
+      tb.classList.remove('bar-hidden');
+      if (bb) bb.classList.remove('bar-small');
+      lastMap.set(el, y);
+    } else if (y > last) {
+      lastMap.set(el, y);
+    }
   }, { passive: true, capture: true });
 })();
 function addPF()         { if(window._addPF) window._addPF(); }
@@ -3268,6 +3351,7 @@ function setFbRec(n)        { if(window.setFbRec) window.setFbRec(n); }
 function toggleFbFeature(i) { if(window.toggleFbFeature) window.toggleFbFeature(i); }
 function submitFeedback()   { if(window.submitFeedback) window.submitFeedback(); }
 function fbStepNext()       { if(window.fbStepNext) window.fbStepNext(); }
+function fbSubmitNow()      { if(window.fbSubmitNow) window.fbSubmitNow(); }
 function fbStepBack()       { if(window.fbStepBack) window.fbStepBack(); }
 function openFeedbackInbox(){ if(window.openFeedbackInbox) window.openFeedbackInbox(); }
 function deleteFeedback(id)  { if(window.deleteFeedback) window.deleteFeedback(id); }
