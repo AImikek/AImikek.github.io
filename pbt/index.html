@@ -929,13 +929,23 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <!-- STEP 1: choose an option -->
     <div id="setupStep1">
       <div class="mtitle">🏓 Let's Play</div>
-      <div class="msub">Choose one of these options</div>
-      <div class="mtoggle" style="grid-template-columns:1fr;">
-        <div class="mcard" onclick="chooseFormat('rr')">
-          <div class="micon">🔄</div><div class="mname">Round Robin</div>
-          <div class="mdesc">8+ players · Everyone partners once · Standings by points</div>
+      <div class="msub" id="step1Sub">First: singles or doubles?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="mcard" id="ptSingles" onclick="setPlayType('singles')" style="padding:14px 8px;">
+          <div class="micon">🙋</div><div class="mname">Singles</div>
+          <div class="mdesc">1 vs 1</div>
         </div>
-        <div class="mcard" onclick="chooseFormat('4p')">
+        <div class="mcard active" id="ptDoubles" onclick="setPlayType('doubles')" style="padding:14px 8px;">
+          <div class="micon">👥</div><div class="mname">Doubles</div>
+          <div class="mdesc">2 vs 2</div>
+        </div>
+      </div>
+      <div class="mtoggle" style="grid-template-columns:1fr;">
+        <div class="mcard" id="fmtRR" onclick="chooseFormat('rr')">
+          <div class="micon">🔄</div><div class="mname">Round Robin</div>
+          <div class="mdesc" id="rrDesc">8+ players · Everyone partners once · Standings by points</div>
+        </div>
+        <div class="mcard" id="fmt4P" onclick="chooseFormat('4p')">
           <div class="micon">⚡</div><div class="mname">4-Player Rotation</div>
           <div class="mdesc">Best of 3 per matchup · Partners rotate · Points wins</div>
         </div>
@@ -1263,6 +1273,8 @@ function closeSetup() {
 }
 
 function applyModeToStep2() {
+  const sb2 = document.getElementById('startBtn');
+  if (sb2) sb2.innerHTML = selMode_ === 'log' ? '🚀 Start Games' : '🚀 Start Tournament';
   const isLog = selMode_ === 'log';
   document.getElementById('tNameWrap').style.display = isLog ? 'none' : 'block';
   document.getElementById('step2Title').textContent = isLog ? '📝 Who\'s Playing Today?' : '🏓 Who\'s Playing?';
@@ -1272,6 +1284,20 @@ function applyModeToStep2() {
   updPCnt();
 }
 
+let playType_ = 'doubles';
+window.setPlayType = function(t) {
+  playType_ = t;
+  document.getElementById('ptSingles').classList.toggle('active', t === 'singles');
+  document.getElementById('ptDoubles').classList.toggle('active', t === 'doubles');
+  // 4-Player Rotation is a doubles-only concept
+  const f4 = document.getElementById('fmt4P');
+  if (f4) f4.style.display = t === 'singles' ? 'none' : '';
+  const rd = document.getElementById('rrDesc');
+  if (rd) rd.textContent = t === 'singles'
+    ? 'Everyone plays everyone 1v1 · Standings by points'
+    : '8+ players · Everyone partners once · Standings by points';
+};
+
 window.chooseFormat = function(m) {
   selMode_ = m;
   document.getElementById('setupStep1').style.display = 'none';
@@ -1279,7 +1305,12 @@ window.chooseFormat = function(m) {
   // Editing the active tournament? Prefill its name + players.
   if (cfg && (cfg.mode === m || (m === 'rr' && cfg.mode === '4p'))) {
     document.getElementById('tName').value = cfg.name || '';
+    playType_ = cfg.playType || 'doubles';
     buildPFields(cfg.players || []);
+  } else {
+    // Fresh: right-sized defaults (singles → 2 slots, doubles → 4)
+    buildPFields(playType_ === 'singles' ? ['',''] : ['','','','']);
+    document.getElementById('tName').value = '';
   }
   applyModeToStep2();
   const first = document.querySelector('.pinput');
@@ -1324,7 +1355,7 @@ window.doStart = window._doStart = function() {
   const players=[...document.querySelectorAll('.pinput')].map(i=>i.value.trim()).filter(Boolean);
   let mode=selMode_;
   if (mode!=='log' && players.length<2){alert('Need at least 2 players!');return;}
-  // Rotation format flexes: exactly 4 → best-of-3 matchups; any other count → smart round-robin rotation
+  if (playType_ === 'singles' && mode === '4p') mode = 'rr';
   if (mode==='4p' && players.length!==4) mode='rr';
   window._pendingSetup = { name, players, mode };
   // Archive any existing tournament before replacing it
@@ -1373,8 +1404,10 @@ function _finalizeTournament() {
     const month = d.toLocaleDateString('en-US',{month:'long'});
     name = (firsts.join(' ') + ' ' + month + ' ' + d.getDate()).trim() || 'Open Play';
   }
-  const schedule = mode==='log' ? [] : mode==='4p' ? make4PSchedule(players) : makeRRSchedule(players);
-  cfg={name,mode,players,schedule}; scores={};
+  const schedule = mode==='log' ? []
+    : mode==='4p' ? make4PSchedule(players)
+    : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players));
+  cfg={name,mode,players,schedule,playType:playType_}; scores={};
   const tid = makeTid();
   activeTid = tid;
   set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
@@ -1683,7 +1716,7 @@ window.deleteFeedback = async function(id) {
 };
 
 // ── LEADERBOARD ──
-let lbTime = 'all', lbSort = 'avg', lbData = null;
+let lbTime = 'all', lbSort = 'avg', lbData = null, lbType = 'doubles';
 const LB_MIN_GAMES = 3;
 
 window.openLeaderboard = async function() {
@@ -1707,6 +1740,7 @@ window.closeLeaderboard = function() {
 };
 window.setLbTime = function(t) { lbTime = t; renderLeaderboard(); };
 window.setLbSort = function(s) { lbSort = s; renderLeaderboard(); };
+window.setLbType = function(t) { lbType = t; renderLeaderboard(); };
 
 async function loadLeaderboardData() {
   try {
@@ -1746,7 +1780,7 @@ async function loadLeaderboardData() {
         if (!s || s.s1 === null || s.s2 === null || s.s1 === undefined) return;
         const t1 = Array.isArray(g.t1)?g.t1:Object.values(g.t1||{});
         const t2 = Array.isArray(g.t2)?g.t2:Object.values(g.t2||{});
-        games.push({ t1, t2, s1: s.s1, s2: s.s2, when, tid: t.__tid || null, tname: (t.cfg && t.cfg.name) || 'Tournament' });
+        games.push({ t1, t2, s1: s.s1, s2: s.s2, when, tid: t.__tid || null, tname: (t.cfg && t.cfg.name) || 'Tournament', gtype: (t1.length===1 && t2.length===1) ? 'singles' : 'doubles' });
       });
     });
     games.sort((a,b) => a.when - b.when);
@@ -1763,8 +1797,11 @@ window.renderLeaderboard = function() {
   const cutoff = 0;
   const cityFilter = '';
 
-  // Toggle rows (time + city hidden for now — not applicable yet)
-  document.getElementById('lbTimeRow').style.display = 'none';
+  // Type toggle (time/city filters still hidden)
+  const tr = document.getElementById('lbTimeRow');
+  tr.style.display = '';
+  tr.innerHTML = [['doubles','👥 Doubles'],['singles','🙋 Singles']].map(([v,l]) =>
+    '<button class="rtbtn'+(lbType===v?' active':'')+'" onclick="setLbType(\''+v+'\')">'+l+'</button>').join('');
   document.getElementById('lbCity').parentElement.style.display = 'none';
   document.getElementById('lbSortRow').innerHTML =
     [['avg','Avg Diff'],['wins','Wins'],['pts','Points']].map(([v,l]) =>
@@ -1773,6 +1810,7 @@ window.renderLeaderboard = function() {
   // Aggregate
   const stats = {};
   lbData.games.forEach(g => {
+    if ((g.gtype || 'doubles') !== lbType) return;
     if (g.when < cutoff) return;
     const credit = (players, pf, pa, won) => players.forEach(p => {
       const k = p.trim(); if (!k) return;
@@ -1832,7 +1870,7 @@ window.renderLeaderboard = function() {
       });
     }
     if (qualified.length) {
-      h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(cityFilter?cityFilter:'')+' champ · min '+LB_MIN_GAMES+' games to rank</div>';
+      h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(lbType==='singles'?'Singles':'Doubles')+' champ · min '+LB_MIN_GAMES+' games to rank</div>';
     }
   }
   document.getElementById('lbContent').innerHTML = h;
@@ -1843,7 +1881,8 @@ window.openPlayerDetail = async function(name) {
   if (!lbData) return;
   const nm = name.toLowerCase();
   const games = lbData.games.filter(g =>
-    g.t1.some(p=>p.trim().toLowerCase()===nm) || g.t2.some(p=>p.trim().toLowerCase()===nm)).slice().reverse();
+    ((g.gtype || 'doubles') === lbType) &&
+    (g.t1.some(p=>p.trim().toLowerCase()===nm) || g.t2.some(p=>p.trim().toLowerCase()===nm))).slice().reverse();
   let w=0,l=0,pf=0,pa=0;
   const rows = games.map(g => {
     const onT1 = g.t1.some(p=>p.trim().toLowerCase()===nm);
@@ -1986,7 +2025,7 @@ window.runImport = async function() {
       }));
       const scores = {};
       t.games.forEach((g, i) => { scores['imp'+i] = { s1: g.s1, s2: g.s2 }; });
-      const cfg = { name: t.name || 'Imported Tournament', mode: t.mode || 'rr', players, schedule };
+      const cfg = { name: t.name || 'Imported Tournament', mode: t.mode || 'rr', players, schedule, playType: (t.games.every(g=>(g.t1||[]).length===1&&(g.t2||[]).length===1)?'singles':'doubles') };
       const finishedAt = t.date ? new Date(t.date + 'T18:00:00').getTime() : Date.now();
       const tid = 'imported' + finishedAt + Math.random().toString(36).slice(2,5);
       await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), { cfg, scores, finishedAt, imported: true });
@@ -2041,23 +2080,26 @@ window.openAdminDash = async function() {
   const box = (num, lbl, color) => '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 8px;text-align:center;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:26px;color:'+(color||'var(--cyan)')+';">'+num+'</div>'
     +'<div style="font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:4px;">'+lbl+'</div></div>';
+  const boxT = (num, lbl, color, target) => '<div onclick="adScrollTo(\''+target+'\')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 8px;text-align:center;">'
+    +'<div style="font-family:\'Russo One\',sans-serif;font-size:26px;color:'+(color||'var(--cyan)')+';">'+num+'</div>'
+    +'<div style="font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:4px;">'+lbl+'</div></div>';
   document.getElementById('adStats').innerHTML =
-    box(players.length, 'Registered Players') +
-    box(tourList.length, 'Tournaments', 'var(--pink)') +
-    box(totalGames, 'Games Played', 'var(--aqua)') +
-    box(activeWeek, 'Active This Week', 'var(--yellow)');
+    boxT(players.length, 'Registered Players', null, 'adSignups') +
+    boxT(tourList.length, 'Tournaments', 'var(--pink)', 'adActivity') +
+    boxT(totalGames, 'Games Played', 'var(--aqua)', 'adActivity') +
+    boxT(activeWeek, 'Active This Week', 'var(--yellow)', 'adActivity');
 
   // Signups (newest first)
   players.sort((a,b) => (b.joinedAt||0) - (a.joinedAt||0));
   document.getElementById('adSignups').innerHTML = players.length ? players.map(p => {
     const d = p.joinedAt ? new Date(p.joinedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
     const la = p.lastActive ? new Date(p.lastActive).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
+    return '<div onclick="adEditPlayer(\''+p.uid+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;">'
       +'<div><div style="font-weight:700;color:var(--white);font-size:14px;">'+(p.name||'?')+(p.dupr?' <span style="font-size:10px;color:var(--yellow);">DUPR '+p.dupr+'</span>':'')+'</div>'
       +'<div style="font-size:11px;color:var(--muted);font-weight:600;">'+[p.city, p.email||p.phone].filter(Boolean).join(' · ')+'</div></div>'
       +'<div style="text-align:right;display:flex;align-items:center;gap:10px;"><div><div style="font-size:11px;color:var(--cyan);font-weight:700;">joined '+d+'</div>'
       +(la?'<div style="font-size:10px;color:var(--muted);font-weight:600;">active '+la+'</div>':'')+'</div>'
-      +'<button onclick="adDeletePlayer(\''+p.uid+'\',\''+(p.name||'?').replace(/'/g,'')+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button></div></div>';
+      +'<button onclick="event.stopPropagation();adDeletePlayer(\''+p.uid+'\',\''+(p.name||'?').replace(/'/g,'')+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button></div></div>';
   }).join('') : '<div style="color:var(--muted);font-weight:600;text-align:center;padding:16px;">No registered profiles yet</div>';
 
   // Activity
@@ -2066,13 +2108,49 @@ window.openAdminDash = async function() {
   window._adTourList = tourList;
   document.getElementById('adActivity').innerHTML = bulkBtn + (tourList.slice(0, 20).map(t => {
     const d = t.when ? new Date(t.when).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
+    return '<div onclick="adOpenTournament(\''+t.tid+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;">'
       +'<div><div style="font-weight:700;color:var(--white);font-size:13px;">'+t.name+'</div>'
       +'<div style="font-size:11px;color:var(--muted);font-weight:600;">'+t.players.slice(0,6).join(', ')+'</div></div>'
       +'<div style="text-align:right;display:flex;align-items:center;gap:10px;"><div><div style="font-size:12px;color:'+(t.played?'var(--aqua)':'var(--muted)')+';font-weight:700;">'+t.played+' games</div>'
       +'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+d+'</div></div>'
-      +'<button onclick="adDeleteTournament(\''+t.tid+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button></div></div>';
+      +'<button onclick="event.stopPropagation();adDeleteTournament(\''+t.tid+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button></div></div>';
   }).join('') || '<div style="color:var(--muted);font-weight:600;text-align:center;padding:16px;">No tournaments yet</div>');
+};
+
+window.adScrollTo = function(id) {
+  const el = document.getElementById(id);
+  if (el && el.scrollIntoView) try { el.scrollIntoView({ behavior:'smooth', block:'start' }); } catch(e) {}
+};
+
+window.adOpenTournament = async function(tid) {
+  document.getElementById('adminDash').classList.add('hidden');
+  await openHistory();
+  setTimeout(() => {
+    if (window._historyData && window._historyData[tid]) viewHistoryDetail(tid);
+    else alert('This tournament is not in your archive (owned by another user). You can delete it from the dashboard, or manage it via the leaderboard player tools.');
+  }, 350);
+};
+
+window.adEditPlayer = async function(uid) {
+  if (!isAdmin()) return;
+  try {
+    const snap = await get(ref(db, 'directory/' + uid));
+    const p = snap.val() || {};
+    const name  = prompt('Name:', p.name || '');            if (name === null) return;
+    const city  = prompt('City:', p.city || '');            if (city === null) return;
+    const email = prompt('Email:', p.email || '');          if (email === null) return;
+    const phone = prompt('Phone:', p.phone || '');          if (phone === null) return;
+    const dupr  = prompt('DUPR rating:', p.dupr || '');     if (dupr === null) return;
+    await set(ref(db, 'directory/' + uid), {
+      ...p,
+      name: name.trim() || p.name || null,
+      city: city.trim() || null,
+      email: email.trim() || null,
+      phone: phone.trim() || null,
+      dupr: dupr.trim() ? parseFloat(dupr) : null
+    });
+    openAdminDash();
+  } catch(e) { alert('Edit failed (publish the latest Firebase rules with admin directory write): ' + (e.message||e)); }
 };
 
 window.adDeleteTournament = async function(tid) {
@@ -2298,6 +2376,25 @@ function make4PSchedule(players) {
   return sched;
 }
 
+function makeSinglesRRSchedule(players) {
+  // Classic circle method: everyone plays everyone 1v1; odd counts get byes
+  const ps = [...players];
+  if (ps.length === 2) return [{ key:'g1', round:1, t1:[ps[0]], t2:[ps[1]] }];
+  if (ps.length % 2 === 1) ps.push(null); // bye
+  const n = ps.length, rounds = n - 1, half = n / 2;
+  const arr = [...ps];
+  const sched = [];
+  let k = 1;
+  for (let r = 1; r <= rounds; r++) {
+    for (let i = 0; i < half; i++) {
+      const a = arr[i], b = arr[n - 1 - i];
+      if (a !== null && b !== null) sched.push({ key:'g'+(k++), round:r, t1:[a], t2:[b] });
+    }
+    arr.splice(1, 0, arr.pop()); // rotate (fix first)
+  }
+  return sched;
+}
+
 function makeRRSchedule(players) {
   const n=players.length;
   if (n===8) {
@@ -2443,7 +2540,7 @@ function renderGames() {
 
   el.innerHTML = html
     + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
-    + '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>';
+    + (Object.values(scores).some(s=>s&&s.s1!==null&&s.s1!==undefined) ? '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>' : '');
 }
 
 window.saveScore = window._saveScore = function(key) {
@@ -2502,20 +2599,22 @@ function renderAgPicker() {
     +'style="'+(team?'width:100%;text-align:center;':'')+'" '
     +'onclick="'+(team?'removeAgPlayer':'addAgPlayer')+'(\''+p.replace(/'/g,"\\'")+'\')">'+p+(team?' ✕':'')+'</div>';
   const empt = (color) => '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:'+color+';opacity:0.4;font-size:12px;font-weight:700;">tap a player below</div>';
-  document.getElementById('agZone1').innerHTML = agT1.map(p=>chip(p,'t1')).join('') + (agT1.length<2 ? empt('var(--cyan)') : '');
-  document.getElementById('agZone2').innerHTML = agT2.map(p=>chip(p,'t2')).join('') + (agT2.length<2 ? empt('var(--pink)') : '');
+  document.getElementById('agZone1').innerHTML = agT1.map(p=>chip(p,'t1')).join('') + (agT1.length<agCap() ? empt('var(--cyan)') : '');
+  document.getElementById('agZone2').innerHTML = agT2.map(p=>chip(p,'t2')).join('') + (agT2.length<agCap() ? empt('var(--pink)') : '');
   document.getElementById('agPlayerPicker').innerHTML = pool.map(p=>chip(p,null)).join('')
     || '<div style="color:var(--muted);font-size:12px;font-weight:600;padding:6px;">All players placed</div>';
   const t1l = agT1.join(' & ') || '?', t2l = agT2.join(' & ') || '?';
   document.getElementById('agTeamPreview').textContent =
     agT1.length || agT2.length ? t1l + ' vs ' + t2l : '';
   const sb = document.querySelector('#addGameOverlay button[onclick*="saveAddedGame"]');
-  if (sb) sb.style.opacity = (agT1.length===2 && agT2.length===2) ? '1' : '0.35';
+  if (sb) sb.style.opacity = (agT1.length===agCap() && agT2.length===agCap()) ? '1' : '0.35';
 }
 
+function agCap() { return (cfg && cfg.playType === 'singles') ? 1 : 2; }
 window.addAgPlayer = function(p) {
-  if (agT1.length < 2) agT1.push(p);
-  else if (agT2.length < 2) agT2.push(p);
+  const cap = agCap();
+  if (agT1.length < cap) agT1.push(p);
+  else if (agT2.length < cap) agT2.push(p);
   renderAgPicker();
 };
 window.removeAgPlayer = function(p) {
@@ -2535,7 +2634,7 @@ window.addNewPlayerToGame = function() {
     if (cfg.players && !cfg.players.includes(name)) cfg.players.push(name);
   }
   document.getElementById('agNewName').value = '';
-  if (!agT1.includes(name) && !agT2.includes(name) && (agT1.length < 2 || agT2.length < 2)) {
+  if (!agT1.includes(name) && !agT2.includes(name) && (agT1.length < agCap() || agT2.length < agCap())) {
     addAgPlayer(name);
   } else {
     renderAgPicker();
@@ -2543,8 +2642,9 @@ window.addNewPlayerToGame = function() {
 };
 
 window.saveAddedGame = function() {
-  if (agT1.length !== 2 || agT2.length !== 2) {
-    alert('Each team needs 2 players.\n\nTeam 1 has ' + agT1.length + ', Team 2 has ' + agT2.length + '. Tap players to fill the empty slots.');
+  const cap = agCap();
+  if (agT1.length !== cap || agT2.length !== cap) {
+    alert('Each ' + (cap===1?'side needs 1 player':'team needs 2 players') + '.\n\nTeam 1 has ' + agT1.length + ', Team 2 has ' + agT2.length + '. Tap players to fill the empty slots.');
     return;
   }
   const s1 = parseInt(document.getElementById('agS1').value);
@@ -3397,6 +3497,8 @@ function openLeaderboard()   { if(window.openLeaderboard) window.openLeaderboard
 function closeLeaderboard()  { if(window.closeLeaderboard) window.closeLeaderboard(); }
 function setLbTime(t)        { if(window.setLbTime) window.setLbTime(t); }
 function setLbSort(s)        { if(window.setLbSort) window.setLbSort(s); }
+function setLbType(t)        { if(window.setLbType) window.setLbType(t); }
+function setPlayType(t)      { if(window.setPlayType) window.setPlayType(t); }
 function renderLeaderboard() { if(window.renderLeaderboard) window.renderLeaderboard(); }
 function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
 function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
@@ -3413,6 +3515,9 @@ function shareAppLink()      { if(window.shareAppLink) window.shareAppLink(); }
 function adDeleteTournament(t){ if(window.adDeleteTournament) window.adDeleteTournament(t); }
 function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments) window.adDeleteEmptyTournaments(); }
 function adDeletePlayer(u,n) { if(window.adDeletePlayer) window.adDeletePlayer(u,n); }
+function adOpenTournament(t) { if(window.adOpenTournament) window.adOpenTournament(t); }
+function adEditPlayer(u)     { if(window.adEditPlayer) window.adEditPlayer(u); }
+function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 
 
 </script>
