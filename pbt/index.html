@@ -1726,8 +1726,13 @@ async function loadLeaderboardData() {
       if (!tournaments[tid]) tournaments[tid] = { ...t, updatedAt: t.finishedAt || t.updatedAt || Date.now() };
     });
     const dir = dSnap.val() || {};
-    const cityByName = {};
-    Object.values(dir).forEach(p => { if (p.name && p.city && !cityByName[p.name.toLowerCase()]) cityByName[p.name.toLowerCase()] = p.city; });
+    const cityByName = {}, dirByName = {};
+    Object.values(dir).forEach(p => {
+      if (!p.name) return;
+      const k = p.name.toLowerCase();
+      if (p.city && !cityByName[k]) cityByName[k] = p.city;
+      if (!dirByName[k]) dirByName[k] = p;
+    });
     // Flatten all completed games with timestamps
     const games = [];
     Object.entries(tournaments).forEach(([__tid, t]) => {
@@ -1745,7 +1750,7 @@ async function loadLeaderboardData() {
       });
     });
     games.sort((a,b) => a.when - b.when);
-    lbData = { games, cityByName };
+    lbData = { games, cityByName, dirByName };
     // Populate city dropdown
     const cities = [...new Set(Object.values(cityByName))].sort();
     document.getElementById('lbCity').innerHTML = '<option value="">🌎 All Cities</option>'
@@ -1833,7 +1838,8 @@ window.renderLeaderboard = function() {
   document.getElementById('lbContent').innerHTML = h;
 };
 
-window.openPlayerDetail = function(name) {
+window.openPlayerDetail = async function(name) {
+  if (!lbData) { try { await loadLeaderboardData(); } catch(e) {} }
   if (!lbData) return;
   const nm = name.toLowerCase();
   const games = lbData.games.filter(g =>
@@ -1859,6 +1865,18 @@ window.openPlayerDetail = function(name) {
   document.getElementById('pdStats').innerHTML =
     box('Record', w+'-'+l) + box('Games', games.length) + box('Pts For', pf, 'var(--cyan)') + box('Avg Diff', (diff>=0?'+':'')+diff, diff>=0?'var(--aqua)':'var(--danger)');
   document.getElementById('pdGames').innerHTML = rows || '<div style="color:var(--muted);text-align:center;padding:20px;font-weight:600;">No games found</div>';
+  // Player profile (if registered)
+  const prof = lbData.dirByName && lbData.dirByName[nm];
+  if (prof && (prof.city || prof.dupr || prof.instagram || prof.homeCourt)) {
+    let pc = '<div id="pdProfile" style="margin-top:16px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;">'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">👤 Player Profile</div>';
+    if (prof.city) pc += '<div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:4px;">📍 ' + prof.city + '</div>';
+    if (prof.dupr) pc += '<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-bottom:4px;">DUPR ' + prof.dupr + '</div>';
+    if (prof.homeCourt) pc += '<div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:4px;">🏟 ' + prof.homeCourt + '</div>';
+    if (prof.instagram) pc += '<div style="font-size:13px;font-weight:600;"><a href="https://instagram.com/' + String(prof.instagram).replace(/^@/,'') + '" target="_blank" style="color:var(--pink);text-decoration:none;">📸 ' + prof.instagram + '</a></div>';
+    pc += '</div>';
+    document.getElementById('pdGames').innerHTML += pc;
+  }
   // Admin tools: rename player + manage source tournaments
   if (isAdmin()) {
     const sources = {};
@@ -2335,6 +2353,7 @@ function getMatchupWins(mi) {
 }
 
 function gameCard(g, s, done, w, label) {
+  if (done && window._editingScores && window._editingScores.has(g.key)) done = false;
   if (g.deleted) return '<div class="gcard cancelled"><div class="cancelled-lbl">✕ Cancelled</div>'
     +'<div style="padding:8px 14px;font-size:13px;color:var(--muted);font-weight:600;">'+g.t1.join(' & ')+' vs '+g.t2.join(' & ')+'</div>'
     +'<div style="padding:0 14px 10px;"><button class="delbtn" style="color:var(--cyan);border-color:rgba(0,240,255,0.2);" onclick="restoreGame(\''+g.key+'\')">↩ Restore</button></div>'
@@ -2424,10 +2443,11 @@ function renderGames() {
 
   el.innerHTML = html
     + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
-    + '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏁 Done — View Summary</a>';
+    + '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>';
 }
 
 window.saveScore = window._saveScore = function(key) {
+  if (window._editingScores) window._editingScores.delete(key);
   const v1=document.getElementById('s1_'+key)?.value.trim();
   const v2=document.getElementById('s2_'+key)?.value.trim();
   if(!v1||!v2){alert('Enter both scores!');return;}
@@ -2435,9 +2455,11 @@ window.saveScore = window._saveScore = function(key) {
   if(isNaN(n1)||isNaN(n2)){alert('Numbers only!');return;}
   scores[key]={s1:n1,s2:n2}; push(); renderGames(); updateNav();
 };
+window._editingScores = new Set();
 window.editScore = window._editScore = function(key) {
-  scores[key]={s1:null,s2:null}; push(); renderGames(); updateNav();
-  setTimeout(()=>{const e=document.getElementById('s1_'+key);if(e){e.scrollIntoView({behavior:'smooth',block:'center'});e.focus();}},100);
+  window._editingScores.add(key);
+  renderGames(); updateNav();
+  setTimeout(()=>{const e=document.getElementById('s1_'+key);if(e){if(e.scrollIntoView)try{e.scrollIntoView({behavior:'smooth',block:'center'});}catch(x){}e.focus();if(e.select)e.select();}},100);
 };
 window.addDecider = window._addDecider = function(mi) {
   const games=cfg.schedule.filter(g=>g.matchup===mi);
@@ -2464,6 +2486,8 @@ let agT1 = [], agT2 = [], agExtraPlayers = [];
 
 window.openAddGame = function() {
   agT1 = []; agT2 = []; agExtraPlayers = [];
+  const nn = document.getElementById('agNewName');
+  if (nn && !nn._blurWired) { nn._blurWired = true; nn.addEventListener('blur', () => setTimeout(addNewPlayerToGame, 50)); }
   document.getElementById('agS1').value = '';
   document.getElementById('agS2').value = '';
   document.getElementById('agNewName').value = '';
@@ -2614,7 +2638,7 @@ function renderStandings() {
 
   list.forEach((p,i) => {
     const dc = p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
-    html += '<tr>'
+    html += '<tr onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;">'
       +'<td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
       +'<td '+(hW?hl:'')+'>'+p.wins+'</td>'
       +'<td '+(hP?hl:'')+' class="ptsf">'+p.ptsFor+'</td>'
@@ -2626,9 +2650,21 @@ function renderStandings() {
   html += '</tbody></table>';
   const modeLabel = effectiveMode==='avg'?'Avg Point Differential':effectiveMode==='wins'?'Most Wins':'Most Points';
   html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong></div>';
+  if (allDone) {
+    html += '<div style="margin-top:22px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:10px;">⚡ All Games</div>';
+    const sched = cfg.schedule.filter(g => !g.deleted);
+    sched.forEach(g => {
+      const s = scores[g.key];
+      if (!s || s.s1 === null || s.s1 === undefined) return;
+      const w1 = s.s1 > s.s2;
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
+        +'<div style="font-size:12px;font-weight:700;color:var(--white);min-width:0;">'+g.t1.join(' & ')+' <span style="color:var(--muted);">vs</span> '+g.t2.join(' & ')+'</div>'
+        +'<div style="font-family:\'Russo One\',sans-serif;font-size:14px;flex-shrink:0;margin-left:10px;"><span style="color:'+(w1?'var(--cyan)':'var(--white)')+'">'+s.s1+'</span><span style="color:var(--muted)"> — </span><span style="color:'+(!w1?'var(--cyan)':'var(--white)')+'">'+s.s2+'</span></div></div>';
+    });
+  }
   if (done > 0) {
-    html += '<button onclick="shareStatsLink()" style="display:block;width:100%;margin-top:20px;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🔗 Share Results Link</button>';
-    html += '<button onclick="saveStatsImage()" id="saveStatsBtn" style="display:block;width:100%;margin-top:10px;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(255,45,120,0.3);">📸 Save Image</button>';
+    if (done > 0) html += '<button onclick="shareStatsLink()" style="display:block;width:100%;margin-top:20px;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🔗 Share Results Link</button>';
+    if (done > 0) html += '<button onclick="saveStatsImage()" id="saveStatsBtn" style="display:block;width:100%;margin-top:10px;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(255,45,120,0.3);">📸 Save Image</button>';
   } else {
     html += '<div style="text-align:center;margin-top:20px;padding:14px;color:var(--muted);font-size:13px;font-weight:600;border:1px dashed var(--border);border-radius:12px;">📊 Enter your first score and sharing options appear here</div>';
   }
@@ -3299,7 +3335,8 @@ window.scoreTyped = function(k) {
   if (a) a.classList.toggle('await', a.value === '');
   if (b) b.classList.toggle('await', b.value === '');
 };
-function saveScore(k)    { if(window._saveScore) window._saveScore(k); }
+function saveScore(k)    {
+  if (window._editingScores) window._editingScores.delete(k); if(window._saveScore) window._saveScore(k); }
 function editScore(k)    { if(window._editScore) window._editScore(k); }
 function addDecider(m)   { if(window._addDecider) window._addDecider(m); }
 function doSignIn()    { if(window._doSignIn) window._doSignIn(); }
