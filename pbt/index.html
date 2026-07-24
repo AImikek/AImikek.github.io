@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Pickleball Tournament Builder</title>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -86,10 +86,13 @@
   .mcard { background:var(--surface2); border:2px solid var(--border); border-radius:12px;
     padding:14px 10px; cursor:pointer; transition:all 0.2s; text-align:center; }
   .mcard.active { border-color:var(--cyan); background:rgba(0,240,255,0.07); }
-  .micon { font-size:26px; margin-bottom:6px; }
-  .mname { font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:1px;
+  .micon { font-size:32px; margin-bottom:8px; }
+  .mname { font-family:'Russo One',sans-serif; font-size:17px; letter-spacing:1.5px;
     color:var(--white); text-transform:uppercase; }
-  .mdesc { font-size:11px; color:var(--muted); margin-top:4px; font-weight:600; line-height:1.4; }
+  .mdesc { font-size:12px; color:var(--muted); margin-top:5px; font-weight:600; line-height:1.45; }
+  .mcard { transition: transform 0.15s ease, border-color 0.2s, box-shadow 0.2s; }
+  .mcard:active { transform: scale(0.965); }
+  .mcard.active { box-shadow: 0 0 22px rgba(0,240,255,0.18), inset 0 0 18px rgba(0,240,255,0.05); }
   .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
   .pwrap { position:relative; }
   .pinput { background:var(--surface2); border:2px solid var(--border); border-radius:10px;
@@ -395,6 +398,8 @@
   .empty-t { font-family:'Russo One',sans-serif; font-size:15px; letter-spacing:2px;
     color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
   .empty-s { font-size:13px; color:var(--muted); font-weight:500; }
+  /* iOS: 16px inputs prevent focus auto-zoom */
+  input, select, textarea { font-size:16px !important; }
 </style>
 </head>
 <body>
@@ -960,8 +965,9 @@ document.addEventListener('touchend',   _unlockAudio, true);
 
     <!-- STEP 1: choose an option -->
     <div id="setupStep1">
-      <div class="mtitle">🏓 Let's Play</div>
-      <div class="msub" id="step1Sub">First: singles or doubles?</div>
+      <div class="mtitle" style="font-size:26px;">🏓 Let's Play</div>
+      <div class="msub" id="step1Sub" style="margin-bottom:18px;">How are you playing today?</div>
+      <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;opacity:0.8;">1 · Pick your game</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div class="mcard" id="ptSingles" onclick="setPlayType('singles')" style="padding:14px 8px;">
           <div class="micon">🙋</div><div class="mname">Singles</div>
@@ -972,18 +978,19 @@ document.addEventListener('touchend',   _unlockAudio, true);
           <div class="mdesc">2 vs 2</div>
         </div>
       </div>
+      <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin:16px 0 8px;opacity:0.8;">2 · Pick your format</div>
       <div class="mtoggle" style="grid-template-columns:1fr;">
         <div class="mcard" id="fmtRR" onclick="chooseFormat('rr')">
           <div class="micon">🔄</div><div class="mname">Round Robin</div>
-          <div class="mdesc" id="rrDesc">8+ players · Everyone partners once · Standings by points</div>
+          <div class="mdesc" id="rrDesc">Everyone partners with everyone · Fair &amp; balanced</div>
         </div>
         <div class="mcard" id="fmt4P" onclick="chooseFormat('4p')">
-          <div class="micon">⚡</div><div class="mname">4-Player Rotation</div>
-          <div class="mdesc">Best of 3 per matchup · Partners rotate · Points wins</div>
+          <div class="micon">⚡</div><div class="mname">Best 2 Out of 3!</div>
+          <div class="mdesc">Partners rotate every matchup · Best of 3 games</div>
         </div>
         <div class="mcard" onclick="chooseFormat('log')">
           <div class="micon">📝</div><div class="mname">Log Games</div>
-          <div class="mdesc">No schedule · Just add games as you play · Great for open play</div>
+          <div class="mdesc">No schedule — just add games as you play</div>
         </div>
         <button onclick="joinTournamentPrompt()"
           style="width:100%;padding:18px;background:transparent;border:2px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
@@ -1330,8 +1337,8 @@ window.setPlayType = function(t) {
   if (f4) f4.style.display = t === 'singles' ? 'none' : '';
   const rd = document.getElementById('rrDesc');
   if (rd) rd.textContent = t === 'singles'
-    ? 'Everyone plays everyone 1v1 · Standings by points'
-    : '8+ players · Everyone partners once · Standings by points';
+    ? 'Everyone plays everyone · 1 vs 1'
+    : 'Everyone partners with everyone · Fair & balanced';
 };
 
 window.chooseFormat = function(m) {

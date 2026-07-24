@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Tournament Results 🏓</title>
 <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -154,6 +154,8 @@
     letter-spacing:2px; text-transform:uppercase; cursor:pointer; text-decoration:none;
     box-shadow:0 4px 24px rgba(255,45,120,0.45); transition:all 0.2s; }
   .cta-btn:hover { transform:translateY(-2px); }
+  /* iOS: 16px inputs prevent focus auto-zoom */
+  input, select, textarea { font-size:16px !important; }
 </style>
 </head>
 <body>
