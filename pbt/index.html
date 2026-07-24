@@ -63,7 +63,7 @@
   .page { display:none; padding:16px; max-width:860px; margin:0 auto; }
   .page.active { display:block; }
 
-  .overlay { position:fixed; inset:0;
+  .overlay { position:fixed; inset:0; -webkit-overflow-scrolling:touch;
     background:var(--bg); z-index:310;
     display:flex; align-items:flex-start; justify-content:center;
     padding:72px 20px 100px; overflow-y:auto; overscroll-behavior:contain; }
@@ -357,6 +357,16 @@
   .bbtn.active::after { width:18px; box-shadow:0 0 10px var(--cyan); }
   #tabLeaderboard { transition: transform 0.22s, filter 0.22s; }
   #tabLeaderboard.lb-active { transform: scale(1.25); filter: drop-shadow(0 0 10px rgba(255,224,0,0.9)); }
+
+  /* Home (Let's Play): compact so everything fits one screen */
+  #setupStep1 .mcard { padding:11px 10px; }
+  #setupStep1 .micon { font-size:24px; margin-bottom:3px; }
+  #setupStep1 .mname { font-size:16px; }
+  #setupStep1 .mdesc { font-size:11px; margin-top:3px; }
+  #setupStep1 .mtitle { font-size:22px !important; margin-bottom:2px; }
+  #setupStep1 .msub { margin-bottom:10px !important; font-size:13px; }
+  #setupStep1 .mtoggle { gap:8px; }
+  #setupOverlay { padding-top:58px; padding-bottom:84px; }
 
   /* ── LOGIN SCREEN ── */
   #loginScreen {
@@ -967,7 +977,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <div id="setupStep1">
       <div class="mtitle" style="font-size:26px;">🏓 Let's Play</div>
       <div class="msub" id="step1Sub" style="margin-bottom:18px;">How are you playing today?</div>
-      <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;opacity:0.8;">1 · Pick your game</div>
+      <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin-bottom:6px;opacity:0.8;">1 · Pick your game</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div class="mcard" id="ptSingles" onclick="setPlayType('singles')" style="padding:14px 8px;">
           <div class="micon">🙋</div><div class="mname">Singles</div>
@@ -978,7 +988,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
           <div class="mdesc">2 vs 2</div>
         </div>
       </div>
-      <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin:16px 0 8px;opacity:0.8;">2 · Pick your format</div>
+      <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin:10px 0 6px;opacity:0.8;">2 · Pick your format</div>
       <div class="mtoggle" style="grid-template-columns:1fr;">
         <div class="mcard" id="fmtRR" onclick="chooseFormat('rr')">
           <div class="micon">🔄</div><div class="mname">Round Robin</div>
@@ -3456,6 +3466,14 @@ function showPage(p)     { if(window._showPage) window._showPage(p); }
 function selMode(m)      { if(window._selMode) window._selMode(m); }
 function chooseFormat(m) { if(window.chooseFormat) window.chooseFormat(m); }
 function setupBack()     { if(window.setupBack) window.setupBack(); }
+// iOS: after the keyboard closes it often leaves the window scrolled with the
+// fixed overlay's own scroller at its boundary — feels like scrolling is stuck.
+document.addEventListener('focusout', function() {
+  setTimeout(function() {
+    if ((window.scrollY || 0) > 0) { try { window.scrollTo(0, 0); } catch(e) {} }
+  }, 150);
+});
+
 function closeAllOverlaysAndShow(p) {
   if (window.resetBars) resetBars();
   if (document.getElementById('tabGames').disabled) return;
