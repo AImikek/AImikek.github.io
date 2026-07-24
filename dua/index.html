@@ -419,8 +419,54 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 2px;
-    padding: 48px;
     position: relative;
+    overflow: hidden;
+  }
+  .rooftop-viz img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+  .concept-badge {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1;
+    padding: 9px 12px;
+    background: rgba(15, 32, 40, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1.35;
+    text-transform: uppercase;
+  }
+  .concept-caption {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 18px;
+    align-items: start;
+    padding: 18px 24px 20px;
+    background: var(--surface);
+    color: var(--ink-muted);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .concept-caption strong {
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  @media (max-width: 640px) {
+    .rooftop-viz { margin-top: 40px; }
+    .concept-badge { top: 12px; left: 12px; font-size: 8px; }
+    .concept-caption { grid-template-columns: 1fr; gap: 6px; padding: 15px 16px 17px; }
   }
   .placeholder-note {
     background: var(--bg-alt);
@@ -2715,13 +2761,14 @@
       </p>
     </div>
 
-    <div class="rooftop-viz reveal">
-      <div class="placeholder-note">
-        <strong>Architectural concept rendering placeholder</strong>
-        Final rendering must be coordinated with DUA's architect of record,<br>
-        structural engineer, acoustic consultant, and existing pool-deck plans.
-      </div>
-    </div>
+    <figure class="rooftop-viz reveal">
+      <div class="concept-badge">Early Concept Rendering<br>Placeholder Only</div>
+      <img src="assets/dua-rooftop-court-daytime-concept.png" alt="Illustrative daytime concept of DUA's proposed enclosed rooftop pickleball court beside the existing pool.">
+      <figcaption class="concept-caption">
+        <strong>For discussion only</strong>
+        <span>Illustrative concept rendering, not a construction drawing. Final location, dimensions, enclosure, lighting, pool-deck clearances, structural loads, HVAC, acoustics, and permitting remain subject to coordination with DUA's architect of record, structural engineer, acoustic consultant, and existing pool-deck plans.</span>
+      </figcaption>
+    </figure>
 
     <div class="vision-grid reveal">
       <div>
