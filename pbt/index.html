@@ -215,7 +215,7 @@
     backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
   #addGameOverlay.hidden { display:none; }
 
-  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden { display:none !important; }
+  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden, #adPlayerModal.hidden { display:none !important; }
 
   /* City/Email overlay — display controlled ONLY by CSS class */
   #cityEmailOverlay { display:flex; }
@@ -343,6 +343,17 @@
   #pageHistory, #leaderboardPage, #guidePage, #adminDash, #pageProfile { overflow-x:clip; }
   #pageHistory > div, #leaderboardPage > div, #guidePage > div, #adminDash > div { max-width:min(560px,100%); box-sizing:border-box; }
   #pageHistory .finput, #pageHistory input, #pageHistory button { max-width:100%; box-sizing:border-box; }
+
+  .bbtn .bicon { transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), filter 0.22s; }
+  .bbtn.active .bicon {
+    transform: translateY(-3px) scale(1.22);
+    filter: drop-shadow(0 0 8px rgba(0,240,255,0.8));
+  }
+  .bbtn::after { content:''; width:0; height:3px; border-radius:99px; background:var(--cyan);
+    margin-top:3px; transition: width 0.25s ease, box-shadow 0.25s; }
+  .bbtn.active::after { width:18px; box-shadow:0 0 10px var(--cyan); }
+  #tabLeaderboard { transition: transform 0.22s, filter 0.22s; }
+  #tabLeaderboard.lb-active { transform: scale(1.25); filter: drop-shadow(0 0 10px rgba(255,224,0,0.9)); }
 
   /* ── LOGIN SCREEN ── */
   #loginScreen {
@@ -781,7 +792,7 @@
     </div>
     <div class="rank-toggle" id="lbTimeRow" style="margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;margin-bottom:8px;">
-      <select class="finput" id="lbCity" onchange="renderLeaderboard()" style="margin-bottom:0;flex:1;color-scheme:dark;font-size:13px;padding:10px 12px;"><option value="">🌎 All Cities</option></select>
+      <select class="finput" id="lbCity" onchange="renderLeaderboard()" style="display:none;margin-bottom:0;flex:1;color-scheme:dark;font-size:13px;padding:10px 12px;"><option value="">🌎 All Cities</option></select>
     </div>
     <div class="rank-toggle" id="lbSortRow" style="margin-bottom:14px;"></div>
     <div id="lbContent"><div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading...</div></div>
@@ -832,6 +843,27 @@
     <div style="margin-top:24px;">
       <button onclick="shareAppLink()" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.35);">📤 Share It With Your Pickleball Friends</button>
       <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted);font-weight:600;">mikek.ai/pbt · free forever for players</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PLAYER EDIT MODAL -->
+<div id="adPlayerModal" class="hidden" style="position:fixed;inset:0;z-index:650;background:rgba(4,6,15,0.9);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;width:min(420px,100%);max-height:85vh;overflow-y:auto;">
+    <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:14px;">✏️ Edit Player</div>
+    <label class="flabel">Name</label>
+    <input class="finput" id="apName">
+    <label class="flabel">City</label>
+    <input class="finput" id="apCity">
+    <label class="flabel">Email</label>
+    <input class="finput" id="apEmail" type="email">
+    <label class="flabel">Phone</label>
+    <input class="finput" id="apPhone" type="tel">
+    <label class="flabel">DUPR Rating</label>
+    <input class="finput" id="apDupr" type="number" step="0.01" min="1" max="8">
+    <div style="display:flex;gap:10px;margin-top:6px;">
+      <button onclick="document.getElementById('adPlayerModal').classList.add('hidden')" style="flex:1;padding:13px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Cancel</button>
+      <button onclick="adSavePlayer()" style="flex:1;padding:13px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">💾 Save</button>
     </div>
   </div>
 </div>
@@ -1224,6 +1256,10 @@ function setActiveTab(t) {
   document.getElementById('navHome').classList.toggle('active', t==='home');
   document.getElementById('tabGames').classList.toggle('active', t==='games');
   document.getElementById('tabStats').classList.toggle('active', t==='standings');
+  var pb = document.getElementById('navProfileBtn');
+  if (pb) pb.classList.toggle('active', t==='profile');
+  var lb = document.getElementById('tabLeaderboard');
+  if (lb) lb.classList.toggle('lb-active', t==='leaderboard');
 }
 
 window.showPage = window._showPage = function(page) {
@@ -1720,17 +1756,29 @@ let lbTime = 'all', lbSort = 'avg', lbData = null, lbType = 'doubles';
 const LB_MIN_GAMES = 3;
 
 window.openLeaderboard = async function() {
-  if (window.resetBars) resetBars();
-  try { history.replaceState({}, '', '#leaderboard'); } catch(e) {}
+  if (window._resetBars) window._resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   var ph = document.getElementById('pageHistory'); if (ph) ph.style.display = 'none';
   var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
   document.getElementById('setupOverlay').classList.add('hidden');
   document.getElementById('leaderboardPage').classList.remove('hidden');
-  setActiveTab(null);
-  document.getElementById('lbContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading...</div>';
-  await loadLeaderboardData();
-  renderLeaderboard();
+  try { history.replaceState({}, '', '#leaderboard'); } catch(e) {}
+  setActiveTab('leaderboard');
+  if (lbData) {
+    // Instant render from cache, refresh silently in background
+    renderLeaderboard();
+    if (!window._lbLoading) {
+      window._lbLoading = true;
+      loadLeaderboardData().then(() => { renderLeaderboard(); }).finally(() => { window._lbLoading = false; });
+    }
+  } else {
+    document.getElementById('lbContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading the boards...</div>';
+    if (!window._lbLoading) {
+      window._lbLoading = true;
+      try { await loadLeaderboardData(); } finally { window._lbLoading = false; }
+    }
+    renderLeaderboard();
+  }
 };
 window.closeLeaderboard = function() {
   try { history.replaceState({}, '', window.location.pathname); } catch(e) {}
@@ -2131,26 +2179,50 @@ window.adOpenTournament = async function(tid) {
   }, 350);
 };
 
+window._apUid = null;
 window.adEditPlayer = async function(uid) {
   if (!isAdmin()) return;
   try {
     const snap = await get(ref(db, 'directory/' + uid));
     const p = snap.val() || {};
-    const name  = prompt('Name:', p.name || '');            if (name === null) return;
-    const city  = prompt('City:', p.city || '');            if (city === null) return;
-    const email = prompt('Email:', p.email || '');          if (email === null) return;
-    const phone = prompt('Phone:', p.phone || '');          if (phone === null) return;
-    const dupr  = prompt('DUPR rating:', p.dupr || '');     if (dupr === null) return;
-    await set(ref(db, 'directory/' + uid), {
+    window._apUid = uid;
+    document.getElementById('apName').value  = p.name || '';
+    document.getElementById('apCity').value  = p.city || '';
+    document.getElementById('apEmail').value = p.email || '';
+    document.getElementById('apPhone').value = p.phone || '';
+    document.getElementById('apDupr').value  = p.dupr || '';
+    document.getElementById('adPlayerModal').classList.remove('hidden');
+  } catch(e) { alert('Could not load player: ' + (e.message||e)); }
+};
+
+window.adSavePlayer = async function() {
+  if (!isAdmin() || !window._apUid) return;
+  try {
+    const snap = await get(ref(db, 'directory/' + window._apUid));
+    const p = snap.val() || {};
+    const d = document.getElementById('apDupr').value.trim();
+    await set(ref(db, 'directory/' + window._apUid), {
       ...p,
-      name: name.trim() || p.name || null,
-      city: city.trim() || null,
-      email: email.trim() || null,
-      phone: phone.trim() || null,
-      dupr: dupr.trim() ? parseFloat(dupr) : null
+      name:  document.getElementById('apName').value.trim() || p.name || null,
+      city:  document.getElementById('apCity').value.trim() || null,
+      email: document.getElementById('apEmail').value.trim() || null,
+      phone: document.getElementById('apPhone').value.trim() || null,
+      dupr:  d ? parseFloat(d) : null
     });
-    openAdminDash();
-  } catch(e) { alert('Edit failed (publish the latest Firebase rules with admin directory write): ' + (e.message||e)); }
+    document.getElementById('adPlayerModal').classList.add('hidden');
+    if (!document.getElementById('adminDash').classList.contains('hidden')) openAdminDash();
+  } catch(e) { alert('Save failed (publish latest Firebase rules): ' + (e.message||e)); }
+};
+
+window.adEditPlayerByName = async function(name) {
+  if (!isAdmin()) return;
+  try {
+    const snap = await get(ref(db, 'directory'));
+    const dir = snap.val() || {};
+    const hit = Object.entries(dir).find(([uid, p]) => (p.name||'').toLowerCase() === name.toLowerCase());
+    if (hit) adEditPlayer(hit[0]);
+    else alert('"' + name + '" hasn\'t registered a profile yet. Use the leaderboard player view to rename them across games.');
+  } catch(e) { alert('Lookup failed: ' + (e.message||e)); }
 };
 
 window.adDeleteTournament = async function(tid) {
@@ -2926,6 +2998,7 @@ window._wireProfileAutosave = function() {
 
 window.openProfile = function() {
   if (window.resetBars) resetBars();
+  setActiveTab('profile');
   var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
   document.getElementById('editName').value  = userProfile.name  || '';
   document.getElementById('editEmail').value = userProfile.email || '';
@@ -3035,6 +3108,8 @@ function isAdmin() {
 }
 
 window.openHistory = function() {
+  var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
+  var gpg = document.getElementById('guidePage'); if (gpg) gpg.classList.add('hidden');
   if (window.resetBars) resetBars();
   document.getElementById('pageHistory').style.display = 'block';
   document.getElementById('historyDetail').style.display = 'none';
@@ -3108,7 +3183,7 @@ window.viewHistoryDetail = function(tid) {
   const cellHl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
   list.forEach((p,i)=>{
     const dc=p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
-    html+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
+    html+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname"'+(isAdmin()?' onclick="adEditPlayerByName(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;border-bottom:1px dotted rgba(0,240,255,0.5);"':'')+'>'+p.name+'</span></td>'
       +'<td '+(hs==='wins'?cellHl:'')+'>'+p.wins+'</td>'
       +'<td '+(hs==='pts'?cellHl:'')+' class="ptsf">'+p.ptsFor+'</td>'
       +'<td '+(hs==='ag'?cellHl:'')+'>'+p.ptsAgainst+'</td>'
@@ -3517,6 +3592,8 @@ function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments) window.
 function adDeletePlayer(u,n) { if(window.adDeletePlayer) window.adDeletePlayer(u,n); }
 function adOpenTournament(t) { if(window.adOpenTournament) window.adOpenTournament(t); }
 function adEditPlayer(u)     { if(window.adEditPlayer) window.adEditPlayer(u); }
+function adSavePlayer()      { if(window.adSavePlayer) window.adSavePlayer(); }
+function adEditPlayerByName(n){ if(window.adEditPlayerByName) window.adEditPlayerByName(n); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 
 
