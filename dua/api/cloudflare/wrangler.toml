@@ -1,0 +1,7 @@
+name = "dua-nda-api"
+main = "worker.mjs"
+compatibility_date = "2026-07-27"
+workers_dev = true
+
+# Add the D1 database binding named DB in the Cloudflare dashboard after creating the Worker.
+# Secrets are intentionally not stored in this repository.
