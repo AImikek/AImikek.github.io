@@ -3,4 +3,4 @@
 // After you deploy the Firebase function (DEPLOY.md, Part 2), paste its
 // URL below, commit this file, and the whole site is wired up.
 // =====================================================================
-window.MIKEK_ENDPOINT = ""; // e.g. "https://referrals-abc123-uc.a.run.app"
+window.MIKEK_ENDPOINT = "https://us-central1-referrals-55bee.cloudfunctions.net/referrals";
