@@ -882,8 +882,6 @@
       <button onclick="document.getElementById('sessionCreate').classList.add('hidden')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;">➕ New Session</div>
     </div>
-    <label class="flabel">Session Name</label>
-    <input class="finput" id="scTitle" placeholder="Brickell Pickle">
     <label class="flabel">Location</label>
     <input class="finput" id="scLocation" placeholder="Woodside Courts">
     <label class="flabel">Date</label>
@@ -894,6 +892,8 @@
     </div>
     <label class="flabel">Spots</label>
     <input class="finput" id="scSpots" type="number" inputmode="numeric" min="2" max="24" value="4">
+    <label class="flabel">Level (optional)</label>
+    <input class="finput" id="scLevel" placeholder="3.0 - 3.5+">
     <label class="flabel">Note (optional)</label>
     <input class="finput" id="scNote" placeholder="Bring balls · All levels welcome">
     <label class="flabel">Who can see it?</label>
@@ -906,6 +906,8 @@
       <div class="mcard active" id="scRecNo" onclick="scSetRec(null)" style="padding:12px 8px;"><div class="mname" style="font-size:13px;">One-time</div></div>
       <div class="mcard" id="scRecWeekly" onclick="scSetRec('weekly')" style="padding:12px 8px;"><div class="mname" style="font-size:13px;">🔁 Weekly</div></div>
     </div>
+    <label class="flabel">Session Name (optional)</label>
+    <input class="finput" id="scTitle" placeholder="Auto-named if left blank">
     <button onclick="createSession()" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🚀 Create Session</button>
   </div>
 </div>
@@ -1359,6 +1361,7 @@ function renderCurrent() {
 }
 
 window.openSetup = window._openSetup = function() {
+  window.hideAllPages();
   if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   document.getElementById('setupOverlay').classList.remove('hidden');
@@ -1838,9 +1841,7 @@ const LB_MIN_GAMES = 3;
 
 window.openLeaderboard = async function() {
   if (window._resetBars) window._resetBars();
-  var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
-  var ph = document.getElementById('pageHistory'); if (ph) ph.style.display = 'none';
-  var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
+  window.hideAllPages();
   document.getElementById('setupOverlay').classList.add('hidden');
   document.getElementById('leaderboardPage').classList.remove('hidden');
   try { history.replaceState({}, '', '#leaderboard'); } catch(e) {}
@@ -2168,6 +2169,7 @@ window.runImport = async function() {
 };
 
 window.openGuide = function() {
+  window.hideAllPages();
   if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   document.getElementById('guidePage').classList.remove('hidden');
@@ -2185,6 +2187,20 @@ window.shareAppLink = async function() {
   else prompt('Copy this link:', url);
 };
 
+// Hide every overlay page - lets nav icons work from EVERY screen.
+window.hideAllPages = function() {
+  ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
+   'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
+   'adPlayerModal','qrOverlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  const ph = document.getElementById('pageHistory'); if (ph) ph.style.display = 'none';
+  const pd = document.getElementById('playerDetail'); if (pd) pd.classList.add('hidden');
+  const pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
+  if (typeof sdUnsub !== 'undefined' && sdUnsub) { try { sdUnsub(); } catch(e) {} sdUnsub = null; }
+};
+
 // ═══════════ SESSIONS: GAMES TO JOIN ═══════════
 let scVis = 'public', scRec = null, sdUnsub = null, sdCurrent = null;
 
@@ -2200,6 +2216,7 @@ window.scSetRec = function(r) {
 };
 
 window.openSessions = async function() {
+  window.hideAllPages();
   if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
@@ -2223,7 +2240,7 @@ window.openSessions = async function() {
         +'<div style="display:flex;justify-content:space-between;align-items:center;">'
         +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' 🔁':'')+'</div>'
         +'<div style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;'+(spotsLeft?'background:rgba(0,245,196,0.12);color:var(--aqua);':'background:rgba(255,224,0,0.1);color:var(--yellow);')+'">'+(spotsLeft ? spotsLeft+' open' : 'Full')+'</div></div>'
-        +'<div style="font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;">'+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+(s.location?' · 📍 '+s.location:'')+'</div>'
+        +'<div style="font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;">'+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+(s.location?' · 📍 '+s.location:'')+(s.level?' · 🎚 '+s.level:'')+'</div>'
         +'<div style="font-size:12px;color:var(--white);font-weight:600;margin-top:6px;">'+roster.map(r=>r.name).join(' · ')+'</div>'
         +'</div>';
     }).join('') : '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">No upcoming public sessions yet.<br>Create one and get the crew together! 🏓</div>';
@@ -2231,6 +2248,12 @@ window.openSessions = async function() {
     list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger);font-weight:600;">Could not load sessions — publish the latest Firebase rules.</div>';
   }
 };
+
+function shortDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00');
+  return (d.getMonth()+1) + '/' + d.getDate() + '/' + String(d.getFullYear()).slice(2);
+}
 
 function fmtSessTime(t) {
   if (!t) return '';
@@ -2248,7 +2271,16 @@ window.openSessionCreate = function() {
 };
 
 window.createSession = async function() {
-  const title = document.getElementById('scTitle').value.trim() || 'Pickleball Session';
+  const dateV = document.getElementById('scDate').value;
+  const stV = document.getElementById('scStart').value || '07:30';
+  let title = document.getElementById('scTitle').value.trim();
+  if (!title && dateV) {
+    const wd = new Date(dateV + 'T12:00').toLocaleDateString('en-US', { weekday:'long' });
+    const hh = parseInt(stV.split(':')[0]);
+    const tod = hh < 12 ? 'Morning' : hh < 17 ? 'Afternoon' : 'Evening';
+    title = wd + ' ' + tod + ' Pickleball';
+  }
+  if (!title) title = 'Pickleball Session';
   const location = document.getElementById('scLocation').value.trim();
   const date = document.getElementById('scDate').value;
   if (!date) { alert('Pick a date!'); return; }
@@ -2261,6 +2293,7 @@ window.createSession = async function() {
       startTime: document.getElementById('scStart').value || '07:30',
       endTime: document.getElementById('scEnd').value || '09:30',
       spots,
+      level: document.getElementById('scLevel').value.trim() || null,
       note: document.getElementById('scNote').value.trim() || null,
       visibility: scVis,
       recurring: scRec,
@@ -2307,6 +2340,7 @@ function renderSessionDetail(sid, s) {
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:20px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' <span style="font-size:12px;color:var(--cyan);">🔁 weekly</span>':'')+'</div>'
     +'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:6px;">📅 '+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+'</div>'
     +(s.location?'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:2px;">📍 '+s.location+'</div>':'')
+    +(s.level?'<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-top:2px;">🎚 Level '+s.level+'</div>':'')
     +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+'</div>':'')
     +(s.ownerName?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organized by '+s.ownerName+'</div>':'')
     +'</div>';
@@ -2391,7 +2425,9 @@ window.shareSession = async function(sid) {
   const snap = await get(ref(db, 'sessions/' + sid));
   const s = snap.val() || {};
   const url = window.location.origin + window.location.pathname + '?s=' + sid;
-  const txt = '🏓 ' + (s.title||'Pickleball session') + ' — ' + (s.date||'') + ' ' + fmtSessTime(s.startTime) + (s.location ? ' @ ' + s.location : '') + '. Claim your spot: ' + url;
+    const txt = '🏓 ' + (s.title||'Pickleball Session') + '\n'
+    + shortDate(s.date) + ' ' + fmtSessTime(s.startTime) + '-' + fmtSessTime(s.endTime) + (s.location ? ' @ ' + s.location : '') + (s.level ? ' \u00b7 Level ' + s.level : '') + '\n'
+    + 'Claim your spot: ' + url;
   if (navigator.share) {
     try { await navigator.share({ title: s.title || 'Pickleball Session', text: txt, url }); return; }
     catch(e) { if (e && e.name === 'AbortError') return; }
@@ -2407,7 +2443,8 @@ window.copySessionRoster = async function(sid) {
   const spots = s.spots || 4;
   const d = new Date(s.date + 'T12:00');
   const ds = d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
-  let txt = (s.title||'Session') + ' — ' + ds + ' ' + fmtSessTime(s.startTime) + '-' + fmtSessTime(s.endTime) + (s.location ? ' @ ' + s.location : '') + '\n';
+  let txt = '🏓 ' + (s.title||'Session') + '\n'
+    + shortDate(s.date) + ' ' + fmtSessTime(s.startTime) + '-' + fmtSessTime(s.endTime) + (s.location ? ' @ ' + s.location : '') + (s.level ? ' \u00b7 Level ' + s.level : '') + '\n';
   for (let i = 0; i < spots; i++) txt += (i+1) + '. ' + (roster[i] ? roster[i].name + (roster[i].comment ? ' (' + roster[i].comment + ')' : '') : '?') + '\n';
   const left = spots - roster.length;
   txt += left > 0 ? left + ' spot' + (left>1?'s':'') + ' left — claim yours: ' + window.location.origin + window.location.pathname + '?s=' + sid : 'FULL! 🔥';
@@ -2453,6 +2490,7 @@ window.deleteSession = async function(sid) {
 };
 
 window.openAdminDash = async function() {
+  window.hideAllPages();
   if (window.resetBars) resetBars();
   if (!isAdmin()) return;
   document.getElementById('adminDash').classList.remove('hidden');
@@ -3345,6 +3383,7 @@ window._wireProfileAutosave = function() {
 };
 
 window.openProfile = function() {
+  window.hideAllPages();
   if (window.resetBars) resetBars();
   setActiveTab('profile');
   var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
@@ -3456,6 +3495,7 @@ function isAdmin() {
 }
 
 window.openHistory = function() {
+  window.hideAllPages();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   var gpg = document.getElementById('guidePage'); if (gpg) gpg.classList.add('hidden');
   if (window.resetBars) resetBars();
@@ -3806,6 +3846,7 @@ document.addEventListener('focusout', function() {
 });
 
 function closeAllOverlaysAndShow(p) {
+  if (window.hideAllPages) window.hideAllPages();
   if (window.resetBars) resetBars();
   if (document.getElementById('tabGames').disabled) return;
   document.getElementById('setupOverlay').classList.add('hidden');
