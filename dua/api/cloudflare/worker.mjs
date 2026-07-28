@@ -3,11 +3,13 @@ let schemaPromise;
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     const headers = responseHeaders(origin, env);
 
     try {
-      if (origin && !allowedOrigins(env).includes(origin)) {
+      // The private admin page runs on this Worker origin; the public form runs only on the approved proposal origin.
+      if (origin && origin !== url.origin && !allowedOrigins(env).includes(origin)) {
         return json({ error: 'This origin is not permitted to access the NDA service.' }, 403, headers);
       }
 
@@ -16,7 +18,6 @@ export default {
       }
 
       await ensureSchema(env);
-      const url = new URL(request.url);
 
       if (request.method === 'GET' && url.pathname === '/health') {
         return json({ status: 'ok', service: 'dua-nda-backend' }, 200, headers);
