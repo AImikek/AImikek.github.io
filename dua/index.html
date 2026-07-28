@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="nda-api-base" content="https://dua-nda-api.m-938.workers.dev">
+<meta name="nda-terms-version" content="2026-07-27">
+<meta name="proposal-version" content="DUA Pickleball &amp; Recovery Owner Pro Forma">
 <title>DUA Pickleball & Recovery — Rooftop Club Pro Forma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -194,6 +197,14 @@
   }
   .gate-btn:hover:not(:disabled) { transform: translateY(-1px); }
   .gate-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .gate-error {
+    min-height: 20px;
+    margin-top: 14px;
+    color: var(--danger);
+    font-size: 14px;
+    line-height: 1.45;
+    text-align: center;
+  }
   .gate-footer {
     margin-top: 24px;
     font-family: 'JetBrains Mono', monospace;
@@ -2555,6 +2566,34 @@
   }
   .operator-note p:last-child { margin-bottom: 0; }
   .operator-note strong { color: var(--ink); }
+  .operator-proof-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    margin: 26px 0;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  .operator-proof {
+    padding: 20px;
+    background: var(--bg-alt);
+  }
+  .operator-proof .kicker {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .operator-proof p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  @media (max-width: 820px) { .operator-proof-grid { grid-template-columns: 1fr; } }
 
   /* CTA */
   .cta {
@@ -2686,7 +2725,7 @@
     </div>
     <div class="gate-terms">
       <strong>Confidentiality & Intellectual Property Acknowledgment</strong><br><br>
-      By entering, you acknowledge that (1) the contents of this pitch — including all financial models, operational structures, membership designs, build specifications, and valuation frameworks — are the <strong>original intellectual property of Michael Krilivsky</strong> and are shared under confidentiality; (2) you will not reproduce, redistribute, share externally, or execute against this material without a signed written agreement with Michael Krilivsky; (3) you will not engage third parties to implement any portion of this concept for DUA Hotel without compensating or formally engaging Michael Krilivsky as the originator of the concept; (4) this acknowledgment is logged with timestamp, name, and email as evidence of receipt and assent.<br><br>
+      By entering, you acknowledge that (1) the contents of this pitch — including all financial models, operational structures, membership designs, build specifications, and valuation frameworks — are the <strong>original intellectual property of Michael Krilivsky</strong> and are shared under confidentiality; (2) you will not reproduce, redistribute, share externally, or execute against this material without a signed written agreement with Michael Krilivsky; (3) you will not engage third parties to implement any portion of this concept for DUA Hotel without compensating or formally engaging Michael Krilivsky as the originator of the concept; (4) this acknowledgment will be timestamped and recorded in the NDA log before access is granted.<br><br>
       A formal Non-Disclosure & Non-Circumvention Agreement will be circulated separately for signature before any execution discussions.
     </div>
     <div class="gate-form">
@@ -2699,7 +2738,8 @@
       </label>
       <button class="gate-btn" id="gateBtn" disabled>Acknowledge & Continue →</button>
     </div>
-    <div class="gate-footer">Timestamped · Logged · Protected</div>
+    <div class="gate-error" id="gateError" role="alert" aria-live="polite"></div>
+    <div class="gate-footer">Timestamped · Recorded · Protected</div>
   </div>
 </div>
 
@@ -3982,7 +4022,7 @@
           <div class="pnl-year-tag">3-Year Summary</div>
           <div class="pnl-year-title">$1.42M direct revenue · $340K CapEx + $987K OpEx · <span style="color:var(--accent)">$88K direct cash after full CapEx recovery</span></div>
         </div>
-        <div class="pnl-year-note">The $605K operator compensation is already included in operating expenses below. Before the $340K build CapEx, the simple model produces ~$942K of cumulative direct profit plus gross room/F&amp;B halo revenue. After CapEx, it shows ~$602K of cumulative benefit before normal hotel departmental flow-through on the halo revenue. Valuation is modeled separately using a conservative Year 3 NOI bridge.</div>
+        <div class="pnl-year-note">The total operating model includes leadership, staffing, member acquisition, technology, insurance, events, and maintenance. Before the $340K build CapEx, the simple model produces ~$942K of cumulative direct profit plus gross room/F&amp;B halo revenue. After CapEx, it shows ~$602K of cumulative benefit before normal hotel departmental flow-through on the halo revenue. Valuation is modeled separately using a conservative Year 3 NOI bridge.</div>
       </div>
       <div class="pnl-scroll">
       <table class="pnl-table">
@@ -4005,8 +4045,7 @@
           <tr class="subtotal"><td class="line-label">Total Direct Revenue</td><td>$156K</td><td>$556K</td><td>$703K</td><td class="total-col">$1,415K</td></tr>
 
           <tr class="section-header"><td colspan="5">Operating Expenses</td></tr>
-          <tr><td class="line-label">Operator compensation (all phases)</td><td>$111K</td><td>$211K</td><td>$283K</td><td class="total-col">$605K</td></tr>
-          <tr><td class="line-label">Staff</td><td>$27K</td><td>$46K</td><td>$46K</td><td class="total-col">$118K</td></tr>
+          <tr><td class="line-label">Program leadership, staffing &amp; management</td><td>$138K</td><td>$257K</td><td>$329K</td><td class="total-col">$723K</td></tr>
           <tr><td class="line-label">PodPlay SaaS</td><td>$2.5K</td><td>$4K</td><td>$4K</td><td class="total-col">$11K</td></tr>
           <tr><td class="line-label">Insurance rider</td><td>$5K</td><td>$8K</td><td>$8K</td><td class="total-col">$21K</td></tr>
           <tr><td class="line-label">Marketing & acquisition</td><td>$64K</td><td>$30K</td><td>$25K</td><td class="total-col">$119K</td></tr>
@@ -4270,7 +4309,7 @@
       <div class="section-eyebrow"><span class="num">08</span> The Valuation</div>
       <h2>The multiplier effect <em>on<br>property value.</em></h2>
       <p class="lede">
-        Brickell boutique hotels trade at 6–8% cap rates. The point is not to capitalize gross revenue; it is to capitalize recurring NOI. The bridge below starts with Year 3 direct operating profit after operator compensation, then applies conservative hotel flow-through to the room and F&amp;B halo.
+        Brickell boutique hotels trade at 6–8% cap rates. The point is not to capitalize gross revenue; it is to capitalize recurring NOI. The bridge below starts with Year 3 direct operating profit after program operating costs, then applies conservative hotel flow-through to the room and F&amp;B halo.
       </p>
     </div>
 
@@ -4416,7 +4455,7 @@
       <div class="section-eyebrow"><span class="num">10</span> The Operating Partnership</div>
       <h2>This doesn't happen<br><em>without someone running it.</em></h2>
       <p class="lede">
-        Michael Krilivsky is the operating partner — originator, project manager, and ongoing operator. The concept, the pro forma, the sponsor network, the member acquisition engine, the build management — all of it sits with one person who has skin in the game. DUA doesn't staff this. DUA partners on it.
+        Michael Krilivsky is the operating partner — originator, project manager, and ongoing operator. DUA is not hiring a generic amenity consultant; it is partnering with a builder who understands the professional pickleball ecosystem, what premium players will pay for, and how to turn a hard-to-access rooftop court into a member community from day one.
       </p>
     </div>
 
@@ -4443,55 +4482,20 @@
       </div>
     </div>
 
-    <div class="comp-structure reveal">
-      <div class="comp-header">
-        <div class="comp-label">Compensation Structure</div>
-        <h3>Performance-aligned, CapEx-triggered escalation.</h3>
-        <p>DUA pays the highest rate only after the project has fully paid for itself. Until then, the operator earns a lower share — aligning incentives with DUA's actual cash return.</p>
+    <div class="operator-note reveal">
+      <div class="tag">Why Michael Is The Operating Partner</div>
+      <h3>Industry access, real player standards, and a direct path to the first members.</h3>
+      <p>Michael is a part-owner of United Pickleball Association (UPA), the professional ecosystem behind the PPA Tour and Major League Pickleball, with ownership and operating relationships across the Texas Ranchers MLP team, DUPR, and Pickleheads. That proximity matters because this project must feel credible to serious players from the first visit — not like a hotel court with a membership label attached.</p>
+      <div class="operator-proof-grid">
+        <div class="operator-proof"><span class="kicker">Institutional Access</span><p>UPA ownership and direct relationships across the PPA Tour, MLP, Texas Ranchers, DUPR, and Pickleheads ecosystem.</p></div>
+        <div class="operator-proof"><span class="kicker">Player Standard</span><p>More than nine years in the sport, nine gold medals, and competing in the 2026 Pickleball World Cup in Vietnam.</p></div>
+        <div class="operator-proof"><span class="kicker">Builder Mindset</span><p>Built a proprietary tournament and game-logging app for pickleball players — experience that translates into better booking, event, and retention mechanics.</p></div>
+        <div class="operator-proof"><span class="kicker">Member Acquisition</span><p>Connected to thousands of South Florida pickleball players who can be reached directly for founding-member and event marketing.</p></div>
+        <div class="operator-proof"><span class="kicker">Pro Court Fluency</span><p>Knows the details that make premium members pay and stay: clear run-off, ceiling height, lighting, wind/noise control, climate, programming, and social energy.</p></div>
+        <div class="operator-proof"><span class="kicker">One Accountable Partner</span><p>Owns the build coordination, launch playbook, membership engine, programming, sponsors, and operating reporting in one aligned role.</p></div>
       </div>
-
-      <div class="comp-phases">
-        <div class="comp-phase">
-          <div class="phase-tag">Build Phase</div>
-          <div class="phase-title">Months 1–4</div>
-          <div class="phase-fee">$10K<span class="per">/mo</span></div>
-          <div class="phase-note">Flat fee during pre-launch. Covers project management, vendor coordination, web + booking buildout, pre-sale campaign.</div>
-          <div class="phase-total">Total: $40K</div>
-        </div>
-        <div class="comp-phase">
-          <div class="phase-tag">Year 1 · Ramp</div>
-          <div class="phase-title">Months 5–12</div>
-          <div class="phase-fee">$6K<span class="per">/mo</span><span class="plus">+ 15%</span></div>
-          <div class="phase-note">Base retainer + 15% of gross club revenue. Lower share during ramp when DUA is still recovering CapEx.</div>
-        </div>
-        <div class="comp-phase accent">
-          <div class="phase-tag">Year 2 · Post-Payback</div>
-          <div class="phase-title">Months 13–24</div>
-          <div class="phase-fee">$6K<span class="per">/mo</span><span class="plus">+ 25%</span></div>
-          <div class="phase-note"><strong>Escalation triggers when DUA recovers full CapEx</strong> (~Month 20). Higher share reflects proven program.</div>
-        </div>
-        <div class="comp-phase accent">
-          <div class="phase-tag">Year 3+ · Mature</div>
-          <div class="phase-title">Months 25+</div>
-          <div class="phase-fee">$6K<span class="per">/mo</span><span class="plus">+ 30%</span></div>
-          <div class="phase-note">Steady-state operating partnership. 70% of gross stays with DUA, plus 100% of F&B and room-night halo uplift.</div>
-        </div>
-      </div>
-
-      <div class="comp-align">
-        <div class="align-block">
-          <div class="align-num">$602K</div>
-          <div class="align-label">3-year cumulative benefit after build CapEx + gross halo revenue in the current simple model</div>
-        </div>
-        <div class="align-block">
-          <div class="align-num">~$605K</div>
-          <div class="align-label">3-year operator comp (Y1 $111K + Y2 $211K + Y3 $283K)</div>
-        </div>
-        <div class="align-block">
-          <div class="align-num">100%</div>
-          <div class="align-label">Of the hotel asset value created through underwritten NOI belongs to DUA ownership</div>
-        </div>
-      </div>
+      <p><strong>Why this is decisive:</strong> the membership model only works if the court earns trust with experienced players and fills quickly with the right community. Michael’s job is to prevent expensive design misses, build a club people want to join, and activate demand well before opening day.</p>
+      <p>Commercial terms are intentionally documented separately and structured around measurable build, launch, membership, and hotel-return milestones.</p>
     </div>
   </div>
 </section>
@@ -4551,6 +4555,12 @@
   const gateRole = document.getElementById('gateRole');
   const gateAgree = document.getElementById('gateAgree');
   const gateBtn = document.getElementById('gateBtn');
+  const gateError = document.getElementById('gateError');
+  const ndaApiMeta = document.querySelector('meta[name="nda-api-base"]');
+  const termsVersion = document.querySelector('meta[name="nda-terms-version"]').content;
+  const proposalVersion = document.querySelector('meta[name="proposal-version"]').content;
+  const isLocalPreview = !window.location.hostname || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  const ndaApiBase = (ndaApiMeta.content.trim() || (isLocalPreview ? 'http://localhost:8787' : '')).replace(/\/$/, '');
 
   function checkGate() {
     const valid = gateName.value.trim().length > 1 &&
@@ -4564,23 +4574,42 @@
     el.addEventListener('change', checkGate);
   });
 
-  gateBtn.addEventListener('click', () => {
-    const log = {
-      name: gateName.value.trim(),
-      email: gateEmail.value.trim(),
-      role: gateRole.value.trim(),
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent
-    };
+  gateBtn.addEventListener('click', async () => {
+    if (!ndaApiBase) {
+      gateError.textContent = 'This NDA intake is not configured. Please contact Michael for access.';
+      return;
+    }
+
+    const label = gateBtn.textContent;
+    gateBtn.disabled = true;
+    gateBtn.textContent = 'Recording acknowledgment...';
+    gateError.textContent = '';
+
     try {
-      const existing = JSON.parse(localStorage.getItem('ndaLog') || '[]');
-      existing.push(log);
-      localStorage.setItem('ndaLog', JSON.stringify(existing));
-    } catch(e) {}
-    document.getElementById('accessLog').textContent =
-      'Viewed by ' + log.name + ' · ' + new Date().toLocaleDateString();
-    gate.classList.add('hidden');
-    document.body.style.overflow = 'auto';
+      const response = await fetch(ndaApiBase + '/api/nda-acknowledgments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: gateName.value.trim(),
+          email: gateEmail.value.trim(),
+          role: gateRole.value.trim(),
+          accepted: gateAgree.checked,
+          termsVersion,
+          proposalVersion
+        })
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || 'Unable to record your acknowledgment.');
+
+      document.getElementById('accessLog').textContent =
+        'Acknowledged by ' + gateName.value.trim() + ' · ' + new Date(body.acknowledgement.acknowledgedAt).toLocaleDateString();
+      gate.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    } catch (error) {
+      gateError.textContent = error.message || 'Unable to record your acknowledgment. Please try again.';
+      gateBtn.disabled = false;
+      gateBtn.textContent = label;
+    }
   });
 
   // Reveal
