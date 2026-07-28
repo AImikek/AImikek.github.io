@@ -3,5 +3,12 @@ main = "worker.mjs"
 compatibility_date = "2026-07-27"
 workers_dev = true
 
-# Add the D1 database binding named DB in the Cloudflare dashboard after creating the Worker.
-# Secrets are intentionally not stored in this repository.
+[vars]
+ALLOWED_ORIGINS = "https://mikek.ai"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dua-nda-records"
+database_id = "a8a00a79-9084-4d02-a549-ac1042808049"
+
+# ADMIN_PASSWORD and SESSION_SECRET are intentionally stored only in Cloudflare.
