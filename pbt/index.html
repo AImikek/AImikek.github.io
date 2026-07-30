@@ -508,7 +508,7 @@
 <div id="pageHistory" style="display:none;position:fixed;inset:0;z-index:350;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;">
   <div style="max-width:600px;margin:0 auto;padding-top:8px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-top:4px;">
-      <button onclick="closeHistory()"
+      <button onclick="goBack()"
         style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">📜 Past Tournaments</div>
     </div>
@@ -802,7 +802,7 @@
 <div id="leaderboardPage" class="hidden" style="position:fixed;inset:0;z-index:340;background:var(--bg);overflow-y:auto;padding:60px 16px 100px;">
   <div style="max-width:560px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-top:4px;">
-      <button onclick="closeLeaderboard()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">🏆 Leaderboard</div>
     </div>
     <div class="rank-toggle" id="lbTimeRow" style="margin-bottom:8px;"></div>
@@ -818,7 +818,7 @@
 <div id="playerDetail" class="hidden" style="position:fixed;inset:0;z-index:590;background:rgba(4,6,15,0.96);backdrop-filter:blur(8px);overflow-y:auto;padding:16px 16px 60px;">
   <div style="max-width:520px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-top:4px;">
-      <button onclick="document.getElementById('playerDetail').classList.add('hidden')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div id="pdName" style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;"></div>
     </div>
     <div id="pdStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
@@ -832,7 +832,7 @@
 <div id="guidePage" class="hidden" style="position:fixed;inset:0;z-index:345;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;">
   <div style="max-width:560px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
-      <button onclick="document.getElementById('guidePage').classList.add('hidden')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">✨ App Guide</div>
     </div>
     <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:22px;">Everything PB Tourney can do — free, no downloads, works on any phone.</div>
@@ -842,6 +842,8 @@
     <div class="guide-card"><div class="guide-icon">📝</div><div><div class="guide-t">Log Casual Games</div><div class="guide-s">No schedule? No problem. Log Games mode lets you add games one at a time during open play. The session names itself after the players and date, and every score still counts toward your all-time stats.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">📲</div><div><div class="guide-t">Everyone Edits Scores Live</div><div class="guide-s">Invite friends with the <b>Share button, link, or QR code</b> right from the Games screen. Anyone who joins sees every score update in real time on their own phone — and can enter scores too. No more shouting the score across four courts.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">📅</div><div><div class="guide-t">Games to Join — Reserve Your Spot</div><div class="guide-s">Planning a session? Create it in <b>Games to Join</b> (menu): set the location, date, time, spots, and level — then share ONE link. Friends tap it, sign in, and claim numbered spots. Full sessions get an automatic <b>waitlist</b> that promotes people when someone drops. Make it <b>Public</b> so the whole community can find it, or <b>Private</b> for just your crew. Weekly games can repeat with one tap, and when everyone shows up — start the tournament straight from the roster. 🥒</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">👑</div><div><div class="guide-t">The Leaderboard</div><div class="guide-s">Tap the 🏆 anytime to see the all-time rankings — who's the real champ in your city. Sort by Average Point Differential (the fair way), Wins, or Points. Win streaks get 🔥 badges, the #1 spot gets the crown, and every row shows how far you are behind the player above you. Tap any player to see their full match history. Play 3+ games to get ranked.</div></div></div>
 
@@ -866,7 +868,7 @@
 <div id="sessionsPage" class="hidden" style="position:fixed;inset:0;z-index:347;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;">
   <div style="max-width:560px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
-      <button onclick="document.getElementById('sessionsPage').classList.add('hidden')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;">📅 Games to Join</div>
     </div>
     <div style="color:var(--muted);font-size:13px;font-weight:600;margin-bottom:16px;">Claim a spot in an upcoming session — or create your own.</div>
@@ -879,7 +881,7 @@
 <div id="sessionCreate" class="hidden" style="position:fixed;inset:0;z-index:348;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;">
   <div style="max-width:520px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-      <button onclick="document.getElementById('sessionCreate').classList.add('hidden')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;">➕ New Session</div>
     </div>
     <label class="flabel">Location</label>
@@ -916,7 +918,7 @@
 <div id="sessionDetail" class="hidden" style="position:fixed;inset:0;z-index:349;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;">
   <div style="max-width:560px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-      <button onclick="closeSessionDetail()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;">📅 Session</div>
     </div>
     <div id="sdContent"></div>
@@ -948,7 +950,7 @@
 <div id="adminDash" class="hidden" style="position:fixed;inset:0;z-index:585;background:var(--bg);overflow-y:auto;padding:60px 16px 100px;">
   <div style="max-width:560px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-      <button onclick="document.getElementById('adminDash').classList.add('hidden')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">📊 Admin Dashboard</div>
     </div>
     <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;"></div>
@@ -1361,6 +1363,7 @@ function renderCurrent() {
 }
 
 window.openSetup = window._openSetup = function() {
+  window._pushNav('home');
   window.hideAllPages();
   if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
@@ -1841,6 +1844,7 @@ const LB_MIN_GAMES = 3;
 
 window.openLeaderboard = async function() {
   if (window._resetBars) window._resetBars();
+  window._pushNav('leaderboard');
   window.hideAllPages();
   document.getElementById('setupOverlay').classList.add('hidden');
   document.getElementById('leaderboardPage').classList.remove('hidden');
@@ -2007,6 +2011,8 @@ window.renderLeaderboard = function() {
 };
 
 window.openPlayerDetail = async function(name) {
+  window._pushNav('playerDetail');
+  window._pdName = name;
   if (!lbData) { try { await loadLeaderboardData(); } catch(e) {} }
   if (!lbData) return;
   const nm = name.toLowerCase();
@@ -2169,6 +2175,7 @@ window.runImport = async function() {
 };
 
 window.openGuide = function() {
+  window._pushNav('guide');
   window.hideAllPages();
   if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
@@ -2179,12 +2186,58 @@ window.shareAppLink = async function() {
   const url = 'https://mikek.ai/pbt';
   const txt = '🏓 Check out PB Tourney — free pickleball tournaments with live scores and an all-time leaderboard. See where you rank: ' + url;
   if (navigator.share) {
-    try { await navigator.share({ title: 'PB Tourney 🏓', text: txt, url }); return; }
+    try { await navigator.share({ title: 'PB Tourney 🏓', text: txt }); return; }
     catch(e) { if (e && e.name === 'AbortError') return; }
   }
   const ok = await copyTextRobust(url);
   if (ok) copiedToast('✓ Link Copied — share away!');
   else prompt('Copy this link:', url);
+};
+
+// ─── Navigation history: Back always returns to the previous screen ───
+window._navStack = [];
+window._navBack = false;
+window._currentScreen = function() {
+  const vis = id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden') && el.style.display !== 'none'; };
+  if (vis('sessionDetail')) return { id:'sessionDetail', arg: (typeof sdCurrent !== 'undefined' ? sdCurrent : null) };
+  if (vis('sessionCreate')) return { id:'sessionCreate' };
+  if (vis('sessionsPage')) return { id:'sessions' };
+  if (vis('adminDash')) return { id:'admin' };
+  if (vis('playerDetail')) return { id:'playerDetail', arg: window._pdName || null };
+  if (vis('guidePage')) return { id:'guide' };
+  if (vis('leaderboardPage')) return { id:'leaderboard' };
+  const ph = document.getElementById('pageHistory'); if (ph && ph.style.display !== 'none') return { id:'history' };
+  const pp = document.getElementById('pageProfile'); if (pp && pp.style.display === 'block') return { id:'profile' };
+  const so = document.getElementById('setupOverlay'); if (so && !so.classList.contains('hidden')) return { id:'home' };
+  const ps = document.getElementById('pageStandings'); if (ps && ps.style.display !== 'none') return { id:'standings' };
+  return { id:'games' };
+};
+window._pushNav = function(targetId) {
+  if (window._navBack) { window._navBack = false; return; }
+  const cur = window._currentScreen();
+  if (cur.id === targetId) return;
+  window._navStack.push(cur);
+  if (window._navStack.length > 20) window._navStack.shift();
+};
+window.goBack = function() {
+  const prev = window._navStack.pop();
+  window._navBack = true;
+  if (!prev) { closeAllOverlaysAndShow('games'); return; }
+  switch (prev.id) {
+    case 'home': openSetup(); break;
+    case 'games': closeAllOverlaysAndShow('games'); break;
+    case 'standings': closeAllOverlaysAndShow('standings'); break;
+    case 'profile': openProfile(); break;
+    case 'leaderboard': openLeaderboard(); break;
+    case 'history': openHistory(); break;
+    case 'guide': openGuide(); break;
+    case 'sessions': openSessions(); break;
+    case 'sessionCreate': openSessions(); break;
+    case 'sessionDetail': prev.arg ? openSessionDetail(prev.arg) : openSessions(); break;
+    case 'admin': openAdminDash(); break;
+    case 'playerDetail': prev.arg ? openPlayerDetail(prev.arg) : openLeaderboard(); break;
+    default: closeAllOverlaysAndShow('games');
+  }
 };
 
 // Hide every overlay page - lets nav icons work from EVERY screen.
@@ -2216,6 +2269,7 @@ window.scSetRec = function(r) {
 };
 
 window.openSessions = async function() {
+  window._pushNav('sessions');
   window.hideAllPages();
   if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
@@ -2264,6 +2318,7 @@ function fmtSessTime(t) {
 }
 
 window.openSessionCreate = function() {
+  window._pushNav('sessionCreate');
   document.getElementById('sessionCreate').classList.remove('hidden');
   const d = new Date(); d.setDate(d.getDate() + 1);
   document.getElementById('scDate').value = d.toISOString().slice(0,10);
@@ -2309,6 +2364,7 @@ window.createSession = async function() {
 };
 
 window.openSessionDetail = function(sid) {
+  window._pushNav('sessionDetail');
   sdCurrent = sid;
   document.getElementById('sessionDetail').classList.remove('hidden');
   document.getElementById('sdContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading...</div>';
@@ -2425,11 +2481,15 @@ window.shareSession = async function(sid) {
   const snap = await get(ref(db, 'sessions/' + sid));
   const s = snap.val() || {};
   const url = window.location.origin + window.location.pathname + '?s=' + sid;
-    const txt = '🏓 ' + (s.title||'Pickleball Session') + '\n'
-    + shortDate(s.date) + ' ' + fmtSessTime(s.startTime) + '-' + fmtSessTime(s.endTime) + (s.location ? ' @ ' + s.location : '') + (s.level ? ' \u00b7 Level ' + s.level : '') + '\n'
-    + 'Claim your spot: ' + url;
+  const d = new Date(s.date + 'T12:00');
+  const ds = d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+  let txt = '🏓 ' + (s.title||'Pickleball Session') + '\n'
+    + '📅 ' + ds + ' · ' + fmtSessTime(s.startTime) + '–' + fmtSessTime(s.endTime) + '\n';
+  if (s.location) txt += '📍 ' + s.location + '\n';
+  if (s.level) txt += '🎚 Level ' + s.level + '\n';
+  txt += 'Claim your spot: ' + url;
   if (navigator.share) {
-    try { await navigator.share({ title: s.title || 'Pickleball Session', text: txt, url }); return; }
+    try { await navigator.share({ title: s.title || 'Pickleball Session', text: txt }); return; }
     catch(e) { if (e && e.name === 'AbortError') return; }
   }
   const ok = await copyTextRobust(txt);
@@ -2444,7 +2504,9 @@ window.copySessionRoster = async function(sid) {
   const d = new Date(s.date + 'T12:00');
   const ds = d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
   let txt = '🏓 ' + (s.title||'Session') + '\n'
-    + shortDate(s.date) + ' ' + fmtSessTime(s.startTime) + '-' + fmtSessTime(s.endTime) + (s.location ? ' @ ' + s.location : '') + (s.level ? ' \u00b7 Level ' + s.level : '') + '\n';
+    + '📅 ' + ds + ' · ' + fmtSessTime(s.startTime) + '–' + fmtSessTime(s.endTime) + '\n';
+  if (s.location) txt += '📍 ' + s.location + '\n';
+  if (s.level) txt += '🎚 Level ' + s.level + '\n';
   for (let i = 0; i < spots; i++) txt += (i+1) + '. ' + (roster[i] ? roster[i].name + (roster[i].comment ? ' (' + roster[i].comment + ')' : '') : '?') + '\n';
   const left = spots - roster.length;
   txt += left > 0 ? left + ' spot' + (left>1?'s':'') + ' left — claim yours: ' + window.location.origin + window.location.pathname + '?s=' + sid : 'FULL! 🔥';
@@ -2490,6 +2552,7 @@ window.deleteSession = async function(sid) {
 };
 
 window.openAdminDash = async function() {
+  window._pushNav('admin');
   window.hideAllPages();
   if (window.resetBars) resetBars();
   if (!isAdmin()) return;
@@ -2783,7 +2846,7 @@ window.shareTournamentLink = async function() {
   const txt = 'Join our pickleball tournament! Open this link, sign in, and you can see + edit all the scores live: ' + url;
   if (navigator.share) {
     try {
-      await navigator.share({ title: (cfg && cfg.name) || 'Pickleball Tournament', text: txt, url });
+      await navigator.share({ title: (cfg && cfg.name) || 'Pickleball Tournament', text: txt });
       return;
     } catch(e) {
       if (e && e.name === 'AbortError') return; // user cancelled
@@ -3383,6 +3446,7 @@ window._wireProfileAutosave = function() {
 };
 
 window.openProfile = function() {
+  window._pushNav('profile');
   window.hideAllPages();
   if (window.resetBars) resetBars();
   setActiveTab('profile');
@@ -3495,6 +3559,7 @@ function isAdmin() {
 }
 
 window.openHistory = function() {
+  window._pushNav('history');
   window.hideAllPages();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   var gpg = document.getElementById('guidePage'); if (gpg) gpg.classList.add('hidden');
@@ -3846,6 +3911,7 @@ document.addEventListener('focusout', function() {
 });
 
 function closeAllOverlaysAndShow(p) {
+  if (window._pushNav) window._pushNav(p === 'standings' ? 'standings' : 'games');
   if (window.hideAllPages) window.hideAllPages();
   if (window.resetBars) resetBars();
   if (document.getElementById('tabGames').disabled) return;
@@ -4005,6 +4071,7 @@ function scheduleNextWeek(s) { if(window.scheduleNextWeek) window.scheduleNextWe
 function deleteSession(s)    { if(window.deleteSession) window.deleteSession(s); }
 function scSetVis(v)         { if(window.scSetVis) window.scSetVis(v); }
 function scSetRec(r)         { if(window.scSetRec) window.scSetRec(r); }
+function goBack()            { if(window.goBack) window.goBack(); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 
 
