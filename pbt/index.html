@@ -218,7 +218,7 @@
     backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
   #addGameOverlay.hidden { display:none; }
 
-  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden, #adPlayerModal.hidden, #sessionsPage.hidden, #sessionCreate.hidden, #sessionDetail.hidden { display:none !important; }
+  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden, #adPlayerModal.hidden, #sessionsPage.hidden, #sessionCreate.hidden, #sessionDetail.hidden, #quickStartPage.hidden, #courtsPage.hidden, #courtSubmit.hidden { display:none !important; }
 
   /* City/Email overlay — display controlled ONLY by CSS class */
   #cityEmailOverlay { display:flex; }
@@ -411,6 +411,8 @@
   /* iOS: 16px inputs prevent focus auto-zoom */
   input, select, textarea { font-size:16px !important; }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 </head>
 <body>
 
@@ -843,6 +845,10 @@
 
     <div class="guide-card"><div class="guide-icon">📲</div><div><div class="guide-t">Everyone Edits Scores Live</div><div class="guide-s">Invite friends with the <b>Share button, link, or QR code</b> right from the Games screen. Anyone who joins sees every score update in real time on their own phone — and can enter scores too. No more shouting the score across four courts.</div></div></div>
 
+    <div class="guide-card"><div class="guide-icon">🏟</div><div><div class="guide-t">Find Courts Near You</div><div class="guide-s">The <b>Find Courts</b> page (menu) maps every pickleball court in the Miami area — hours, pricing, lights, indoor/outdoor, and one-tap directions. Allow location and the whole list sorts by distance from you. Know a hidden gem? Submit it right from the page.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">📖</div><div><div class="guide-t">New to Pickleball? Quick Start</div><div class="guide-s">The <b>Quick Start Guide</b> (menu) takes you from zero to your first game: the two videos worth watching, the best Instagram coaches to follow, where to play, and the local WhatsApp community. Share your own tips at the bottom — the best ones make it into the guide.</div></div></div>
+
     <div class="guide-card"><div class="guide-icon">📅</div><div><div class="guide-t">Games to Join — Reserve Your Spot</div><div class="guide-s">Planning a session? Create it in <b>Games to Join</b> (menu): set the location, date, time, spots, and level — then share ONE link. Friends tap it, sign in, and claim numbered spots. Full sessions get an automatic <b>waitlist</b> that promotes people when someone drops. Make it <b>Public</b> so the whole community can find it, or <b>Private</b> for just your crew. Weekly games can repeat with one tap, and when everyone shows up — start the tournament straight from the roster. 🥒</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">👑</div><div><div class="guide-t">The Leaderboard</div><div class="guide-s">Tap the 🏆 anytime to see the all-time rankings — who's the real champ in your city. Sort by Average Point Differential (the fair way), Wins, or Points. Win streaks get 🔥 badges, the #1 spot gets the crown, and every row shows how far you are behind the player above you. Tap any player to see their full match history. Play 3+ games to get ranked.</div></div></div>
@@ -861,6 +867,89 @@
       <button onclick="shareAppLink()" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.35);">📤 Share It With Your Pickleball Friends</button>
       <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted);font-weight:600;">mikek.ai/pbt · free forever for players</div>
     </div>
+  </div>
+</div>
+
+<!-- QUICK START GUIDE -->
+<div id="quickStartPage" class="hidden" style="position:fixed;inset:0;z-index:346;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;">📖 Quick Start Guide</div>
+    </div>
+    <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:20px;">New to pickleball? Everything you need to go from zero to your first game. 🏓</div>
+
+    <div class="guide-card"><div class="guide-icon">🎬</div><div><div class="guide-t">Step 1 · Learn the Basics</div><div class="guide-s">Two videos and you'll understand the whole game:<br>
+      ▶ <a href="https://www.youtube.com/watch?v=pDDwZgepQeE" target="_blank" style="color:var(--cyan);font-weight:700;">How to Play Pickleball</a><br>
+      ▶ <a href="https://www.youtube.com/watch?v=EHsoeRJ5QdQ" target="_blank" style="color:var(--cyan);font-weight:700;">How Pickleball Scoring Works</a><br>
+      Watching these first makes your on-court debut way smoother.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">📸</div><div><div class="guide-t">Step 2 · Follow the Pros</div><div class="guide-s">Free daily tips in your feed:<br>
+      <b>Beginner &amp; Intermediate:</b><br>
+      · <a href="https://www.instagram.com/effectivepickleball" target="_blank" style="color:var(--pink);font-weight:700;">@effectivepickleball</a><br>
+      · <a href="https://www.instagram.com/tanner.pickleball" target="_blank" style="color:var(--pink);font-weight:700;">@tanner.pickleball</a><br>
+      <b>Advanced &amp; Coaching:</b><br>
+      · <a href="https://www.instagram.com/jamesignatowichcoaching" target="_blank" style="color:var(--pink);font-weight:700;">@jamesignatowichcoaching</a></div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">🏟</div><div><div class="guide-t">Step 3 · Hit the Courts</div><div class="guide-s">Practice makes perfect. Busy courts are the easiest place to join a game — just put your paddle down in line and you're in the rotation. Use our <b onclick="openCourts()" style="color:var(--cyan);cursor:pointer;text-decoration:underline;">Find Courts</b> page to see every Miami-area court near you (with hours, prices, and lights), and join a game in <b onclick="openSessions()" style="color:var(--cyan);cursor:pointer;text-decoration:underline;">Games to Join</b>.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Step 4 · Join the Community</div><div class="guide-s">Connect with local players in the <a href="https://t.ly/brickellpb" target="_blank" style="color:var(--aqua);font-weight:700;">Miami Brickell Pickleball WhatsApp Group</a> — games get organized daily.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">💡</div><div><div class="guide-t">Pro Tip</div><div class="guide-s">Learning through videos and IG tips <b>before</b> playing makes the game click much faster. Pickleball is easy to pick up once you understand the fundamentals!</div></div></div>
+
+    <div style="margin-top:24px;padding:16px;background:var(--surface);border:1px solid rgba(0,240,255,0.25);border-radius:16px;">
+      <div style="font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--cyan);text-transform:uppercase;margin-bottom:6px;">🧠 Got a tip worth sharing?</div>
+      <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:10px;">Know a great video, account, drill, or trick that helped your game? Share it and we may add it to this guide!</div>
+      <textarea class="finput" id="tipText" rows="3" placeholder="Your tip, link, or helpful knowledge..." style="resize:vertical;min-height:70px;"></textarea>
+      <button onclick="submitTip()" style="display:block;width:100%;padding:13px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">📮 Submit Your Tip</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIND COURTS -->
+<div id="courtsPage" class="hidden" style="position:fixed;inset:0;z-index:346;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;">🏟 Find Courts</div>
+    </div>
+    <div style="color:var(--muted);font-size:13px;font-weight:600;margin-bottom:12px;">Every pickleball court in the Miami area — hours, pricing, lights, and directions.</div>
+    <button id="courtLocBtn" onclick="enableCourtLocation()" style="display:block;width:100%;padding:13px;margin-bottom:12px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">📍 Sort By Distance From Me</button>
+    <div id="courtMap" style="height:260px;border-radius:16px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;background:var(--surface);"></div>
+    <div id="courtsList"></div>
+    <button onclick="openCourtSubmit()" style="display:block;width:100%;padding:14px;margin-top:16px;background:transparent;border:2px dashed rgba(0,240,255,0.35);color:var(--cyan);border-radius:14px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">➕ Know a Court We're Missing?</button>
+  </div>
+</div>
+
+<!-- SUBMIT A COURT -->
+<div id="courtSubmit" class="hidden" style="position:fixed;inset:0;z-index:348;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;">
+  <div style="max-width:520px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;">➕ Submit a Court</div>
+    </div>
+    <div style="color:var(--muted);font-size:13px;font-weight:600;margin-bottom:14px;">Help the community find every court! Submissions are reviewed before appearing.</div>
+    <label class="flabel">Court Name *</label>
+    <input class="finput" id="csName" placeholder="Woodside Park">
+    <label class="flabel">Address</label>
+    <input class="finput" id="csAddress" placeholder="123 Main St">
+    <label class="flabel">City *</label>
+    <input class="finput" id="csCity" placeholder="Miami">
+    <label class="flabel">Number of Courts</label>
+    <input class="finput" id="csCount" placeholder="4">
+    <label class="flabel">Indoor or Outdoor?</label>
+    <input class="finput" id="csIndoor" placeholder="Outdoor">
+    <label class="flabel">Lights?</label>
+    <input class="finput" id="csLights" placeholder="Lights until 10pm">
+    <label class="flabel">Free or Pricing</label>
+    <input class="finput" id="csPrice" placeholder="Free">
+    <label class="flabel">Days / Hours</label>
+    <input class="finput" id="csHours" placeholder="Daily, sunrise to sunset">
+    <label class="flabel">Website / Info Link</label>
+    <input class="finput" id="csUrl" placeholder="https://...">
+    <label class="flabel">Anything else?</label>
+    <input class="finput" id="csNote" placeholder="Busy weekday mornings, bring water...">
+    <button onclick="submitCourt()" style="display:block;width:100%;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">📮 Submit for Review</button>
   </div>
 </div>
 
@@ -956,6 +1045,8 @@
     <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;"></div>
     <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">👥 Registered Players</div>
     <div id="adSignups" style="margin-bottom:20px;"></div>
+    <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">🏟 Court Submissions (Pending)</div>
+    <div id="adCourts" style="margin-bottom:20px;"></div>
     <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">🏓 Recent Tournament Activity</div>
     <div id="adActivity"></div>
     <div style="margin-top:16px;font-size:11px;color:var(--muted);font-weight:600;text-align:center;">Full auth list (incl. users without profiles): Firebase Console → Authentication → Users</div>
@@ -1012,6 +1103,8 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item" onclick="closeSettings();openProfile();">👤 My Profile</button>
     <button class="settings-item" onclick="closeSettings();openGuide();">✨ App Guide</button>
     <button class="settings-item" onclick="closeSettings();openSessions();">📅 Games to Join</button>
+    <button class="settings-item" onclick="closeSettings();openCourts();">🏟 Find Courts</button>
+    <button class="settings-item" onclick="closeSettings();openQuickStart();">📖 Quick Start Guide</button>
     <div class="settings-divider"></div>
     <button class="settings-item" onclick="closeSettings();newTournament();">🏠 New Tournament</button>
     <button class="settings-item" onclick="closeSettings();shareTournamentLink();">🔗 Invite Players to Edit Scores</button>
@@ -2199,6 +2292,9 @@ window._navStack = [];
 window._navBack = false;
 window._currentScreen = function() {
   const vis = id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden') && el.style.display !== 'none'; };
+  if (vis('courtSubmit')) return { id:'courtSubmit' };
+  if (vis('courtsPage')) return { id:'courts' };
+  if (vis('quickStartPage')) return { id:'quickstart' };
   if (vis('sessionDetail')) return { id:'sessionDetail', arg: (typeof sdCurrent !== 'undefined' ? sdCurrent : null) };
   if (vis('sessionCreate')) return { id:'sessionCreate' };
   if (vis('sessionsPage')) return { id:'sessions' };
@@ -2235,16 +2331,225 @@ window.goBack = function() {
     case 'sessionCreate': openSessions(); break;
     case 'sessionDetail': prev.arg ? openSessionDetail(prev.arg) : openSessions(); break;
     case 'admin': openAdminDash(); break;
+    case 'quickstart': openQuickStart(); break;
+    case 'courts': openCourts(); break;
+    case 'courtSubmit': openCourts(); break;
     case 'playerDetail': prev.arg ? openPlayerDetail(prev.arg) : openLeaderboard(); break;
     default: closeAllOverlaysAndShow('games');
   }
 };
 
+const COURTS = [
+{n:"Jose Marti Park Indoor Pickleball",u:"https://www.miami.gov/Parks-Public-Places/Parks-Directory/Jose-Marti-Park",a:"434 SW 3rd Ave",c:"Miami",z:"33130",ct:"2 courts",h:"M-F 10am-2pm, Sat & Sun 12pm-5pm",io:"Indoor/Outdoor",l:"Not specified",p:"Free",lat:25.7689,lng:-80.2016},
+{n:"Bryan Park",u:"https://www.pickleheads.com/courts/us/virginia/richmond/bryan-park",a:"2301 SW 13th St",c:"Miami",z:"33145",ct:"4 courts",h:"Mon, Wed, Fri & Sat (park hours)",io:"Outdoor",l:"Lights until 8:25 PM",p:"Free",lat:25.7573,lng:-80.2326},
+{n:"Sip & Pickle at Wynwood Marketplace",u:"https://bucketlisters.com/experience/sip-pickle-at-wynwood-marketplace",a:"2250 NW 2nd Ave",c:"Miami",z:"33127",ct:"5 courts",h:"Wed-Thu 4-10pm · Fri 4pm-12am · Sat 11am-12am · Sun 11am-9pm",io:"Outdoor",l:"Lights",p:"From $40/hr (up to 4)",lat:25.7988,lng:-80.1996},
+{n:"Coconut Grove",u:"https://joespickleball.com/courts/coconut-grove-tennis-court",a:"2875 Oak Avenue",c:"Miami",z:"33133",ct:"2 courts",h:"6am–8pm",io:"Outdoor",l:"No lights",p:"Free",lat:25.7296,lng:-80.2437},
+{n:"Calusa Park",u:"https://www.globalpickleball.network/pickleball-courts/courts/pickleball-court-page/court/3513-calusa-park",a:"6702 Crandon Blvd",c:"Key Biscayne",z:"33149",ct:"4 courts",h:"8am-6:30pm daily",io:"Outdoor",l:"No lights",p:"Free",lat:25.6926,lng:-80.1620},
+{n:"The Ritz-Carlton Key Biscayne",u:"https://www.rckbtennis.com/",a:"415 Grand Bay Dr",c:"Key Biscayne",z:"33149",ct:"3 courts",h:"8am-9pm",io:"Outdoor",l:"Lights",p:"$40/hr · $60/90min",lat:25.6866,lng:-80.1594},
+{n:"Douglas Park",u:"https://douglasparkcc.org/event/pickleball-recreational-2/",a:"2755 SW 37th Ave",c:"Miami",z:"33133",ct:"2 courts",h:"M/W/F/Sa 9-12 · Tu 9-12 & 6-9pm · Th 6-9pm · Su 1-4pm",io:"Outdoor",l:"Lights",p:"Free",lat:25.7415,lng:-80.2547},
+{n:"Polo Park",u:"https://www.pickleheads.com/courts/us/florida/miami-beach/polo-park",a:"4301 N Michigan Ave",c:"Miami Beach",z:"33140",ct:"2 courts",h:"Daily, sunrise to sunset",io:"Outdoor",l:"Lights",p:"Free",lat:25.8153,lng:-80.1354},
+{n:"Miami Beach Golf",u:"https://www.pickleheads.com/courts/us/florida/miami-beach/miami-beach-pickleball-courts",a:"2301 Alton Rd",c:"Miami Beach",z:"33140",ct:"6 courts",h:"Sunrise to 10pm, 7 days",io:"Outdoor",l:"Lights until 10 PM",p:"Free",lat:25.7994,lng:-80.1417},
+{n:"Gerry Curtis Park",u:"https://www.miami.gov/Parks-Public-Places/Parks-Directory/Gerry-Curtis-Park",a:"1901 NW 24th Ave",c:"Miami",z:"33125",ct:"1 court",h:"M-F 7am-9:30pm · Sa-Su 8am-6pm",io:"Indoor/Outdoor",l:"Not specified",p:"Free",lat:25.7926,lng:-80.2374},
+{n:"Ultra Padel and Pickleball Club",u:"https://www.pickleheads.com/courts/us/florida/miami/ultra-padel-club",a:"6301 Northeast 4th Avenue",c:"Miami",z:"33138",ct:"8 courts",h:"Daily 7am-11pm",io:"Indoor & Outdoor",l:"Lights",p:"Membership required",lat:25.8348,lng:-80.1893},
+{n:"Scott Rakow Youth Center",u:"https://www.miamibeachfl.gov",a:"2700 Sheridan Ave",c:"Miami Beach",z:"33140",ct:"3 courts",h:"Su 2-5pm · Fri 6:15-8pm · M/W/F 9am-1pm",io:"Indoor",l:"Not specified",p:"Free",lat:25.8043,lng:-80.1319},
+{n:"Charlie DeLucca Park (Kinloch Park)",u:"https://www.miami.gov/Parks-Public-Places/Parks-Directory/Charlie-DeLucca-Park",a:"455 NW 47th Ave",c:"Miami",z:"33126",ct:"Courts",h:"M-F 7am-5pm",io:"Outdoor",l:"Not specified",p:"Free",lat:25.7757,lng:-80.2721},
+{n:"University of Miami",u:"https://wellness.miami.edu/booking",a:"1241 Dickinson Dr",c:"Coral Gables",z:"33146",ct:"4 courts",h:"See booking site",io:"Outdoor",l:"No lights",p:"One-time fee",lat:25.7178,lng:-80.2792},
+{n:"North Shore",u:"https://www.pickleheads.com/courts/us/florida/miami-beach/north-shore-park-and-youth-center",a:"501 72nd St",c:"Miami Beach",z:"33141",ct:"3 courts",h:"M/Tu/Th 10am-1pm · Mon 6:15-8pm",io:"Indoor",l:"Lights",p:"Free for residents",lat:25.8574,lng:-80.1258},
+{n:"Miami Shores Tennis Club & Pickleball",u:"https://www.pickleheads.com/courts/us/florida/miami-shores/miami-shores-tennis-club-and-pickleball",a:"825 NE 100th Street",c:"Miami Shores",z:"33138",ct:"6 courts",h:"Daily 7am-9pm",io:"Outdoor",l:"Lights",p:"Membership required",lat:25.8687,lng:-80.1802},
+{n:"Salvadore Park Tennis Center",u:"https://www.pickleheads.com/courts/us/florida/coral-gables/salvadore-park-tennis-center",a:"1120 Andalusia Ave",c:"Coral Gables",z:"33134",ct:"2 courts",h:"M-F 7am-9pm · Sa-Su 7am-7pm",io:"Outdoor",l:"Lights",p:"One-time fee",lat:25.7471,lng:-80.2662},
+{n:"Schoolyard Pickleball Academy",u:"https://www.schoolyardtennis.com",a:"7440 SW 82nd Street",c:"Miami",z:"33143",ct:"6 courts",h:"M/W 9-11am · Tu/Th 6-8pm · Su 9-11am",io:"Outdoor",l:"Not specified",p:"$10/player (RSVP)",lat:25.6947,lng:-80.3169},
+{n:"The Yards",u:"https://www.playtheyards.com/play-pickleball",a:"7551 W 4th Ave",c:"Hialeah",z:"33014",ct:"3 courts",h:"M-F 7:30am-9pm · Sa 7:30-7 · Su 7:30-6",io:"Indoor",l:"Lights",p:"Membership ($1500/yr)",lat:25.8887,lng:-80.3327},
+{n:"Tropical Park",u:"https://www.pickleheads.com/courts/us/florida/miami/tropical-park",a:"9775 SW 87th Avenue... 7900 SW 40th St",c:"Miami",z:"33155",ct:"4 courts",h:"Daily, sunrise to sunset",io:"Outdoor",l:"Lights",p:"Free",lat:25.7327,lng:-80.3255},
+{n:"Country Club of Miami",u:"https://www.pickleheads.com/courts/us/florida/hialeah/country-club-of-miami",a:"6814 NW 186 Ter",c:"Hialeah",z:"33015",ct:"2 courts",h:"M-Sa 6:30am-8:30pm · Su 6:30am-6pm",io:"Outdoor",l:"Not specified",p:"Free",lat:25.9434,lng:-80.3130},
+{n:"Fisher Island Racquet Club",u:"https://www.fisherislandclub.com",a:"1 Fisher Island Dr",c:"Miami Beach",z:"33109",ct:"6 courts",h:"Members",io:"Outdoor",l:"Lights",p:"Membership required",lat:25.7616,lng:-80.1424},
+{n:"Golden Isles Tennis Center",u:"http://www.cohb.org/Tennis",a:"600 Blue Heron Dr",c:"Hallandale Beach",z:"33009",ct:"4 courts",h:"Daily 7am-9pm",io:"Outdoor",l:"Lights",p:"$80 one-time",lat:25.9840,lng:-80.1338},
+{n:"C.B. Smith Park",u:"https://www.broward.org",a:"900 N Flamingo Rd",c:"Pembroke Pines",z:"33028",ct:"6 courts",h:"Daily 8am-6pm",io:"Outdoor",l:"Lights",p:"Free",lat:26.0142,lng:-80.3126},
+{n:"Riviera Tennis Center",u:"https://rivieratenniscenter.com/pickleball/",a:"9775 SW 87th Avenue",c:"Miami",z:"33176",ct:"8 courts",h:"M-F 7-12 & 4-9 · Sa 8-2 · Su 8-1",io:"Outdoor",l:"Lights (4 courts)",p:"One-time fee",lat:25.6867,lng:-80.3346},
+{n:"Morgan Levy Park",u:"https://www.pickleheads.com/courts/us/florida/doral/morgan-levy-park",a:"5300 NW 102nd Avenue",c:"Doral",z:"33166",ct:"4 courts",h:"M-F 7am-9pm · Sa 8-9 · Su 8-7:30",io:"Outdoor",l:"Lights",p:"Free",lat:25.8207,lng:-80.3623},
+{n:"Water Oaks Park",u:"https://www.miamidade.gov",a:"9100 Hammocks Blvd",c:"Miami",z:"33196",ct:"8 courts",h:"Daily, sunrise to sunset",io:"Outdoor",l:"No lights",p:"Free",lat:25.6720,lng:-80.4290},
+{n:"Coral Pine Park",u:"https://www.pickleheads.com/courts/us/florida/pinecrest/coral-pine-park",a:"6955 SW 104th St",c:"Pinecrest",z:"33156",ct:"4 courts",h:"M-F 12-6pm",io:"Outdoor",l:"Not specified",p:"One-time fee · rentals $16-20",lat:25.6708,lng:-80.3079},
+{n:"West Pembroke Pines Pickleball Courts",u:"https://www.broward.org",a:"445 SW 172nd Ave",c:"Pembroke Pines",z:"33023",ct:"2 courts",h:"6am-10pm",io:"Indoor",l:"Lights",p:"Free",lat:26.0031,lng:-80.3768},
+{n:"Jefferson Park Pickleball",u:"https://www.pickleheads.com/courts/us/florida/hollywood/jefferson-park-pickleball",a:"1501 Jefferson St",c:"Hollywood",z:"33020",ct:"5 courts",h:"Daily 8am-8:45pm",io:"Outdoor",l:"No lights",p:"Free",lat:26.0069,lng:-80.1495},
+{n:"Diadem Pickleball Complex",u:"https://www.diadempickleballcomplex.com/",a:"1000 Coconut Creek Blvd",c:"Coconut Creek",z:"33066",ct:"9 courts",h:"M-Sa 7am-10pm · Su 7am-9pm",io:"Indoor",l:"Lights",p:"$40/hr",lat:26.2517,lng:-80.1854},
+{n:"Pembroke Lakes Tennis Center",u:"https://www.pickleheads.com/courts/us/florida/pembroke-pines/pembroke-lakes-tennis-center",a:"10500 Taft St",c:"Pembroke Pines",z:"33026",ct:"5 courts",h:"Daily 8am-9pm",io:"Outdoor",l:"Lights",p:"One-time fee",lat:26.0248,lng:-80.2899},
+{n:"Keystone Park",u:"https://www.pickleheads.com/courts/us/florida/miami/keystone-park",a:"13050 Ixora Ct",c:"Miami",z:"33181",ct:"2 courts",h:"Daily 6am-10pm",io:"Outdoor",l:"Lights",p:"Free",lat:25.8935,lng:-80.1560},
+{n:"Coral Reef Tennis Center",u:"https://www.pickleheads.com/courts/us/florida/palmetto-bay/coral-reef-tennis-center",a:"7895 SW 152nd St",c:"Palmetto Bay",z:"33157",ct:"2 courts",h:"M-F 8-12 & 3-10 · Sa-Su 8-8",io:"Outdoor",l:"Lights",p:"Free",lat:25.6234,lng:-80.3210},
+{n:"Suniland Park",u:"https://www.pickleheads.com/courts/us/florida/pinecrest/suniland-park",a:"12855 Pinecrest Pkwy",c:"Pinecrest",z:"33156",ct:"4 courts",h:"M-F 8am-12pm · weekends 2 courts",io:"Outdoor",l:"Lights",p:"Free",lat:25.6478,lng:-80.3103},
+{n:"305 Pickleball Series",u:"https://www.pickleheads.com/courts/us/florida/miami/305-pickleball-series",a:"6401 Kendale Lakes Drive",c:"Miami",z:"33183",ct:"8 courts",h:"M-F 7am-10pm · Sa-Su 7am-6pm",io:"Outdoor",l:"Lights",p:"Membership · $15/hr",lat:25.7080,lng:-80.4098},
+{n:"Aventura Community Center",u:"https://www.pickleheads.com/courts/us/florida/miami/aventura-community-center",a:"3375 NE 188th St",c:"Aventura",z:"33180",ct:"4 courts",h:"M-F 7am-9:30pm · Sa-Su 7am-3pm",io:"Indoor",l:"Lights",p:"Membership required",lat:25.9524,lng:-80.1367},
+{n:"Palmetto Bay Park",u:"https://www.palmettobay-fl.gov/1468/Court-Rentals",a:"17535 SW 95th Ave",c:"Palmetto Bay",z:"33157",ct:"2 courts",h:"M-F 8am-12pm",io:"Outdoor",l:"Lights",p:"Free",lat:25.5924,lng:-80.3444},
+{n:"Christ Fellowship Church",u:"https://www.places2play.org/place/1108-christ-fellowship-church-homestead-fl",a:"16390 SW 248th St",c:"Homestead",z:"33031",ct:"1 court",h:"Thu 9am-12pm",io:"Outdoor",l:"Not specified",p:"Free (membership)",lat:25.5251,lng:-80.4570},
+{n:"Woodside Park",u:"",a:"Woodside",c:"Miami",z:"",ct:"Courts",h:"",io:"Outdoor",l:"Lights",p:"Free",lat:25.7420,lng:-80.2790},
+{n:"The Fort",u:"",a:"Fort Lauderdale",c:"Fort Lauderdale",z:"",ct:"Courts",h:"",io:"Outdoor & Covered",l:"",p:"",lat:26.1224,lng:-80.1373}
+];
+
+let courtUserLoc = null, courtMapObj = null, courtMarkers = [];
+
+window.openQuickStart = function() {
+  window._pushNav('quickstart');
+  window.hideAllPages();
+  document.getElementById('quickStartPage').classList.remove('hidden');
+};
+
+window.submitTip = async function() {
+  const tip = document.getElementById('tipText').value.trim();
+  if (!tip) { alert('Type your tip first!'); return; }
+  try {
+    await set(ref(db, 'feedback/tip' + Date.now()), {
+      type: 'tip',
+      tip,
+      name: userProfile?.name || null,
+      contact: userProfile?.email || currentUser?.email || currentUser?.phoneNumber || null,
+      submittedAt: Date.now()
+    });
+    document.getElementById('tipText').value = '';
+    copiedToast('✓ Tip Submitted — thank you! 🧠');
+  } catch(e) { alert('Could not submit: ' + (e.message||e)); }
+};
+
+window.openCourts = async function() {
+  window._pushNav('courts');
+  window.hideAllPages();
+  document.getElementById('courtsPage').classList.remove('hidden');
+  renderCourtsList();
+  setTimeout(initCourtMap, 60);
+  // merge community-approved courts
+  try {
+    const snap = await get(ref(db, 'courts'));
+    const extra = snap.val();
+    if (extra) {
+      Object.values(extra).forEach(c => {
+        if (c && c.n && !COURTS.some(x => x.n.toLowerCase() === c.n.toLowerCase())) COURTS.push(c);
+      });
+      renderCourtsList();
+      refreshCourtMarkers();
+    }
+  } catch(e) {}
+};
+
+function courtDist(c) {
+  if (!courtUserLoc || !c.lat) return null;
+  const R = 3958.8, toR = x => x * Math.PI / 180;
+  const dLat = toR(c.lat - courtUserLoc.lat), dLng = toR(c.lng - courtUserLoc.lng);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toR(courtUserLoc.lat)) * Math.cos(toR(c.lat)) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+window.enableCourtLocation = function() {
+  if (!navigator.geolocation) { alert('Location not supported on this device.'); return; }
+  const btn = document.getElementById('courtLocBtn');
+  btn.textContent = '📍 Finding you...';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      courtUserLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      btn.textContent = '✓ Sorted By Distance';
+      btn.style.opacity = '0.6';
+      renderCourtsList();
+      if (courtMapObj && typeof L !== 'undefined') {
+        L.circleMarker([courtUserLoc.lat, courtUserLoc.lng], { radius:8, color:'#00F0FF', fillColor:'#00F0FF', fillOpacity:0.9 })
+          .addTo(courtMapObj).bindPopup('📍 You are here');
+        courtMapObj.setView([courtUserLoc.lat, courtUserLoc.lng], 11);
+      }
+    },
+    err => {
+      btn.textContent = '📍 Sort By Distance From Me';
+      alert('Location was blocked. You can allow it in your browser settings — the list still works without it!');
+    },
+    { enableHighAccuracy: false, timeout: 10000 }
+  );
+};
+
+function renderCourtsList() {
+  const list = document.getElementById('courtsList');
+  if (!list) return;
+  let courts = COURTS.slice();
+  if (courtUserLoc) courts.sort((a,b) => (courtDist(a) ?? 999) - (courtDist(b) ?? 999));
+  list.innerHTML = courts.map(c => {
+    const d = courtDist(c);
+    const gmaps = 'https://maps.google.com/?q=' + encodeURIComponent((c.a?c.a+', ':'') + c.c + ', FL ' + (c.z||''));
+    return '<div style="padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:14px;color:var(--white);min-width:0;">'+c.n+'</div>'
+      +(d !== null ? '<div style="flex-shrink:0;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;background:rgba(0,245,196,0.12);color:var(--aqua);">'+d.toFixed(1)+' mi</div>' : '')
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:3px;">📍 '+(c.a?c.a+' · ':'')+c.c+'</div>'
+      +'<div style="font-size:12px;color:var(--white);font-weight:600;margin-top:6px;">🏟 '+c.ct+' · '+c.io+(c.l && c.l !== 'Not specified' ? ' · 💡 '+c.l : '')+'</div>'
+      +(c.p ? '<div style="font-size:12px;font-weight:700;margin-top:3px;color:'+(String(c.p).toLowerCase().startsWith('free')?'var(--aqua)':'var(--yellow)')+';">💵 '+c.p+'</div>' : '')
+      +(c.h ? '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:3px;">🕐 '+c.h+'</div>' : '')
+      +'<div style="display:flex;gap:8px;margin-top:10px;">'
+      +'<a href="'+gmaps+'" target="_blank" style="flex:1;text-align:center;padding:9px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:9px;font-size:11px;font-weight:800;text-decoration:none;letter-spacing:0.5px;">🧭 DIRECTIONS</a>'
+      +(c.u ? '<a href="'+(c.u.startsWith('http')?c.u:'https://'+c.u)+'" target="_blank" style="flex:1;text-align:center;padding:9px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;font-size:11px;font-weight:800;text-decoration:none;letter-spacing:0.5px;">ℹ️ INFO</a>' : '')
+      +'</div></div>';
+  }).join('');
+}
+
+function initCourtMap() {
+  if (typeof L === 'undefined') {
+    const el = document.getElementById('courtMap');
+    if (el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-weight:600;font-size:13px;">Map loading...</div>';
+    setTimeout(initCourtMap, 500);
+    return;
+  }
+  if (courtMapObj) { setTimeout(() => courtMapObj.invalidateSize(), 100); return; }
+  try {
+    courtMapObj = L.map('courtMap', { scrollWheelZoom: false }).setView([25.78, -80.22], 10);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap © CARTO', maxZoom: 18
+    }).addTo(courtMapObj);
+    refreshCourtMarkers();
+  } catch(e) { console.log('map err', e); }
+}
+
+function refreshCourtMarkers() {
+  if (!courtMapObj || typeof L === 'undefined') return;
+  courtMarkers.forEach(m => { try { courtMapObj.removeLayer(m); } catch(e) {} });
+  courtMarkers = [];
+  COURTS.forEach(c => {
+    if (!c.lat) return;
+    const mk = L.circleMarker([c.lat, c.lng], { radius:7, color:'#FF2D78', fillColor:'#FF2D78', fillOpacity:0.85, weight:2 })
+      .addTo(courtMapObj)
+      .bindPopup('<b>'+c.n+'</b><br>'+c.ct+' · '+(c.p||'')+'<br><a href="https://maps.google.com/?q='+encodeURIComponent((c.a?c.a+', ':'')+c.c+', FL')+'" target="_blank">Directions →</a>');
+    courtMarkers.push(mk);
+  });
+}
+
+window.openCourtSubmit = function() {
+  window._pushNav('courtSubmit');
+  document.getElementById('courtSubmit').classList.remove('hidden');
+};
+
+window.submitCourt = async function() {
+  const name = document.getElementById('csName').value.trim();
+  const city = document.getElementById('csCity').value.trim();
+  if (!name || !city) { alert('Court name and city are required!'); return; }
+  try {
+    await set(ref(db, 'courtSubmissions/cs' + Date.now()), {
+      n: name,
+      a: document.getElementById('csAddress').value.trim() || null,
+      c: city,
+      ct: (document.getElementById('csCount').value.trim() ? document.getElementById('csCount').value.trim() + ' courts' : 'Courts'),
+      io: document.getElementById('csIndoor').value.trim() || 'Outdoor',
+      l: document.getElementById('csLights').value.trim() || null,
+      p: document.getElementById('csPrice').value.trim() || null,
+      h: document.getElementById('csHours').value.trim() || null,
+      u: document.getElementById('csUrl').value.trim() || null,
+      note: document.getElementById('csNote').value.trim() || null,
+      submittedBy: userProfile?.name || null,
+      submitterUid: currentUser?.uid || null,
+      at: Date.now()
+    });
+    ['csName','csAddress','csCity','csCount','csIndoor','csLights','csPrice','csHours','csUrl','csNote'].forEach(id => document.getElementById(id).value = '');
+    goBack();
+    copiedToast('✓ Court Submitted — pending review! 🏟');
+  } catch(e) { alert('Could not submit (publish latest Firebase rules): ' + (e.message||e)); }
+};
+
+
 // Hide every overlay page - lets nav icons work from EVERY screen.
 window.hideAllPages = function() {
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
    'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
-   'adPlayerModal','qrOverlay'].forEach(id => {
+   'adPlayerModal','qrOverlay','quickStartPage','courtsPage','courtSubmit'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -2559,7 +2864,7 @@ window.openAdminDash = async function() {
   document.getElementById('adminDash').classList.remove('hidden');
   document.getElementById('adStats').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-weight:600;padding:20px;">Loading...</div>';
   const safeGet = async (p) => { try { return (await get(ref(db, p))).val() || {}; } catch(e) { return {}; } };
-  const [dir, tours, fb] = await Promise.all([safeGet('directory'), safeGet('tournaments'), safeGet('feedback')]);
+  const [dir, tours, fb, courtSubs] = await Promise.all([safeGet('directory'), safeGet('tournaments'), safeGet('feedback'), safeGet('courtSubmissions')]);
 
   // Totals
   const players = Object.entries(dir).map(([uid, p]) => ({ uid, ...p }));
@@ -2585,6 +2890,20 @@ window.openAdminDash = async function() {
     boxT(tourList.length, 'Tournaments', 'var(--pink)', 'adActivity') +
     boxT(totalGames, 'Games Played', 'var(--aqua)', 'adActivity') +
     boxT(activeWeek, 'Active This Week', 'var(--yellow)', 'adActivity');
+
+  // Court submissions
+  const subs = Object.entries(courtSubs || {});
+  document.getElementById('adCourts').innerHTML = subs.length ? subs.map(([id, c]) =>
+    '<div style="padding:12px;background:var(--surface);border:1px solid rgba(255,224,0,0.3);border-radius:12px;margin-bottom:8px;">'
+    +'<div style="font-weight:800;color:var(--white);font-size:14px;">'+(c.n||'?')+' <span style="font-size:11px;color:var(--muted);">· '+(c.c||'')+'</span></div>'
+    +'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:3px;">'+[c.a, c.ct, c.io, c.l, c.p, c.h].filter(Boolean).join(' · ')+'</div>'
+    +(c.note ? '<div style="font-size:11px;color:var(--white);font-weight:600;margin-top:3px;">💬 '+c.note+'</div>' : '')
+    +(c.submittedBy ? '<div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:3px;">by '+c.submittedBy+'</div>' : '')
+    +'<div style="display:flex;gap:8px;margin-top:8px;">'
+    +'<button onclick="adApproveCourt(\''+id+'\')" style="flex:1;padding:9px;background:rgba(0,245,196,0.12);border:1px solid var(--aqua);color:var(--aqua);border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;">✓ APPROVE</button>'
+    +'<button onclick="adRejectCourt(\''+id+'\')" style="flex:1;padding:9px;background:rgba(255,79,107,0.1);border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;">✕ REJECT</button>'
+    +'</div></div>').join('')
+    : '<div style="color:var(--muted);font-weight:600;font-size:12px;padding:8px;">No pending submissions</div>';
 
   // Signups (newest first)
   players.sort((a,b) => (b.joinedAt||0) - (a.joinedAt||0));
@@ -2612,6 +2931,23 @@ window.openAdminDash = async function() {
       +'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+d+'</div></div>'
       +'<button onclick="event.stopPropagation();adDeleteTournament(\''+t.tid+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button></div></div>';
   }).join('') || '<div style="color:var(--muted);font-weight:600;text-align:center;padding:16px;">No tournaments yet</div>');
+};
+
+window.adApproveCourt = async function(id) {
+  if (!isAdmin()) return;
+  try {
+    const snap = await get(ref(db, 'courtSubmissions/' + id));
+    const c = snap.val(); if (!c) return;
+    await set(ref(db, 'courts/' + id), { n:c.n, a:c.a||'', c:c.c, ct:c.ct||'Courts', io:c.io||'Outdoor', l:c.l||'', p:c.p||'', h:c.h||'', u:c.u||'', z:'', lat:c.lat||null, lng:c.lng||null });
+    await set(ref(db, 'courtSubmissions/' + id), null);
+    openAdminDash();
+  } catch(e) { alert('Approve failed: ' + (e.message||e)); }
+};
+window.adRejectCourt = async function(id) {
+  if (!isAdmin()) return;
+  if (!confirm('Reject and delete this submission?')) return;
+  try { await set(ref(db, 'courtSubmissions/' + id), null); openAdminDash(); }
+  catch(e) { alert('Error: ' + (e.message||e)); }
 };
 
 window.adScrollTo = function(id) {
@@ -4072,7 +4408,15 @@ function deleteSession(s)    { if(window.deleteSession) window.deleteSession(s);
 function scSetVis(v)         { if(window.scSetVis) window.scSetVis(v); }
 function scSetRec(r)         { if(window.scSetRec) window.scSetRec(r); }
 function goBack()            { if(window.goBack) window.goBack(); }
+function openQuickStart()    { if(window.openQuickStart) window.openQuickStart(); }
+function submitTip()         { if(window.submitTip) window.submitTip(); }
+function openCourts()        { if(window.openCourts) window.openCourts(); }
+function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCourtLocation(); }
+function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
+function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
+function adApproveCourt(i)   { if(window.adApproveCourt) window.adApproveCourt(i); }
+function adRejectCourt(i)    { if(window.adRejectCourt) window.adRejectCourt(i); }
 
 
 </script>
