@@ -56,6 +56,14 @@
     background:linear-gradient(transparent,rgba(0,0,0,.55));letter-spacing:.02em}
   .gallery .wide{grid-column:span 2}
   @media (max-width:560px){ .gallery .wide{grid-column:span 1} }
+  .photo-hero{margin:18px 0 0;border-radius:18px;overflow:hidden;position:relative;aspect-ratio:16/10;background:#eee}
+  .photo-hero img{width:100%;height:100%;object-fit:cover;display:block}
+  .photo-hero figcaption,.photo-strip figcaption{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 8px;color:#fff;
+    font-size:13px;font-weight:600;background:linear-gradient(transparent,rgba(0,0,0,.55));letter-spacing:.02em}
+  .photo-strip{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .photo-strip figure{margin:0;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:4/3;background:#eee}
+  .photo-strip img{width:100%;height:100%;object-fit:cover;display:block}
+  @media (max-width:560px){ .photo-strip{grid-template-columns:1fr} }
   .perk .ico{width:42px;height:42px;flex-shrink:0;border-radius:12px;background:var(--navy);color:var(--yellow);
              display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
   .pay-flag{background:var(--navy);color:#fff;border-radius:18px;padding:24px;text-align:center;margin:18px 0}
@@ -115,6 +123,9 @@
       <div class="chip"><div class="k"><span class="en">Location</span><span class="es">Ubicación</span></div><div class="v">Brickell, Miami</div></div>
     </div>
 
+    <figure class="photo-hero"><img src="photos/living.jpg" alt="The living and dining area" loading="lazy">
+      <figcaption><span class="en">The home you'll run — bright, modern, high-rise Brickell</span><span class="es">El hogar que manejarás — luminoso, moderno, en un edificio de Brickell</span></figcaption></figure>
+
     <section class="card">
       <h2><span class="en">About the Role</span><span class="es">Sobre el Puesto</span></h2>
       <p class="en">We are looking for a <strong>reliable, detail-oriented House Manager</strong> to help run a private home in Brickell. This is a great role for someone who enjoys cooking healthy meals, keeping a home clean and organized, and taking pride in their work. The right person is trustworthy, proactive, and happy to anticipate what the home needs.</p>
@@ -137,6 +148,12 @@
         <li><strong>Coordinar:</strong> trabajar con la administración del edificio y proveedores.</li>
         <li><strong>Tomar iniciativa:</strong> anticipar las necesidades del hogar y mantener todo funcionando bien.</li>
       </ul>
+      <div class="photo-strip">
+        <figure><img src="photos/kitchen.jpg" alt="The kitchen" loading="lazy">
+          <figcaption><span class="en">The kitchen you'll cook in</span><span class="es">La cocina donde cocinarás</span></figcaption></figure>
+        <figure><img src="photos/lounge.jpg" alt="The living room" loading="lazy">
+          <figcaption><span class="en">The living room</span><span class="es">La sala</span></figcaption></figure>
+      </div>
     </section>
 
     <section class="card">
@@ -163,29 +180,14 @@
         <div class="small en">Help yourself to the in-home stash: specialty coffee, nootropics, Magic Mind, electrolytes, and more.</div>
         <div class="small es">Sírvete del surtido en casa: café especial, nootrópicos, Magic Mind, electrolitos, y más.</div>
       </div></div>
-    </section>
-
-    <section class="card">
-      <h2><span class="en">Where You'll Work</span><span class="es">Donde Trabajarás</span></h2>
-      <p class="small en" style="margin-top:2px">A bright, modern high-rise home in Brickell — plus the 5-star rooftop you get access to off the clock.</p>
-      <p class="small es" style="margin-top:2px">Un hogar moderno y luminoso en un edificio de Brickell — más el rooftop 5 estrellas al que tienes acceso fuera de tu horario.</p>
-      <div class="gallery">
-        <figure class="wide"><img src="photos/living.jpg" alt="Living and dining area" loading="lazy">
-          <figcaption><span class="en">The living &amp; dining area</span><span class="es">Sala y comedor</span></figcaption></figure>
-        <figure><img src="photos/kitchen.jpg" alt="Kitchen" loading="lazy">
-          <figcaption><span class="en">The kitchen you'll cook in</span><span class="es">La cocina donde cocinarás</span></figcaption></figure>
-        <figure><img src="photos/view.jpg" alt="Water view from the residence" loading="lazy">
-          <figcaption><span class="en">The view from the residence</span><span class="es">La vista desde la residencia</span></figcaption></figure>
-        <figure><img src="photos/lounge.jpg" alt="Living room" loading="lazy">
-          <figcaption><span class="en">The living room</span><span class="es">La sala</span></figcaption></figure>
+      <div class="photo-strip">
         <figure><img src="photos/pool1.jpg" alt="Rooftop pool" loading="lazy">
-          <figcaption><span class="en">Rooftop pool — free access for you</span><span class="es">Piscina del rooftop — acceso gratis para ti</span></figcaption></figure>
-        <figure class="wide"><img src="photos/pool3.jpg" alt="Rooftop pool deck" loading="lazy">
-          <figcaption><span class="en">The 5-star rooftop deck</span><span class="es">El rooftop 5 estrellas</span></figcaption></figure>
+          <figcaption><span class="en">The rooftop pool — yours off the clock</span><span class="es">La piscina del rooftop — tuya fuera del horario</span></figcaption></figure>
         <figure><img src="photos/pool2.jpg" alt="Pool and jacuzzi" loading="lazy">
           <figcaption><span class="en">Pool &amp; jacuzzi</span><span class="es">Piscina y jacuzzi</span></figcaption></figure>
       </div>
     </section>
+
 
     <section class="card">
       <h2><span class="en">Who We're Looking For</span><span class="es">A Quién Buscamos</span></h2>
@@ -214,6 +216,9 @@
         <span class="es">Comienza en $25/hora con crecimiento hasta $30/hora para alguien que demuestra buen desempeño, toma responsabilidad del puesto, y resulta ser una buena opción a largo plazo. <strong>Más bonos.</strong></span>
       </p>
     </div>
+
+    <figure class="photo-hero" style="margin-top:24px"><img src="photos/view.jpg" alt="The view from the residence" loading="lazy">
+      <figcaption><span class="en">The view from the residence</span><span class="es">La vista desde la residencia</span></figcaption></figure>
 
     <div class="center" style="margin-top:24px">
       <button class="btn btn-block" onclick="goStep('form')"><span class="en">Apply Now</span><span class="es">Aplicar Ahora</span></button>
