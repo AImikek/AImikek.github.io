@@ -211,6 +211,11 @@
         <input id="q-phone" type="tel" autocomplete="tel">
       </div>
       <div class="field">
+        <label><span class="en">3b. Home ZIP code (where you live)</span><span class="es">3b. Código postal de tu casa (donde vives)</span></label>
+        <input id="q-zip" type="text" inputmode="numeric" maxlength="5" autocomplete="postal-code" placeholder="33130">
+        <p class="small" id="zip-place" style="margin-top:6px"></p>
+      </div>
+      <div class="field">
         <label><span class="en">4. Are you good at cleaning, cooking, and managing a home?</span><span class="es">4. ¿Eres buena limpiando, cocinando y manejando un hogar?</span></label>
         <div class="row" data-pick="goodAtHome">
           <button type="button" class="btn-pick" data-val="yes"><span class="en">Yes</span><span class="es">Sí</span></button>
@@ -337,8 +342,8 @@
   <div class="step" id="step-instructions">
     <section class="card">
       <h2><span class="en">Almost done! 2 quick steps left</span><span class="es">¡Casi listo! Quedan 2 pasos rápidos</span></h2>
-      <p class="small en" style="margin-bottom:4px">Read carefully. Do these in order. You must finish both before you can book your interview.</p>
-      <p class="small es" style="margin-bottom:4px">Lee con cuidado. Hazlo en orden. Debes terminar ambos pasos antes de agendar tu entrevista.</p>
+      <p class="small en" style="margin-bottom:4px"><strong>This is the step that decides everything.</strong> There is no interview booking on this page. The booking link only appears after your reference group texts are done.</p>
+      <p class="small es" style="margin-bottom:4px"><strong>Este es el paso que lo decide todo.</strong> No hay enlace para agendar en esta página. El enlace para agendar solo aparece después de completar los mensajes grupales con tus referencias.</p>
 
       <!-- STEP 1 -->
       <div class="stepbox">
@@ -386,21 +391,28 @@
       </div>
 
       <button class="btn" id="completeBtn" style="width:100%;margin-top:6px">
-        <span class="en">✓ I started both group texts — take me to booking</span><span class="es">✓ Creé ambos grupos — llévame a agendar</span>
+        <span class="en">✓ Both group texts are sent</span><span class="es">✓ Ya envié ambos grupos</span>
       </button>
+      <p class="small" style="text-align:center;margin-top:10px">
+        <span class="en">Mike checks his phone for your two group texts. If they haven't arrived, any booking will be canceled.</span>
+        <span class="es">Mike revisa su teléfono para ver tus dos mensajes grupales. Si no han llegado, cualquier cita será cancelada.</span>
+      </p>
     </section>
   </div>
 
   <!-- ============================ STEP: DONE ============================ -->
   <div class="step" id="step-done">
     <section class="card" style="text-align:center;padding:46px 24px">
-      <h2><span class="en">You're all set! Let's talk</span><span class="es">¡Listo! Hablemos</span></h2>
-      <p class="en" style="max-width:520px;margin:12px auto 24px;color:var(--ink-soft)">Final step: schedule your FaceTime or video call interview. Pick any time that works for you.</p>
-      <p class="es" style="max-width:520px;margin:12px auto 24px;color:var(--ink-soft)">Último paso: agenda tu entrevista por FaceTime o videollamada. Elige el horario que mejor te funcione.</p>
+      <h2><span class="en">Booking unlocked — let's talk</span><span class="es">Agenda desbloqueada — hablemos</span></h2>
+      <p class="en" style="max-width:520px;margin:12px auto 24px;color:var(--ink-soft)">Since your reference group texts are on their way to Mike's phone, you can now schedule your FaceTime or video interview. Pick any time that works for you.</p>
+      <p class="es" style="max-width:520px;margin:12px auto 24px;color:var(--ink-soft)">Como tus mensajes grupales ya van en camino al teléfono de Mike, ahora puedes agendar tu entrevista por FaceTime o videollamada. Elige el horario que mejor te funcione.</p>
       <a class="btn" href="https://calendly.com/m-pupsnchill/15min" target="_blank" rel="noopener noreferrer">
         <span class="en">Schedule your interview</span><span class="es">Agendar tu entrevista</span>
       </a>
-      <p class="small" style="margin-top:14px">calendly.com/m-pupsnchill/15min</p>
+      <p class="small" style="margin-top:14px;font-weight:700">
+        <span class="en">Reminder: interviews are only held after both reference group texts have arrived. Bookings without them are canceled.</span>
+        <span class="es">Recordatorio: las entrevistas solo se realizan después de que lleguen los dos mensajes grupales con tus referencias. Las citas sin ellos serán canceladas.</span>
+      </p>
     </section>
   </div>
 
@@ -435,9 +447,9 @@ const db = getFirestore(app);
    Until then, emails are skipped silently and the funnel still works.
    Setup guide is in the chat. Free tier = 200 emails/month.
 ------------------------------------------------------------------- */
-const EMAILJS_PUBLIC_KEY   = "PASTE_PUBLIC_KEY";
-const EMAILJS_SERVICE_ID   = "PASTE_SERVICE_ID";
-const EMAILJS_TEMPLATE_CONFIRM = "PASTE_CONFIRM_TEMPLATE_ID";
+const EMAILJS_PUBLIC_KEY   = "X2dC3mFeqOruG4n4S";
+const EMAILJS_SERVICE_ID   = "service_gumjfq5";
+const EMAILJS_TEMPLATE_CONFIRM = "template_34sno6w";
 const EMAILJS_TEMPLATE_REJECT  = "PASTE_REJECT_TEMPLATE_ID";
 
 const EMAILJS_READY =
@@ -524,12 +536,14 @@ document.querySelectorAll("[data-pick]").forEach((row) => {
 /* ------------------------- resume upload ------------------------- */
 const CLOUD_NAME = "da4p5qui8";
 const UPLOAD_PRESET = "HouseManager";
+let resumeUploading = false;
 document.getElementById("q-resume-file").addEventListener("change", async (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
   const btnEn = document.getElementById("resumeBtnEn");
   const btnEs = document.getElementById("resumeBtnEs");
   btnEn.textContent = "Uploading…"; btnEs.textContent = "Subiendo…";
+  resumeUploading = true;
   try {
     const fd = new FormData();
     fd.append("file", file);
@@ -541,12 +555,20 @@ document.getElementById("q-resume-file").addEventListener("change", async (e) =>
     if (!data.secure_url) throw new Error("no url returned");
     document.getElementById("q-resume").value = data.secure_url;
     document.getElementById("resumeOk").style.display = "block";
+    hideErr("form-err");
+  if (resumeUploading) {
+    showErr("form-err", lang === "es"
+      ? "Tu currículum todavía se está subiendo — espera unos segundos y vuelve a intentar."
+      : "Your resume is still uploading — give it a few seconds and try again.");
+    return;
+  } // clear any stale "please upload" error
   } catch (err) {
     console.error(err);
     showErr("form-err", lang === "es"
       ? "No se pudo subir el archivo. Pega un enlace a tu currículum o escribe NA para continuar."
       : "Upload failed. Paste a link to your resume instead, or type NA to continue.");
   } finally {
+    resumeUploading = false;
     btnEn.textContent = "Upload file"; btnEs.textContent = "Subir archivo";
   }
 });
@@ -561,11 +583,37 @@ function showErr(id, msg) {
 function hideErr(id) { document.getElementById(id).style.display = "none"; }
 const val = (id) => document.getElementById(id).value.trim();
 
+/* ZIP -> city/state via zippopotam.us. Fails soft (city/state just stay blank). */
+let zipInfo = { city: "", state: "" };
+async function lookupZip(z) {
+  zipInfo = { city: "", state: "" };
+  const el = document.getElementById("zip-place");
+  el.textContent = "";
+  if (!/^\d{5}$/.test(z)) return;
+  try {
+    const r = await fetch("https://api.zippopotam.us/us/" + z);
+    if (!r.ok) return;
+    const d = await r.json();
+    const place = d.places && d.places[0];
+    if (place) {
+      zipInfo = { city: place["place name"] || "", state: place["state abbreviation"] || "" };
+      el.textContent = zipInfo.city + ", " + zipInfo.state;
+    }
+  } catch (e) { /* soft fail */ }
+}
+document.getElementById("q-zip").addEventListener("input", (e) => {
+  const z = e.target.value.replace(/\D/g, "").slice(0, 5);
+  e.target.value = z;
+  if (z.length === 5) lookupZip(z);
+  else { zipInfo = { city: "", state: "" }; document.getElementById("zip-place").textContent = ""; }
+});
+
 function validateForm() {
   const T = (en, es) => (lang === "es" ? es : en);
   if (!val("q-name")) return T("Please enter your full legal name (question 1).", "Por favor escribe tu nombre legal completo (pregunta 1).");
   if (!val("q-email") || !val("q-email").includes("@")) return T("Please enter a valid email (question 2).", "Por favor escribe un correo válido (pregunta 2).");
   if (!val("q-phone")) return T("Please enter your phone number (question 3).", "Por favor escribe tu teléfono (pregunta 3).");
+  if (!/^\d{5}$/.test(val("q-zip"))) return T("Please enter your 5-digit home ZIP code (question 3b).", "Por favor escribe tu código postal de 5 dígitos (pregunta 3b).");
   if (!picks.goodAtHome) return T("Please answer question 4.", "Por favor responde la pregunta 4.");
   if (!picks.experienceYears) return T("Please answer question 5.", "Por favor responde la pregunta 5.");
   if (!val("q-expdesc")) return T("Please describe your experience (question 6).", "Por favor describe tu experiencia (pregunta 6).");
@@ -603,6 +651,9 @@ document.getElementById("submitFormBtn").addEventListener("click", async () => {
       fullName: val("q-name"),
       email: val("q-email"),
       phone: val("q-phone"),
+      zip: val("q-zip"),
+      city: zipInfo.city,
+      state: zipInfo.state,
       goodAtHome: picks.goodAtHome,
       experienceYears: picks.experienceYears,
       experienceDescription: val("q-expdesc"),
@@ -690,6 +741,10 @@ document.getElementById("submitRefsBtn").addEventListener("click", async () => {
 /* ------------------------- completion click ---------------------- */
 document.getElementById("completeBtn").addEventListener("click", async () => {
   const btn = document.getElementById("completeBtn");
+  const confirmMsg = lang === "es"
+    ? "IMPORTANTE: Mike solo agenda entrevistas DESPUÉS de que le lleguen los DOS mensajes grupales con tus referencias.\n\nSi agendas sin haberlos enviado, tu entrevista será CANCELADA.\n\n¿Ya enviaste los dos mensajes grupales al +1 617-633-0544?"
+    : "IMPORTANT: Mike only schedules interviews AFTER both reference group texts have arrived on his phone.\n\nIf you book without sending them, your interview will be CANCELED.\n\nHave you already sent both group texts to +1 617-633-0544?";
+  if (!window.confirm(confirmMsg)) return;
   btn.disabled = true;
   try {
     await addDoc(collection(db, "applications", appId, "extras"), {
