@@ -49,6 +49,13 @@
   ul.list li::before{content:"✓";position:absolute;left:4px;color:var(--turquoise-deep);font-weight:800}
   .perk{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px dashed var(--line)}
   .perk:last-child{border-bottom:none}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:18px}
+  .gallery figure{margin:0;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:4/3;background:#eee}
+  .gallery img{width:100%;height:100%;object-fit:cover;display:block}
+  .gallery figcaption{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 8px;color:#fff;font-size:13px;font-weight:600;
+    background:linear-gradient(transparent,rgba(0,0,0,.55));letter-spacing:.02em}
+  .gallery .wide{grid-column:span 2}
+  @media (max-width:560px){ .gallery .wide{grid-column:span 1} }
   .perk .ico{width:42px;height:42px;flex-shrink:0;border-radius:12px;background:var(--navy);color:var(--yellow);
              display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
   .pay-flag{background:var(--navy);color:#fff;border-radius:18px;padding:24px;text-align:center;margin:18px 0}
@@ -156,6 +163,28 @@
         <div class="small en">Help yourself to the in-home stash: specialty coffee, nootropics, Magic Mind, electrolytes, and more.</div>
         <div class="small es">Sírvete del surtido en casa: café especial, nootrópicos, Magic Mind, electrolitos, y más.</div>
       </div></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="en">Where You'll Work</span><span class="es">Donde Trabajarás</span></h2>
+      <p class="small en" style="margin-top:2px">A bright, modern high-rise home in Brickell — plus the 5-star rooftop you get access to off the clock.</p>
+      <p class="small es" style="margin-top:2px">Un hogar moderno y luminoso en un edificio de Brickell — más el rooftop 5 estrellas al que tienes acceso fuera de tu horario.</p>
+      <div class="gallery">
+        <figure class="wide"><img src="photos/living.jpg" alt="Living and dining area" loading="lazy">
+          <figcaption><span class="en">The living &amp; dining area</span><span class="es">Sala y comedor</span></figcaption></figure>
+        <figure><img src="photos/kitchen.jpg" alt="Kitchen" loading="lazy">
+          <figcaption><span class="en">The kitchen you'll cook in</span><span class="es">La cocina donde cocinarás</span></figcaption></figure>
+        <figure><img src="photos/view.jpg" alt="Water view from the residence" loading="lazy">
+          <figcaption><span class="en">The view from the residence</span><span class="es">La vista desde la residencia</span></figcaption></figure>
+        <figure><img src="photos/lounge.jpg" alt="Lounge" loading="lazy">
+          <figcaption><span class="en">The lounge</span><span class="es">El salón</span></figcaption></figure>
+        <figure><img src="photos/pool1.jpg" alt="Rooftop pool" loading="lazy">
+          <figcaption><span class="en">Rooftop pool — free access for you</span><span class="es">Piscina del rooftop — acceso gratis para ti</span></figcaption></figure>
+        <figure class="wide"><img src="photos/pool3.jpg" alt="Rooftop pool deck" loading="lazy">
+          <figcaption><span class="en">The 5-star rooftop deck</span><span class="es">El rooftop 5 estrellas</span></figcaption></figure>
+        <figure><img src="photos/pool2.jpg" alt="Pool and jacuzzi" loading="lazy">
+          <figcaption><span class="en">Pool &amp; jacuzzi</span><span class="es">Piscina y jacuzzi</span></figcaption></figure>
+      </div>
     </section>
 
     <section class="card">
