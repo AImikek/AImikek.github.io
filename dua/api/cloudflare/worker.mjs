@@ -1,4 +1,7 @@
 const encoder = new TextEncoder();
+const CURRENT_TERMS_VERSION = 'DUA-NDA-2026-07-31-v2';
+const PRIOR_FULL_NDA_VERSION = 'DUA-NDA-2026-07-31-v1';
+const LEGACY_TERMS_VERSION = '2026-07-27';
 let schemaPromise;
 
 export default {
@@ -57,38 +60,62 @@ async function createAcknowledgment(request, env, headers) {
 
   const name = cleanText(body.value.name, 2, 120);
   const email = normalizeEmail(body.value.email);
+  const company = cleanText(body.value.company, 0, 160);
   const role = cleanText(body.value.role, 0, 160);
+  const country = cleanText(body.value.country, 0, 120);
   const termsVersion = cleanText(body.value.termsVersion, 1, 64);
   const proposalVersion = cleanText(body.value.proposalVersion, 1, 64);
+  const isSignedNda = termsVersion === CURRENT_TERMS_VERSION;
+  const isPriorSignedNda = termsVersion === PRIOR_FULL_NDA_VERSION;
+  const isFullNda = isSignedNda || isPriorSignedNda;
+  const isLegacyAcknowledgment = termsVersion === LEGACY_TERMS_VERSION;
 
-  if (!name || !email || body.value.accepted !== true || !termsVersion || !proposalVersion) {
-    return json({ error: 'Please provide your name, email, acknowledgement, and the current terms version.' }, 422, headers);
+  if (!name || !email || body.value.accepted !== true || !proposalVersion || (!isFullNda && !isLegacyAcknowledgment)) {
+    return json({ error: 'Please provide the required signer information and accept the current agreement.' }, 422, headers);
+  }
+  if (isFullNda && (!company || !role || !country || body.value.authorityAccepted !== true || body.value.electronicSignature !== true || body.value.termsScrolled !== true)) {
+    return json({ error: 'Please complete every signer field, review the agreement to the end, and accept both electronic-signature confirmations.' }, 422, headers);
   }
 
   const record = {
     id: crypto.randomUUID(),
     name,
     email,
+    company,
     role,
+    country,
     acknowledgedAt: new Date().toISOString(),
     termsVersion,
     proposalVersion,
+    authorityAccepted: isFullNda ? 1 : 0,
+    electronicSignature: isFullNda ? 1 : 0,
+    termsScrolled: isFullNda ? 1 : 0,
+    agreementType: isSignedNda ? 'signed_nda' : (isPriorSignedNda ? 'signed_nda_prior' : 'legacy_acknowledgment'),
+    ipAddress: cleanText(request.headers.get('CF-Connecting-IP'), 0, 64),
     userAgent: cleanText(request.headers.get('User-Agent'), 0, 300),
     source: cleanText(request.headers.get('Referer'), 0, 300)
   };
 
   await env.DB.prepare(`
     INSERT INTO acknowledgments (
-      id, name, email, role, acknowledged_at, terms_version, proposal_version, user_agent, source
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, name, email, company, role, country, acknowledged_at, terms_version, proposal_version,
+      authority_accepted, electronic_signature, terms_scrolled, agreement_type, ip_address, user_agent, source
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     record.id,
     record.name,
     record.email,
+    record.company,
     record.role,
+    record.country,
     record.acknowledgedAt,
     record.termsVersion,
     record.proposalVersion,
+    record.authorityAccepted,
+    record.electronicSignature,
+    record.termsScrolled,
+    record.agreementType,
+    record.ipAddress,
     record.userAgent,
     record.source
   ).run();
@@ -132,7 +159,8 @@ async function listAcknowledgments(request, env, headers) {
   }
 
   const result = await env.DB.prepare(`
-    SELECT id, name, email, role, acknowledged_at, terms_version, proposal_version, user_agent, source
+    SELECT id, name, email, company, role, country, acknowledged_at, terms_version, proposal_version,
+      authority_accepted, electronic_signature, terms_scrolled, agreement_type, ip_address, user_agent, source
     FROM acknowledgments ORDER BY acknowledged_at DESC
   `).all();
 
@@ -140,10 +168,17 @@ async function listAcknowledgments(request, env, headers) {
     id: record.id,
     name: record.name,
     email: record.email,
+    company: record.company,
     role: record.role,
+    country: record.country,
     acknowledgedAt: record.acknowledged_at,
     termsVersion: record.terms_version,
     proposalVersion: record.proposal_version,
+    authorityAccepted: Boolean(record.authority_accepted),
+    electronicSignature: Boolean(record.electronic_signature),
+    termsScrolled: Boolean(record.terms_scrolled),
+    agreementType: record.agreement_type,
+    ipAddress: record.ip_address,
     userAgent: record.user_agent,
     source: record.source
   }));
@@ -156,21 +191,30 @@ async function exportCsv(request, env, headers) {
   }
 
   const result = await env.DB.prepare(`
-    SELECT id, name, email, role, acknowledged_at, terms_version, proposal_version, source
+    SELECT id, name, email, company, role, country, acknowledged_at, terms_version, proposal_version,
+      authority_accepted, electronic_signature, terms_scrolled, agreement_type, ip_address, user_agent, source
     FROM acknowledgments ORDER BY acknowledged_at DESC
   `).all();
   const rows = (result.results || []).map((record) => [
     record.acknowledged_at,
     record.name,
     record.email,
+    record.company,
     record.role,
+    record.country,
+    record.agreement_type,
+    record.authority_accepted ? 'Yes' : 'No',
+    record.electronic_signature ? 'Yes' : 'No',
+    record.terms_scrolled ? 'Yes' : 'No',
     record.terms_version,
     record.proposal_version,
+    record.ip_address,
+    record.user_agent,
     record.source,
     record.id
   ]);
   const csv = [
-    ['Timestamp (UTC)', 'Name', 'Email', 'Role / Company', 'Terms version', 'Proposal version', 'Source', 'Record ID'],
+    ['Timestamp (UTC)', 'Name', 'Email', 'Company / organization', 'Title / role', 'Country', 'Agreement type', 'Authority accepted', 'Electronic signature', 'Terms scrolled to end', 'Terms version', 'Proposal version', 'IP address', 'User agent', 'Source', 'Record ID'],
     ...rows
   ].map((row) => row.map(csvCell).join(',')).join('\n');
 
@@ -182,34 +226,61 @@ async function exportCsv(request, env, headers) {
 async function ensureSchema(env) {
   if (!env.DB) throw new Error('The D1 database binding named DB has not been configured.');
   if (!schemaPromise) {
-    schemaPromise = env.DB.batch([
-      env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS acknowledgments (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          email TEXT NOT NULL,
-          role TEXT NOT NULL,
-          acknowledged_at TEXT NOT NULL,
-          terms_version TEXT NOT NULL,
-          proposal_version TEXT NOT NULL,
-          user_agent TEXT NOT NULL,
-          source TEXT NOT NULL
-        )
-      `),
-      env.DB.prepare('CREATE INDEX IF NOT EXISTS acknowledgments_acknowledged_at ON acknowledgments(acknowledged_at DESC)'),
-      env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS login_attempts (
-          ip TEXT PRIMARY KEY,
-          failures INTEGER NOT NULL,
-          locked_until INTEGER NOT NULL
-        )
-      `)
-    ]).catch((error) => {
+    schemaPromise = initializeSchema(env).catch((error) => {
       schemaPromise = undefined;
       throw error;
     });
   }
   return schemaPromise;
+}
+
+async function initializeSchema(env) {
+  await env.DB.batch([
+    env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS acknowledgments (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        company TEXT NOT NULL DEFAULT '',
+        role TEXT NOT NULL,
+        country TEXT NOT NULL DEFAULT '',
+        acknowledged_at TEXT NOT NULL,
+        terms_version TEXT NOT NULL,
+        proposal_version TEXT NOT NULL,
+        authority_accepted INTEGER NOT NULL DEFAULT 0,
+        electronic_signature INTEGER NOT NULL DEFAULT 0,
+        terms_scrolled INTEGER NOT NULL DEFAULT 0,
+        agreement_type TEXT NOT NULL DEFAULT 'legacy_acknowledgment',
+        ip_address TEXT NOT NULL DEFAULT '',
+        user_agent TEXT NOT NULL,
+        source TEXT NOT NULL
+      )
+    `),
+    env.DB.prepare('CREATE INDEX IF NOT EXISTS acknowledgments_acknowledged_at ON acknowledgments(acknowledged_at DESC)'),
+    env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS login_attempts (
+        ip TEXT PRIMARY KEY,
+        failures INTEGER NOT NULL,
+        locked_until INTEGER NOT NULL
+      )
+    `)
+  ]);
+
+  const existing = await env.DB.prepare('PRAGMA table_info(acknowledgments)').all();
+  const columns = new Set((existing.results || []).map((column) => column.name));
+  const additions = [
+    ['company', "ALTER TABLE acknowledgments ADD COLUMN company TEXT NOT NULL DEFAULT ''"],
+    ['country', "ALTER TABLE acknowledgments ADD COLUMN country TEXT NOT NULL DEFAULT ''"],
+    ['authority_accepted', 'ALTER TABLE acknowledgments ADD COLUMN authority_accepted INTEGER NOT NULL DEFAULT 0'],
+    ['electronic_signature', 'ALTER TABLE acknowledgments ADD COLUMN electronic_signature INTEGER NOT NULL DEFAULT 0'],
+    ['terms_scrolled', 'ALTER TABLE acknowledgments ADD COLUMN terms_scrolled INTEGER NOT NULL DEFAULT 0'],
+    ['agreement_type', "ALTER TABLE acknowledgments ADD COLUMN agreement_type TEXT NOT NULL DEFAULT 'legacy_acknowledgment'"],
+    ['ip_address', "ALTER TABLE acknowledgments ADD COLUMN ip_address TEXT NOT NULL DEFAULT ''"]
+  ].filter(([name]) => !columns.has(name));
+
+  if (additions.length) {
+    await env.DB.batch(additions.map(([, sql]) => env.DB.prepare(sql)));
+  }
 }
 
 function responseHeaders(origin, env) {
@@ -358,8 +429,8 @@ function csvCell(value) {
 function adminPage() {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>DUA NDA Signer Log</title><style>
-:root{--ink:#0f2028;--paper:#f4f1ea;--surface:#fffdf8;--muted:#65747a;--line:#d9d5ca;--danger:#a63d36}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,sans-serif}main{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:56px 0}.eyebrow{font:700 11px/1.2 ui-monospace,SFMono-Regular,monospace;letter-spacing:.14em;text-transform:uppercase;color:#667b16}h1{margin:10px 0 8px;font:400 clamp(34px,5vw,58px)/1.05 Georgia,serif;letter-spacing:-.045em}.sub{margin:0;color:var(--muted);max-width:680px;line-height:1.55}.card{margin-top:34px;background:var(--surface);border:1px solid var(--line);box-shadow:0 20px 50px rgba(15,32,40,.06)}#login{width:min(420px,100%);padding:32px}label{display:block;margin:20px 0 8px;font-size:13px;font-weight:700}input{width:100%;padding:13px 14px;border:1px solid #b7beb9;border-radius:2px;background:#fff;font:inherit}button,.download{border:0;border-radius:2px;padding:12px 16px;background:var(--ink);color:#fff;font:700 13px/1 ui-sans-serif,system-ui,sans-serif;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}button:hover,.download:hover{background:#243b45}button.secondary{color:var(--ink);background:#e8e6df}button.danger{color:var(--danger);background:transparent;border:1px solid #c99792}.error{min-height:20px;margin-top:14px;color:var(--danger);font-size:13px}#dashboard{display:none}.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:22px 24px;border-bottom:1px solid var(--line)}.count{font:700 14px ui-monospace,SFMono-Regular,monospace}.actions{display:flex;gap:10px;flex-wrap:wrap}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:16px 20px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f0eee7;color:var(--muted);font:700 10px/1.2 ui-monospace,SFMono-Regular,monospace;letter-spacing:.09em;text-transform:uppercase}td{font-size:14px}td strong{display:block;font-size:14px}td span{color:var(--muted);font-size:12px}.empty{padding:56px 24px;color:var(--muted);text-align:center}@media(max-width:640px){main{width:min(100% - 28px,1180px);padding:32px 0}.toolbar{padding:18px}}
-</style></head><body><main><div class="eyebrow">Confidential · DUA Hotel</div><h1>NDA signer log</h1><p class="sub">Review recorded proposal acknowledgments. This dashboard is private and not indexed by search engines.</p><section class="card" id="login"><form id="login-form"><label for="password">Admin password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button type="submit" style="margin-top:18px">Sign in</button><div class="error" id="login-error" role="alert"></div></form></section><section class="card" id="dashboard"><div class="toolbar"><div class="count" id="count">0 records</div><div class="actions"><button class="secondary" id="refresh" type="button">Refresh</button><a class="download" href="/api/admin/acknowledgments.csv">Export CSV</a><button class="danger" id="logout" type="button">Sign out</button></div></div><div class="table-wrap"><table><thead><tr><th>Recorded (UTC)</th><th>Signer</th><th>Role / company</th><th>Terms</th><th>Record</th></tr></thead><tbody id="records"></tbody></table></div></section></main><script>
-const login=document.getElementById('login'),dashboard=document.getElementById('dashboard'),error=document.getElementById('login-error'),records=document.getElementById('records'),count=document.getElementById('count');document.getElementById('login-form').addEventListener('submit',async event=>{event.preventDefault();error.textContent='';const response=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('password').value})});if(!response.ok){error.textContent=(await response.json()).error||'Unable to sign in.';return}login.style.display='none';dashboard.style.display='block';loadRecords()});document.getElementById('refresh').addEventListener('click',loadRecords);document.getElementById('logout').addEventListener('click',async()=>{await fetch('/api/admin/logout',{method:'POST'});location.reload()});async function loadRecords(){const response=await fetch('/api/admin/acknowledgments');if(response.status===401){login.style.display='block';dashboard.style.display='none';return}const data=await response.json(),entries=data.acknowledgments||[];count.textContent=entries.length+' '+(entries.length===1?'record':'records');records.innerHTML=entries.length?entries.map(row).join(''):'<tr><td class="empty" colspan="5">No NDA acknowledgments have been recorded yet.</td></tr>'}function row(entry){return '<tr><td>'+escapeHtml(new Date(entry.acknowledgedAt).toISOString().replace('T',' ').replace('.000Z',' UTC'))+'</td><td><strong>'+escapeHtml(entry.name)+'</strong><span>'+escapeHtml(entry.email)+'</span></td><td>'+escapeHtml(entry.role||'—')+'</td><td><strong>'+escapeHtml(entry.termsVersion)+'</strong><span>Proposal '+escapeHtml(entry.proposalVersion)+'</span></td><td><span>'+escapeHtml(entry.id)+'</span></td></tr>'}function escapeHtml(value){return String(value||'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]))}loadRecords();
+:root{--ink:#0f2028;--paper:#f4f1ea;--surface:#fffdf8;--muted:#65747a;--line:#d9d5ca;--danger:#a63d36;--signed:#456400}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,sans-serif}main{width:min(1280px,calc(100% - 40px));margin:0 auto;padding:56px 0}.eyebrow{font:700 11px/1.2 ui-monospace,SFMono-Regular,monospace;letter-spacing:.14em;text-transform:uppercase;color:#667b16}h1{margin:10px 0 8px;font:400 clamp(34px,5vw,58px)/1.05 Georgia,serif;letter-spacing:-.045em}.sub{margin:0;color:var(--muted);max-width:720px;line-height:1.55}.card{margin-top:34px;background:var(--surface);border:1px solid var(--line);box-shadow:0 20px 50px rgba(15,32,40,.06)}#login{width:min(420px,100%);padding:32px}label{display:block;margin:20px 0 8px;font-size:13px;font-weight:700}input{width:100%;padding:13px 14px;border:1px solid #b7beb9;border-radius:2px;background:#fff;font:inherit}button,.download{border:0;border-radius:2px;padding:12px 16px;background:var(--ink);color:#fff;font:700 13px/1 ui-sans-serif,system-ui,sans-serif;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}button:hover,.download:hover{background:#243b45}button.secondary{color:var(--ink);background:#e8e6df}button.danger{color:var(--danger);background:transparent;border:1px solid #c99792}.error{min-height:20px;margin-top:14px;color:var(--danger);font-size:13px}#dashboard{display:none}.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:22px 24px;border-bottom:1px solid var(--line)}.count{font:700 14px ui-monospace,SFMono-Regular,monospace}.actions{display:flex;gap:10px;flex-wrap:wrap}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1050px}th,td{padding:16px 20px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f0eee7;color:var(--muted);font:700 10px/1.2 ui-monospace,SFMono-Regular,monospace;letter-spacing:.09em;text-transform:uppercase}td{font-size:14px}td strong{display:block;font-size:14px}td span{display:block;color:var(--muted);font-size:12px;line-height:1.45;margin-top:3px}.status{display:inline-flex;border:1px solid #bac99c;background:#f3f7e9;color:var(--signed);padding:5px 7px;font:700 10px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:.06em;text-transform:uppercase}.status.legacy{border-color:var(--line);background:#f0eee7;color:var(--muted)}.empty{padding:56px 24px;color:var(--muted);text-align:center}@media(max-width:640px){main{width:min(100% - 28px,1280px);padding:32px 0}.toolbar{padding:18px}}
+</style></head><body><main><div class="eyebrow">Confidential · DUA Hotel</div><h1>NDA signature log</h1><p class="sub">Review signed NDA evidence and earlier legacy acknowledgments. This private dashboard is not indexed by search engines.</p><section class="card" id="login"><form id="login-form"><label for="password">Admin password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button type="submit" style="margin-top:18px">Sign in</button><div class="error" id="login-error" role="alert"></div></form></section><section class="card" id="dashboard"><div class="toolbar"><div class="count" id="count">0 records</div><div class="actions"><button class="secondary" id="refresh" type="button">Refresh</button><a class="download" href="/api/admin/acknowledgments.csv">Export full evidence CSV</a><button class="danger" id="logout" type="button">Sign out</button></div></div><div class="table-wrap"><table><thead><tr><th>Recorded (UTC)</th><th>Signer</th><th>Organization</th><th>Acceptance</th><th>Evidence</th></tr></thead><tbody id="records"></tbody></table></div></section></main><script>
+const login=document.getElementById('login'),dashboard=document.getElementById('dashboard'),error=document.getElementById('login-error'),records=document.getElementById('records'),count=document.getElementById('count');document.getElementById('login-form').addEventListener('submit',async event=>{event.preventDefault();error.textContent='';const response=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('password').value})});if(!response.ok){error.textContent=(await response.json()).error||'Unable to sign in.';return}login.style.display='none';dashboard.style.display='block';loadRecords()});document.getElementById('refresh').addEventListener('click',loadRecords);document.getElementById('logout').addEventListener('click',async()=>{await fetch('/api/admin/logout',{method:'POST'});location.reload()});async function loadRecords(){const response=await fetch('/api/admin/acknowledgments');if(response.status===401){login.style.display='block';dashboard.style.display='none';return}const data=await response.json(),entries=data.acknowledgments||[];count.textContent=entries.length+' '+(entries.length===1?'record':'records');records.innerHTML=entries.length?entries.map(row).join(''):'<tr><td class="empty" colspan="5">No NDA signatures have been recorded yet.</td></tr>'}function row(entry){const signed=String(entry.agreementType||'').startsWith('signed_nda');return '<tr><td>'+escapeHtml(new Date(entry.acknowledgedAt).toISOString().replace('T',' ').replace('.000Z',' UTC'))+'</td><td><strong>'+escapeHtml(entry.name)+'</strong><span>'+escapeHtml(entry.email)+'</span><span>'+escapeHtml(entry.country||'Country not recorded')+'</span></td><td><strong>'+escapeHtml(entry.company||'Not recorded')+'</strong><span>'+escapeHtml(entry.role||'Role not recorded')+'</span></td><td><span class="status'+(signed?'':' legacy')+'">'+(signed?'Signed NDA':'Legacy acknowledgment')+'</span><span>'+escapeHtml(entry.termsVersion)+'</span><span>Authority: '+(entry.authorityAccepted?'Yes':'Not recorded')+' · E-sign: '+(entry.electronicSignature?'Yes':'Not recorded')+' · Read-through: '+(entry.termsScrolled?'Yes':'Not recorded')+'</span></td><td><strong>'+escapeHtml(entry.id)+'</strong><span>IP: '+escapeHtml(entry.ipAddress||'Not recorded')+'</span><span>'+escapeHtml(entry.source||'Source not recorded')+'</span></td></tr>'}function escapeHtml(value){return String(value||'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]))}loadRecords();
 </script></body></html>`;
 }
