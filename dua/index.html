@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="nda-api-base" content="https://dua-nda-api.m-938.workers.dev">
-<meta name="nda-terms-version" content="2026-07-27">
+<meta name="nda-terms-version" content="DUA-NDA-2026-07-31-v2">
 <meta name="proposal-version" content="DUA Pickleball &amp; Recovery Owner Pro Forma">
 <title>DUA Pickleball & Recovery — Rooftop Club Pro Forma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -67,11 +67,11 @@
   }
   .gate.hidden { display: none; }
   .gate-inner {
-    max-width: 620px;
+    max-width: 920px;
     width: 100%;
     background: var(--surface);
     border: 1px solid var(--line-strong);
-    padding: 56px 52px;
+    padding: 46px 48px;
     border-radius: 2px;
     position: relative;
   }
@@ -126,29 +126,96 @@
     font-weight: 600;
   }
   .gate-body {
-    font-size: 16.5px;
+    font-size: 16px;
     color: var(--ink-soft);
     line-height: 1.6;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
   }
   .gate-terms {
     background: var(--bg-alt);
     border: 1px solid var(--line);
-    padding: 22px 24px;
-    margin-bottom: 28px;
-    max-height: 180px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+    max-height: 360px;
     overflow-y: auto;
-    font-size: 21px;
+    font-size: 14px;
     color: var(--ink-soft);
-    line-height: 1.65;
+    line-height: 1.62;
+    scroll-behavior: smooth;
+  }
+  .gate-terms h2 {
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .gate-terms h3 {
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    margin: 20px 0 6px;
+  }
+  .gate-terms p { margin: 0 0 10px; }
+  .gate-terms ul { margin: 0 0 12px 19px; }
+  .gate-terms li { margin-bottom: 6px; }
+  .gate-terms .terms-meta {
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .gate-terms .legal-callout {
+    border-left: 2px solid var(--accent);
+    background: rgba(212, 255, 58, 0.045);
+    color: var(--ink);
+    padding: 12px 14px;
+    margin: 14px 0;
   }
   .gate-terms strong {
     color: var(--ink);
     font-weight: 600;
   }
+  .gate-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    color: var(--ink-muted);
+    font-size: 12px;
+  }
+  .gate-print {
+    appearance: none;
+    border: 1px solid var(--line-strong);
+    background: transparent;
+    color: var(--ink-soft);
+    padding: 9px 12px;
+    border-radius: 2px;
+    font: 600 11px/1 'JetBrains Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .gate-print:hover { border-color: var(--accent); color: var(--accent); }
   .gate-form {
     display: grid;
     gap: 16px;
+  }
+  .gate-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .gate-field { display: grid; gap: 7px; }
+  .gate-field span {
+    color: var(--ink-muted);
+    font: 600 11px/1.2 'JetBrains Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
   .gate-form input[type="text"],
   .gate-form input[type="email"] {
@@ -167,7 +234,7 @@
     display: flex;
     gap: 12px;
     align-items: flex-start;
-    font-size: 17.5px;
+    font-size: 14px;
     color: var(--ink-soft);
     line-height: 1.5;
     cursor: pointer;
@@ -180,6 +247,7 @@
     height: 16px;
     accent-color: var(--accent);
   }
+  .gate-form input[type="checkbox"]:disabled { opacity: 0.4; cursor: not-allowed; }
   .gate-btn {
     background: var(--accent);
     color: var(--bg);
@@ -215,8 +283,44 @@
     text-transform: uppercase;
   }
   @media (max-width: 520px) {
-    .gate-inner { padding: 36px 28px; }
+    .gate { padding: 12px; align-items: flex-start; }
+    .gate-inner { padding: 32px 22px; }
     .gate h1 { font-size: 26px; }
+    .gate-fields { grid-template-columns: 1fr; }
+    .gate-terms { max-height: 330px; padding: 21px 19px; }
+    .gate-tools { align-items: flex-start; flex-direction: column; }
+  }
+
+  @media print {
+    body { background: #fff !important; color: #111 !important; }
+    body > *:not(#ndaGate) { display: none !important; }
+    body::before { display: none !important; }
+    #ndaGate {
+      position: static !important;
+      display: block !important;
+      background: #fff !important;
+      color: #111 !important;
+      padding: 0 !important;
+    }
+    .gate-inner {
+      max-width: none !important;
+      background: #fff !important;
+      border: 0 !important;
+      padding: 0 !important;
+    }
+    .gate-inner::before, .gate-body, .gate-form, .gate-tools, .gate-error, .gate-footer { display: none !important; }
+    .gate-eyebrow, .gate-attribution, .gate-terms .terms-meta { color: #405600 !important; }
+    .gate h1, .gate-terms h2, .gate-terms h3, .gate-terms strong, .gate-terms .legal-callout { color: #111 !important; }
+    .gate-terms {
+      max-height: none !important;
+      overflow: visible !important;
+      background: #fff !important;
+      border: 0 !important;
+      color: #222 !important;
+      padding: 0 !important;
+      font-size: 10.5pt !important;
+    }
+    .gate-terms .legal-callout { background: #f4f4f0 !important; border-color: #405600 !important; }
   }
 
   /* ============= MAIN ============= */
@@ -2717,29 +2821,110 @@
 <!-- NDA GATE -->
 <div class="gate" id="ndaGate">
   <div class="gate-inner">
-    <div class="gate-eyebrow">Confidential · NDA Required</div>
-    <h1>This is proprietary work.<br>Before you <em>read it</em>, acknowledge the terms.</h1>
+    <div class="gate-eyebrow">Legally Binding · NDA Required</div>
+    <h1>Review the opportunity.<br><em>Protect the work.</em></h1>
     <div class="gate-attribution">Prepared by <strong>Michael Krilivsky</strong></div>
     <div class="gate-body">
-      What follows is a complete operational blueprint, financial pro forma, and capital-improvement roadmap developed specifically for DUA Hotel. It represents significant original work product. Please review and acknowledge before viewing.
+      This owner presentation contains a site-specific operating blueprint, financial pro forma, development strategy, and project relationships prepared for DUA Hotel. Access is provided only for confidential evaluation of a potential DUA Pickleball &amp; Recovery engagement.
     </div>
-    <div class="gate-terms">
-      <strong>Confidentiality & Intellectual Property Acknowledgment</strong><br><br>
-      By entering, you acknowledge that (1) the contents of this pitch — including all financial models, operational structures, membership designs, build specifications, and valuation frameworks — are the <strong>original intellectual property of Michael Krilivsky</strong> and are shared under confidentiality; (2) you will not reproduce, redistribute, share externally, or execute against this material without a signed written agreement with Michael Krilivsky; (3) you will not engage third parties to implement any portion of this concept for DUA Hotel without compensating or formally engaging Michael Krilivsky as the originator of the concept; (4) this acknowledgment will be timestamped and recorded in the NDA log before access is granted.<br><br>
-      A formal Non-Disclosure & Non-Circumvention Agreement will be circulated separately for signature before any execution discussions.
+    <div class="gate-terms" id="ndaTerms" tabindex="0" aria-label="Non-Disclosure, Restricted-Use and Non-Circumvention Agreement">
+      <h2>Non-Disclosure, Restricted-Use &amp; Non-Circumvention Agreement</h2>
+      <div class="terms-meta">Effective July 31, 2026 · Version DUA-NDA-2026-07-31-v2</div>
+
+      <p class="legal-callout"><strong>This is a legally binding agreement.</strong> Do not continue unless you have read and agree to every term, including the six-month arbitration requirement, prevailing-party fee shifting, Florida governing law, Miami-Dade seat and venue, and jury-trial waiver below.</p>
+
+      <h3>1. Parties, Recipient, and Consideration</h3>
+      <p>This Non-Disclosure, Restricted-Use and Non-Circumvention Agreement (the <strong>“Agreement”</strong>) is between <strong>Michael Krilivsky</strong>, individually and his permitted successors and assigns (the <strong>“Disclosing Party”</strong>), and the individual accepting below. If that individual identifies a company or other organization and has authority to bind it, <strong>“Recipient”</strong> means both that individual and that organization, jointly and severally. If the individual lacks that authority, the individual remains personally bound and must not access the materials for or disclose them to that organization. Access to the Confidential Information is good and sufficient consideration for this Agreement.</p>
+
+      <h3>2. Limited Purpose</h3>
+      <p>Recipient may use the Confidential Information solely to evaluate a potential written business engagement with the Disclosing Party concerning the proposed enclosed, climate-controlled professional pickleball and recovery project at DUA Hotel in Brickell, Miami, Florida (the <strong>“Project”</strong> and the <strong>“Purpose”</strong>). No other use is authorized.</p>
+
+      <h3>3. Confidential Information</h3>
+      <p><strong>“Confidential Information”</strong> means all nonpublic information disclosed by or for the Disclosing Party, before or after acceptance, in any form, relating to the Project or Purpose, including:</p>
+      <ul>
+        <li>this presentation and its selection, arrangement, wording, financial models, formulas, assumptions, forecasts, valuation methods, budgets, pricing, membership structures, operating plans, launch strategy, timelines, specifications, drawings, renderings, research, analyses, notes, and revisions;</li>
+        <li>business, marketing, sponsorship, event, vendor, contractor, investor, member, player, hotel, and professional-pickleball relationships or contact information;</li>
+        <li>the existence and status of discussions, proposed deal terms, follow-up materials, demonstrations, and information a reasonable person would understand to be confidential given its nature or the circumstances; and</li>
+        <li>all copies, excerpts, summaries, analyses, notes, screenshots, downloads, or derivative materials containing or reflecting any of the foregoing.</li>
+      </ul>
+      <p>Confidential Information need not be marked “confidential.” Public facts about DUA Hotel, Brickell, or pickleball are not made confidential merely by appearing in the presentation; however, the Disclosing Party’s nonpublic compilation, expression, analysis, and application of those facts remain protected to the extent permitted by contract and law.</p>
+
+      <h3>4. Exclusions</h3>
+      <p>Confidential Information excludes only information Recipient proves through contemporaneous written records: (a) became public through no breach of this Agreement or other duty; (b) was lawfully known by Recipient without a confidentiality duty before disclosure; (c) was lawfully received from a third party entitled to disclose it without restriction; or (d) was independently developed without access to or use of Confidential Information. A combination of information is not excluded merely because individual elements are public or known unless the combination and its operating significance are also public or known.</p>
+
+      <h3>5. Confidentiality, Security, and Restricted Use</h3>
+      <p>Recipient will:</p>
+      <ul>
+        <li>hold the Confidential Information in strict confidence and use it only for the Purpose;</li>
+        <li>not disclose it to any person except Recipient’s attorneys, accountants, financing sources, officers, directors, or employees who have a strict need to know for the Purpose and are bound by duties at least as protective as this Agreement (<strong>“Representatives”</strong>);</li>
+        <li>remain responsible for every act or omission of Recipient’s Representatives as if it were Recipient’s own;</li>
+        <li>not publish, forward, reproduce, distribute, upload, scrape, photograph, record, screenshot, download, or create copies except the minimum reasonably necessary for the Purpose;</li>
+        <li>protect the information using at least reasonable care and no less than the care used for Recipient’s own similarly sensitive information; and</li>
+        <li>promptly notify the Disclosing Party of any suspected loss, unauthorized access, use, or disclosure and reasonably cooperate to contain and remedy it.</li>
+      </ul>
+      <p>Without the Disclosing Party’s prior written consent, Recipient will not use the Confidential Information, directly or indirectly, to design, price, finance, bid, procure, build, launch, market, operate, or assist any person in implementing all or any material portion of the Project, nor solicit bids or proposals based on the Confidential Information.</p>
+
+      <h3>6. Project-Specific Non-Circumvention</h3>
+      <p>For <strong>thirty-six (36) months</strong> after acceptance, Recipient will not knowingly bypass, avoid, or circumvent the Disclosing Party in connection with the Project by: (a) using Confidential Information to pursue or implement the Project at DUA Hotel without a separate written agreement with the Disclosing Party; or (b) directly engaging a vendor, contractor, sponsor, investor, operator, member source, athlete, league, or other business contact first introduced to Recipient by the Disclosing Party for the Project, when the purpose or effect is to exclude the Disclosing Party from the Project or avoid a written engagement with him. This section does not prohibit ordinary hotel operations, unrelated projects, lawful competition based solely on independently developed information, or dealings Recipient proves existed before the introduction. It is a narrow project and use restriction, not a general restriction on Recipient’s profession or business.</p>
+
+      <h3>7. Legally Required Disclosure</h3>
+      <p>If law, regulation, subpoena, or court order requires disclosure, Recipient will, to the extent legally permitted, give prompt written notice so the Disclosing Party may seek protection, cooperate at the Disclosing Party’s expense, and disclose only the minimum portion Recipient’s counsel determines is legally required. Recipient will use reasonable efforts to obtain confidential treatment.</p>
+
+      <h3>8. Ownership; No License; No Commitment</h3>
+      <p>As between the parties, the Disclosing Party retains all right, title, and interest in his Confidential Information and in the copyrightable expression embodied in his materials. No patent, copyright, trademark, trade-secret, know-how, or other license is granted except the limited right to review for the Purpose. Ideas, systems, and methods are protected only to the extent available under this Agreement and applicable law. Recipient retains ownership of Recipient’s preexisting materials. Nothing obligates either party to proceed with a transaction, and no project-management, compensation, partnership, agency, fiduciary, employment, or joint-venture relationship exists unless set out in a later written agreement signed by both parties.</p>
+
+      <h3>9. Return, Deletion, and Preservation</h3>
+      <p>Upon written request or when discussions end, Recipient will promptly stop using and permanently delete or destroy the Confidential Information and certify completion in writing, except one archival copy may be retained solely by legal counsel if required by law or bona fide record-retention policy. Any retained copy remains subject to this Agreement and may not be used for a business purpose. Routine backup copies need not be separately removed if inaccessible in ordinary operations and deleted under normal retention cycles.</p>
+
+      <h3>10. No Warranty or Reliance</h3>
+      <p>Confidential Information, projections, estimates, concept renderings, and preliminary specifications are provided “as is” for evaluation. The Disclosing Party makes no representation or warranty as to completeness, accuracy, permitting, engineering feasibility, future performance, or results. Recipient is responsible for independent legal, financial, structural, code, acoustic, lighting, insurance, and other diligence. Only representations in a later definitive written agreement will bind a party.</p>
+
+      <h3>11. Term and Survival</h3>
+      <p>This Agreement begins when Recipient electronically signs. Confidentiality and restricted-use obligations continue for <strong>five (5) years</strong> after the last disclosure; obligations covering information qualifying as a trade secret continue for as long as it remains a trade secret under applicable law; Section 6 continues for thirty-six (36) months after acceptance; and provisions concerning ownership, remedies, disputes, electronic records, and any accrued rights survive expiration.</p>
+
+      <h3>12. Remedies and Fees</h3>
+      <p>Recipient acknowledges that unauthorized use or disclosure may cause irreparable harm for which monetary damages are inadequate. The Disclosing Party may seek temporary, preliminary, and permanent injunctive relief, specific performance, and other equitable relief, without limiting any right to actual damages, unjust enrichment, disgorgement, reasonable royalty, exemplary damages where authorized, or other remedies available under contract, the Florida Uniform Trade Secrets Act, the federal Defend Trade Secrets Act, or other applicable law. Fee and expense shifting is governed by Section 13 below. No remedy is exclusive, and delay is not a waiver.</p>
+
+      <h3>13. Florida Law; Mandatory Arbitration; Exclusive Miami-Dade Court Context</h3>
+      <p><strong>13.1 Governing law.</strong> This Agreement and every dispute arising from it are governed by Florida law, without regard to conflict-of-law rules; the Federal Arbitration Act, 9 U.S.C. §§ 1–16; Chapter 2 of the Federal Arbitration Act for an international matter; and the Florida Arbitration Code, Chapter 682, Florida Statutes, to the extent it is not preempted or inconsistent with federal law.</p>
+      <p><strong>13.2 Mandatory binding arbitration.</strong> Except for provisional equitable relief permitted below, every dispute, claim, or controversy arising out of or relating to this Agreement, the Confidential Information, the Project, or the parties’ dealings—including any question concerning formation, scope, interpretation, validity, breach, enforceability, arbitrability, or available remedies—will be resolved exclusively by confidential, final, and binding arbitration. A domestic matter will be administered by the <strong>American Arbitration Association (“AAA”)</strong> under its Commercial Arbitration Rules. A matter involving a party residing or principally based outside the United States will be administered by the AAA’s International Centre for Dispute Resolution (“ICDR”) under its International Arbitration Rules. The legal seat and exclusive place of arbitration is <strong>Miami-Dade County, Florida</strong>; the proceeding and award will be in English; and the award may be confirmed and enforced in any court having jurisdiction.</p>
+      <p><strong>13.3 Single highly experienced arbitrator.</strong> The case will be heard by <strong>one neutral arbitrator selected through the AAA or ICDR</strong>. The arbitrator must be a lawyer in good standing or a retired judge with at least <strong>twenty (20) years of substantial commercial-litigation experience</strong>, including meaningful experience with complex business contracts and, where reasonably available, confidentiality, trade-secret, intellectual-property, or hospitality disputes. The parties may jointly select a qualified arbitrator. If they do not agree within ten (10) calendar days after the AAA or ICDR requests a selection, the AAA or ICDR will appoint a qualified arbitrator under the applicable rules. The arbitrator must make all disclosures required by applicable law and the administering rules.</p>
+      <p><strong>13.4 Six-month decision requirement.</strong> The arbitrator must manage the proceeding on an expedited basis and issue a reasoned, written, final award <strong>within one hundred eighty (180) calendar days after the arbitration demand is filed</strong>. The initial scheduling order must establish deadlines for pleadings, proportionate document exchange, any depositions, dispositive motions, the final hearing, and post-hearing submissions that permit compliance with this deadline. The deadline may be extended only: (a) by a written agreement signed by all parties; or (b) by a reasoned written finding from the arbitrator that extraordinary circumstances outside the arbitrator’s reasonable control make compliance impracticable, in which case any extension must be the shortest reasonably necessary and ordinarily may not exceed sixty (60) additional days. The parties direct the AAA, ICDR, and arbitrator to enforce this schedule. A missed deadline does not by itself terminate arbitral jurisdiction or invalidate an otherwise enforceable award.</p>
+      <p><strong>13.5 Prevailing-party fees; non-prevailing party pays.</strong> The <strong>non-prevailing party must pay or reimburse the prevailing party</strong> for all reasonable attorneys’ fees and litigation expenses incurred in the arbitration and in any related court proceeding, including expert and consultant fees, discovery and electronic-discovery costs, AAA or ICDR administrative charges, arbitrator compensation, filing and service fees, court costs, and reasonable fees and costs incurred to obtain provisional relief or to confirm, enforce, correct, modify, defend, or challenge an award, including on appeal. The arbitrator must identify the prevailing party and include this award in the final award. If each side prevails on substantial issues, the arbitrator will identify the party that prevailed on the central claims and obtained the greater practical relief and may equitably apportion fees and costs to reflect the parties’ relative success.</p>
+      <p><strong>13.6 Miami-Dade judicial support and exclusive venue.</strong> Before an arbitrator is appointed and able to act—or afterward when the matter is urgent and the arbitrator cannot provide timely or adequate relief—either party may seek a temporary restraining order, preliminary injunction, preservation order, or other provisional equitable relief without waiving arbitration. Exclusive jurisdiction and venue for such relief and for any action to compel arbitration or confirm, enforce, correct, modify, or vacate an award lies in: (a) the state courts of the <strong>Eleventh Judicial Circuit in and for Miami-Dade County, Florida</strong>; or (b) if federal subject-matter jurisdiction exists, the <strong>United States District Court for the Southern District of Florida, Miami Division</strong>. Each party irrevocably submits to personal jurisdiction there and waives any objection based on improper venue, inconvenient forum, or similar doctrine.</p>
+      <p><strong>13.7 Jury-trial waiver and confidentiality.</strong> For any dispute or issue that is litigated in court, each party, knowingly and voluntarily and to the fullest extent permitted by law, <strong>waives trial by jury</strong>. The parties will keep the arbitration, submissions, evidence, hearing, and award confidential except as reasonably necessary to conduct the proceeding, obtain professional advice, comply with law, or enforce rights or an award.</p>
+
+      <h3>14. Electronic Signature, Records, and Privacy Notice</h3>
+      <p>By checking the acceptance boxes and clicking <strong>“Electronically Sign NDA &amp; View Proposal,”</strong> Recipient intends to sign and be legally bound by this Agreement, consents to transact and receive this Agreement electronically, confirms the ability to read and retain it, and agrees that the electronic record has the same effect as a handwritten signature. A print/save control is provided before acceptance.</p>
+      <p>To document acceptance and protect legal rights, the system records the signer’s entered name, email, organization, title, country, acceptance choices, server timestamp, agreement and proposal versions, source URL, IP address, and browser/device user-agent. These records are used for contract evidence, access control, security, legal compliance, and enforcement—not unrelated marketing—and may be processed or stored in the United States and other locations used by hosting providers, and disclosed to hosting providers, professional advisers, courts, arbitrators, or authorities as reasonably necessary for those purposes. They will be retained for as long as reasonably necessary to establish, exercise, or defend legal rights. A person unwilling to provide this information, permit those cross-border transfers, or consent to electronic contracting must exit without accessing the proposal and request a separate paper agreement.</p>
+
+      <h3>15. General Terms</h3>
+      <p>This Agreement is the entire agreement concerning confidentiality and restricted use of the Project information and supersedes prior click-through or oral confidentiality understandings on that subject, but it does not replace a later signed project, consulting, compensation, or other definitive agreement. Amendments and waivers must be in a writing signed by the party against whom enforcement is sought. Recipient may not assign this Agreement without the Disclosing Party’s written consent; the Disclosing Party may assign it to an entity through which he pursues the Project or to a successor. If any provision is invalid or overbroad, it will be enforced to the maximum lawful extent and, where permitted, reformed to best accomplish its original intent; the remainder will continue in effect. Headings are for convenience only. English controls over any translation. Electronic counterparts and records are originals. There are no third-party beneficiaries except the Disclosing Party’s permitted assignee.</p>
+    </div>
+    <div class="gate-tools">
+      <span id="termsReadStatus">Scroll through the entire agreement to unlock the signature controls.</span>
+      <button class="gate-print" id="printNda" type="button">Print / Save Agreement</button>
     </div>
     <div class="gate-form">
-      <input type="text" id="gateName" placeholder="Full name" autocomplete="name">
-      <input type="email" id="gateEmail" placeholder="Email address" autocomplete="email">
-      <input type="text" id="gateRole" placeholder="Role / Company (e.g., GM, DUA Hotel)">
+      <div class="gate-fields">
+        <label class="gate-field"><span>Full legal name</span><input type="text" id="gateName" placeholder="Your full legal name" autocomplete="name" required></label>
+        <label class="gate-field"><span>Business email</span><input type="email" id="gateEmail" placeholder="name@company.com" autocomplete="email" required></label>
+        <label class="gate-field"><span>Company / organization</span><input type="text" id="gateCompany" placeholder="Company name or Individual" autocomplete="organization" required></label>
+        <label class="gate-field"><span>Title / role</span><input type="text" id="gateRole" placeholder="Owner, manager, adviser, etc." autocomplete="organization-title" required></label>
+        <label class="gate-field"><span>Country</span><input type="text" id="gateCountry" placeholder="Country of residence or organization" autocomplete="country-name" required></label>
+      </div>
       <label class="check">
-        <input type="checkbox" id="gateAgree">
-        <span>I acknowledge I am reviewing confidential, proprietary work and agree to the terms above.</span>
+        <input type="checkbox" id="gateAgree" disabled>
+        <span>I have read the entire Agreement and agree to be legally bound, including its confidentiality, restricted-use, non-circumvention, Florida-law, six-month AAA/ICDR arbitration, 20+ year arbitrator qualification, non-prevailing-party fee payment, Miami-Dade seat/venue, and jury-waiver terms. I consent to the electronic signature and evidence record described above.</span>
       </label>
-      <button class="gate-btn" id="gateBtn" disabled>Acknowledge & Continue →</button>
+      <label class="check">
+        <input type="checkbox" id="gateAuthority" disabled>
+        <span>I accept individually. If I entered a company or organization other than “Individual,” I represent that I am authorized to bind it; if I am not authorized, I will not access or disclose the proposal on its behalf.</span>
+      </label>
+      <button class="gate-btn" id="gateBtn" disabled>Electronically Sign NDA &amp; View Proposal →</button>
     </div>
     <div class="gate-error" id="gateError" role="alert" aria-live="polite"></div>
-    <div class="gate-footer">Timestamped · Recorded · Protected</div>
+    <div class="gate-footer">Electronic Signature · Timestamped Evidence · Confidential Access</div>
   </div>
 </div>
 
@@ -4534,8 +4719,7 @@
   <div class="container">
     <div class="ip-badge">© Confidential IP</div>
     <div class="ip-text">
-      <strong>Intellectual Property Notice.</strong> This pro forma, operational blueprint, membership structure, build budget, and valuation framework are the original intellectual property of <strong>Michael Krilivsky</strong> and are shared with DUA Hotel under confidentiality. By reviewing this material, the recipient agrees not to reproduce, redistribute, or execute against this concept — in whole or in part, independently or through third parties — without a signed written engagement with Michael Krilivsky as the originator.<br><br>
-      A formal Non-Disclosure & Non-Circumvention Agreement will be circulated separately before any execution discussions.
+      <strong>Confidentiality &amp; Rights Notice.</strong> This presentation and its nonpublic compilation, expression, models, analyses, Project strategy, and related materials are confidential and protected by the Non-Disclosure, Restricted-Use &amp; Non-Circumvention Agreement accepted before access. Michael Krilivsky retains his rights in the materials. No license or implementation right is granted, and no portion may be disclosed, reproduced, used to solicit bids, or used to implement the DUA Pickleball &amp; Recovery Project except under a separate written agreement.
     </div>
   </div>
 </div>
@@ -4552,8 +4736,13 @@
   const gate = document.getElementById('ndaGate');
   const gateName = document.getElementById('gateName');
   const gateEmail = document.getElementById('gateEmail');
+  const gateCompany = document.getElementById('gateCompany');
   const gateRole = document.getElementById('gateRole');
+  const gateCountry = document.getElementById('gateCountry');
   const gateAgree = document.getElementById('gateAgree');
+  const gateAuthority = document.getElementById('gateAuthority');
+  const ndaTerms = document.getElementById('ndaTerms');
+  const termsReadStatus = document.getElementById('termsReadStatus');
   const gateBtn = document.getElementById('gateBtn');
   const gateError = document.getElementById('gateError');
   const ndaApiMeta = document.querySelector('meta[name="nda-api-base"]');
@@ -4561,15 +4750,31 @@
   const proposalVersion = document.querySelector('meta[name="proposal-version"]').content;
   const isLocalPreview = !window.location.hostname || ['localhost', '127.0.0.1'].includes(window.location.hostname);
   const ndaApiBase = (ndaApiMeta.content.trim() || (isLocalPreview ? 'http://localhost:8787' : '')).replace(/\/$/, '');
+  let termsScrolled = false;
+
+  function checkTermsScroll() {
+    if (termsScrolled || ndaTerms.scrollTop + ndaTerms.clientHeight < ndaTerms.scrollHeight - 12) return;
+    termsScrolled = true;
+    gateAgree.disabled = false;
+    gateAuthority.disabled = false;
+    termsReadStatus.textContent = 'Agreement reviewed to the end. You may print, save, and electronically sign below.';
+    checkGate();
+  }
+  ndaTerms.addEventListener('scroll', checkTermsScroll, { passive: true });
 
   function checkGate() {
     const valid = gateName.value.trim().length > 1 &&
                   gateEmail.value.includes('@') &&
                   gateEmail.value.includes('.') &&
-                  gateAgree.checked;
+                  gateCompany.value.trim().length > 1 &&
+                  gateRole.value.trim().length > 1 &&
+                  gateCountry.value.trim().length > 1 &&
+                  termsScrolled &&
+                  gateAgree.checked &&
+                  gateAuthority.checked;
     gateBtn.disabled = !valid;
   }
-  [gateName, gateEmail, gateRole, gateAgree].forEach(el => {
+  [gateName, gateEmail, gateCompany, gateRole, gateCountry, gateAgree, gateAuthority].forEach(el => {
     el.addEventListener('input', checkGate);
     el.addEventListener('change', checkGate);
   });
@@ -4582,7 +4787,7 @@
 
     const label = gateBtn.textContent;
     gateBtn.disabled = true;
-    gateBtn.textContent = 'Recording acknowledgment...';
+    gateBtn.textContent = 'Recording electronic signature...';
     gateError.textContent = '';
 
     try {
@@ -4592,8 +4797,13 @@
         body: JSON.stringify({
           name: gateName.value.trim(),
           email: gateEmail.value.trim(),
+          company: gateCompany.value.trim(),
           role: gateRole.value.trim(),
+          country: gateCountry.value.trim(),
           accepted: gateAgree.checked,
+          authorityAccepted: gateAuthority.checked,
+          electronicSignature: true,
+          termsScrolled,
           termsVersion,
           proposalVersion
         })
@@ -4602,7 +4812,7 @@
       if (!response.ok) throw new Error(body.error || 'Unable to record your acknowledgment.');
 
       document.getElementById('accessLog').textContent =
-        'Acknowledged by ' + gateName.value.trim() + ' · ' + new Date(body.acknowledgement.acknowledgedAt).toLocaleDateString();
+        'NDA signed by ' + gateName.value.trim() + ' · ' + new Date(body.acknowledgement.acknowledgedAt).toLocaleDateString();
       gate.classList.add('hidden');
       document.body.style.overflow = 'auto';
     } catch (error) {
@@ -4611,6 +4821,8 @@
       gateBtn.textContent = label;
     }
   });
+
+  document.getElementById('printNda').addEventListener('click', () => window.print());
 
   // Reveal
   const observer = new IntersectionObserver((entries) => {
