@@ -441,15 +441,14 @@
   <!-- ============================ STEP: DONE ============================ -->
   <div class="step" id="step-done">
     <section class="card" style="text-align:center;padding:46px 24px">
-      <h2><span class="en">Booking unlocked — let's talk</span><span class="es">Agenda desbloqueada — hablemos</span></h2>
-      <p class="en" style="max-width:520px;margin:12px auto 24px;color:var(--ink-soft)">Since your reference group texts are on their way to Mike's phone, you can now schedule your FaceTime or video interview. Pick any time that works for you.</p>
-      <p class="es" style="max-width:520px;margin:12px auto 24px;color:var(--ink-soft)">Como tus mensajes grupales ya van en camino al teléfono de Mike, ahora puedes agendar tu entrevista por FaceTime o videollamada. Elige el horario que mejor te funcione.</p>
-      <a class="btn" href="https://calendly.com/m-pupsnchill/15min" target="_blank" rel="noopener noreferrer">
-        <span class="en">Schedule your interview</span><span class="es">Agendar tu entrevista</span>
-      </a>
-      <p class="small" style="margin-top:14px;font-weight:700">
-        <span class="en">Reminder: interviews are only held after both reference group texts have arrived. Bookings without them are canceled.</span>
-        <span class="es">Recordatorio: las entrevistas solo se realizan después de que lleguen los dos mensajes grupales con tus referencias. Las citas sin ellos serán canceladas.</span>
+      <h2><span class="en">Done — here's what happens next</span><span class="es">Listo — esto es lo que sigue</span></h2>
+      <p class="en" style="max-width:520px;margin:12px auto 18px;color:var(--ink-soft)">Mike will now speak with your two references. <strong>Once they respond and everything checks out, he will personally text you your private booking link</strong> for the FaceTime / video interview.</p>
+      <p class="es" style="max-width:520px;margin:12px auto 18px;color:var(--ink-soft)">Mike hablará ahora con tus dos referencias. <strong>Cuando respondan y todo esté en orden, él personalmente te enviará por texto tu enlace privado</strong> para agendar la entrevista por FaceTime o videollamada.</p>
+      <p class="en small" style="max-width:520px;margin:0 auto 10px;color:var(--ink-soft)">💡 Tip: references replying quickly is the #1 thing that speeds this up — give them a heads-up to watch for Mike's message.</p>
+      <p class="es small" style="max-width:520px;margin:0 auto 10px;color:var(--ink-soft)">💡 Consejo: que tus referencias respondan rápido es lo que más acelera el proceso — avísales que estén pendientes del mensaje de Mike.</p>
+      <p class="small" style="margin-top:8px;font-weight:700">
+        <span class="en">There is no other way to book — the interview link only comes from Mike, after your references clear.</span>
+        <span class="es">No hay otra forma de agendar — el enlace solo lo envía Mike, después de que tus referencias sean verificadas.</span>
       </p>
     </section>
   </div>
@@ -780,8 +779,8 @@ document.getElementById("submitRefsBtn").addEventListener("click", async () => {
 document.getElementById("completeBtn").addEventListener("click", async () => {
   const btn = document.getElementById("completeBtn");
   const confirmMsg = lang === "es"
-    ? "IMPORTANTE: Mike solo agenda entrevistas DESPUÉS de que le lleguen los DOS mensajes grupales con tus referencias.\n\nSi agendas sin haberlos enviado, tu entrevista será CANCELADA.\n\n¿Ya enviaste los dos mensajes grupales al +1 617-633-0544?"
-    : "IMPORTANT: Mike only schedules interviews AFTER both reference group texts have arrived on his phone.\n\nIf you book without sending them, your interview will be CANCELED.\n\nHave you already sent both group texts to +1 617-633-0544?";
+    ? "Mike te enviará tu enlace de entrevista SOLO después de hablar con tus dos referencias y verificar que todo esté en orden.\n\n¿Ya enviaste los dos mensajes grupales al +1 617-633-0544?"
+    : "Mike will text you your interview link ONLY after he has spoken with both references and everything checks out.\n\nHave you already sent both group texts to +1 617-633-0544?";
   if (!window.confirm(confirmMsg)) return;
   btn.disabled = true;
   try {
