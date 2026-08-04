@@ -377,6 +377,10 @@
     100% { box-shadow: 0 0 0 0 rgba(0,245,196,0); transform: scale(1); }
   }
   .gcard.just-saved { animation: savedPulse 1.5s cubic-bezier(0.34,1.4,0.64,1); border-color: var(--aqua) !important; }
+  .gcard.done { opacity: 0.82; }
+  .gcard.done .ghdr { background: rgba(0,245,196,0.04); }
+  .gcard:not(.done):not(.cancelled) { border-color: rgba(255,45,120,0.35); box-shadow: 0 0 14px rgba(255,45,120,0.08); }
+  .gcard:not(.done):not(.cancelled) .ghdr { background: rgba(255,45,120,0.05); }
 
   /* ── LOGIN SCREEN ── */
   #loginScreen {
@@ -1153,15 +1157,19 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <div class="settings-title">⚙ Options</div>
     <button class="settings-item" onclick="closeSettings();openProfile();">👤 My Profile</button>
     <button class="settings-item" onclick="closeSettings();openGuide();">✨ App Guide</button>
-    <button class="settings-item" onclick="closeSettings();openSessions();">📅 Games to Join</button>
+    <button class="settings-item" onclick="closeSettings();openSessions();">📅 Schedule/Join Games!</button>
     <button class="settings-item" onclick="closeSettings();openCourts();">🏟 Find Courts</button>
     <button class="settings-item" onclick="closeSettings();openQuickStart();">📖 Quick Start Guide</button>
     <div class="settings-divider"></div>
     <button class="settings-item" onclick="closeSettings();newTournament();">🏠 New Tournament</button>
-    <button class="settings-item" onclick="closeSettings();shareTournamentLink();">🔗 Invite Players to Edit Scores</button>
     <button class="settings-item" onclick="closeSettings();openHistory();">📜 Past Tournaments</button>
-    <button class="settings-item" onclick="closeSettings();document.getElementById('setupOverlay').classList.add('hidden');showPage('games');">🎮 Edit Scores</button>
-    <button class="settings-item danger" onclick="closeSettings();resetScores();">🔄 Reset Scores</button>
+    <button class="settings-item" id="menuMoreBtn" onclick="toggleMenuMore()" style="color:var(--muted);">⋯ More</button>
+    <div id="menuMore" style="display:none;padding-left:6px;border-left:2px solid var(--border);margin-left:8px;">
+      <button class="settings-item" onclick="closeSettings();shareTournamentLink();">🔗 Invite Players to Edit Scores</button>
+      <button class="settings-item" onclick="closeSettings();document.getElementById('setupOverlay').classList.add('hidden');showPage('games');">🎮 Edit Scores</button>
+      <button class="settings-item danger" onclick="closeSettings();resetScores();">🔄 Reset Scores</button>
+      <button class="settings-item danger" onclick="closeSettings();doSignOut();">🚪 Sign Out</button>
+    </div>
     <div class="settings-divider"></div>
     <div class="settings-divider"></div>
     <button class="settings-item fb" onclick="closeSettings();openFeedback();">🆘 Help / Feedback</button>
@@ -1171,7 +1179,6 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item" id="adminDashBtn" style="display:none;" onclick="closeSettings();openAdminDash();">📊 Admin Dashboard</button>
     <div class="settings-divider"></div>
     <button class="settings-item" id="userInfo" style="color:var(--muted);font-size:13px;cursor:default;"></button>
-    <button class="settings-item danger" onclick="closeSettings();doSignOut();">🚪 Sign Out</button>
   </div>
 </div>
 
@@ -2130,7 +2137,7 @@ window.renderLeaderboard = function() {
   if (!qualified.length && !unqualified.length) {
     h = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-t">No Games Yet</div><div style="color:var(--muted);font-size:13px;font-weight:600;margin-top:8px;">Play some games and the leaderboard comes alive!</div></div>';
   } else {
-    h += '<table class="stbl"><thead><tr><th></th><th>Player</th><th>W-L</th><th>G</th><th>'+(lbSort==='pts'?'Pts':'Avg')+'</th></tr></thead><tbody>';
+    h += '<table class="stbl"><thead><tr><th></th><th>Player</th><th>W-L</th><th>W%</th><th>G</th><th>'+(lbSort==='pts'?'Pts':'Avg')+'</th></tr></thead><tbody>';
     qualified.forEach((p, i) => {
       const isMe = p.name.toLowerCase() === myName;
       const medal = i===0?'👑':i===1?'🥈':i===2?'🥉':(i+1);
@@ -2142,7 +2149,9 @@ window.renderLeaderboard = function() {
         +'<td style="font-size:'+(i<3?'18':'14')+'px;">'+medal+'</td>'
         +'<td><span class="pname">'+p.name+'</span>'+streakBadge
         +(p.city?'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+p.city+'</div>':'')+gap+'</td>'
-        +'<td>'+p.wins+'-'+p.losses+'</td><td style="color:var(--muted);">'+p.games+'</td>'
+        +'<td>'+p.wins+'-'+p.losses+'</td>'
+        +'<td style="font-weight:800;color:'+(p.games&&p.wins/p.games>=0.5?'var(--aqua)':'var(--muted)')+';">'+(p.games?Math.round(100*p.wins/p.games):0)+'%</td>'
+        +'<td style="color:var(--muted);">'+p.games+'</td>'
         +'<td>'+metric+'</td></tr>';
     });
     h += '</tbody></table>';
@@ -3487,7 +3496,11 @@ function gameCard(g, s, done, w, label) {
     +'<div style="padding:0 14px 10px;"><button class="delbtn" style="color:var(--cyan);border-color:rgba(0,240,255,0.2);" onclick="restoreGame(\''+g.key+'\')">↩ Restore</button></div>'
     +'</div>';
 
-  return '<div class="gcard'+(done?' done':'')+'"><div class="ghdr"><span class="glbl">⚡ '+label+'</span><span>'+(done?'✅':'')+'</span></div>'
+  return '<div class="gcard'+(done?' done':'')+'"><div class="ghdr"><span class="glbl">⚡ '+label+'</span>'
+    +'<span style="display:flex;align-items:center;gap:10px;">'
+    +(done?'<span style="font-size:10px;font-weight:800;letter-spacing:1px;color:var(--aqua);">✓ DONE</span>':'')
+    +'<span onclick="deleteGame(\''+g.key+'\')" style="cursor:pointer;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;font-size:11px;color:rgba(255,79,107,0.55);border:1px solid rgba(255,79,107,0.25);">✕</span>'
+    +'</span></div>'
     +'<div class="gbody"><div class="matchup">'
     +'<div class="team"><span style="display:block;font-size:9px;letter-spacing:2px;color:var(--muted);font-family:\'Russo One\',sans-serif;margin-bottom:2px;">⬆ NORTH</span>'+g.t1.join(' & ')+(w==='t1'?'<span class="wtag" style="margin-left:8px;">W</span>':'')+'</div>'
     +'<div class="vs">vs</div>'
@@ -3497,9 +3510,8 @@ function gameCard(g, s, done, w, label) {
     +'<span class="sdash">—</span>'
     +'<input class="sinput'+(s.s2===null&&!done?' await':'')+'" type="number" inputmode="numeric" min="0" max="99" id="s2_'+g.key+'" value="'+(s.s2!==null?s.s2:'')+'" placeholder="0" oninput="scoreTyped(\''+g.key+'\')">'
     +'</div>'
-    +'<button class="savebtn'+(done?' saved':'')+'" id="save_'+g.key+'" style="'+(done||(s.s1!==null&&s.s2!==null)?'':'opacity:0.3;')+'" onclick="saveScore(\''+g.key+'\')">'+(done?'✓ Saved':'Save Score')+'</button>'
-    +(done?'<button class="editbtn" onclick="editScore(\''+g.key+'\')">✏ Edit Score</button>':'')
-    +'<button class="delbtn" onclick="deleteGame(\''+g.key+'\')">✕ Remove Game</button>'
+    +(done?'<div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;margin:2px 0 4px;">tap a score to edit</div>':'')
+    +'<button class="savebtn'+(done?' saved':'')+'" id="save_'+g.key+'" style="'+(done?'display:none;':((s.s1!==null&&s.s2!==null)?'':'opacity:0.3;'))+'" onclick="saveScore(\''+g.key+'\')">'+(done?'✓ Saved':'Save Score')+'</button>'
     +'</div></div>';
 }
 
@@ -3598,7 +3610,8 @@ window.saveScore = window._saveScore = function(key) {
   //    slam the viewport back to the top. Update the card IN PLACE instead. ──
   try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch(e) {}
   var sb = document.getElementById('save_' + key);
-  if (sb) { sb.textContent = '✓ Saved'; sb.classList.add('saved'); sb.style.opacity = '1'; }
+  if (sb) { sb.textContent = '✓ Saved'; sb.classList.add('saved'); sb.style.opacity = '1';
+    setTimeout(function(){ if (sb) sb.style.display = 'none'; }, 900); }
   var i1 = document.getElementById('s1_' + key), i2 = document.getElementById('s2_' + key);
   if (i1) i1.classList.remove('await');
   if (i2) i2.classList.remove('await');
@@ -4533,6 +4546,13 @@ function newTournament() { if(window._newTournament) window._newTournament(); }
 window.scoreTyped = function(k) {
   var a = document.getElementById('s1_'+k), b = document.getElementById('s2_'+k);
   var btn = document.getElementById('save_'+k);
+  // Tap-to-edit: touching a saved game's scores brings the save button back
+  if (btn && btn.style.display === 'none') {
+    btn.style.display = '';
+    btn.textContent = '✓ Update Score';
+    btn.classList.remove('saved');
+    if (window._editingScores) window._editingScores.add(k);
+  }
   var both = a && b && a.value !== '' && b.value !== '';
   if (btn) btn.style.opacity = both ? '1' : '0.3';
   if (a) a.classList.toggle('await', a.value === '');
@@ -4644,6 +4664,12 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
+function toggleMenuMore() {
+  var m = document.getElementById('menuMore'), b = document.getElementById('menuMoreBtn');
+  var open = m.style.display !== 'none';
+  m.style.display = open ? 'none' : 'block';
+  if (b) b.textContent = open ? '⋯ More' : '⋯ Less';
+}
 function scUseMyLocation()   { if(window.scUseMyLocation) window.scUseMyLocation(); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 function adApproveCourt(i)   { if(window.adApproveCourt) window.adApproveCourt(i); }
