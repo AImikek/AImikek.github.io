@@ -2837,7 +2837,7 @@ function renderSessionDetail(sid, s) {
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
         +'<div style="min-width:0;"><span style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--aqua);margin-right:10px;">'+(i+1)+'</span>'
         +'<span style="font-weight:700;color:var(--white);font-size:14px;">'+r.name+'</span>'
-        +(r.comment?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
+        +(r.comment && r.comment.toLowerCase() !== (r.name||'').toLowerCase() ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
         +(r.uid === currentUser?.uid ? '<button onclick="releaseSpot(\'' + sid + '\')" style="flex-shrink:0;padding:6px 12px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">I\'m out</button>' : '')
         +'</div>';
     } else {
@@ -2883,7 +2883,8 @@ window.claimSpot = async function(sid) {
   if (roster.some(r=>r.uid===currentUser.uid) || wait.some(r=>r.uid===currentUser.uid)) { alert("You're already in!"); return; }
   let nm = userProfile?.name;
   if (!nm) { nm = (prompt('Your name for the roster:')||'').trim(); if (!nm) return; }
-  const comment = (prompt('Optional note (e.g. "can be there at 8") — or leave blank:') || '').trim();
+  let comment = (prompt("You're in, " + nm + "! 🏓\n\nAdd a note for the group? (e.g. \"running 15 min late\")\nLeave EMPTY and press OK to skip:") || '').trim();
+  if (comment.toLowerCase() === nm.toLowerCase()) comment = '';  // typed their name again — not a note
   const entry = { name: nm, uid: currentUser.uid, comment, at: Date.now() };
   try {
     if (roster.length < (s.spots||4)) await set(ref(db, 'sessions/'+sid+'/roster'), [...roster, entry]);
@@ -2936,7 +2937,11 @@ window.copySessionRoster = async function(sid) {
     + '📅 ' + ds + ' · ' + fmtSessTime(s.startTime) + '–' + fmtSessTime(s.endTime) + '\n';
   if (s.location) txt += '📍 ' + s.location + '\n';
   if (s.level) txt += '🎚 Level ' + s.level + '\n';
-  for (let i = 0; i < spots; i++) txt += (i+1) + '. ' + (roster[i] ? roster[i].name + (roster[i].comment ? ' (' + roster[i].comment + ')' : '') : '?') + '\n';
+  for (let i = 0; i < spots; i++) {
+    const r0 = roster[i];
+    const note = r0 && r0.comment && r0.comment.toLowerCase() !== (r0.name||'').toLowerCase() ? ' (' + r0.comment + ')' : '';
+    txt += (i+1) + '. ' + (r0 ? r0.name + note : '?') + '\n';
+  }
   const left = spots - roster.length;
   const sUrl = window.location.origin + window.location.pathname + '?s=' + sid;
   txt += left > 0 ? left + ' spot' + (left>1?'s':'') + ' left — claim yours: ' + sUrl
