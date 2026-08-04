@@ -136,8 +136,8 @@
     color:var(--white); padding:2px 7px; border-radius:4px; text-transform:uppercase;
     margin-left:4px; vertical-align:middle; }
   .srow { display:flex; align-items:center; gap:12px; justify-content:center; }
-  .sinput { width:84px; height:62px; background:var(--surface2); border:2px solid var(--border);
-    border-radius:12px; color:var(--white); font-family:'Russo One',sans-serif; font-size:36px;
+  .sinput { width:96px; height:74px; background:var(--surface2); border:2px solid var(--border);
+    border-radius:14px; color:var(--white); font-family:'Russo One',sans-serif; font-size:42px !important;
     text-align:center; outline:none; transition:border-color 0.2s; -moz-appearance:textfield; }
   .sinput::-webkit-inner-spin-button,.sinput::-webkit-outer-spin-button { -webkit-appearance:none; }
   .sinput:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,240,255,0.12); }
@@ -369,6 +369,13 @@
   #setupStep1 .mtoggle { gap:8px; }
   #setupOverlay { padding-top:58px; padding-bottom:84px; }
 
+  @keyframes savedPulse {
+    0% { box-shadow: 0 0 0 0 rgba(0,245,196,0.55); border-color: var(--aqua); }
+    70% { box-shadow: 0 0 24px 6px rgba(0,245,196,0.18); border-color: var(--aqua); }
+    100% { box-shadow: 0 0 0 0 rgba(0,245,196,0); }
+  }
+  .gcard.just-saved { animation: savedPulse 1.2s ease-out; }
+
   /* ── LOGIN SCREEN ── */
   #loginScreen {
     position:fixed; inset:0; z-index:500;
@@ -410,7 +417,7 @@
     color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
   .empty-s { font-size:13px; color:var(--muted); font-weight:500; }
   /* iOS: 16px inputs prevent focus auto-zoom */
-  input, select, textarea { font-size:16px !important; }
+  input, select, textarea { font-size:16px; }  /* >=16px stops iOS zoom; specific styles may go bigger */
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
@@ -3495,6 +3502,7 @@ function gameCard(g, s, done, w, label) {
 }
 
 function renderGames() {
+  const _keepY = window.scrollY || 0;
   const el=document.getElementById('pageGames');
   if (!cfg){el.innerHTML='<div class="empty"><div class="empty-icon">🏓</div><div class="empty-t">No Tournament Yet</div><div class="empty-s">Tap Home to set one up</div></div>';return;}
   if (!cfg.schedule) cfg.schedule = [];
@@ -3561,6 +3569,7 @@ function renderGames() {
   }
 
   el.innerHTML = html
+  if (_keepY) { try { window.scrollTo(0, _keepY); } catch(e) {} }
     + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
     + (Object.values(scores).some(s=>s&&s.s1!==null&&s.s1!==undefined) ? '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>' : '');
 }
@@ -3573,6 +3582,11 @@ window.saveScore = window._saveScore = function(key) {
   const n1=parseInt(v1),n2=parseInt(v2);
   if(isNaN(n1)||isNaN(n2)){alert('Numbers only!');return;}
   scores[key]={s1:n1,s2:n2}; push(); renderGames(); updateNav();
+  setTimeout(function() {
+    var sb = document.getElementById('save_' + key);
+    var card = sb ? sb.closest('.gcard') : null;
+    if (card) { card.classList.add('just-saved'); setTimeout(function(){ card.classList.remove('just-saved'); }, 1300); }
+  }, 30);
 };
 window._editingScores = new Set();
 window.editScore = window._editScore = function(key) {
@@ -4429,6 +4443,9 @@ document.addEventListener('focusout', function() {
     // Still typing in another field? Don't yank the screen around.
     const a = document.activeElement;
     if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+    // Games/Stats scroll the window legitimately - never snap those.
+    const cur = window._currentScreen ? window._currentScreen().id : 'games';
+    if (cur === 'games' || cur === 'standings') return;
     if ((window.scrollY || 0) > 0) { try { window.scrollTo(0, 0); } catch(e) {} }
   }, 200);
 });
