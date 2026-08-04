@@ -980,6 +980,7 @@
     </div>
     <label class="flabel">Location</label>
     <input class="finput" id="scLocation" placeholder="Woodside Courts">
+    <div id="scLocSuggest" style="display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 12px;"></div>
     <label class="flabel">Date</label>
     <input class="finput" id="scDate" type="date">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -990,6 +991,7 @@
     <input class="finput" id="scSpots" type="number" inputmode="numeric" min="2" max="24" value="4">
     <label class="flabel">Level (optional)</label>
     <input class="finput" id="scLevel" placeholder="3.0 - 3.5+">
+    <div id="scLevelSuggest" style="display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 12px;"></div>
     <label class="flabel">Note (optional)</label>
     <input class="finput" id="scNote" placeholder="Bring balls · All levels welcome">
     <label class="flabel">Who can see it?</label>
@@ -2663,7 +2665,7 @@ window.openSessions = async function() {
       return '<div onclick="openSessionDetail(\'' + s.sid + '\')" style="cursor:pointer;padding:14px;background:var(--surface);border:1px solid '+(spotsLeft?'rgba(0,240,255,0.3)':'var(--border)')+';border-radius:14px;margin-bottom:10px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;">'
         +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' 🔁':'')+'</div>'
-        +'<div style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;'+(spotsLeft?'background:rgba(0,245,196,0.12);color:var(--aqua);':'background:rgba(255,224,0,0.1);color:var(--yellow);')+'">'+(spotsLeft ? spotsLeft+' open' : 'Full')+'</div></div>'
+        +'<div style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;'+(spotsLeft?'background:rgba(0,245,196,0.12);color:var(--aqua);':'background:rgba(255,224,0,0.1);color:var(--yellow);')+'">'+(spotsLeft ? spotsLeft+' open' : 'Full · waitlist open')+'</div></div>'
         +'<div style="font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;">'+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+(s.location?' · 📍 '+s.location:'')+(s.level?' · 🎚 '+s.level:'')+'</div>'
         +'<div style="font-size:12px;color:var(--white);font-weight:600;margin-top:6px;">'+roster.map(r=>r.name).join(' · ')+'</div>'
         +'</div>';
@@ -2690,9 +2692,48 @@ function fmtSessTime(t) {
 window.openSessionCreate = function() {
   window._pushNav('sessionCreate');
   document.getElementById('sessionCreate').classList.remove('hidden');
-  const d = new Date(); d.setDate(d.getDate() + 1);
-  document.getElementById('scDate').value = d.toISOString().slice(0,10);
+  const d = new Date();
+  document.getElementById('scDate').value = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
   scSetVis('public'); scSetRec(null);
+  renderScSuggestions();
+  const st = document.getElementById('scStart'), en = document.getElementById('scEnd');
+  if (st && !st._smartWired) {
+    st._smartWired = true;
+    st.addEventListener('change', function() {
+      if (!st.value) return;
+      if (!en.value || en.value <= st.value) {
+        const parts = st.value.split(':').map(Number);
+        en.value = String(Math.min(23, parts[0] + 2)).padStart(2,'0') + ':' + String(parts[1]).padStart(2,'0');
+      }
+    });
+  }
+};
+
+function renderScSuggestions() {
+  const locBox = document.getElementById('scLocSuggest');
+  if (locBox) {
+    let list = COURTS.slice();
+    if (courtUserLoc) list.sort((a,b) => (courtDist(a) ?? 999) - (courtDist(b) ?? 999));
+    const chips = list.slice(0, 6).map(c =>
+      '<span onclick="document.getElementById(\'scLocation\').value=\''+c.n.replace(/'/g,'')+'\'" style="cursor:pointer;padding:6px 11px;background:var(--surface2);border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:99px;font-size:11px;font-weight:700;">'+c.n.split('(')[0].trim()+'</span>');
+    if (!courtUserLoc && navigator.geolocation) {
+      chips.unshift('<span onclick="scUseMyLocation()" style="cursor:pointer;padding:6px 11px;background:rgba(0,240,255,0.12);border:1px solid var(--cyan);color:var(--cyan);border-radius:99px;font-size:11px;font-weight:800;">📍 Near me</span>');
+    }
+    locBox.innerHTML = chips.join('');
+  }
+  const lvBox = document.getElementById('scLevelSuggest');
+  if (lvBox) {
+    lvBox.innerHTML = ['All levels','Beginner','2.5 - 3.0','3.0 - 3.5','3.5 - 4.0','4.0+'].map(l =>
+      '<span onclick="document.getElementById(\'scLevel\').value=\''+l+'\'" style="cursor:pointer;padding:6px 11px;background:var(--surface2);border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:99px;font-size:11px;font-weight:700;">'+l+'</span>').join('');
+  }
+}
+
+window.scUseMyLocation = function() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    courtUserLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    renderScSuggestions();
+  }, () => {});
 };
 
 window.createSession = async function() {
@@ -2879,7 +2920,9 @@ window.copySessionRoster = async function(sid) {
   if (s.level) txt += '🎚 Level ' + s.level + '\n';
   for (let i = 0; i < spots; i++) txt += (i+1) + '. ' + (roster[i] ? roster[i].name + (roster[i].comment ? ' (' + roster[i].comment + ')' : '') : '?') + '\n';
   const left = spots - roster.length;
-  txt += left > 0 ? left + ' spot' + (left>1?'s':'') + ' left — claim yours: ' + window.location.origin + window.location.pathname + '?s=' + sid : 'FULL! 🔥';
+  const sUrl = window.location.origin + window.location.pathname + '?s=' + sid;
+  txt += left > 0 ? left + ' spot' + (left>1?'s':'') + ' left — claim yours: ' + sUrl
+                  : 'FULL! 🔥 Join the waitlist (auto-promoted if someone drops): ' + sUrl;
   const ok = await copyTextRobust(txt);
   if (ok) copiedToast('✓ Roster Copied — paste in the chat!'); else prompt('Copy this:', txt);
 };
@@ -3535,7 +3578,7 @@ window._editingScores = new Set();
 window.editScore = window._editScore = function(key) {
   window._editingScores.add(key);
   renderGames(); updateNav();
-  setTimeout(()=>{const e=document.getElementById('s1_'+key);if(e){if(e.scrollIntoView)try{e.scrollIntoView({behavior:'smooth',block:'center'});}catch(x){}e.focus();if(e.select)e.select();}},100);
+  setTimeout(()=>{const e=document.getElementById('s1_'+key);if(e){if(e.scrollIntoView)try{e.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(x){}e.focus();if(e.select)e.select();}},100);
 };
 window.addDecider = window._addDecider = function(mi) {
   const games=cfg.schedule.filter(g=>g.matchup===mi);
@@ -4362,10 +4405,32 @@ function chooseFormat(m) { if(window.chooseFormat) window.chooseFormat(m); }
 function setupBack()     { if(window.setupBack) window.setupBack(); }
 // iOS: after the keyboard closes it often leaves the window scrolled with the
 // fixed overlay's own scroller at its boundary — feels like scrolling is stuck.
+document.addEventListener('focusin', function(e) {
+  const t = e.target;
+  if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+  // Only nudge when the field is ACTUALLY hidden (behind the keyboard or top bar).
+  // Visible fields are left alone — no jumping.
+  setTimeout(function() {
+    try {
+      if (document.activeElement !== t) return;
+      const r = t.getBoundingClientRect();
+      const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      const hiddenBelow = r.bottom > vh - 12;
+      const hiddenAbove = r.top < 56;
+      if ((hiddenBelow || hiddenAbove) && t.scrollIntoView) {
+        t.scrollIntoView({ behavior:'smooth', block: hiddenBelow ? 'center' : 'start' });
+      }
+    } catch(x) {}
+  }, 350);
+});
+
 document.addEventListener('focusout', function() {
   setTimeout(function() {
+    // Still typing in another field? Don't yank the screen around.
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
     if ((window.scrollY || 0) > 0) { try { window.scrollTo(0, 0); } catch(e) {} }
-  }, 150);
+  }, 200);
 });
 
 function closeAllOverlaysAndShow(p) {
@@ -4537,6 +4602,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
+function scUseMyLocation()   { if(window.scUseMyLocation) window.scUseMyLocation(); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 function adApproveCourt(i)   { if(window.adApproveCourt) window.adApproveCourt(i); }
 function adRejectCourt(i)    { if(window.adRejectCourt) window.adRejectCourt(i); }
