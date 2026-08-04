@@ -136,8 +136,8 @@
     color:var(--white); padding:2px 7px; border-radius:4px; text-transform:uppercase;
     margin-left:4px; vertical-align:middle; }
   .srow { display:flex; align-items:center; gap:12px; justify-content:center; }
-  .sinput { width:96px; height:74px; background:var(--surface2); border:2px solid var(--border);
-    border-radius:14px; color:var(--white); font-family:'Russo One',sans-serif; font-size:42px !important;
+  .sinput { width:112px; height:92px; background:var(--surface2); border:2px solid var(--border);
+    border-radius:16px; color:var(--white); font-family:'Russo One',sans-serif; font-size:56px !important;
     text-align:center; outline:none; transition:border-color 0.2s; -moz-appearance:textfield; }
   .sinput::-webkit-inner-spin-button,.sinput::-webkit-outer-spin-button { -webkit-appearance:none; }
   .sinput:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,240,255,0.12); }
@@ -370,11 +370,13 @@
   #setupOverlay { padding-top:58px; padding-bottom:84px; }
 
   @keyframes savedPulse {
-    0% { box-shadow: 0 0 0 0 rgba(0,245,196,0.55); border-color: var(--aqua); }
-    70% { box-shadow: 0 0 24px 6px rgba(0,245,196,0.18); border-color: var(--aqua); }
-    100% { box-shadow: 0 0 0 0 rgba(0,245,196,0); }
+    0%   { box-shadow: 0 0 0 3px rgba(0,245,196,0.9), 0 0 30px 8px rgba(0,245,196,0.35); border-color: var(--aqua); transform: scale(1); }
+    18%  { transform: scale(1.025); }
+    40%  { transform: scale(1); }
+    70%  { box-shadow: 0 0 0 2px rgba(0,245,196,0.35), 0 0 18px 4px rgba(0,245,196,0.15); border-color: var(--aqua); }
+    100% { box-shadow: 0 0 0 0 rgba(0,245,196,0); transform: scale(1); }
   }
-  .gcard.just-saved { animation: savedPulse 1.2s ease-out; }
+  .gcard.just-saved { animation: savedPulse 1.5s cubic-bezier(0.34,1.4,0.64,1); border-color: var(--aqua) !important; }
 
   /* ── LOGIN SCREEN ── */
   #loginScreen {
@@ -3501,7 +3503,17 @@ function gameCard(g, s, done, w, label) {
     +'</div></div>';
 }
 
+window.renderGames = renderGames;
 function renderGames() {
+  // A remote update (or our own echo) must never destroy an input mid-typing —
+  // that's what closes the keyboard and jumps the screen.
+  const ae = document.activeElement;
+  const recentLocalSave = window._localSaveAt && (Date.now() - window._localSaveAt < 550);
+  if (recentLocalSave || (ae && ae.classList && ae.classList.contains('sinput'))) {
+    clearTimeout(window._rgDeferT);
+    window._rgDeferT = setTimeout(renderGames, 700);
+    return;
+  }
   const _keepY = window.scrollY || 0;
   const el=document.getElementById('pageGames');
   if (!cfg){el.innerHTML='<div class="empty"><div class="empty-icon">🏓</div><div class="empty-t">No Tournament Yet</div><div class="empty-s">Tap Home to set one up</div></div>';return;}
@@ -3581,12 +3593,25 @@ window.saveScore = window._saveScore = function(key) {
   if(!v1||!v2){alert('Enter both scores!');return;}
   const n1=parseInt(v1),n2=parseInt(v2);
   if(isNaN(n1)||isNaN(n2)){alert('Numbers only!');return;}
-  scores[key]={s1:n1,s2:n2}; push(); renderGames(); updateNav();
-  setTimeout(function() {
-    var sb = document.getElementById('save_' + key);
-    var card = sb ? sb.closest('.gcard') : null;
-    if (card) { card.classList.add('just-saved'); setTimeout(function(){ card.classList.remove('just-saved'); }, 1300); }
-  }, 30);
+  scores[key]={s1:n1,s2:n2}; window._localSaveAt = Date.now(); push();
+  // ── NO immediate re-render: destroying the focused input makes iOS Safari
+  //    slam the viewport back to the top. Update the card IN PLACE instead. ──
+  try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch(e) {}
+  var sb = document.getElementById('save_' + key);
+  if (sb) { sb.textContent = '✓ Saved'; sb.classList.add('saved'); sb.style.opacity = '1'; }
+  var i1 = document.getElementById('s1_' + key), i2 = document.getElementById('s2_' + key);
+  if (i1) i1.classList.remove('await');
+  if (i2) i2.classList.remove('await');
+  var card = sb ? sb.closest('.gcard') : null;
+  if (card) { card.classList.add('just-saved'); setTimeout(function(){ card.classList.remove('just-saved'); }, 1500); }
+  updateNav();
+  // Full re-render AFTER the keyboard has finished closing (keeps headers/deciders in sync)
+  clearTimeout(window._rgSaveT);
+  window._rgSaveT = setTimeout(function() {
+    var y = window.scrollY || 0;
+    renderGames(); updateNav();
+    try { window.scrollTo(0, y); } catch(e) {}
+  }, 600);
 };
 window._editingScores = new Set();
 window.editScore = window._editScore = function(key) {
