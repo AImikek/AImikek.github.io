@@ -1254,7 +1254,7 @@ window.EMAILJS_CONFIG = {
   publicKey:  "X2dC3mFeqOruG4n4S",
   serviceId:  "service_gumjfq5",
   templateId: "template_0w416an",
-  welcomeTemplateId: "YOUR_WELCOME_TEMPLATE_ID"  // create in EmailJS, then paste ID here
+  welcomeTemplateId: "template_zj3a07b"  // Welcome email
 };
 if (window.emailjs && window.EMAILJS_CONFIG.publicKey !== "YOUR_PUBLIC_KEY") {
   emailjs.init({ publicKey: window.EMAILJS_CONFIG.publicKey });
@@ -2935,7 +2935,7 @@ window.releaseSpot = async function(sid) {
 };
 
 // EmailJS template for waitlist promotions - paste the template ID here once created
-const WAITLIST_TEMPLATE_ID = window.WAITLIST_TEMPLATE_ID || 'YOUR_WAITLIST_TEMPLATE_ID';
+const WAITLIST_TEMPLATE_ID = window.WAITLIST_TEMPLATE_ID || 'template_0vbuhv9';
 
 function sendWaitlistPromotionEmail(person, s, sid, isOrganizer, promotedList) {
   try {
@@ -2963,7 +2963,8 @@ function sendWaitlistPromotionEmail(person, s, sid, isOrganizer, promotedList) {
           session_where: s.location || '',
           session_level: s.level ? 'Level ' + s.level : '',
           session_link: link,
-          share_text: shareText
+          share_text: shareText,
+          share_url: 'https://wa.me/?text=' + encodeURIComponent(shareText)
         }
       })
     }).catch(() => {});
