@@ -2693,6 +2693,18 @@ window.openSessions = async function() {
   }
 };
 
+function isNameEcho(comment, name) {
+  if (!comment) return true;
+  const c = comment.trim().toLowerCase(), n = (name||'').trim().toLowerCase();
+  if (!c) return true;
+  if (c === n) return true;
+  // "Andres H", "Andres H." = their name + an initial — an echo, not a note
+  if (c.startsWith(n + ' ') && c.length - n.length <= 4) return true;
+  // comment is a prefix of their name ("Rob" for Robert)
+  if (n.startsWith(c) && c.length >= 2) return true;
+  return false;
+}
+
 function shortDate(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T12:00');
@@ -2826,7 +2838,7 @@ function renderSessionDetail(sid, s) {
     +'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:6px;">📅 '+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+'</div>'
     +(s.location?'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:2px;">📍 '+s.location+'</div>':'')
     +(s.level?'<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-top:2px;">🎚 Level '+s.level+'</div>':'')
-    +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+'</div>':'')
+    +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+(isOwner?' <span onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;color:var(--cyan);font-size:12px;margin-left:6px;">✎ edit</span>':'')+'</div>':(isOwner?'<div onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;font-size:12px;color:var(--cyan);font-weight:700;margin-top:8px;">➕ Add a note for the group</div>':''))
     +(s.ownerName?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organized by '+s.ownerName+'</div>':'')
     +'</div>';
 
@@ -2837,7 +2849,7 @@ function renderSessionDetail(sid, s) {
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
         +'<div style="min-width:0;"><span style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--aqua);margin-right:10px;">'+(i+1)+'</span>'
         +'<span style="font-weight:700;color:var(--white);font-size:14px;">'+r.name+'</span>'
-        +(r.comment && r.comment.toLowerCase() !== (r.name||'').toLowerCase() ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
+        +(!isNameEcho(r.comment, r.name) ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
         +(r.uid === currentUser?.uid ? '<button onclick="releaseSpot(\'' + sid + '\')" style="flex-shrink:0;padding:6px 12px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">I\'m out</button>' : '')
         +'</div>';
     } else {
@@ -2874,6 +2886,17 @@ function renderSessionDetail(sid, s) {
   document.getElementById('sdContent').innerHTML = h;
 }
 
+window.editSessionNote = async function(sid) {
+  const snap = await get(ref(db, 'sessions/' + sid));
+  const s = snap.val(); if (!s) return;
+  if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
+  const cur = s.note || '';
+  const nv = prompt('Note for the group:', cur);
+  if (nv === null) return;
+  try { await set(ref(db, 'sessions/' + sid + '/note'), nv.trim() || null); }
+  catch(e) { alert('Could not save: ' + (e.message||e)); }
+};
+
 window.claimSpot = async function(sid) {
   if (!currentUser) { alert('Sign in to claim a spot!'); return; }
   const snap = await get(ref(db, 'sessions/' + sid));
@@ -2884,7 +2907,7 @@ window.claimSpot = async function(sid) {
   let nm = userProfile?.name;
   if (!nm) { nm = (prompt('Your name for the roster:')||'').trim(); if (!nm) return; }
   let comment = (prompt("You're in, " + nm + "! 🏓\n\nAdd a note for the group? (e.g. \"running 15 min late\")\nLeave EMPTY and press OK to skip:") || '').trim();
-  if (comment.toLowerCase() === nm.toLowerCase()) comment = '';  // typed their name again — not a note
+  if (isNameEcho(comment, nm)) comment = '';  // typed their name (or name + initial) — not a note
   const entry = { name: nm, uid: currentUser.uid, comment, at: Date.now() };
   try {
     if (roster.length < (s.spots||4)) await set(ref(db, 'sessions/'+sid+'/roster'), [...roster, entry]);
@@ -2900,12 +2923,53 @@ window.releaseSpot = async function(sid) {
   let wait = s.waitlist ? (Array.isArray(s.waitlist)?s.waitlist:Object.values(s.waitlist)) : [];
   roster = roster.filter(r => r.uid !== currentUser.uid);
   wait = wait.filter(r => r.uid !== currentUser.uid);
-  while (roster.length < (s.spots||4) && wait.length) roster.push(wait.shift());
+  const promoted = [];
+  while (roster.length < (s.spots||4) && wait.length) { const p = wait.shift(); roster.push(p); promoted.push(p); }
   try {
     await set(ref(db, 'sessions/'+sid+'/roster'), roster);
     await set(ref(db, 'sessions/'+sid+'/waitlist'), wait.length ? wait : null);
+    // Auto-notify: promoted players + the organizer get an email
+    promoted.forEach(p => sendWaitlistPromotionEmail(p, s, sid, false));
+    if (promoted.length && s.ownerEmail) sendWaitlistPromotionEmail({ name: s.ownerName || 'Organizer', email: s.ownerEmail }, s, sid, true, promoted);
   } catch(e) { alert('Error: ' + (e.message||e)); }
 };
+
+// EmailJS template for waitlist promotions - paste the template ID here once created
+const WAITLIST_TEMPLATE_ID = window.WAITLIST_TEMPLATE_ID || 'YOUR_WAITLIST_TEMPLATE_ID';
+
+function sendWaitlistPromotionEmail(person, s, sid, isOrganizer, promotedList) {
+  try {
+    if (!person || !person.email) return;
+    const tid2 = window.WAITLIST_TEMPLATE_ID || WAITLIST_TEMPLATE_ID;
+    if (tid2 === 'YOUR_WAITLIST_TEMPLATE_ID') return; // not configured yet
+    const d = new Date(s.date + 'T12:00');
+    const ds = d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+    const when = ds + ' \u00b7 ' + fmtSessTime(s.startTime) + '\u2013' + fmtSessTime(s.endTime);
+    const link = 'https://mikek.ai/pbt?s=' + sid;
+    const shareText = "\ud83c\udf89 I'm off the waitlist and IN for " + (s.title||'our pickleball session') + ' \u2014 ' + when + (s.location ? ' @ ' + s.location : '') + '! See you out there \ud83c\udfd3 ' + link;
+    fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id: 'service_gumjfq5',
+        template_id: tid2,
+        user_id: 'X2dC3mFeqOruG4n4S',
+        template_params: {
+          to_email: person.email,
+          to_name: person.name || 'Player',
+          headline: isOrganizer ? ((promotedList||[]).map(p=>p.name).join(', ') + ' moved off the waitlist and ' + ((promotedList||[]).length>1?'are':'is') + ' confirmed for your session!') : "You're off the waitlist and CONFIRMED! \ud83c\udf89",
+          session_title: s.title || 'Pickleball Session',
+          session_when: when,
+          session_where: s.location || '',
+          session_level: s.level ? 'Level ' + s.level : '',
+          session_link: link,
+          share_text: shareText
+        }
+      })
+    }).catch(() => {});
+  } catch(e) {}
+}
+
 
 window.shareSession = async function(sid) {
   const snap = await get(ref(db, 'sessions/' + sid));
@@ -2939,7 +3003,7 @@ window.copySessionRoster = async function(sid) {
   if (s.level) txt += '🎚 Level ' + s.level + '\n';
   for (let i = 0; i < spots; i++) {
     const r0 = roster[i];
-    const note = r0 && r0.comment && r0.comment.toLowerCase() !== (r0.name||'').toLowerCase() ? ' (' + r0.comment + ')' : '';
+    const note = r0 && !isNameEcho(r0.comment, r0.name) ? ' (' + r0.comment + ')' : '';
     txt += (i+1) + '. ' + (r0 ? r0.name + note : '?') + '\n';
   }
   const left = spots - roster.length;
@@ -4676,6 +4740,7 @@ function toggleMenuMore() {
   if (b) b.textContent = open ? '⋯ More' : '⋯ Less';
 }
 function scUseMyLocation()   { if(window.scUseMyLocation) window.scUseMyLocation(); }
+function editSessionNote(s)  { if(window.editSessionNote) window.editSessionNote(s); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 function adApproveCourt(i)   { if(window.adApproveCourt) window.adApproveCourt(i); }
 function adRejectCourt(i)    { if(window.adRejectCourt) window.adRejectCourt(i); }
