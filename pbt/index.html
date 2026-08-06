@@ -1179,6 +1179,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item" id="adminDashBtn" style="display:none;" onclick="closeSettings();openAdminDash();">📊 Admin Dashboard</button>
     <div class="settings-divider"></div>
     <button class="settings-item" id="userInfo" style="color:var(--muted);font-size:13px;cursor:default;"></button>
+    <div id="buildTag" style="padding:6px 16px;color:var(--muted);opacity:0.55;font-size:10px;font-weight:600;letter-spacing:1px;"></div>
   </div>
 </div>
 
@@ -4746,6 +4747,8 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
+window.BUILD_TAG = 'v2026-08-05.1';
+(function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 function toggleMenuMore() {
   var m = document.getElementById('menuMore'), b = document.getElementById('menuMoreBtn');
   var open = m.style.display !== 'none';
