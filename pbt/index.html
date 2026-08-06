@@ -1662,6 +1662,8 @@ window.doStart = window._doStart = function() {
 };
 
 function _finalizeTournament() {
+  const _hadPrev = !!activeTid;
+  if (_hadPrev) setTimeout(() => copiedToast('Previous tournament saved in 📜 Past Tournaments'), 1500);
   // Never land anywhere but Games after starting
   try { history.replaceState({}, '', window.location.pathname); } catch(e) {}
   try { window.scrollTo(0, 0); } catch(e) {}
@@ -2673,7 +2675,16 @@ window.openSessions = async function() {
     const today = new Date(); today.setHours(0,0,0,0);
     const upcoming = Object.entries(all)
       .map(([sid, s]) => ({ sid, ...s }))
-      .filter(s => s.visibility === 'public' && s.date && new Date(s.date + 'T23:59') >= today)
+      .filter(s => {
+        if (!s.date || new Date(s.date + 'T23:59') < today) return false;
+        if (s.visibility === 'public') return true;
+        // Private: still visible to the organizer and anyone on the roster/waitlist
+        const me = currentUser?.uid;
+        if (!me) return false;
+        const inR = (s.roster ? (Array.isArray(s.roster)?s.roster:Object.values(s.roster)) : []).some(r=>r.uid===me);
+        const inW = (s.waitlist ? (Array.isArray(s.waitlist)?s.waitlist:Object.values(s.waitlist)) : []).some(r=>r.uid===me);
+        return s.ownerUid === me || inR || inW;
+      })
       .sort((a,b) => (a.date||'').localeCompare(b.date||''));
     list.innerHTML = upcoming.length ? upcoming.map(s => {
       const roster = s.roster ? (Array.isArray(s.roster)?s.roster:Object.values(s.roster)) : [];
@@ -2682,7 +2693,7 @@ window.openSessions = async function() {
       const ds = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
       return '<div onclick="openSessionDetail(\'' + s.sid + '\')" style="cursor:pointer;padding:14px;background:var(--surface);border:1px solid '+(spotsLeft?'rgba(0,240,255,0.3)':'var(--border)')+';border-radius:14px;margin-bottom:10px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;">'
-        +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' 🔁':'')+'</div>'
+        +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' 🔁':'')+(s.visibility==='private'?' 🔒':'')+'</div>'
         +'<div style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;'+(spotsLeft?'background:rgba(0,245,196,0.12);color:var(--aqua);':'background:rgba(255,224,0,0.1);color:var(--yellow);')+'">'+(spotsLeft ? spotsLeft+' open' : 'Full · waitlist open')+'</div></div>'
         +'<div style="font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;">'+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+(s.location?' · 📍 '+s.location:'')+(s.level?' · 🎚 '+s.level:'')+'</div>'
         +'<div style="font-size:12px;color:var(--white);font-weight:600;margin-top:6px;">'+roster.map(r=>r.name).join(' · ')+'</div>'
@@ -3663,9 +3674,9 @@ function renderGames() {
   }
 
   el.innerHTML = html
-  if (_keepY) { try { window.scrollTo(0, _keepY); } catch(e) {} }
     + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
     + (Object.values(scores).some(s=>s&&s.s1!==null&&s.s1!==undefined) ? '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>' : '');
+  if (_keepY) { try { window.scrollTo(0, _keepY); } catch(e) {} }
 }
 
 window.saveScore = window._saveScore = function(key) {
@@ -3710,6 +3721,7 @@ window.addDecider = window._addDecider = function(mi) {
 };
 
 window.deleteGame = function(key) {
+  if (!confirm('Cancel this game? (You can restore it after)')) return;
   const g = cfg.schedule.find(g=>g.key===key); if(!g) return;
   g.deleted = true;
   if (scores[key]) { scores[key] = {s1:null,s2:null}; }
