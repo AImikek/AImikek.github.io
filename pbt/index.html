@@ -3674,9 +3674,16 @@ function renderGames() {
     });
   }
 
-  el.innerHTML = html
-    + '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
-    + (Object.values(scores).some(s=>s&&s.s1!==null&&s.s1!==undefined) ? '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>' : '');
+  el.innerHTML = html;
+  // Action row appended imperatively — guaranteed present regardless of render path
+  (function(){
+    var wrap = document.createElement('div');
+    wrap.id = 'gamesActions';
+    var hasAnyScore = Object.values(scores).some(function(s){ return s && s.s1 !== null && s.s1 !== undefined; });
+    wrap.innerHTML = '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
+      + (hasAnyScore ? '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>' : '');
+    el.appendChild(wrap);
+  })();
   if (_keepY) { try { window.scrollTo(0, _keepY); } catch(e) {} }
 }
 
@@ -4747,7 +4754,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-05.1';
+window.BUILD_TAG = 'v2026-08-05.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 function toggleMenuMore() {
   var m = document.getElementById('menuMore'), b = document.getElementById('menuMoreBtn');
