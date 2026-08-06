@@ -215,7 +215,8 @@
 
   /* ── ADD GAME OVERLAY ── */
   #addGameOverlay { position:fixed; inset:0; z-index:450; background:rgba(4,6,15,0.95);
-    backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
+    backdrop-filter:blur(10px); display:flex; justify-content:center; padding:20px;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; }
   #addGameOverlay.hidden { display:none; }
 
   #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden, #adPlayerModal.hidden, #sessionsPage.hidden, #sessionCreate.hidden, #sessionDetail.hidden, #quickStartPage.hidden, #courtsPage.hidden, #courtSubmit.hidden, #adCourtModal.hidden { display:none !important; }
@@ -537,7 +538,7 @@
 <div id="addGameOverlay" class="hidden">
   <div class="modal" style="max-width:460px;">
     <div class="mtitle">+ Add Game</div>
-    <div class="msub">Pick 2 players per team, then enter the score</div>
+    <div class="msub">Pick players for each team — add the score now or later</div>
 
     <div class="team-labels">
       <div class="tlbl c">Team 1</div>
@@ -3659,22 +3660,51 @@ function renderGames() {
       });
     });
   }
-  if (cfg.mode === 'log' && !cfg.schedule.filter(g=>g.added).length) {
-    html += '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-weight:600;">📝 Log mode — tap <span style="color:var(--cyan);">➕ Add Game</span> below after each game you play.</div>';
+  let _lgBuilder = false;
+  if (cfg.mode === 'log' && !cfg.schedule.length) {
+    _lgBuilder = true;
+    html += ''
+      +'<div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px 18px;margin-bottom:14px;">'
+      +'<div class="mtitle" style="font-size:18px;">🎮 Set Up Your Game</div>'
+      +'<div class="msub" style="margin-bottom:14px;">Tap players onto teams — score comes after you play</div>'
+      +'<div class="team-labels"><div class="tlbl c">Team 1</div><div class="tlbl p">Team 2</div></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">'
+      +'<div id="lgZone1" style="min-height:96px;border:2px dashed rgba(0,240,255,0.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;"></div>'
+      +'<div id="lgZone2" style="min-height:96px;border:2px dashed rgba(255,45,120,0.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;"></div>'
+      +'</div>'
+      +'<div style="font-size:11px;letter-spacing:1px;color:var(--muted);font-family:\'Russo One\',sans-serif;text-transform:uppercase;margin-bottom:6px;">Tap players to add them</div>'
+      +'<div class="team-picker" id="lgPlayerPicker"></div>'
+      +'<div style="margin-bottom:14px;">'
+      +'<input class="finput" id="lgNewName" placeholder="+ Type a new player\'s name" style="margin-bottom:6px;" onkeydown="if(event.key===\'Enter\'){this.blur();}">'
+      +'<button onclick="addNewPlayerToGame()" style="width:100%;padding:10px;background:transparent;border:1px dashed rgba(0,240,255,0.25);color:var(--muted);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Add New Player</button>'
+      +'</div>'
+      +'<div id="lgTeamPreview" style="text-align:center;font-size:13px;color:var(--muted);font-weight:600;margin-bottom:14px;min-height:20px;"></div>'
+      +'<button id="lgStartBtn" onclick="lgStartGame()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🚀 Start Game</button>'
+      +'</div>';
   }
   // Extra added games
   const extraGames = cfg.schedule.filter(g => g.added);
   if (extraGames.length) {
-    html += '<div class="rhdr">Extra Games</div>';
+    html += '<div class="rhdr">'+(cfg.mode==='log'?'Games':'Extra Games')+'</div>';
     extraGames.forEach((g, i) => {
       const s = scores[g.key] || {s1:null,s2:null};
       const done = s.s1!==null && s.s2!==null;
       const w = done ? (s.s1>s.s2?'t1':s.s2>s.s1?'t2':null) : null;
-      html += gameCard(g, s, done, w, 'Extra '+(i+1));
+      html += gameCard(g, s, done, w, (cfg.mode==='log'?'Game ':'Extra ')+(i+1));
     });
   }
 
   el.innerHTML = html;
+  if (_lgBuilder) {
+    // Log-mode pre-game: wire the inline team builder; no Add Game/Done row yet
+    if (window._lgTid !== activeTid) { window._lgTid = activeTid; agT1 = []; agT2 = []; agExtraPlayers = []; }
+    agTarget = 'lg';
+    var lgnn = document.getElementById('lgNewName');
+    if (lgnn && !lgnn._blurWired) { lgnn._blurWired = true; lgnn.addEventListener('blur', function(){ setTimeout(addNewPlayerToGame, 50); }); }
+    renderAgPicker();
+    if (_keepY) { try { window.scrollTo(0, _keepY); } catch(e) {} }
+    return;
+  }
   // Action row appended imperatively — guaranteed present regardless of render path
   (function(){
     var wrap = document.createElement('div');
@@ -3743,9 +3773,10 @@ window.restoreGame = function(key) {
 };
 
 // ── ADD GAME ──
-let agT1 = [], agT2 = [], agExtraPlayers = [];
+let agT1 = [], agT2 = [], agExtraPlayers = [], agTarget = 'ag';
 
 window.openAddGame = function() {
+  agTarget = 'ag';
   agT1 = []; agT2 = []; agExtraPlayers = [];
   const nn = document.getElementById('agNewName');
   if (nn && !nn._blurWired) { nn._blurWired = true; nn.addEventListener('blur', () => setTimeout(addNewPlayerToGame, 50)); }
@@ -3763,14 +3794,17 @@ function renderAgPicker() {
     +'style="'+(team?'width:100%;text-align:center;':'')+'" '
     +'onclick="'+(team?'removeAgPlayer':'addAgPlayer')+'(\''+p.replace(/'/g,"\\'")+'\')">'+p+(team?' ✕':'')+'</div>';
   const empt = (color) => '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:'+color+';opacity:0.4;font-size:12px;font-weight:700;">tap a player below</div>';
-  document.getElementById('agZone1').innerHTML = agT1.map(p=>chip(p,'t1')).join('') + (agT1.length<agCap() ? empt('var(--cyan)') : '');
-  document.getElementById('agZone2').innerHTML = agT2.map(p=>chip(p,'t2')).join('') + (agT2.length<agCap() ? empt('var(--pink)') : '');
-  document.getElementById('agPlayerPicker').innerHTML = pool.map(p=>chip(p,null)).join('')
+  const _z1 = document.getElementById(agTarget+'Zone1'), _z2 = document.getElementById(agTarget+'Zone2');
+  const _pk = document.getElementById(agTarget+'PlayerPicker'), _pv = document.getElementById(agTarget+'TeamPreview');
+  if (!_z1 || !_z2 || !_pk) return; // target not in DOM (e.g. builder replaced by re-render)
+  _z1.innerHTML = agT1.map(p=>chip(p,'t1')).join('') + (agT1.length<agCap() ? empt('var(--cyan)') : '');
+  _z2.innerHTML = agT2.map(p=>chip(p,'t2')).join('') + (agT2.length<agCap() ? empt('var(--pink)') : '');
+  _pk.innerHTML = pool.map(p=>chip(p,null)).join('')
     || '<div style="color:var(--muted);font-size:12px;font-weight:600;padding:6px;">All players placed</div>';
   const t1l = agT1.join(' & ') || '?', t2l = agT2.join(' & ') || '?';
-  document.getElementById('agTeamPreview').textContent =
-    agT1.length || agT2.length ? t1l + ' vs ' + t2l : '';
-  const sb = document.querySelector('#addGameOverlay button[onclick*="saveAddedGame"]');
+  if (_pv) _pv.textContent = agT1.length || agT2.length ? t1l + ' vs ' + t2l : '';
+  const sb = agTarget === 'lg' ? document.getElementById('lgStartBtn')
+    : document.querySelector('#addGameOverlay button[onclick*="saveAddedGame"]');
   if (sb) sb.style.opacity = (agT1.length===agCap() && agT2.length===agCap()) ? '1' : '0.35';
 }
 
@@ -3791,13 +3825,15 @@ window.toggleAgPlayer = function(p) {
 };
 
 window.addNewPlayerToGame = function() {
-  const name = document.getElementById('agNewName').value.trim();
+  const _ni = document.getElementById(agTarget+'NewName');
+  if (!_ni) return;
+  const name = _ni.value.trim();
   if (!name) return;
   if (![...(cfg?.players||[]), ...agExtraPlayers].includes(name)) {
     agExtraPlayers.push(name);
     if (cfg.players && !cfg.players.includes(name)) cfg.players.push(name);
   }
-  document.getElementById('agNewName').value = '';
+  _ni.value = '';
   if (!agT1.includes(name) && !agT2.includes(name) && (agT1.length < agCap() || agT2.length < agCap())) {
     addAgPlayer(name);
   } else {
@@ -3811,14 +3847,29 @@ window.saveAddedGame = function() {
     alert('Each ' + (cap===1?'side needs 1 player':'team needs 2 players') + '.\n\nTeam 1 has ' + agT1.length + ', Team 2 has ' + agT2.length + '. Tap players to fill the empty slots.');
     return;
   }
-  const s1 = parseInt(document.getElementById('agS1').value);
-  const s2 = parseInt(document.getElementById('agS2').value);
-  if (isNaN(s1) || isNaN(s2)) { alert('Enter both scores'); return; }
+  const v1 = document.getElementById('agS1').value.trim();
+  const v2 = document.getElementById('agS2').value.trim();
+  const s1 = parseInt(v1), s2 = parseInt(v2);
+  if ((v1 !== '' || v2 !== '') && (isNaN(s1) || isNaN(s2))) { alert('Enter both scores — or leave both empty to score the game later.'); return; }
   const key = 'ag' + Date.now();
   cfg.schedule.push({ key, t1:[...agT1], t2:[...agT2], round:'Extra', added:true });
-  scores[key] = { s1, s2 };
+  if (!isNaN(s1) && !isNaN(s2)) scores[key] = { s1, s2 };
   push(); renderGames(); updateNav();
   document.getElementById('addGameOverlay').classList.add('hidden');
+};
+
+// Log-mode pre-game: create the first game (unscored) from the inline builder
+window.lgStartGame = function() {
+  const cap = agCap();
+  if (agT1.length !== cap || agT2.length !== cap) {
+    alert('Each ' + (cap===1?'side needs 1 player':'team needs 2 players') + '.\n\nTeam 1 has ' + agT1.length + ', Team 2 has ' + agT2.length + '. Tap players to fill the empty slots.');
+    return;
+  }
+  try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch(e) {}
+  const key = 'ag' + Date.now();
+  cfg.schedule.push({ key, t1:[...agT1], t2:[...agT2], round:'Extra', added:true });
+  agT1 = []; agT2 = []; agTarget = 'ag';
+  push(); renderGames(); updateNav();
 };
 
 let rankMode = 'avg'; // 'avg' | 'wins' | 'pts'
@@ -4666,6 +4717,7 @@ function closeProfile()     { if(window.closeProfile) window.closeProfile(); }
 function saveProfileEdits() { if(window.saveProfileEdits) window.saveProfileEdits(); }
 function setRankMode(m)     { if(window.setRankMode) window.setRankMode(m); }
 function openAddGame()      { if(window.openAddGame) window.openAddGame(); }
+function lgStartGame()      { if(window.lgStartGame) window.lgStartGame(); }
 function toggleAgPlayer(p)  { if(window.toggleAgPlayer) window.toggleAgPlayer(p); }
 function addNewPlayerToGame(){ if(window.addNewPlayerToGame) window.addNewPlayerToGame(); }
 function saveAddedGame()    { if(window.saveAddedGame) window.saveAddedGame(); }
@@ -4754,7 +4806,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-05.2';
+window.BUILD_TAG = 'v2026-08-06.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 function toggleMenuMore() {
   var m = document.getElementById('menuMore'), b = document.getElementById('menuMoreBtn');
