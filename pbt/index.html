@@ -1168,6 +1168,10 @@
       <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">📊 Admin Dashboard</div>
     </div>
+    <div id="adCourtBanner" style="display:none;cursor:pointer;align-items:center;justify-content:space-between;padding:13px 15px;background:rgba(255,224,0,0.08);border:1px solid rgba(255,224,0,0.45);border-radius:12px;margin-bottom:14px;" onclick="adScrollTo('adCourts')">
+      <span id="adCourtBannerTxt" style="font-weight:800;color:var(--yellow);font-size:13px;"></span>
+      <span style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1px;color:var(--yellow);">REVIEW →</span>
+    </div>
     <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;"></div>
     <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">👥 Registered Players</div>
     <div id="adSignups" style="margin-bottom:20px;"></div>
@@ -2923,6 +2927,7 @@ function renderSessionDetail(sid, s) {
     +(s.location?'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:2px;">📍 '+s.location+'</div>':'')
     +(s.level?'<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-top:2px;">🎚 Level '+s.level+'</div>':'')
     +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+(isOwner?' <span onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;color:var(--cyan);font-size:12px;margin-left:6px;">✎ edit</span>':'')+'</div>':(isOwner?'<div onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;font-size:12px;color:var(--cyan);font-weight:700;margin-top:8px;">➕ Add a note for the group</div>':''))
+    +(s.info?'<div onclick="jumpToInfo(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.35);border-radius:10px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📋 FULL DETAILS ↓</div>':'')
     +(s.ownerName?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organized by '+s.ownerName+'</div>':'')
     +'</div>';
 
@@ -2934,7 +2939,9 @@ function renderSessionDetail(sid, s) {
         +'<div style="min-width:0;"><span style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--aqua);margin-right:10px;">'+(i+1)+'</span>'
         +'<span style="font-weight:700;color:var(--white);font-size:14px;">'+r.name+'</span>'
         +(!isNameEcho(r.comment, r.name) ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
-        +(r.uid === currentUser?.uid ? '<button onclick="releaseSpot(\'' + sid + '\')" style="flex-shrink:0;padding:6px 12px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">I\'m out</button>' : '')
+        +(r.uid === currentUser?.uid
+          ? '<button onclick="releaseSpot(\'' + sid + '\')" style="flex-shrink:0;padding:6px 12px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">I\'m out</button>'
+          : (isOwner ? '<button onclick="removeRosterEntry(\''+sid+'\',\''+(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'')+'\')" style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button>' : ''))
         +'</div>';
     } else {
       h += '<div onclick="claimSpot(\'' + sid + '\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;background:transparent;border:2px dashed rgba(0,240,255,0.35);border-radius:10px;margin-bottom:6px;">'
@@ -2948,7 +2955,9 @@ function renderSessionDetail(sid, s) {
     wait.forEach((w, i) => {
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
         +'<div><span style="color:var(--yellow);font-size:12px;margin-right:8px;">W'+(i+1)+'</span><span style="font-weight:700;color:var(--white);font-size:13px;">'+w.name+'</span></div>'
-        +(w.uid === currentUser?.uid ? '<button onclick="releaseSpot(\'' + sid + '\')" style="padding:5px 10px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Leave</button>' : '')
+        +(w.uid === currentUser?.uid
+          ? '<button onclick="releaseSpot(\'' + sid + '\')" style="padding:5px 10px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Leave</button>'
+          : (isOwner ? '<button onclick="removeRosterEntry(\''+sid+'\',\''+(w.uid||'')+'\',\''+String(w.name||'').replace(/'/g,'')+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button>' : ''))
         +'</div>';
     });
     if (mine < 0 && inWait < 0 && roster.length >= spots) {
@@ -2999,7 +3008,7 @@ function renderSessionInfo(sid, s, isOwner) {
     }
     return h;
   }
-  h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:18px 0 8px;">📋 Event Info'+editLink+'</div>';
+  h += '<div id="sessInfoHdr" style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:18px 0 8px;scroll-margin-top:70px;">📋 Event Info'+editLink+'</div>';
   // parse: '## ' lines start collapsible sections; text before first section is always visible
   const lines = String(s.info).split('\n');
   let pre = [], secs = [], cur = null;
@@ -3020,6 +3029,18 @@ function renderSessionInfo(sid, s, isOwner) {
   });
   return h;
 }
+window.jumpToInfo = function(sid) {
+  // open every section so the details read top-to-bottom, then scroll there
+  document.querySelectorAll('[id^="infoSec_"]').forEach(el => {
+    const i = el.id.slice(8);
+    window._infoOpen[sid + '|' + i] = true;
+    el.style.display = '';
+    const a = document.getElementById('infoArr_' + i);
+    if (a) a.style.transform = 'rotate(90deg)';
+  });
+  const hdr = document.getElementById('sessInfoHdr');
+  if (hdr && hdr.scrollIntoView) try { hdr.scrollIntoView({ behavior:'smooth', block:'start' }); } catch(e) {}
+};
 window.toggleInfoSec = function(k) {
   window._infoOpen[k] = !window._infoOpen[k];
   const i = k.split('|')[1];
@@ -3084,6 +3105,27 @@ window.claimSpot = async function(sid) {
     if (roster.length < (s.spots||4)) await set(ref(db, 'sessions/'+sid+'/roster'), [...roster, entry]);
     else await set(ref(db, 'sessions/'+sid+'/waitlist'), [...wait, entry]);
   } catch(e) { alert('Could not claim: ' + (e.message||e)); }
+};
+
+window.removeRosterEntry = async function(sid, uid, name) {
+  const snap = await get(ref(db, 'sessions/' + sid));
+  const s = snap.val(); if (!s) return;
+  if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
+  if (!uid) { alert('Cannot remove this entry.'); return; }
+  if (!confirm('Remove ' + (name || 'this player') + ' from the session?\n\nIf someone is on the waitlist, they will be auto-promoted and emailed.')) return;
+  let roster = s.roster ? (Array.isArray(s.roster)?s.roster:Object.values(s.roster)) : [];
+  let wait = s.waitlist ? (Array.isArray(s.waitlist)?s.waitlist:Object.values(s.waitlist)) : [];
+  roster = roster.filter(r => r.uid !== uid);
+  wait = wait.filter(r => r.uid !== uid);
+  const promoted = [];
+  while (roster.length < (s.spots||4) && wait.length) { const p = wait.shift(); roster.push(p); promoted.push(p); }
+  try {
+    await set(ref(db, 'sessions/'+sid+'/roster'), roster);
+    await set(ref(db, 'sessions/'+sid+'/waitlist'), wait.length ? wait : null);
+    promoted.forEach(p => sendWaitlistPromotionEmail(p, s, sid, false));
+    if (promoted.length && s.ownerEmail) sendWaitlistPromotionEmail({ name: s.ownerName || 'Organizer', email: s.ownerEmail }, s, sid, true, promoted);
+    copiedToast('✓ Removed' + (promoted.length ? ' — waitlist promoted!' : ''));
+  } catch(e) { alert('Error: ' + (e.message||e)); }
 };
 
 window.releaseSpot = async function(sid) {
@@ -3261,6 +3303,14 @@ window.openAdminDash = async function() {
 
   // Court submissions
   const subs = Object.entries(courtSubs || {});
+  const cb = document.getElementById('adCourtBanner');
+  if (cb) {
+    if (subs.length) {
+      cb.style.display = 'flex';
+      const t = document.getElementById('adCourtBannerTxt');
+      if (t) t.textContent = '🏟 ' + subs.length + ' court submission' + (subs.length>1?'s':'') + ' pending';
+    } else cb.style.display = 'none';
+  }
   document.getElementById('adCourts').innerHTML = subs.length ? subs.map(([id, c]) =>
     '<div style="padding:12px;background:var(--surface);border:1px solid rgba(255,224,0,0.3);border-radius:12px;margin-bottom:8px;">'
     +'<div style="font-weight:800;color:var(--white);font-size:14px;">'+(c.n||'?')+' <span style="font-size:11px;color:var(--muted);">· '+(c.c||'')+'</span></div>'
@@ -4976,6 +5026,8 @@ function openSessionDetail(s){ if(window.openSessionDetail) window.openSessionDe
 function closeSessionDetail(){ if(window.closeSessionDetail) window.closeSessionDetail(); }
 function claimSpot(s)        { if(window.claimSpot) window.claimSpot(s); }
 function releaseSpot(s)      { if(window.releaseSpot) window.releaseSpot(s); }
+function removeRosterEntry(s,u,n) { if(window.removeRosterEntry) window.removeRosterEntry(s,u,n); }
+function jumpToInfo(s)       { if(window.jumpToInfo) window.jumpToInfo(s); }
 function shareSession(s)     { if(window.shareSession) window.shareSession(s); }
 function copySessionRoster(s){ if(window.copySessionRoster) window.copySessionRoster(s); }
 function startFromSession(s) { if(window.startFromSession) window.startFromSession(s); }
@@ -4991,7 +5043,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-06.3';
+window.BUILD_TAG = 'v2026-08-06.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 function toggleMenuMore() {
   var m = document.getElementById('menuMore'), b = document.getElementById('menuMoreBtn');
