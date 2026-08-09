@@ -219,6 +219,23 @@
     overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; }
   #addGameOverlay.hidden { display:none; }
 
+  /* ── EVENT INFO EDITOR ── */
+  #sessionInfoEdit { position:fixed; inset:0; z-index:460; background:rgba(4,6,15,0.95);
+    backdrop-filter:blur(10px); display:flex; justify-content:center; padding:20px;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; }
+  #sessionInfoEdit.hidden { display:none !important; }
+  #siText { width:100%; min-height:300px; background:var(--surface2); border:1px solid var(--border);
+    border-radius:12px; padding:14px; color:var(--white); font-family:'DM Sans',sans-serif;
+    font-size:16px; font-weight:500; line-height:1.5; resize:vertical; }
+  #siText:focus { outline:none; border-color:var(--cyan); }
+  .info-sec-hdr { display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+    padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:6px; font-family:'Russo One',sans-serif; font-size:13px; color:var(--white);
+    letter-spacing:1px; text-transform:uppercase; user-select:none; -webkit-user-select:none; }
+  .info-sec-body { padding:4px 14px 12px; font-size:14px; color:var(--white); font-weight:500;
+    line-height:1.6; overflow-wrap:break-word; }
+  .info-sec-body a { color:var(--cyan); text-decoration:underline; }
+
   #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden, #adPlayerModal.hidden, #sessionsPage.hidden, #sessionCreate.hidden, #sessionDetail.hidden, #quickStartPage.hidden, #courtsPage.hidden, #courtSubmit.hidden, #adCourtModal.hidden { display:none !important; }
 
   /* City/Email overlay — display controlled ONLY by CSS class */
@@ -538,52 +555,105 @@
 <div id="addGameOverlay" class="hidden">
   <div class="modal" style="max-width:460px;">
     <div class="mtitle">+ Add Game</div>
-    <div class="msub">Pick players for each team — add the score now or later</div>
 
-    <div class="team-labels">
-      <div class="tlbl c">Team 1</div>
-      <div class="tlbl p">Team 2</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div id="agZone1" style="min-height:96px;border:2px dashed rgba(0,240,255,0.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;"></div>
-      <div id="agZone2" style="min-height:96px;border:2px dashed rgba(255,45,120,0.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;"></div>
-    </div>
-    <div style="font-size:11px;letter-spacing:1px;color:var(--muted);font-family:'Russo One',sans-serif;text-transform:uppercase;margin-bottom:6px;">Tap players to add them</div>
-    <div class="team-picker" id="agPlayerPicker"></div>
+    <!-- STEP 1 · WHO'S PLAYING -->
+    <div id="agStep1">
+      <div class="msub">Step 1 · Who's playing?</div>
 
-    <div id="agNewPlayerWrap" style="margin-bottom:14px;">
-      <input class="finput" id="agNewName" placeholder="+ Type a new player's name"
-        style="margin-bottom:6px;" onkeydown="if(event.key==='Enter'){this.blur();}" onblur="addNewPlayerToGame()">
-      <button onclick="addNewPlayerToGame()" style="width:100%;padding:10px;background:transparent;
-        border:1px dashed rgba(0,240,255,0.25);color:var(--muted);border-radius:10px;
-        font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
-        Add New Player
+      <div class="team-labels">
+        <div class="tlbl c">Team 1</div>
+        <div class="tlbl p">Team 2</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div id="agZone1" style="min-height:96px;border:2px dashed rgba(0,240,255,0.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;"></div>
+        <div id="agZone2" style="min-height:96px;border:2px dashed rgba(255,45,120,0.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <div style="font-size:11px;letter-spacing:1px;color:var(--muted);font-family:'Russo One',sans-serif;text-transform:uppercase;margin-bottom:6px;">Tap players to add them</div>
+      <div class="team-picker" id="agPlayerPicker"></div>
+
+      <div id="agNewPlayerWrap" style="margin-bottom:14px;">
+        <input class="finput" id="agNewName" placeholder="+ Type a new player's name"
+          style="margin-bottom:6px;" onkeydown="if(event.key==='Enter'){this.blur();}" onblur="addNewPlayerToGame()">
+        <button onclick="addNewPlayerToGame()" style="width:100%;padding:10px;background:transparent;
+          border:1px dashed rgba(0,240,255,0.25);color:var(--muted);border-radius:10px;
+          font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+          Add New Player
+        </button>
+      </div>
+
+      <button id="agNextBtn" onclick="agNext()"
+        style="width:100%;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));
+        color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;
+        font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+        box-shadow:0 4px 16px rgba(0,144,255,0.3);margin-bottom:10px;">
+        Next →
       </button>
     </div>
 
-    <div style="display:flex;gap:10px;margin-bottom:14px;">
-      <div style="flex:1;text-align:center;">
-        <label class="flabel" style="color:var(--cyan);">Team 1 Score</label>
-        <input class="sinput" type="number" inputmode="numeric" id="agS1" placeholder="0" style="width:100%;">
+    <!-- STEP 2 · SCORE -->
+    <div id="agStep2" style="display:none;">
+      <div class="msub">Step 2 · Score (or play first)</div>
+
+      <div id="agTeamPreview" style="text-align:center;font-size:16px;color:var(--white);
+        font-family:'Exo 2',sans-serif;font-weight:800;margin-bottom:16px;min-height:22px;"></div>
+
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <div style="flex:1;text-align:center;">
+          <label class="flabel" style="color:var(--cyan);">Team 1 Score</label>
+          <input class="sinput" type="number" inputmode="numeric" id="agS1" placeholder="0" style="width:100%;">
+        </div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:6px;color:var(--muted);font-size:24px;font-family:'Russo One',sans-serif;">—</div>
+        <div style="flex:1;text-align:center;">
+          <label class="flabel" style="color:var(--pink);">Team 2 Score</label>
+          <input class="sinput" type="number" inputmode="numeric" id="agS2" placeholder="0" style="width:100%;">
+        </div>
       </div>
-      <div style="display:flex;align-items:flex-end;padding-bottom:6px;color:var(--muted);font-size:24px;font-family:'Russo One',sans-serif;">—</div>
-      <div style="flex:1;text-align:center;">
-        <label class="flabel" style="color:var(--pink);">Team 2 Score</label>
-        <input class="sinput" type="number" inputmode="numeric" id="agS2" placeholder="0" style="width:100%;">
-      </div>
+
+      <button onclick="saveAddedGame()"
+        style="width:100%;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));
+        color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;
+        font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+        box-shadow:0 4px 16px rgba(255,45,120,0.3);margin-bottom:10px;">
+        ✓ Save Game
+      </button>
+      <button onclick="agScoreLater()"
+        style="width:100%;padding:13px;background:transparent;border:1px solid rgba(0,240,255,0.35);
+        color:var(--cyan);border-radius:12px;font-family:'Russo One',sans-serif;
+        font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:10px;">
+        ▶ Play First — Score Later
+      </button>
+      <button onclick="agBack()"
+        style="width:100%;padding:11px;background:transparent;border:none;
+        color:var(--muted);border-radius:12px;font-family:'DM Sans',sans-serif;
+        font-size:14px;font-weight:600;cursor:pointer;margin-bottom:2px;">← Back to players</button>
     </div>
 
-    <div id="agTeamPreview" style="text-align:center;font-size:13px;color:var(--muted);
-      font-weight:600;margin-bottom:14px;min-height:20px;"></div>
-
-    <button onclick="saveAddedGame()"
-      style="width:100%;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));
-      color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;
-      font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
-      box-shadow:0 4px 16px rgba(255,45,120,0.3);margin-bottom:10px;">
-      ✓ Save Game
-    </button>
     <button onclick="document.getElementById('addGameOverlay').classList.add('hidden')"
+      style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);
+      color:var(--muted);border-radius:12px;font-family:'DM Sans',sans-serif;
+      font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+  </div>
+</div>
+
+<!-- EVENT INFO EDITOR (session owner/admin) -->
+<div id="sessionInfoEdit" class="hidden">
+  <div class="modal" style="max-width:520px;">
+    <div class="mtitle">📋 Event Info</div>
+    <div class="msub">Everything players need — format, rules, parking. Shows on this session's page.</div>
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;">
+      💡 Start a line with <span style="color:var(--cyan);font-weight:800;">##&nbsp;</span>to make a tappable section (e.g. <span style="color:var(--cyan);">## Parking</span>). Links become tappable automatically.
+    </div>
+    <button onclick="insertInfoTemplate()" style="width:100%;padding:10px;background:transparent;
+      border:1px dashed rgba(0,240,255,0.3);color:var(--cyan);border-radius:10px;
+      font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+      cursor:pointer;margin-bottom:10px;">📋 Insert Template</button>
+    <textarea id="siText" placeholder="## Format&#10;Round robin, rally scoring to 21...&#10;&#10;## Parking&#10;Free valet or guest parking down the ramp..."></textarea>
+    <button onclick="saveSessionInfo()"
+      style="width:100%;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));
+      color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;
+      font-size:16px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+      box-shadow:0 4px 16px rgba(0,144,255,0.3);margin:12px 0 10px;">💾 Save Event Info</button>
+    <button onclick="document.getElementById('sessionInfoEdit').classList.add('hidden')"
       style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);
       color:var(--muted);border-radius:12px;font-family:'DM Sans',sans-serif;
       font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
@@ -2638,7 +2708,8 @@ window.submitCourt = async function() {
 window.hideAllPages = function() {
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
    'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
-   'adPlayerModal','adCourtModal','qrOverlay','quickStartPage','courtsPage','courtSubmit'].forEach(id => {
+   'adPlayerModal','adCourtModal','qrOverlay','quickStartPage','courtsPage','courtSubmit',
+   'sessionInfoEdit'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -2885,6 +2956,8 @@ function renderSessionDetail(sid, s) {
     }
   }
 
+  h += renderSessionInfo(sid, s, isOwner);
+
   h += '<div style="margin-top:18px;">'
     +'<button onclick="shareSession(\'' + sid + '\')" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📤 Share Invite Link</button>'
     +'<button onclick="copySessionRoster(\'' + sid + '\')" style="display:block;width:100%;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📋 Copy Roster for Group Chat</button>';
@@ -2898,6 +2971,91 @@ function renderSessionDetail(sid, s) {
   h += '</div>';
   document.getElementById('sdContent').innerHTML = h;
 }
+
+function escInfo(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function infoBody(text) {
+  // escape, linkify, bullets, line breaks
+  let out = [];
+  text.split('\n').forEach(line => {
+    let l = escInfo(line);
+    l = l.replace(/(https?:\/\/[^\s&]+[^\s&.,)])/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    const t = l.trim();
+    if (!t) { out.push('<div style="height:8px;"></div>'); return; }
+    if (t.startsWith('- ') || t.startsWith('• '))
+      out.push('<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--cyan);flex-shrink:0;">•</span><span>'+t.slice(2)+'</span></div>');
+    else out.push('<div style="margin:3px 0;">'+t+'</div>');
+  });
+  return out.join('');
+}
+window._infoOpen = window._infoOpen || {};
+function renderSessionInfo(sid, s, isOwner) {
+  let h = '';
+  const editLink = isOwner ? ' <span onclick="editSessionInfo(\''+sid+'\')" style="cursor:pointer;color:var(--cyan);font-size:12px;letter-spacing:0;text-transform:none;font-family:\'DM Sans\',sans-serif;font-weight:700;">✎ edit</span>' : '';
+  if (!s.info) {
+    if (isOwner) {
+      h += '<div onclick="editSessionInfo(\''+sid+'\')" style="cursor:pointer;text-align:center;padding:14px;border:2px dashed rgba(0,240,255,0.3);border-radius:12px;color:var(--cyan);font-weight:800;font-size:13px;margin-top:16px;">📋 Add Event Info — rules, format, parking…</div>';
+    }
+    return h;
+  }
+  h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:18px 0 8px;">📋 Event Info'+editLink+'</div>';
+  // parse: '## ' lines start collapsible sections; text before first section is always visible
+  const lines = String(s.info).split('\n');
+  let pre = [], secs = [], cur = null;
+  lines.forEach(line => {
+    if (line.trim().startsWith('## ')) { cur = { title: line.trim().slice(3).trim(), body: [] }; secs.push(cur); }
+    else if (cur) cur.body.push(line);
+    else pre.push(line);
+  });
+  const preTxt = pre.join('\n').trim();
+  if (preTxt) h += '<div class="info-sec-body" style="padding:4px 2px 10px;">'+infoBody(preTxt)+'</div>';
+  secs.forEach((sec, i) => {
+    const k = sid + '|' + i;
+    const open = !!window._infoOpen[k];
+    h += '<div class="info-sec-hdr" onclick="toggleInfoSec(\''+k+'\')">'
+      +'<span>'+escInfo(sec.title)+'</span>'
+      +'<span id="infoArr_'+i+'" style="color:var(--cyan);font-size:12px;transition:transform 0.2s;'+(open?'transform:rotate(90deg);':'')+'">▶</span></div>'
+      +'<div id="infoSec_'+i+'" class="info-sec-body" style="'+(open?'':'display:none;')+'">'+infoBody(sec.body.join('\n').trim())+'</div>';
+  });
+  return h;
+}
+window.toggleInfoSec = function(k) {
+  window._infoOpen[k] = !window._infoOpen[k];
+  const i = k.split('|')[1];
+  const b = document.getElementById('infoSec_'+i), a = document.getElementById('infoArr_'+i);
+  if (b) b.style.display = window._infoOpen[k] ? '' : 'none';
+  if (a) a.style.transform = window._infoOpen[k] ? 'rotate(90deg)' : '';
+};
+window.editSessionInfo = async function(sid) {
+  const snap = await get(ref(db, 'sessions/' + sid));
+  const s = snap.val(); if (!s) return;
+  if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
+  window._siSid = sid;
+  const ta = document.getElementById('siText');
+  if (ta) ta.value = s.info || '';
+  document.getElementById('sessionInfoEdit').classList.remove('hidden');
+};
+window.saveSessionInfo = async function() {
+  const sid = window._siSid; if (!sid) return;
+  const ta = document.getElementById('siText');
+  try { ta.blur(); } catch(e) {}
+  try {
+    await set(ref(db, 'sessions/' + sid + '/info'), (ta.value || '').trim() || null);
+    document.getElementById('sessionInfoEdit').classList.add('hidden');
+    copiedToast('✓ Event Info Saved!');
+  } catch(e) { alert('Could not save: ' + (e.message||e)); }
+};
+window.insertInfoTemplate = function() {
+  const ta = document.getElementById('siText'); if (!ta) return;
+  if (ta.value.trim() && !confirm('Replace what you\'ve written with the template?')) return;
+  ta.value = 'Welcome! Everything you need to know is below — tap a section to open it. 🏓\n\n'
+    + '## Format\n- Round robin — randomized partners, you won\'t partner the same player twice\n- Rally scoring to 21 (no win by 2)\n- Rankings by TOTAL points — don\'t get blown out!\n- After each match, log your score in the app\n\n'
+    + '## Finals\nTop 4 by points: 1&4 vs 2&3 — championship game!\nNext 4: 5&8 vs 6&7\n\n'
+    + '## What to Bring\n- 2 balls\n- Water — check if there\'s a fountain at the courts\n\n'
+    + '## Parking & Arrival\nArrive 15 minutes early — we start SHARP.\n\n'
+    + '## House Rules\n- Please stay until the end — leaving early disrupts the rotation\n- Can\'t make it? Tap "I\'m out" on this page so your spot opens up\n- Send this page\'s link to same-level friends to fill your spot';
+};
 
 window.editSessionNote = async function(sid) {
   const snap = await get(ref(db, 'sessions/' + sid));
@@ -2995,6 +3153,7 @@ window.shareSession = async function(sid) {
     + '📅 ' + ds + ' · ' + fmtSessTime(s.startTime) + '–' + fmtSessTime(s.endTime) + '\n';
   if (s.location) txt += '📍 ' + s.location + '\n';
   if (s.level) txt += '🎚 Level ' + s.level + '\n';
+  if (s.info) txt += '📋 Full rules & details in the link\n';
   txt += 'Claim your spot: ' + url;
   if (navigator.share) {
     try { await navigator.share({ title: s.title || 'Pickleball Session', text: txt }); return; }
@@ -3784,7 +3943,30 @@ window.openAddGame = function() {
   document.getElementById('agS2').value = '';
   document.getElementById('agNewName').value = '';
   renderAgPicker();
+  agShowStep(1);
   document.getElementById('addGameOverlay').classList.remove('hidden');
+};
+
+function agShowStep(n) {
+  const s1 = document.getElementById('agStep1'), s2 = document.getElementById('agStep2');
+  if (s1) s1.style.display = n === 1 ? '' : 'none';
+  if (s2) s2.style.display = n === 2 ? '' : 'none';
+}
+window.agNext = function() {
+  const cap = agCap();
+  if (agT1.length !== cap || agT2.length !== cap) {
+    alert('Each ' + (cap===1?'side needs 1 player':'team needs 2 players') + '.\n\nTeam 1 has ' + agT1.length + ', Team 2 has ' + agT2.length + '. Tap players to fill the empty slots.');
+    return;
+  }
+  try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch(e) {}
+  renderAgPicker(); // refresh preview text
+  agShowStep(2);
+};
+window.agBack = function() { agShowStep(1); renderAgPicker(); };
+window.agScoreLater = function() {
+  const s1 = document.getElementById('agS1'), s2 = document.getElementById('agS2');
+  if (s1) s1.value = ''; if (s2) s2.value = '';
+  window.saveAddedGame();
 };
 
 function renderAgPicker() {
@@ -3804,7 +3986,7 @@ function renderAgPicker() {
   const t1l = agT1.join(' & ') || '?', t2l = agT2.join(' & ') || '?';
   if (_pv) _pv.textContent = agT1.length || agT2.length ? t1l + ' vs ' + t2l : '';
   const sb = agTarget === 'lg' ? document.getElementById('lgStartBtn')
-    : document.querySelector('#addGameOverlay button[onclick*="saveAddedGame"]');
+    : document.getElementById('agNextBtn');
   if (sb) sb.style.opacity = (agT1.length===agCap() && agT2.length===agCap()) ? '1' : '0.35';
 }
 
@@ -4718,6 +4900,9 @@ function saveProfileEdits() { if(window.saveProfileEdits) window.saveProfileEdit
 function setRankMode(m)     { if(window.setRankMode) window.setRankMode(m); }
 function openAddGame()      { if(window.openAddGame) window.openAddGame(); }
 function lgStartGame()      { if(window.lgStartGame) window.lgStartGame(); }
+function agNext()           { if(window.agNext) window.agNext(); }
+function agBack()           { if(window.agBack) window.agBack(); }
+function agScoreLater()     { if(window.agScoreLater) window.agScoreLater(); }
 function toggleAgPlayer(p)  { if(window.toggleAgPlayer) window.toggleAgPlayer(p); }
 function addNewPlayerToGame(){ if(window.addNewPlayerToGame) window.addNewPlayerToGame(); }
 function saveAddedGame()    { if(window.saveAddedGame) window.saveAddedGame(); }
@@ -4806,7 +4991,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-06.1';
+window.BUILD_TAG = 'v2026-08-06.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 function toggleMenuMore() {
   var m = document.getElementById('menuMore'), b = document.getElementById('menuMoreBtn');
@@ -4816,6 +5001,10 @@ function toggleMenuMore() {
 }
 function scUseMyLocation()   { if(window.scUseMyLocation) window.scUseMyLocation(); }
 function editSessionNote(s)  { if(window.editSessionNote) window.editSessionNote(s); }
+function editSessionInfo(s)  { if(window.editSessionInfo) window.editSessionInfo(s); }
+function saveSessionInfo()   { if(window.saveSessionInfo) window.saveSessionInfo(); }
+function insertInfoTemplate(){ if(window.insertInfoTemplate) window.insertInfoTemplate(); }
+function toggleInfoSec(k)    { if(window.toggleInfoSec) window.toggleInfoSec(k); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 function adApproveCourt(i)   { if(window.adApproveCourt) window.adApproveCourt(i); }
 function adRejectCourt(i)    { if(window.adRejectCourt) window.adRejectCourt(i); }
