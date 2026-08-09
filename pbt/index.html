@@ -1598,6 +1598,7 @@ function renderCurrent() {
 }
 
 window.openSetup = window._openSetup = function() {
+  window._fromSid = null;  // cleared unless startFromSession sets it right after
   window._pushNav('home');
   window.hideAllPages();
   if (window.resetBars) resetBars();
@@ -1767,7 +1768,8 @@ function _finalizeTournament() {
   const schedule = mode==='log' ? []
     : mode==='4p' ? make4PSchedule(players)
     : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players));
-  cfg={name,mode,players,schedule,playType:playType_}; scores={};
+  cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null}; scores={};
+  window._fromSid = null;
   const tid = makeTid();
   activeTid = tid;
   set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
@@ -3237,6 +3239,7 @@ window.startFromSession = async function(sid) {
   closeSessionDetail();
   document.getElementById('sessionsPage').classList.add('hidden');
   openSetup(true);
+  window._fromSid = sid;  // carried into cfg so the tournament links back to Event Info
   setPlayType('doubles');
   chooseFormat('rr');
   document.getElementById('tName').value = s.title || 'Session';
@@ -3834,6 +3837,9 @@ function renderGames() {
       +'</div>'
       +'<div style="text-align:center;margin-top:8px;font-size:10px;color:var(--muted);font-weight:600;">Code: '+activeTid+'</div>'
       +'</div>';
+  }
+  if (cfg.fromSession) {
+    html += '<div onclick="openSessionDetail(\''+cfg.fromSession+'\')" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.3);border-radius:12px;margin-bottom:14px;color:var(--cyan);font-weight:800;font-size:13px;letter-spacing:1px;">📋 EVENT INFO &amp; RULES</div>';
   }
   if (cfg.mode==='4p') {
     html+='<div class="infopill">⚡ Best of 3 per matchup · Partners rotate · Most total points wins</div>';
@@ -5043,7 +5049,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-06.4';
+window.BUILD_TAG = 'v2026-08-06.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 function toggleMenuMore() {
   var m = document.getElementById('menuMore'), b = document.getElementById('menuMoreBtn');
