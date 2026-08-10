@@ -669,8 +669,9 @@
       <div class="login-sub" style="margin-bottom:0;">Tell us a little about yourself</div>
     </div>
     <label class="flabel">Your Name</label>
-    <input class="finput" id="profileNameInput" placeholder="First name or nickname" maxlength="30"
+    <input class="finput" id="profileNameInput" placeholder="Full name" maxlength="30"
       style="font-size:18px;font-weight:700;text-align:center;">
+    <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-align:center;margin:6px 0 2px;">👤 This is your username — the exact name everyone sees in the app</div>
     <label class="flabel">I am</label>
     <div class="gender-row">
       <div class="gender-card" id="gMale" onclick="selectGender('M')">
@@ -1501,6 +1502,23 @@ async function bootApp() {
 
   // 1. Joining via shared link? That wins.
   if (_sessParam) {
+    // If this session's tournament is LIVE, drop them straight into the games
+    let _sLive = null;
+    try {
+      const sSnap = await get(ref(db, 'sessions/' + _sessParam));
+      const sVal = sSnap.val();
+      if (sVal && sVal.tournamentId) {
+        const tSnap = await get(ref(db, 'tournaments/' + sVal.tournamentId));
+        if (tSnap.exists()) _sLive = sVal.tournamentId;
+      }
+    } catch(e) {}
+    if (_sLive) {
+      await set(ref(db, 'users/' + uid + '/activeTournamentId'), _sLive);
+      history.replaceState({}, '', window.location.pathname);
+      subscribeTournament(_sLive);
+      setTimeout(() => copiedToast("🔴 Tournament is LIVE — you're in!"), 900);
+      return;
+    }
     setTimeout(() => { try { openSessionDetail(_sessParam); history.replaceState({}, '', window.location.pathname); } catch(e) {} }, 500);
   }
   if (_pageParam) {
@@ -1773,6 +1791,7 @@ function _finalizeTournament() {
   const tid = makeTid();
   activeTid = tid;
   set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
+  if (cfg.fromSession) { try { set(ref(db, 'sessions/' + cfg.fromSession + '/tournamentId'), tid); } catch(e) {} }
   set(ref(db, 'tournaments/' + tid), { cfg, scores, ownerUid: currentUser.uid, updatedAt: Date.now() })
     .then(() => subscribeTournament(tid))
     .catch(e => {
@@ -2929,6 +2948,7 @@ function renderSessionDetail(sid, s) {
     +(s.location?'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:2px;">📍 '+s.location+'</div>':'')
     +(s.level?'<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-top:2px;">🎚 Level '+s.level+'</div>':'')
     +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+(isOwner?' <span onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;color:var(--cyan);font-size:12px;margin-left:6px;">✎ edit</span>':'')+'</div>':(isOwner?'<div onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;font-size:12px;color:var(--cyan);font-weight:700;margin-top:8px;">➕ Add a note for the group</div>':''))
+    +(s.tournamentId?'<div onclick="joinLiveTournament(\''+s.tournamentId+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:12px;color:white;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,45,120,0.3);">🔴 TOURNAMENT IS LIVE — VIEW GAMES</div>':'')
     +(s.info?'<div onclick="jumpToInfo(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.35);border-radius:10px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📋 FULL DETAILS ↓</div>':'')
     +(s.ownerName?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organized by '+s.ownerName+'</div>':'')
     +'</div>';
@@ -3091,6 +3111,18 @@ window.editSessionNote = async function(sid) {
   catch(e) { alert('Could not save: ' + (e.message||e)); }
 };
 
+window.joinLiveTournament = async function(tid) {
+  if (!currentUser) { alert('Sign in first!'); return; }
+  try {
+    const tSnap = await get(ref(db, 'tournaments/' + tid));
+    if (!tSnap.exists()) { alert('That tournament is no longer available.'); return; }
+    await set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
+    closeSessionDetail();
+    document.getElementById('sessionsPage').classList.add('hidden');
+    subscribeTournament(tid);
+  } catch(e) { alert('Could not join: ' + (e.message||e)); }
+};
+
 window.claimSpot = async function(sid) {
   if (!currentUser) { alert('Sign in to claim a spot!'); return; }
   const snap = await get(ref(db, 'sessions/' + sid));
@@ -3098,8 +3130,12 @@ window.claimSpot = async function(sid) {
   const roster = s.roster ? (Array.isArray(s.roster)?s.roster:Object.values(s.roster)) : [];
   const wait = s.waitlist ? (Array.isArray(s.waitlist)?s.waitlist:Object.values(s.waitlist)) : [];
   if (roster.some(r=>r.uid===currentUser.uid) || wait.some(r=>r.uid===currentUser.uid)) { alert("You're already in!"); return; }
-  let nm = userProfile?.name;
-  if (!nm) { nm = (prompt('Your name for the roster:')||'').trim(); if (!nm) return; }
+  let nm = (userProfile?.name || '').trim();
+  if (!nm) {
+    nm = (prompt('Your name for the roster:\n\n(This is saved as your player name)')||'').trim(); if (!nm) return;
+    userProfile = Object.assign({}, userProfile || {}, { name: nm });
+    try { set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch(e) {}
+  }
   let comment = (prompt("You're in, " + nm + "! 🏓\n\nAdd a note for the group? (e.g. \"running 15 min late\")\nLeave EMPTY and press OK to skip:") || '').trim();
   if (isNameEcho(comment, nm)) comment = '';  // typed their name (or name + initial) — not a note
   const entry = { name: nm, uid: currentUser.uid, comment, at: Date.now() };
@@ -3745,16 +3781,43 @@ function makeRRSchedule(players) {
     ].map((g,i)=>({key:'g'+(i+1),round:g.r,t1:g.t1,t2:g.t2}));
     return randomizeSchedule(perfect8);
   }
+  return randomizeSchedule(makeBalancedRounds(players, {}));
+}
+
+// Bye-balanced round builder: byes equalized, NEVER back-to-back, repeats spread out.
+// opts seeds history for mid-tournament rebuilds: {PC,OC,byes,played,lastSat,rounds,startGN,startRound}
+function makeBalancedRounds(players, opts) {
+  opts = opts || {};
   const pairKey=(a,b)=>[a,b].sort().join('||');
-  const PC={},OC={};
+  const PC=opts.PC||{}, OC=opts.OC||{};
   const gP=(a,b)=>PC[pairKey(a,b)]||0, gO=(a,b)=>OC[pairKey(a,b)]||0;
   const iP=(a,b)=>{const k=pairKey(a,b);PC[k]=(PC[k]||0)+1;};
   const iO=(a,b)=>{const k=pairKey(a,b);OC[k]=(OC[k]||0)+1;};
-  const gScore=(t1a,t1b,t2a,t2b)=>(gP(t1a,t1b)+gP(t2a,t2b))*100+(gO(t1a,t2a)+gO(t1a,t2b)+gO(t1b,t2a)+gO(t1b,t2b))*10;
-  const list=[...players]; if(list.length%2!==0)list.push(null);
-  const sched=[]; let gN=0; const arr=[...list];
-  for(let r=0;r<list.length-1;r++){
-    const avail=arr.filter(p=>p!==null),used=new Set(),rg=[];
+  const gScore=(t1a,t1b,t2a,t2b)=>(gP(t1a,t1b)*gP(t1a,t1b)+gP(t2a,t2b)*gP(t2a,t2b))*100+(gO(t1a,t2a)+gO(t1a,t2b)+gO(t1b,t2a)+gO(t1b,t2b))*10;
+  const n=players.length;
+  if(n<4) return [];
+  const byes=opts.byes||{}, played=opts.played||{};
+  const lastByeR=opts.lastByeR||{};
+  players.forEach(p=>{ if(byes[p]===undefined)byes[p]=0; if(played[p]===undefined)played[p]=0; if(lastByeR[p]===undefined)lastByeR[p]=-99; });
+  let lastSat=opts.lastSat||new Set();
+  const rounds=opts.rounds||((n%2===1)?n:n-1);
+  let gN=opts.startGN||0, rN=opts.startRound||0;
+  const nSit=n%4;
+  const sched=[];
+  for(let r=0;r<rounds;r++){
+    rN++;
+    let sitters=[];
+    if(nSit>0){
+      let elig=players.filter(p=>!lastSat.has(p));
+      if(elig.length<nSit) elig=[...players];
+      for(let i=elig.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[elig[i],elig[j]]=[elig[j],elig[i]];}
+      // fewest byes first; among ties, whoever's last bye was LONGEST ago; then most games played
+      elig.sort((a,b)=>(byes[a]-byes[b])||(lastByeR[a]-lastByeR[b])||(played[b]-played[a]));
+      sitters=elig.slice(0,nSit);
+    }
+    const sitSet=new Set(sitters);
+    const avail=players.filter(p=>!sitSet.has(p));
+    const used=new Set();
     while(avail.filter(p=>!used.has(p)).length>=4){
       const free=avail.filter(p=>!used.has(p));
       let best=Infinity,bestG=null;
@@ -3769,12 +3832,13 @@ function makeRRSchedule(players) {
       const{t1a,t1b,t2a,t2b}=bestG;
       used.add(t1a);used.add(t1b);used.add(t2a);used.add(t2b);
       iP(t1a,t1b);iP(t2a,t2b);iO(t1a,t2a);iO(t1a,t2b);iO(t1b,t2a);iO(t1b,t2b);
-      rg.push({key:'g'+(++gN),round:r+1,t1:[t1a,t1b],t2:[t2a,t2b]});
+      sched.push({key:'g'+(++gN),round:rN,t1:[t1a,t1b],t2:[t2a,t2b]});
     }
-    sched.push(...rg);
-    const rot=arr.slice(1);rot.unshift(rot.pop());arr.splice(0,arr.length,arr[0],...rot);
+    sitters.forEach(p=>{byes[p]++;lastByeR[p]=rN;});
+    avail.forEach(p=>{ if(used.has(p)) played[p]++; });
+    lastSat=new Set(sitters);
   }
-  return randomizeSchedule(sched);
+  return sched;
 }
 
 function getMatchupWins(mi) {
@@ -3841,6 +3905,9 @@ function renderGames() {
   if (cfg.fromSession) {
     html += '<div onclick="openSessionDetail(\''+cfg.fromSession+'\')" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.3);border-radius:12px;margin-bottom:14px;color:var(--cyan);font-weight:800;font-size:13px;letter-spacing:1px;">📋 EVENT INFO &amp; RULES</div>';
   }
+  if (cfg.mode === 'rr' && activeTid && !Object.values(scores).some(s => s && s.s1 !== null && s.s1 !== undefined)) {
+    html += '<div onclick="addPlayerToTournament()" style="cursor:pointer;text-align:center;padding:11px;border:2px dashed rgba(0,245,196,0.35);border-radius:12px;color:var(--aqua);font-weight:800;font-size:12.5px;letter-spacing:0.5px;margin-bottom:14px;">👤 Someone extra show up? Add players — games re-deal fairly</div>';
+  }
   if (cfg.mode==='4p') {
     html+='<div class="infopill">⚡ Best of 3 per matchup · Partners rotate · Most total points wins</div>';
     const matchups=[...new Set(cfg.schedule.filter(g=>!g.added&&g.matchup).map(g=>g.matchup))].sort((a,b)=>a-b);
@@ -3897,8 +3964,19 @@ function renderGames() {
       +'<button id="lgStartBtn" onclick="lgStartGame()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🚀 Start Game</button>'
       +'</div>';
   }
+  // Finals (seeded from standings)
+  const finalsGames = cfg.schedule.filter(g => g.finals && !g.deleted);
+  if (finalsGames.length) {
+    html += '<div class="rhdr">🏆 Finals</div>';
+    finalsGames.forEach((g, i) => {
+      const s = scores[g.key] || {s1:null,s2:null};
+      const done = s.s1!==null && s.s2!==null;
+      const w = done ? (s.s1>s.s2?'t1':s.s2>s.s1?'t2':null) : null;
+      html += gameCard(g, s, done, w, g.flabel || ('Final ' + (i+1)));
+    });
+  }
   // Extra added games
-  const extraGames = cfg.schedule.filter(g => g.added);
+  const extraGames = cfg.schedule.filter(g => g.added && !g.finals);
   if (extraGames.length) {
     html += '<div class="rhdr">'+(cfg.mode==='log'?'Games':'Extra Games')+'</div>';
     extraGames.forEach((g, i) => {
@@ -3907,6 +3985,15 @@ function renderGames() {
       const w = done ? (s.s1>s.s2?'t1':s.s2>s.s1?'t2':null) : null;
       html += gameCard(g, s, done, w, (cfg.mode==='log'?'Game ':'Extra ')+(i+1));
     });
+  }
+  // Play Finals CTA — appears once all scheduled games are scored (optional)
+  if (cfg.mode === 'rr' && !cfg.schedule.some(g => g.finals && !g.deleted)) {
+    const _reg = cfg.schedule.filter(g => !g.added && !g.deleted);
+    const _scoredN = _reg.filter(g => { const s = scores[g.key]; return s && s.s1 !== null && s.s1 !== undefined; }).length;
+    if (_reg.length > 0 && _scoredN >= Math.ceil(_reg.length * 0.7)) {
+      html += '<div onclick="addFinals()" style="cursor:pointer;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--yellow),#FF9F1C);color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:15px;letter-spacing:2px;text-transform:uppercase;box-shadow:0 4px 20px rgba(255,224,0,0.3);">🏆 Play Finals — Seeds Face Off</div>'
+        + '<div style="text-align:center;font-size:11px;color:var(--muted);font-weight:600;margin-top:6px;">Optional — 1&4 vs 2&3 by the standings</div>';
+    }
   }
 
   el.innerHTML = html;
@@ -3926,6 +4013,7 @@ function renderGames() {
     wrap.id = 'gamesActions';
     var hasAnyScore = Object.values(scores).some(function(s){ return s && s.s1 !== null && s.s1 !== undefined; });
     wrap.innerHTML = '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
+      + (cfg.mode === 'rr' ? '<button onclick="addPlayerToTournament()" class="addrbtn" style="margin-top:8px;">👤 Add Player — rebuilds unplayed games</button>' : '')
       + (hasAnyScore ? '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>' : '');
     el.appendChild(wrap);
   })();
@@ -4077,6 +4165,82 @@ window.addNewPlayerToGame = function() {
   } else {
     renderAgPicker();
   }
+};
+
+window.addFinals = function() {
+  if (!cfg) return;
+  if (cfg.schedule.some(g => g.finals && !g.deleted)) { alert('Finals already added! Delete those games to redo them.'); return; }
+  const reg = cfg.schedule.filter(g => !g.added && !g.deleted);
+  const unscored = reg.filter(g => { const s = scores[g.key]; return !s || s.s1 === null || s.s1 === undefined; });
+  if (unscored.length && !confirm(unscored.length + ' game(s) still unscored — seed finals from CURRENT standings anyway?')) return;
+  const { list } = calcStandings();
+  const ranked = list.filter(p => p.games > 0).map(p => p.name);
+  const per = (cfg.playType === 'singles') ? 2 : 4;
+  if (ranked.length < per) { alert('Need at least ' + per + ' ranked players for finals.'); return; }
+  const games = []; let fi = 0;
+  for (let i = 0; i + per - 1 < ranked.length; i += per) {
+    const lab = fi === 0 ? '🏆 Championship' : '🎖 Places ' + (i+1) + '–' + (i+per);
+    if (per === 4) games.push({ key: 'f' + Date.now() + '_' + fi, t1: [ranked[i], ranked[i+3]], t2: [ranked[i+1], ranked[i+2]],
+      round: 'Final', added: true, finals: true, flabel: lab + ': #' + (i+1) + '&#' + (i+4) + ' vs #' + (i+2) + '&#' + (i+3) });
+    else games.push({ key: 'f' + Date.now() + '_' + fi, t1: [ranked[i]], t2: [ranked[i+1]],
+      round: 'Final', added: true, finals: true, flabel: lab + ': #' + (i+1) + ' vs #' + (i+2) });
+    fi++;
+  }
+  const preview = games.map(g => g.flabel + '\n   ' + g.t1.join(' & ') + '  vs  ' + g.t2.join(' & ')).join('\n');
+  if (!confirm('Add finals?\n\n' + preview + '\n\n(Optional — skip if everyone wants to head home!)')) return;
+  cfg.schedule.push(...games);
+  push(); renderGames(); updateNav();
+  copiedToast('🏆 Finals are set!');
+};
+
+window.addPlayerToTournament = async function() {
+  if (!cfg || cfg.mode !== 'rr') { alert('Adding players mid-tournament works for round-robin.'); return; }
+  const raw = (prompt("New player name(s) — separate multiple with commas:\n\ne.g.  Alex, Dana") || '').trim(); if (!raw) return;
+  const names = [...new Set(raw.split(',').map(x=>x.trim()).filter(Boolean))];
+  const dupes = names.filter(nm => cfg.players.includes(nm));
+  const fresh0 = names.filter(nm => !cfg.players.includes(nm));
+  if (!fresh0.length) { alert((dupes.join(', ')) + (dupes.length>1?' are':' is') + ' already in the tournament.'); return; }
+  const nm = fresh0.join(' & ');
+  if (!confirm('Add ' + nm + ' and rebuild the remaining games?\n\n✓ Played (scored) games stay exactly as they are\n✓ Unplayed games are re-dealt to work ' + (fresh0.length>1?'them':nm) + ' in fairly' + (dupes.length ? '\n(already in: ' + dupes.join(', ') + ')' : ''))) return;
+  const players = [...cfg.players, ...fresh0];
+  // keep scored games, extra/finals games, and deleted stubs; re-deal the unplayed scheduled ones
+  const keep = cfg.schedule.filter(g => g.added || g.deleted ||
+    (scores[g.key] && scores[g.key].s1 !== null && scores[g.key].s1 !== undefined));
+  // seed balance history from what's been played
+  const pairKey=(a,b)=>[a,b].sort().join('||');
+  const PC={}, OC={}, byes={}, played={}, lastByeR={};
+  players.forEach(p=>{byes[p]=0;played[p]=0;});
+  keep.filter(g=>!g.deleted).forEach(g=>{
+    const t1=g.t1||[], t2=g.t2||[];
+    if(t1.length===2){const k=pairKey(t1[0],t1[1]);PC[k]=(PC[k]||0)+1;}
+    if(t2.length===2){const k=pairKey(t2[0],t2[1]);PC[k]=(PC[k]||0)+1;}
+    t1.forEach(a=>t2.forEach(b=>{const k=pairKey(a,b);OC[k]=(OC[k]||0)+1;}));
+    [...t1,...t2].forEach(p=>{ if(played[p]!==undefined) played[p]++; });
+  });
+  // credit byes already served: for each completed round, whoever ISN'T in it sat it
+  const _byRound = {};
+  keep.filter(g=>!g.deleted&&!g.added).forEach(g=>{ if(typeof g.round==='number'){ (_byRound[g.round]=_byRound[g.round]||[]).push(g); } });
+  Object.keys(_byRound).map(Number).sort((a,b)=>a-b).forEach(r=>{
+    const inRound = new Set(); _byRound[r].forEach(g=>{ (g.t1||[]).forEach(p=>inRound.add(p)); (g.t2||[]).forEach(p=>inRound.add(p)); });
+    cfg.players.forEach(p=>{ if(!inRound.has(p)){ byes[p]=(byes[p]||0)+1; lastByeR[p]=r; } });
+  });
+  // late arrivals: match the current max bye count so they PLAY now instead of "catching up" on sitting
+  const _maxByes = Math.max(0, ...cfg.players.map(p=>byes[p]||0));
+  fresh0.forEach(p=>{ byes[p]=_maxByes; });
+  const gamesPerRound = Math.floor(players.length/4);
+  const totalRounds = (players.length%2===1) ? players.length : players.length-1;
+  const playedSched = keep.filter(g=>!g.deleted&&!g.added).length;
+  const doneRounds = gamesPerRound ? Math.floor(playedSched/gamesPerRound) : 0;
+  const remRounds = Math.max(1, totalRounds - doneRounds);
+  let maxG=0, maxRound=0;
+  cfg.schedule.forEach(g=>{const m=/^g(\d+)$/.exec(g.key); if(m)maxG=Math.max(maxG,+m[1]);});
+  keep.forEach(g=>{ if(typeof g.round==='number') maxRound=Math.max(maxRound,g.round); });
+  const fresh = makeBalancedRounds(players, { rounds: remRounds, startGN: maxG, startRound: maxRound,
+    PC, OC, byes, played, lastByeR, lastSat: new Set() });
+  cfg.players = players;
+  cfg.schedule = [...keep, ...fresh];
+  push(); renderGames(); updateNav();
+  copiedToast('✓ ' + nm + ' added — schedule rebuilt!');
 };
 
 window.saveAddedGame = function() {
@@ -5034,6 +5198,9 @@ function claimSpot(s)        { if(window.claimSpot) window.claimSpot(s); }
 function releaseSpot(s)      { if(window.releaseSpot) window.releaseSpot(s); }
 function removeRosterEntry(s,u,n) { if(window.removeRosterEntry) window.removeRosterEntry(s,u,n); }
 function jumpToInfo(s)       { if(window.jumpToInfo) window.jumpToInfo(s); }
+function addPlayerToTournament() { if(window.addPlayerToTournament) window.addPlayerToTournament(); }
+function addFinals()         { if(window.addFinals) window.addFinals(); }
+function joinLiveTournament(t) { if(window.joinLiveTournament) window.joinLiveTournament(t); }
 function shareSession(s)     { if(window.shareSession) window.shareSession(s); }
 function copySessionRoster(s){ if(window.copySessionRoster) window.copySessionRoster(s); }
 function startFromSession(s) { if(window.startFromSession) window.startFromSession(s); }
@@ -5049,8 +5216,34 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-06.5';
+window.BUILD_TAG = 'v2026-08-07.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
+// ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
+(function(){
+  var lastCheck = 0;
+  function showUpdateBanner(tag){
+    if (document.getElementById('updBanner')) return;
+    var b = document.createElement('div');
+    b.id = 'updBanner';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:950;background:linear-gradient(135deg,#00F0FF,#0090FF);color:#04060F;text-align:center;padding:11px 12px;font-family:DM Sans,sans-serif;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 2px 14px rgba(0,144,255,0.5);';
+    b.textContent = '\u27F3 New version available \u2014 tap to update';
+    b.onclick = function(){ try { location.replace(location.pathname + '?v=' + encodeURIComponent(tag)); } catch(e) { try { location.reload(); } catch(e2) {} } };
+    document.body.appendChild(b);
+  }
+  function checkForUpdate(){
+    var now = Date.now(); if (now - lastCheck < 60000) return; lastCheck = now;
+    try {
+      fetch('version.json?nc=' + now, { cache: 'no-store' })
+        .then(function(r){ return r && r.ok ? r.json() : null; })
+        .then(function(v){ if (v && v.tag && window.BUILD_TAG && v.tag !== window.BUILD_TAG) showUpdateBanner(v.tag); })
+        .catch(function(){});
+    } catch(e) {}
+  }
+  window._checkForUpdate = checkForUpdate;
+  window._showUpdateBanner = showUpdateBanner;
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) { lastCheck = 0; checkForUpdate(); } });
+  setTimeout(checkForUpdate, 2500);
+})();
 function toggleMenuMore() {
   var m = document.getElementById('menuMore'), b = document.getElementById('menuMoreBtn');
   var open = m.style.display !== 'none';
