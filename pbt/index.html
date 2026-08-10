@@ -219,6 +219,9 @@
     overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; }
   #addGameOverlay.hidden { display:none; }
 
+  /* ── ROSTER PLAYER SHEET ── */
+  #rosterPlayerSheet.hidden { display:none !important; }
+
   /* ── EVENT INFO EDITOR ── */
   #sessionInfoEdit { position:fixed; inset:0; z-index:460; background:rgba(4,6,15,0.95);
     backdrop-filter:blur(10px); display:flex; justify-content:center; padding:20px;
@@ -632,6 +635,15 @@
       style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);
       color:var(--muted);border-radius:12px;font-family:'DM Sans',sans-serif;
       font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+  </div>
+</div>
+
+<!-- PLAYER PROFILE SHEET (tap name on roster) -->
+<div id="rosterPlayerSheet" class="hidden" style="position:fixed;inset:0;z-index:580;display:flex;flex-direction:column;justify-content:flex-end;">
+  <div id="rosterPlayerSheetBg" onclick="closeRosterPlayerSheet()" style="position:absolute;inset:0;background:rgba(4,6,15,0.72);backdrop-filter:blur(6px);"></div>
+  <div style="position:relative;background:var(--card);border-radius:22px 22px 0 0;padding:22px 20px 40px;max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;"></div>
+    <div id="rpsContent" style="min-height:80px;"></div>
   </div>
 </div>
 
@@ -2734,7 +2746,7 @@ window.hideAllPages = function() {
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
    'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
    'adPlayerModal','adCourtModal','qrOverlay','quickStartPage','courtsPage','courtSubmit',
-   'sessionInfoEdit'].forEach(id => {
+   'sessionInfoEdit','rosterPlayerSheet'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -2959,7 +2971,7 @@ function renderSessionDetail(sid, s) {
     if (r) {
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
         +'<div style="min-width:0;"><span style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--aqua);margin-right:10px;">'+(i+1)+'</span>'
-        +'<span style="font-weight:700;color:var(--white);font-size:14px;">'+r.name+'</span>'
+        +'<span onclick="openRosterPlayerSheet(\''+encodeURIComponent(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'\\\'')+'\',\'roster\')" style="font-weight:700;color:var(--white);font-size:14px;cursor:pointer;">'+r.name+'</span>'
         +(!isNameEcho(r.comment, r.name) ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
         +(r.uid === currentUser?.uid
           ? '<button onclick="releaseSpot(\'' + sid + '\')" style="flex-shrink:0;padding:6px 12px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">I\'m out</button>'
@@ -2976,7 +2988,7 @@ function renderSessionDetail(sid, s) {
     h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin:14px 0 8px;">Waitlist</div>';
     wait.forEach((w, i) => {
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
-        +'<div><span style="color:var(--yellow);font-size:12px;margin-right:8px;">W'+(i+1)+'</span><span style="font-weight:700;color:var(--white);font-size:13px;">'+w.name+'</span></div>'
+        +'<div><span style="color:var(--yellow);font-size:12px;margin-right:8px;">W'+(i+1)+'</span><span onclick="openRosterPlayerSheet(\''+encodeURIComponent(w.uid||'')+'\',\''+String(w.name||'').replace(/'/g,'\\\'')+'\',\'waitlist\')" style="font-weight:700;color:var(--white);font-size:13px;cursor:pointer;">'+w.name+'</span></div>'
         +(w.uid === currentUser?.uid
           ? '<button onclick="releaseSpot(\'' + sid + '\')" style="padding:5px 10px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Leave</button>'
           : (isOwner ? '<button onclick="removeRosterEntry(\''+sid+'\',\''+(w.uid||'')+'\',\''+String(w.name||'').replace(/'/g,'')+'\')" style="width:26px;height:26px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button>' : ''))
@@ -3098,6 +3110,59 @@ window.insertInfoTemplate = function() {
     + '## What to Bring\n- 2 balls\n- Water — check if there\'s a fountain at the courts\n\n'
     + '## Parking & Arrival\nArrive 15 minutes early — we start SHARP.\n\n'
     + '## House Rules\n- Please stay until the end — leaving early disrupts the rotation\n- Can\'t make it? Tap "I\'m out" on this page so your spot opens up\n- Send this page\'s link to same-level friends to fill your spot';
+};
+
+window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
+  const uid = decodeURIComponent(uidEnc || '');
+  const el = document.getElementById('rpsContent');
+  if (!el) return;
+  // header skeleton while loading
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">'
+    +'<div style="width:48px;height:48px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">👤</div>'
+    +'<div><div style="font-family:\'Russo One\',sans-serif;font-size:18px;color:var(--white);">'+escInfo(name)+'</div>'
+    +'<div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">'+(listType==='waitlist'?'⏳ Waitlist':'✅ Roster')+'</div></div></div>'
+    +'<div style="color:var(--muted);font-size:13px;font-weight:600;">Loading profile…</div>';
+  document.getElementById('rosterPlayerSheet').classList.remove('hidden');
+  // fetch profile
+  let prof = null;
+  if (uid) {
+    try {
+      const snap = await get(ref(db, 'users/' + uid + '/profile'));
+      prof = snap.val();
+    } catch(e) {}
+  }
+  // render
+  let h = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">'
+    +'<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:20px;color:#04060F;flex-shrink:0;">'
+    +(name ? escInfo(name.trim()[0].toUpperCase()) : '?')+'</div>'
+    +'<div><div style="font-family:\'Russo One\',sans-serif;font-size:20px;color:var(--white);">'+escInfo(name)+'</div>'
+    +'<div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">'+(listType==='waitlist'?'⏳ Waitlist':'✅ Roster')+'</div></div></div>';
+  if (prof) {
+    const row = (icon, val, style) => val ? '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">'
+      +'<span style="font-size:16px;">'+icon+'</span>'
+      +'<span style="font-size:14px;font-weight:700;color:'+(style||'var(--white)')+';">'+val+'</span></div>' : '';
+    if (prof.city)       h += row('📍', escInfo(prof.city));
+    if (prof.dupr)       h += row('🏆', 'DUPR ' + escInfo(String(prof.dupr)), 'var(--yellow)');
+    if (prof.homeCourt)  h += row('🏟', escInfo(prof.homeCourt));
+    if (prof.instagram) {
+      const ig = String(prof.instagram).replace(/^@/,'');
+      h += '<div style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">'
+        +'<a href="https://instagram.com/'+escInfo(ig)+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;text-decoration:none;">'
+        +'<span style="font-size:16px;">📸</span><span style="font-size:14px;font-weight:700;color:var(--pink);">@'+escInfo(ig)+'</span></a></div>';
+    }
+    if (!prof.city && !prof.dupr && !prof.homeCourt && !prof.instagram) {
+      h += '<div style="color:var(--muted);font-size:13px;font-weight:600;text-align:center;padding:12px 0;">No profile details added yet</div>';
+    }
+  } else {
+    h += '<div style="color:var(--muted);font-size:13px;font-weight:600;text-align:center;padding:12px 0;">No profile details added yet</div>';
+  }
+  // "View full stats" link for leaderboard cross-reference
+  const safeNameForAttr = String(name).replace(/'/g, '\\x27');
+  h += '<div onclick="closeRosterPlayerSheet();openPlayerDetail(\'' + safeNameForAttr + '\')" style="cursor:pointer;text-align:center;margin-top:4px;padding:11px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.25);border-radius:12px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📊 VIEW GAME HISTORY →</div>';
+  el.innerHTML = h;
+};
+window.closeRosterPlayerSheet = function() {
+  document.getElementById('rosterPlayerSheet').classList.add('hidden');
 };
 
 window.editSessionNote = async function(sid) {
@@ -5216,7 +5281,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-07.2';
+window.BUILD_TAG = 'v2026-08-07.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -5252,6 +5317,8 @@ function toggleMenuMore() {
 }
 function scUseMyLocation()   { if(window.scUseMyLocation) window.scUseMyLocation(); }
 function editSessionNote(s)  { if(window.editSessionNote) window.editSessionNote(s); }
+function openRosterPlayerSheet(u,n,t) { if(window.openRosterPlayerSheet) window.openRosterPlayerSheet(u,n,t); }
+function closeRosterPlayerSheet()     { if(window.closeRosterPlayerSheet) window.closeRosterPlayerSheet(); }
 function editSessionInfo(s)  { if(window.editSessionInfo) window.editSessionInfo(s); }
 function saveSessionInfo()   { if(window.saveSessionInfo) window.saveSessionInfo(); }
 function insertInfoTemplate(){ if(window.insertInfoTemplate) window.insertInfoTemplate(); }
