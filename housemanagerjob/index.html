@@ -95,7 +95,6 @@
 </head>
 <body data-lang="en">
 <div class="wrap">
-
   <div class="topbar">
     <span class="hiring-pill"><span class="en">Now Hiring</span><span class="es">Contratando Ahora</span></span>
     <div class="lang-toggle">
@@ -103,34 +102,27 @@
       <button id="langEs" onclick="setLang('es')">Español</button>
     </div>
   </div>
-
   <!-- ============================ STEP: INTRO ============================ -->
   <div class="step active" id="step-intro">
-
     <div class="hero">
       <h1><span class="en">House Manager &amp; Private Chef</span><span class="es">Encargada de Hogar y Chef Privada</span></h1>
       <div class="sub"><span class="en">Private Residence · Brickell, Miami</span><span class="es">Residencia Privada · Brickell, Miami</span></div>
     </div>
-
     <div class="center" style="margin:18px 0 6px">
       <button class="btn btn-block" onclick="goStep('form')"><span class="en">Apply Now</span><span class="es">Aplicar Ahora</span></button>
     </div>
-
     <div class="chips">
       <div class="chip"><div class="k"><span class="en">Pay</span><span class="es">Pago</span></div><div class="v">$25–$30/hr</div></div>
       <div class="chip"><div class="k"><span class="en">Days</span><span class="es">Días</span></div><div class="v">Mon · Wed · Fri</div></div>
       <div class="chip"><div class="k"><span class="en">Hours</span><span class="es">Horario</span></div><div class="v">9:30 AM – 3:30 PM</div></div>
       <div class="chip"><div class="k"><span class="en">Location</span><span class="es">Ubicación</span></div><div class="v">Brickell, Miami</div></div>
     </div>
-
     <figure class="photo-hero"><img src="photos/living.jpg" alt="The living and dining area" loading="lazy">
       <figcaption><span class="en">The home you'll run — bright, modern, high-rise Brickell</span><span class="es">El hogar que manejarás — luminoso, moderno, en un edificio de Brickell</span></figcaption></figure>
-
     <section class="card">
       <h2><span class="en">About the Role</span><span class="es">Sobre el Puesto</span></h2>
       <p class="en">We are looking for a <strong>reliable, detail-oriented House Manager</strong> to help run a private home in Brickell. This is a great role for someone who enjoys cooking healthy meals, keeping a home clean and organized, and taking pride in their work. The right person is trustworthy, proactive, and happy to anticipate what the home needs.</p>
       <p class="es">Buscamos una <strong>Encargada de Hogar confiable y detallista</strong> para ayudar a manejar una casa privada en Brickell. Es un puesto ideal para alguien que disfruta cocinar comidas saludables, mantener un hogar limpio y organizado, y siente orgullo por su trabajo. La persona ideal es confiable, proactiva, y le gusta anticipar lo que la casa necesita.</p>
-
       <h3><span class="en">What You'll Do</span><span class="es">Tus Responsabilidades</span></h3>
       <ul class="list en">
         <li><strong>Cook healthy meals:</strong> prepare meals and snacks; manage weekly meal prep.</li>
@@ -155,7 +147,6 @@
           <figcaption><span class="en">The living room</span><span class="es">La sala</span></figcaption></figure>
       </div>
     </section>
-
     <section class="card">
       <h2><span class="en">The Perks</span><span class="es">Los Beneficios</span></h2>
       <p class="small en">More than just a paycheck. Extras you can use every week.</p>
@@ -187,8 +178,6 @@
           <figcaption><span class="en">Pool &amp; jacuzzi</span><span class="es">Piscina y jacuzzi</span></figcaption></figure>
       </div>
     </section>
-
-
     <section class="card">
       <h2><span class="en">Who We're Looking For</span><span class="es">A Quién Buscamos</span></h2>
       <ul class="list en">
@@ -206,7 +195,6 @@
         <li><strong>Personalidad:</strong> confiable, proactiva, detallista, y responde a mensajes rápidamente.</li>
       </ul>
     </section>
-
     <div class="pay-flag">
       <div class="small" style="color:#cfe3ee"><span class="en">Starting to Top Rate</span><span class="es">De Inicio a Máximo</span></div>
       <div class="big">$25→$30</div>
@@ -216,22 +204,18 @@
         <span class="es">Comienza en $25/hora con crecimiento hasta $30/hora para alguien que demuestra buen desempeño, toma responsabilidad del puesto, y resulta ser una buena opción a largo plazo. <strong>Más bonos.</strong></span>
       </p>
     </div>
-
     <figure class="photo-hero" style="margin-top:24px"><img src="photos/view.jpg" alt="The view from the residence" loading="lazy">
       <figcaption><span class="en">The view from the residence</span><span class="es">La vista desde la residencia</span></figcaption></figure>
-
     <div class="center" style="margin-top:24px">
       <button class="btn btn-block" onclick="goStep('form')"><span class="en">Apply Now</span><span class="es">Aplicar Ahora</span></button>
     </div>
   </div>
-
   <!-- ============================ STEP: FORM ============================ -->
   <div class="step" id="step-form">
     <section class="card">
       <h2><span class="en">Application Questions</span><span class="es">Preguntas de Aplicación</span></h2>
       <p class="small en">If you think this role is a good fit for you, please answer these questions ASAP. All questions are required.</p>
       <p class="small es">Si crees que este puesto es para ti, por favor responde estas preguntas lo antes posible. Todas las preguntas son obligatorias.</p>
-
       <div class="field" style="margin-top:18px">
         <label><span class="en">1. Full legal name</span><span class="es">1. Nombre legal completo</span></label>
         <input id="q-name" autocomplete="name">
@@ -248,6 +232,17 @@
         <label><span class="en">3b. Home ZIP code (where you live)</span><span class="es">3b. Código postal de tu casa (donde vives)</span></label>
         <input id="q-zip" type="text" inputmode="numeric" maxlength="5" autocomplete="postal-code" placeholder="33130">
         <p class="small" id="zip-place" style="margin-top:6px"></p>
+      </div>
+      <div class="field">
+        <label><span class="en">3c. City &amp; state</span><span class="es">3c. Ciudad y estado</span></label>
+        <div class="row">
+          <input id="q-city" type="text" autocomplete="address-level2" placeholder="City" style="flex:2;min-width:140px">
+          <input id="q-state" type="text" autocomplete="address-level1" placeholder="State" maxlength="2" style="flex:1;min-width:70px;text-transform:uppercase">
+        </div>
+        <p class="small" style="margin-top:6px">
+          <span class="en">Filled in automatically from your ZIP above — double check it, or type it yourself if it's blank.</span>
+          <span class="es">Se completa automáticamente con tu código postal — verifícalo, o escríbelo tú misma si está en blanco.</span>
+        </p>
       </div>
       <div class="field">
         <label><span class="en">4. Are you good at cleaning, cooking, and managing a home?</span><span class="es">4. ¿Eres buena limpiando, cocinando y manejando un hogar?</span></label>
@@ -322,14 +317,24 @@
         </div>
         <div class="ok-badge" id="resumeOk"><span class="en">Resume attached ✓</span><span class="es">Currículum adjunto ✓</span></div>
       </div>
-
+      <div class="field">
+        <label><span class="en">14. How did you hear about us?</span><span class="es">14. ¿Cómo te enteraste de nosotros?</span></label>
+        <div class="row" data-pick="heardAbout">
+          <button type="button" class="btn-pick" data-val="Indeed">Indeed</button>
+          <button type="button" class="btn-pick" data-val="LinkedIn">LinkedIn</button>
+          <button type="button" class="btn-pick" data-val="Craigslist">Craigslist</button>
+          <button type="button" class="btn-pick" data-val="Instagram">Instagram</button>
+          <button type="button" class="btn-pick" data-val="Friend"><span class="en">Friend</span><span class="es">Amistad</span></button>
+          <button type="button" class="btn-pick" data-val="Other"><span class="en">Other</span><span class="es">Otro</span></button>
+        </div>
+        <input id="q-heard-other" style="margin-top:10px;display:none">
+      </div>
       <div class="err" id="form-err"></div>
       <button class="btn btn-block" id="submitFormBtn" style="width:100%;max-width:none">
         <span class="en">Submit application</span><span class="es">Enviar aplicación</span>
       </button>
     </section>
   </div>
-
   <!-- ============================ STEP: DECLINED ============================ -->
   <div class="step" id="step-declined">
     <section class="card" style="text-align:center;padding:50px 24px">
@@ -338,14 +343,12 @@
       <p class="es" style="max-width:520px;margin:12px auto;color:var(--ink-soft)">Agradecemos el tiempo que tomaste para aplicar. Después de revisar tus respuestas, no creemos que este puesto en particular sea la mejor opción, así que vamos a pasar por ahora. Te deseamos lo mejor en tu búsqueda.</p>
     </section>
   </div>
-
   <!-- ============================ STEP: REFERENCES ============================ -->
   <div class="step" id="step-references">
     <section class="card">
       <h2><span class="en">Great news! You're a potential fit</span><span class="es">¡Buenas noticias! Eres una candidata potencial</span></h2>
       <p class="small en">Next step: please provide two professional references, plus your social profiles for a light background check. Type NA for Instagram or LinkedIn if you don't have them, but if you do, please include them.</p>
       <p class="small es">Siguiente paso: por favor proporciona dos referencias profesionales, más tus perfiles sociales para una verificación ligera. Escribe NA en Instagram o LinkedIn si no los tienes, pero si los tienes, por favor inclúyelos.</p>
-
       <div class="refcard">
         <h3 style="margin-top:0"><span class="en">Reference 1</span><span class="es">Referencia 1</span></h3>
         <div class="field"><label><span class="en">Name</span><span class="es">Nombre</span></label><input id="r1-name"></div>
@@ -353,7 +356,6 @@
         <div class="field"><label><span class="en">Phone</span><span class="es">Teléfono</span></label><input id="r1-phone" type="tel"></div>
         <div class="field"><label><span class="en">Relationship (how do they know you?)</span><span class="es">Relación (¿cómo te conocen?)</span></label><input id="r1-rel"></div>
       </div>
-
       <div class="refcard">
         <h3 style="margin-top:0"><span class="en">Reference 2</span><span class="es">Referencia 2</span></h3>
         <div class="field"><label><span class="en">Name</span><span class="es">Nombre</span></label><input id="r2-name"></div>
@@ -361,17 +363,14 @@
         <div class="field"><label><span class="en">Phone</span><span class="es">Teléfono</span></label><input id="r2-phone" type="tel"></div>
         <div class="field"><label><span class="en">Relationship (how do they know you?)</span><span class="es">Relación (¿cómo te conocen?)</span></label><input id="r2-rel"></div>
       </div>
-
       <div class="field"><label>Instagram <span class="small">(<span class="en">handle or link, or NA</span><span class="es">usuario o enlace, o NA</span>)</span></label><input id="q-instagram" placeholder="@..."></div>
       <div class="field"><label>LinkedIn <span class="small">(<span class="en">link, or NA</span><span class="es">enlace, o NA</span>)</span></label><input id="q-linkedin" placeholder="linkedin.com/in/..."></div>
-
       <div class="err" id="refs-err"></div>
       <button class="btn" id="submitRefsBtn" style="width:100%">
         <span class="en">Submit references</span><span class="es">Enviar referencias</span>
       </button>
     </section>
   </div>
-
   <!-- ============================ STEP: INSTRUCTIONS ============================ -->
   <div class="step" id="step-instructions">
     <section class="card">
@@ -382,7 +381,6 @@
       </p>
       <p class="small en" style="margin-bottom:4px"><strong>This is the step that decides everything.</strong> There is no interview booking on this page. The booking link only appears after your reference group texts are done.</p>
       <p class="small es" style="margin-bottom:4px"><strong>Este es el paso que lo decide todo.</strong> No hay enlace para agendar en esta página. El enlace para agendar solo aparece después de completar los mensajes grupales con tus referencias.</p>
-
       <!-- STEP 1 -->
       <div class="stepbox">
         <div class="stepnum">1</div>
@@ -393,7 +391,6 @@
           <p class="es">Escríbele a cada una de tus dos referencias y pregúntales: <em>"¿Está bien si te pongo como referencia para un trabajo? Te enviarán unas preguntas rápidas por texto."</em> Espera a que ambas digan que sí.</p>
         </div>
       </div>
-
       <!-- STEP 2 -->
       <div class="stepbox">
         <div class="stepnum">2</div>
@@ -405,29 +402,28 @@
           <ul class="list en" style="margin-top:6px">
             <li>Group text #1: you + Mike + Reference 1</li>
             <li>Group text #2: you + Mike + Reference 2</li>
-            <li>In each one, write a short intro like: <em>"Hi Mike, this is [your name]. Meet [reference name], who I worked with at [place]. [Reference name], this is Mike, who I'm applying to work with."</em></li>
+            <li><strong>Start each group text with your FULL NAME.</strong> Mike gets many of these texts. If you don't say your name, he can't tell who you are.</li>
+            <li>Write a short intro like: <em>"Hi Mike, this is [YOUR FULL NAME], I applied for the House Manager job. Meet [reference name], who I worked with at [place]. [Reference name], this is Mike, who I'm applying to work with."</em></li>
           </ul>
           <ul class="list es" style="margin-top:6px">
             <li>Grupo #1: tú + Mike + Referencia 1</li>
             <li>Grupo #2: tú + Mike + Referencia 2</li>
-            <li>En cada uno, escribe una breve presentación: <em>"Hola Mike, soy [tu nombre]. Te presento a [nombre de referencia], con quien trabajé en [lugar]. [Nombre de referencia], él es Mike, con quien estoy aplicando para trabajar."</em></li>
+            <li><strong>Comienza cada grupo con tu NOMBRE COMPLETO.</strong> Mike recibe muchos de estos mensajes. Si no dices tu nombre, él no puede saber quién eres.</li>
+            <li>Escribe una breve presentación: <em>"Hola Mike, soy [TU NOMBRE COMPLETO], apliqué para el trabajo de Encargada de Hogar. Te presento a [nombre de referencia], con quien trabajé en [lugar]. [Nombre de referencia], él es Mike, con quien estoy aplicando para trabajar."</em></li>
           </ul>
         </div>
       </div>
-
       <div class="phonebox">
         <div class="small" style="color:#cfe3ee;text-transform:uppercase;letter-spacing:1.4px"><span class="en">Add this number to BOTH group texts</span><span class="es">Agrega este número a AMBOS grupos</span></div>
         <div class="num">+1 617-633-0544</div>
         <div class="small" style="color:#cfe3ee"><span class="en">Mike Krilivsky · regular text message only (no WhatsApp)</span><span class="es">Mike Krilivsky · solo mensaje de texto normal (no WhatsApp)</span></div>
       </div>
-
       <div class="note" style="text-align:center">
         <p class="en" style="font-weight:700;margin-bottom:2px">Done with BOTH group texts?</p>
         <p class="es" style="font-weight:700;margin-bottom:2px">¿Terminaste AMBOS grupos?</p>
-        <p class="small en">Only click below after you've started both separate group texts and added Mike's number to each.</p>
-        <p class="small es">Haz clic abajo solo después de haber creado ambos grupos separados y agregado el número de Mike a cada uno.</p>
+        <p class="small en">Only click below after you've started both separate group texts, added Mike's number to each, and started each one with your full name.</p>
+        <p class="small es">Haz clic abajo solo después de haber creado ambos grupos separados, agregado el número de Mike a cada uno, y comenzado cada uno con tu nombre completo.</p>
       </div>
-
       <button class="btn" id="completeBtn" style="width:100%;margin-top:6px">
         <span class="en">✓ Both group texts are sent</span><span class="es">✓ Ya envié ambos grupos</span>
       </button>
@@ -437,7 +433,6 @@
       </p>
     </section>
   </div>
-
   <!-- ============================ STEP: DONE ============================ -->
   <div class="step" id="step-done">
     <section class="card" style="text-align:center;padding:46px 24px">
@@ -452,13 +447,11 @@
       </p>
     </section>
   </div>
-
   <footer>
     <span class="en">Private Residence · Brickell, Miami</span>
     <span class="es">Residencia Privada · Brickell, Miami</span>
   </footer>
 </div>
-
 <script type="module">
 /* ------------------------------------------------------------------
    Firebase: anonymous, create-only writes to the existing
@@ -467,7 +460,6 @@
 ------------------------------------------------------------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
 const app = initializeApp({
   apiKey: "AIzaSyBmv9J2OJ4XstnypN3z25GJH4f0zMOGqkY",
   authDomain: "house-manager-3506.firebaseapp.com",
@@ -477,7 +469,6 @@ const app = initializeApp({
   appId: "1:492469088677:web:19ebca54450cab3096784c"
 });
 const db = getFirestore(app);
-
 /* ------------------------------------------------------------------
    EmailJS: sends confirmation / rejection emails from the browser.
    FILL IN the 4 values below after creating your EmailJS account.
@@ -488,17 +479,14 @@ const EMAILJS_PUBLIC_KEY   = "X2dC3mFeqOruG4n4S";
 const EMAILJS_SERVICE_ID   = "service_gumjfq5";
 const EMAILJS_TEMPLATE_CONFIRM = "template_34sno6w";
 const EMAILJS_TEMPLATE_REJECT  = "PASTE_REJECT_TEMPLATE_ID";
-
 const EMAILJS_READY =
   window.emailjs &&
   !EMAILJS_PUBLIC_KEY.startsWith("PASTE") &&
   !EMAILJS_SERVICE_ID.startsWith("PASTE");
-
 if (EMAILJS_READY) {
   try { window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); }
   catch (e) { console.error("EmailJS init failed:", e); }
 }
-
 /** Send an email via EmailJS. Never throws — email must not block the funnel. */
 async function sendEmail(templateId, params) {
   if (!EMAILJS_READY || !templateId || templateId.startsWith("PASTE")) {
@@ -512,7 +500,6 @@ async function sendEmail(templateId, params) {
     console.error("Email send failed (funnel continues):", e);
   }
 }
-
 /** Build a plain-text summary of the application for the rejection email. */
 function buildSummary() {
   const g = (id) => (document.getElementById(id)?.value || "").trim();
@@ -532,12 +519,10 @@ function buildSummary() {
     "Resume: " + g("q-resume"),
   ].join("\n");
 }
-
 /* ----------------------------- state ----------------------------- */
 let lang = "en";
 let appId = null;
 const picks = {}; // goodAtHome, experienceYears, backgroundCheck, availableMWF, comfortableDuties, hasReferences, englishLevel
-
 /* ------------------------- language toggle ----------------------- */
 window.setLang = (l) => {
   lang = l;
@@ -545,14 +530,12 @@ window.setLang = (l) => {
   document.getElementById("langEn").classList.toggle("active", l === "en");
   document.getElementById("langEs").classList.toggle("active", l === "es");
 };
-
 /* --------------------------- step engine ------------------------- */
 window.goStep = (name) => {
   document.querySelectorAll(".step").forEach((s) => s.classList.remove("active"));
   document.getElementById("step-" + name).classList.add("active");
   window.scrollTo({ top: 0, behavior: "instant" });
 };
-
 /* ------------------------- pick-row buttons ---------------------- */
 document.querySelectorAll("[data-pick]").forEach((row) => {
   const key = row.dataset.pick;
@@ -566,10 +549,14 @@ document.querySelectorAll("[data-pick]").forEach((row) => {
         alt.style.display = btn.dataset.val === "no" ? "block" : "none";
         alt.placeholder = lang === "es" ? "¿Qué horario te funciona mejor?" : "What schedule works best for you?";
       }
+      if (key === "heardAbout") {
+        const other = document.getElementById("q-heard-other");
+        other.style.display = btn.dataset.val === "Other" ? "block" : "none";
+        other.placeholder = lang === "es" ? "Cuéntanos dónde…" : "Tell us where…";
+      }
     });
   });
 });
-
 /* ------------------------- resume upload ------------------------- */
 const CLOUD_NAME = "da4p5qui8";
 const UPLOAD_PRESET = "HouseManager";
@@ -609,7 +596,6 @@ document.getElementById("q-resume-file").addEventListener("change", async (e) =>
     btnEn.textContent = "Upload file"; btnEs.textContent = "Subir archivo";
   }
 });
-
 /* --------------------------- validation -------------------------- */
 function showErr(id, msg) {
   const el = document.getElementById(id);
@@ -619,13 +605,23 @@ function showErr(id, msg) {
 }
 function hideErr(id) { document.getElementById(id).style.display = "none"; }
 const val = (id) => document.getElementById(id).value.trim();
-
-/* ZIP -> city/state via zippopotam.us. Fails soft (city/state just stay blank). */
-let zipInfo = { city: "", state: "" };
+/* ZIP -> city/state via zippopotam.us, used only to PRE-FILL the City/State
+   fields below. City and state are real form fields now (q-city/q-state) so
+   a slow or failed lookup can never silently submit a blank city/state —
+   the applicant sees the fields and can fill them in themselves. */
+let zipCoords = null;
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 async function lookupZip(z) {
-  zipInfo = { city: "", state: "" };
   const el = document.getElementById("zip-place");
   el.textContent = "";
+  zipCoords = null;
   if (!/^\d{5}$/.test(z)) return;
   try {
     const r = await fetch("https://api.zippopotam.us/us/" + z);
@@ -633,24 +629,35 @@ async function lookupZip(z) {
     const d = await r.json();
     const place = d.places && d.places[0];
     if (place) {
-      zipInfo = { city: place["place name"] || "", state: place["state abbreviation"] || "" };
-      el.textContent = zipInfo.city + ", " + zipInfo.state;
+      const city = place["place name"] || "";
+      const state = place["state abbreviation"] || "";
+      zipCoords = { lat: parseFloat(place["latitude"]), lng: parseFloat(place["longitude"]) };
+      el.textContent = city + ", " + state;
+      const cityEl = document.getElementById("q-city");
+      const stateEl = document.getElementById("q-state");
+      // Only auto-fill if the applicant hasn't already typed their own value.
+      if (!cityEl.value.trim()) cityEl.value = city;
+      if (!stateEl.value.trim()) stateEl.value = state;
     }
-  } catch (e) { /* soft fail */ }
+  } catch (e) { /* soft fail — city/state fields just stay whatever the applicant typed */ }
 }
 document.getElementById("q-zip").addEventListener("input", (e) => {
   const z = e.target.value.replace(/\D/g, "").slice(0, 5);
   e.target.value = z;
   if (z.length === 5) lookupZip(z);
-  else { zipInfo = { city: "", state: "" }; document.getElementById("zip-place").textContent = ""; }
+  else document.getElementById("zip-place").textContent = "";
 });
-
+document.getElementById("q-state").addEventListener("input", (e) => {
+  e.target.value = e.target.value.toUpperCase().slice(0, 2);
+});
 function validateForm() {
   const T = (en, es) => (lang === "es" ? es : en);
   if (!val("q-name")) return T("Please enter your full legal name (question 1).", "Por favor escribe tu nombre legal completo (pregunta 1).");
   if (!val("q-email") || !val("q-email").includes("@")) return T("Please enter a valid email (question 2).", "Por favor escribe un correo válido (pregunta 2).");
   if (!val("q-phone")) return T("Please enter your phone number (question 3).", "Por favor escribe tu teléfono (pregunta 3).");
   if (!/^\d{5}$/.test(val("q-zip"))) return T("Please enter your 5-digit home ZIP code (question 3b).", "Por favor escribe tu código postal de 5 dígitos (pregunta 3b).");
+  if (!val("q-city")) return T("Please enter your city (question 3c).", "Por favor escribe tu ciudad (pregunta 3c).");
+  if (!val("q-state")) return T("Please enter your state (question 3c).", "Por favor escribe tu estado (pregunta 3c).");
   if (!picks.goodAtHome) return T("Please answer question 4.", "Por favor responde la pregunta 4.");
   if (!picks.experienceYears) return T("Please answer question 5.", "Por favor responde la pregunta 5.");
   if (!val("q-expdesc")) return T("Please describe your experience (question 6).", "Por favor describe tu experiencia (pregunta 6).");
@@ -662,23 +669,31 @@ function validateForm() {
   if (!picks.hasReferences) return T("Please answer question 11.", "Por favor responde la pregunta 11.");
   if (!picks.englishLevel) return T("Please rate your English (question 12).", "Por favor califica tu inglés (pregunta 12).");
   if (!val("q-resume")) return T("Please upload your resume, paste a link, or type NA (question 13).", "Por favor sube tu currículum, pega un enlace, o escribe NA (pregunta 13).");
+  if (!picks.heardAbout) return T("Please tell us how you heard about us (question 14).", "Por favor dinos cómo te enteraste de nosotros (pregunta 14).");
+  if (picks.heardAbout === "Other" && !val("q-heard-other")) return T("Please tell us where you heard about us (question 14).", "Por favor dinos dónde te enteraste de nosotros (pregunta 14).");
   return null;
 }
-
 /* --------------------------- form submit ------------------------- */
 document.getElementById("submitFormBtn").addEventListener("click", async () => {
   hideErr("form-err");
   const v = validateForm();
   if (v) { showErr("form-err", v); return; }
+  // Distance from the residence (Brickell), estimated from the ZIP centroid
+  // with a road factor. Soft: if the lookup failed, no distance check happens.
+  let milesFromBrickell = null;
+  if (zipCoords) {
+    const straight = haversineMiles(25.7617, -80.1918, zipCoords.lat, zipCoords.lng);
+    milesFromBrickell = Math.round(straight * 1.3 * 10) / 10;
+  }
 
   const declineReasons = [];
+  if (milesFromBrickell !== null && milesFromBrickell > 20) declineReasons.push("Lives too far away (~" + milesFromBrickell + " mi drive) (Q3b)");
   if (picks.goodAtHome === "no") declineReasons.push("Not confident in core home skills (Q4)");
   if (picks.experienceYears === "0-3") declineReasons.push("Experience under 4 years (Q5)");
   if (picks.backgroundCheck === "no") declineReasons.push("No clean recent background check (Q7)");
   if (picks.hasReferences === "no") declineReasons.push("No references (Q11)");
   if (["1-2","3-4","5-6"].includes(picks.englishLevel)) declineReasons.push("English below 7 (Q12)");
   const status = declineReasons.length ? "declined" : "passed";
-
   const btn = document.getElementById("submitFormBtn");
   btn.disabled = true;
   try {
@@ -689,8 +704,8 @@ document.getElementById("submitFormBtn").addEventListener("click", async () => {
       email: val("q-email"),
       phone: val("q-phone"),
       zip: val("q-zip"),
-      city: zipInfo.city,
-      state: zipInfo.state,
+      city: val("q-city"),
+      state: val("q-state"),
       goodAtHome: picks.goodAtHome,
       experienceYears: picks.experienceYears,
       experienceDescription: val("q-expdesc"),
@@ -702,12 +717,13 @@ document.getElementById("submitFormBtn").addEventListener("click", async () => {
       hasReferences: picks.hasReferences,
       englishLevel: picks.englishLevel,
       resumeUrl: val("q-resume"),
+      heardAbout: picks.heardAbout === "Other" ? "Other: " + val("q-heard-other") : (picks.heardAbout || ""),
+      milesFromBrickell: milesFromBrickell,
       status,
       declineReasons,
       sourceLang: lang,
     });
     appId = ref.id;
-
     // Fire the appropriate email (non-blocking — funnel proceeds regardless)
     if (status === "declined") {
       sendEmail(EMAILJS_TEMPLATE_REJECT, {
@@ -723,7 +739,6 @@ document.getElementById("submitFormBtn").addEventListener("click", async () => {
         mike_phone: "+1 617-633-0544",
       });
     }
-
     goStep(status === "declined" ? "declined" : "references");
   } catch (err) {
     console.error(err);
@@ -731,7 +746,6 @@ document.getElementById("submitFormBtn").addEventListener("click", async () => {
     btn.disabled = false;
   }
 });
-
 /* ------------------------ references submit ---------------------- */
 function validateRefs() {
   const T = (en, es) => (lang === "es" ? es : en);
@@ -749,7 +763,6 @@ function validateRefs() {
   if (!val("q-linkedin")) return T("LinkedIn is required (type NA if you don't have one).", "LinkedIn es obligatorio (escribe NA si no tienes).");
   return null;
 }
-
 document.getElementById("submitRefsBtn").addEventListener("click", async () => {
   hideErr("refs-err");
   const v = validateRefs();
@@ -774,13 +787,12 @@ document.getElementById("submitRefsBtn").addEventListener("click", async () => {
     btn.disabled = false;
   }
 });
-
 /* ------------------------- completion click ---------------------- */
 document.getElementById("completeBtn").addEventListener("click", async () => {
   const btn = document.getElementById("completeBtn");
   const confirmMsg = lang === "es"
-    ? "Mike te enviará tu enlace de entrevista SOLO después de hablar con tus dos referencias y verificar que todo esté en orden.\n\n¿Ya enviaste los dos mensajes grupales al +1 617-633-0544?"
-    : "Mike will text you your interview link ONLY after he has spoken with both references and everything checks out.\n\nHave you already sent both group texts to +1 617-633-0544?";
+    ? "Mike te enviará tu enlace de entrevista SOLO después de hablar con tus dos referencias y verificar que todo esté en orden.\n\n¿Ya enviaste los dos mensajes grupales al +1 617-633-0544, comenzando cada uno con tu nombre completo?"
+    : "Mike will text you your interview link ONLY after he has spoken with both references and everything checks out.\n\nHave you already sent both group texts to +1 617-633-0544, starting each one with your full name?";
   if (!window.confirm(confirmMsg)) return;
   btn.disabled = true;
   try {
