@@ -2840,7 +2840,77 @@ function fmtSessTime(t) {
   return ((h % 12) || 12) + (m ? ':' + String(m).padStart(2,'0') : '') + ap;
 }
 
+window.editSession = async function(sid) {
+  const snap = await get(ref(db, 'sessions/' + sid));
+  const s = snap.val(); if (!s) return;
+  if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
+  window._editSid = sid;
+  // reuse the create form
+  window._pushNav('sessionCreate');
+  document.getElementById('sessionCreate').classList.remove('hidden');
+  // fill fields
+  document.getElementById('scTitle').value    = s.title || '';
+  document.getElementById('scLocation').value = s.location || '';
+  document.getElementById('scDate').value     = s.date || '';
+  document.getElementById('scStart').value    = s.startTime || '07:30';
+  document.getElementById('scEnd').value      = s.endTime   || '09:30';
+  document.getElementById('scSpots').value    = String(s.spots || 4);
+  document.getElementById('scLevel').value    = s.level || '';
+  document.getElementById('scNote').value     = s.note  || '';
+  scSetVis(s.visibility || 'public');
+  scSetRec(s.recurring || null);
+  renderScSuggestions();
+  // swap header + button
+  const hdr = document.querySelector('#sessionCreate [style*="text-transform:uppercase"]');
+  if (hdr) hdr.textContent = '✎ Edit Session';
+  const btn = document.querySelector('#sessionCreate button[onclick="createSession()"]');
+  if (btn) { btn.textContent = '💾 Save Changes'; btn.setAttribute('onclick','saveEditSession()'); }
+};
+window.saveEditSession = async function() {
+  const sid = window._editSid; if (!sid) return;
+  const dateV = document.getElementById('scDate').value;
+  const stV   = document.getElementById('scStart').value || '07:30';
+  let title = document.getElementById('scTitle').value.trim();
+  if (!title && dateV) {
+    const wd  = new Date(dateV + 'T12:00').toLocaleDateString('en-US', { weekday:'long' });
+    const hh  = parseInt(stV.split(':')[0]);
+    const tod = hh < 12 ? 'Morning' : hh < 17 ? 'Afternoon' : 'Evening';
+    title = wd + ' ' + tod + ' Pickleball';
+  }
+  if (!title) title = 'Pickleball Session';
+  if (!dateV) { alert('Pick a date!'); return; }
+  const spots = Math.max(2, Math.min(24, parseInt(document.getElementById('scSpots').value) || 4));
+  try {
+    await update(ref(db, 'sessions/' + sid), {
+      title,
+      location: document.getElementById('scLocation').value.trim(),
+      date: dateV,
+      startTime: stV,
+      endTime:   document.getElementById('scEnd').value || '09:30',
+      spots,
+      level:      document.getElementById('scLevel').value.trim() || null,
+      note:       document.getElementById('scNote').value.trim()  || null,
+      visibility: scVis,
+      recurring:  scRec,
+    });
+    window._editSid = null;
+    // reset button/header back to create state for next open
+    const btn = document.querySelector('#sessionCreate button[onclick="saveEditSession()"]');
+    if (btn) { btn.textContent = '🚀 Create Session'; btn.setAttribute('onclick','createSession()'); }
+    const hdr = document.querySelector('#sessionCreate [style*="text-transform:uppercase"]');
+    if (hdr) hdr.textContent = '➕ New Session';
+    document.getElementById('sessionCreate').classList.add('hidden');
+    openSessionDetail(sid);
+    copiedToast('✓ Session updated!');
+  } catch(e) { alert('Save failed: ' + (e.message||e)); }
+};
 window.openSessionCreate = function() {
+  window._editSid = null;
+  // ensure form is in create state (not edit state from a previous editSession call)
+  const btn = document.querySelector('#sessionCreate button[onclick="saveEditSession()"]');
+  if (btn) { btn.textContent = '🚀 Create Session'; btn.setAttribute('onclick','createSession()'); }
+  const hdr = document.querySelector('#sessionCreate [style*="text-transform:uppercase"]');
+  if (hdr) hdr.textContent = '➕ New Session';
   window._pushNav('sessionCreate');
   document.getElementById('sessionCreate').classList.remove('hidden');
   const d = new Date();
@@ -2963,6 +3033,7 @@ function renderSessionDetail(sid, s) {
     +(s.tournamentId?'<div onclick="joinLiveTournament(\''+s.tournamentId+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:12px;color:white;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,45,120,0.3);">🔴 TOURNAMENT IS LIVE — VIEW GAMES</div>':'')
     +(s.info?'<div onclick="jumpToInfo(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.35);border-radius:10px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📋 FULL DETAILS ↓</div>':'')
     +(s.ownerName?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organized by '+s.ownerName+'</div>':'')
+    +(isOwner?'<div onclick="editSession(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:7px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-weight:800;font-size:11px;letter-spacing:1px;">✎ EDIT SESSION</div>':'')
     +'</div>';
 
   h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">Roster · '+roster.length+'/'+spots+'</div>';
@@ -3131,6 +3202,18 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
       prof = snap.val();
     } catch(e) {}
   }
+  // admin contact info — fetch directly since roster entries don't carry phone/email
+  let adminContact = null;
+  if (uid && isAdmin()) {
+    try {
+      const psnap = await get(ref(db, 'users/' + uid + '/profile'));
+      const pv = psnap.val() || {};
+      // phone comes from auth record stored on profile or from the roster entry itself
+      const ph  = pv.phone  || null;
+      const em  = pv.email  || null;
+      if (ph || em) adminContact = { phone: ph, email: em };
+    } catch(e) {}
+  }
   // render
   let h = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">'
     +'<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:20px;color:#04060F;flex-shrink:0;">'
@@ -3155,6 +3238,13 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
     }
   } else {
     h += '<div style="color:var(--muted);font-size:13px;font-weight:600;text-align:center;padding:12px 0;">No profile details added yet</div>';
+  }
+  if (adminContact) {
+    h += '<div style="padding:10px 12px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.3);border-radius:10px;margin-bottom:8px;">'
+      +'<div style="font-size:9px;font-weight:800;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:6px;">🔒 Admin Only</div>';
+    if (adminContact.phone) h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><a href="tel:'+escInfo(adminContact.phone)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">📞 '+escInfo(adminContact.phone)+'</a></div>';
+    if (adminContact.email) h += '<div style="display:flex;align-items:center;gap:8px;"><a href="mailto:'+escInfo(adminContact.email)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">✉️ '+escInfo(adminContact.email)+'</a></div>';
+    h += '</div>';
   }
   // "View full stats" link for leaderboard cross-reference
   const safeNameForAttr = String(name).replace(/'/g, '\\x27');
@@ -5257,6 +5347,8 @@ function adEditPlayerByName(n){ if(window.adEditPlayerByName) window.adEditPlaye
 function openSessions()      { if(window.openSessions) window.openSessions(); }
 function openSessionCreate() { if(window.openSessionCreate) window.openSessionCreate(); }
 function createSession()     { if(window.createSession) window.createSession(); }
+function editSession(s)      { if(window.editSession) window.editSession(s); }
+function saveEditSession()   { if(window.saveEditSession) window.saveEditSession(); }
 function openSessionDetail(s){ if(window.openSessionDetail) window.openSessionDetail(s); }
 function closeSessionDetail(){ if(window.closeSessionDetail) window.closeSessionDetail(); }
 function claimSpot(s)        { if(window.claimSpot) window.claimSpot(s); }
@@ -5281,7 +5373,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-07.3';
+window.BUILD_TAG = 'v2026-08-07.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
