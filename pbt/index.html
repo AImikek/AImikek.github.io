@@ -221,6 +221,7 @@
 
   /* ── ROSTER PLAYER SHEET ── */
   #rosterPlayerSheet.hidden { display:none !important; }
+  #phoneLinkOverlay.hidden { display:none !important; }
 
   /* ── EVENT INFO EDITOR ── */
   #sessionInfoEdit { position:fixed; inset:0; z-index:460; background:rgba(4,6,15,0.95);
@@ -701,6 +702,37 @@
     <div style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center;">
       You can update this anytime in your profile
     </div>
+  </div>
+</div>
+
+<!-- PHONE LINK GATE (Google sign-ins must verify a phone) -->
+<div id="phoneLinkOverlay" class="hidden" style="position:fixed;inset:0;z-index:960;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:360px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:52px;margin-bottom:10px;">📱</div>
+      <div class="login-title" style="font-size:24px;">Verify Your Phone</div>
+      <div class="login-sub" style="margin-bottom:0;">Your phone number is your player ID — one number, one account. Takes 20 seconds.</div>
+    </div>
+    <div id="plStepPhone">
+      <input id="plPhoneInput" type="tel" placeholder="(305) 555-0100" autocomplete="tel" inputmode="tel"
+        style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:20px;font-weight:600;padding:15px 18px;outline:none;margin-bottom:12px;text-align:center;letter-spacing:2px;"
+        onkeydown="if(event.key==='Enter')plSendCode()">
+      <button id="plSendBtn" onclick="plSendCode()"
+        style="width:100%;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Send Code 📱</button>
+      <div style="margin-top:10px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5;">US numbers auto-formatted · +country code for international</div>
+    </div>
+    <div id="plStepCode" style="display:none;">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-align:center;margin-bottom:12px;">Enter the 6-digit code we texted you</div>
+      <input id="plCodeInput" type="number" placeholder="000000" inputmode="numeric"
+        style="width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:14px;color:var(--white);font-family:'Russo One',sans-serif;font-size:28px;font-weight:700;padding:14px 18px;outline:none;margin-bottom:12px;text-align:center;letter-spacing:8px;-moz-appearance:textfield;"
+        onkeydown="if(event.key==='Enter')plVerifyCode()">
+      <button id="plVerifyBtn" onclick="plVerifyCode()"
+        style="width:100%;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">Verify &amp; Link ✓</button>
+      <button onclick="plEditPhone()" style="width:100%;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">← Change number</button>
+    </div>
+    <div id="plError" style="display:none;margin-top:12px;padding:11px 13px;background:rgba(255,79,107,0.08);border:1px solid rgba(255,79,107,0.35);border-radius:10px;color:var(--danger);font-size:12.5px;font-weight:600;line-height:1.5;"></div>
+    <div id="plRecaptcha"></div>
+    <button onclick="plSignOut()" style="display:block;margin:18px auto 0;padding:8px 14px;background:transparent;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;">Sign out instead</button>
   </div>
 </div>
 
@@ -1368,11 +1400,12 @@ window.addEventListener('unhandledrejection', function(ev) {
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import {
   getAuth,
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  linkWithPhoneNumber,
   onAuthStateChanged,
   signOut,
   GoogleAuthProvider,
@@ -1501,6 +1534,12 @@ async function bootApp() {
     const histSnap = await get(ref(db, 'users/' + uid + '/history'));
     window._archivedTids = new Set(histSnap.exists() ? Object.keys(histSnap.val()) : []);
   } catch(e) { window._archivedTids = new Set(); }
+
+  // GATE: Google sign-ins must link a verified phone (phone = unique player ID)
+  const isGoogleUser = (currentUser.providerData || []).some(p => p.providerId === 'google.com');
+  if (isGoogleUser && !currentUser.phoneNumber) {
+    document.getElementById('phoneLinkOverlay').classList.remove('hidden');
+  }
 
   // Stamp auth contact into profile so it's always in Firebase (phone number = persistent ID)
   (async () => {
@@ -4648,6 +4687,74 @@ window.selectGender = function(g) {
   document.getElementById('gFemale').classList.toggle('active', g==='F');
 };
 
+window.plSendCode = async function() {
+  const raw = (document.getElementById('plPhoneInput').value || '').trim();
+  const errEl = document.getElementById('plError'); errEl.style.display = 'none';
+  if (!raw) { errEl.textContent = 'Enter your phone number'; errEl.style.display = 'block'; return; }
+  const digits = raw.replace(/\D/g, '');
+  const phone = raw.startsWith('+') ? raw : '+1' + digits;
+  if (digits.length < 10) { errEl.textContent = 'Enter a valid 10-digit number'; errEl.style.display = 'block'; return; }
+  const btn = document.getElementById('plSendBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    if (window._plRecaptcha) { try { window._plRecaptcha.clear(); } catch(e) {} window._plRecaptcha = null; }
+    window._plRecaptcha = new RecaptchaVerifier(auth, 'plRecaptcha', { size: 'invisible' });
+    window._plConfirm = await linkWithPhoneNumber(auth.currentUser, phone, window._plRecaptcha);
+    document.getElementById('plStepPhone').style.display = 'none';
+    document.getElementById('plStepCode').style.display = 'block';
+    setTimeout(() => { try { document.getElementById('plCodeInput').focus(); } catch(e) {} }, 200);
+  } catch(e) {
+    const code = e && e.code || '';
+    if (code === 'auth/credential-already-in-use' || code === 'auth/account-exists-with-different-credential') {
+      errEl.textContent = '📵 That number is already linked to another account. Sign out and log in with your phone number instead — that account is you.';
+    } else if (code === 'auth/invalid-phone-number') {
+      errEl.textContent = 'That number doesn\'t look valid — include area code (or +country code).';
+    } else if (code === 'auth/too-many-requests') {
+      errEl.textContent = 'Too many attempts — wait a couple minutes and try again.';
+    } else {
+      errEl.textContent = 'Couldn\'t send the code: ' + (e.message || e);
+    }
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Send Code 📱';
+};
+window.plVerifyCode = async function() {
+  const code = (document.getElementById('plCodeInput').value || '').trim();
+  const errEl = document.getElementById('plError'); errEl.style.display = 'none';
+  if (code.length < 6) { errEl.textContent = 'Enter the 6-digit code'; errEl.style.display = 'block'; return; }
+  const btn = document.getElementById('plVerifyBtn');
+  btn.disabled = true; btn.textContent = 'Verifying...';
+  try {
+    const res = await window._plConfirm.confirm(code);
+    const linkedPhone = (res && res.user && res.user.phoneNumber) || (auth.currentUser && auth.currentUser.phoneNumber) || null;
+    if (linkedPhone) {
+      try { await update(ref(db, 'users/' + currentUser.uid + '/profile'), { phone: linkedPhone }); } catch(e) {}
+    }
+    document.getElementById('phoneLinkOverlay').classList.add('hidden');
+    copiedToast('✓ Phone verified & linked!');
+  } catch(e) {
+    const code2 = e && e.code || '';
+    if (code2 === 'auth/invalid-verification-code') {
+      errEl.textContent = 'Wrong code — check the text and try again.';
+    } else if (code2 === 'auth/credential-already-in-use') {
+      errEl.textContent = '📵 That number is already linked to another account. Sign out and log in with your phone number instead.';
+    } else {
+      errEl.textContent = 'Verification failed: ' + (e.message || e);
+    }
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Verify & Link ✓';
+};
+window.plEditPhone = function() {
+  document.getElementById('plStepCode').style.display = 'none';
+  document.getElementById('plStepPhone').style.display = 'block';
+  document.getElementById('plError').style.display = 'none';
+};
+window.plSignOut = async function() {
+  try { await signOut(auth); } catch(e) {}
+  document.getElementById('phoneLinkOverlay').classList.add('hidden');
+};
+
 window.saveProfile = async function() {
   const name = document.getElementById('profileNameInput').value.trim();
   if (!name) { document.getElementById('profileNameInput').focus(); return; }
@@ -5288,6 +5395,10 @@ function signInGoogle() { if(window._signInGoogle) window._signInGoogle(); }
 function selectGender(g)    { if(window.selectGender) window.selectGender(g); }
 function editSelectGender(g){ if(window.editSelectGender) window.editSelectGender(g); }
 function saveProfile()      { if(window.saveProfile) window.saveProfile(); }
+function plSendCode()       { if(window.plSendCode) window.plSendCode(); }
+function plVerifyCode()     { if(window.plVerifyCode) window.plVerifyCode(); }
+function plEditPhone()      { if(window.plEditPhone) window.plEditPhone(); }
+function plSignOut()        { if(window.plSignOut) window.plSignOut(); }
 function openProfile()      { if(window.openProfile) window.openProfile(); }
 function closeProfile()     { if(window.closeProfile) window.closeProfile(); }
 function saveProfileEdits() { if(window.saveProfileEdits) window.saveProfileEdits(); }
@@ -5392,7 +5503,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-07.5';
+window.BUILD_TAG = 'v2026-08-08.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
