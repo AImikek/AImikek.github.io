@@ -1502,6 +1502,22 @@ async function bootApp() {
     window._archivedTids = new Set(histSnap.exists() ? Object.keys(histSnap.val()) : []);
   } catch(e) { window._archivedTids = new Set(); }
 
+  // Stamp auth contact into profile so it's always in Firebase (phone number = persistent ID)
+  (async () => {
+    try {
+      const authPhone = currentUser.phoneNumber || null;
+      const authEmail = currentUser.email || null;
+      if (authPhone || authEmail) {
+        const snap = await get(ref(db, 'users/' + uid + '/profile'));
+        const cur = snap.val() || {};
+        const updates = {};
+        if (authPhone && cur.phone !== authPhone) updates.phone = authPhone;
+        if (authEmail && cur.email !== authEmail) updates.email = authEmail;
+        if (Object.keys(updates).length) await update(ref(db, 'users/' + uid + '/profile'), updates);
+      }
+    } catch(e) {}
+  })();
+
   // Load profile — show onboarding if first time
   onValue(ref(db, 'users/' + uid + '/profile'), snap => {
     const wasNew = !userProfile.name;
@@ -3206,11 +3222,14 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
   let adminContact = null;
   if (uid && isAdmin()) {
     try {
-      const psnap = await get(ref(db, 'users/' + uid + '/profile'));
+      const [psnap, dsnap] = await Promise.all([
+        get(ref(db, 'users/' + uid + '/profile')),
+        get(ref(db, 'directory/' + uid))
+      ]);
       const pv = psnap.val() || {};
-      // phone comes from auth record stored on profile or from the roster entry itself
-      const ph  = pv.phone  || null;
-      const em  = pv.email  || null;
+      const dv = dsnap.val() || {};
+      const ph = pv.phone || dv.phone || null;
+      const em = pv.email || dv.email || null;
       if (ph || em) adminContact = { phone: ph, email: em };
     } catch(e) {}
   }
@@ -3242,8 +3261,8 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
   if (adminContact) {
     h += '<div style="padding:10px 12px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.3);border-radius:10px;margin-bottom:8px;">'
       +'<div style="font-size:9px;font-weight:800;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:6px;">🔒 Admin Only</div>';
-    if (adminContact.phone) h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><a href="tel:'+escInfo(adminContact.phone)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">📞 '+escInfo(adminContact.phone)+'</a></div>';
-    if (adminContact.email) h += '<div style="display:flex;align-items:center;gap:8px;"><a href="mailto:'+escInfo(adminContact.email)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">✉️ '+escInfo(adminContact.email)+'</a></div>';
+    if (adminContact.phone) h += '<div style="margin-bottom:4px;"><a href="tel:'+escInfo(adminContact.phone)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">📞 '+escInfo(adminContact.phone)+'</a></div>';
+    if (adminContact.email) h += '<div><a href="mailto:'+escInfo(adminContact.email)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">✉️ '+escInfo(adminContact.email)+'</a></div>';
     h += '</div>';
   }
   // "View full stats" link for leaderboard cross-reference
@@ -5373,7 +5392,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-07.4';
+window.BUILD_TAG = 'v2026-08-07.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
