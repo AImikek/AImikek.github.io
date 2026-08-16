@@ -1618,7 +1618,13 @@ async function bootApp() {
       setTimeout(() => copiedToast("🔴 Tournament is LIVE — you're in!"), 900);
       return;
     }
+    // Not live yet → the session page IS the destination. Load their tournament silently in the
+    // background (so nav badge / Games tab work), but do NOT let it render over the session view.
+    const _bgPtr = await get(ref(db, 'users/' + uid + '/activeTournamentId'));
+    if (_bgPtr.exists() && _bgPtr.val()) { skip = true; subscribeTournament(_bgPtr.val()); }
+    else { firstLoad = false; updateNav(); }
     setTimeout(() => { try { openSessionDetail(_sessParam); history.replaceState({}, '', window.location.pathname); } catch(e) {} }, 500);
+    return;
   }
   if (_pageParam) {
     setTimeout(() => { try {
@@ -1716,6 +1722,8 @@ function renderCurrent() {
 
 window.openSetup = window._openSetup = function() {
   window._fromSid = null;  // cleared unless startFromSession sets it right after
+  window._sessRoster = null;
+  const _sb = document.getElementById('sessRosterBanner'); if (_sb) _sb.style.display = 'none';
   window._pushNav('home');
   window.hideAllPages();
   if (window.resetBars) resetBars();
@@ -1783,6 +1791,11 @@ window.chooseFormat = function(m) {
     document.getElementById('tName').value = cfg.name || '';
     playType_ = cfg.playType || 'doubles';
     buildPFields(cfg.players || []);
+  } else if (window._sessRoster) {
+    // Coming from a session: roster + title pre-loaded regardless of format
+    document.getElementById('tName').value = window._sessRoster.name;
+    buildPFields(window._sessRoster.players);
+    updPCnt();
   } else {
     // Fresh: right-sized defaults (singles → 2 slots, doubles → 4)
     buildPFields(playType_ === 'singles' ? ['',''] : ['','','','']);
@@ -1886,7 +1899,7 @@ function _finalizeTournament() {
     : mode==='4p' ? make4PSchedule(players)
     : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players));
   cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null}; scores={};
-  window._fromSid = null;
+  window._fromSid = null; window._sessRoster = null;
   const tid = makeTid();
   activeTid = tid;
   set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
@@ -3536,11 +3549,21 @@ window.startFromSession = async function(sid) {
   document.getElementById('sessionsPage').classList.add('hidden');
   openSetup(true);
   window._fromSid = sid;  // carried into cfg so the tournament links back to Event Info
+  // Park the roster; land on the FORMAT picker so organizer chooses RR / Best 2 of 3 / Log
+  window._sessRoster = { name: s.title || 'Session', players: roster.map(r => r.name) };
   setPlayType('doubles');
-  chooseFormat('rr');
-  document.getElementById('tName').value = s.title || 'Session';
-  buildPFields(roster.map(r => r.name));
-  updPCnt();
+  document.getElementById('setupStep1').style.display = 'block';
+  document.getElementById('setupStep2').style.display = 'none';
+  // banner on step 1 so it's obvious the roster is loaded
+  let sb = document.getElementById('sessRosterBanner');
+  if (!sb) {
+    const step1 = document.getElementById('setupStep1');
+    sb = document.createElement('div'); sb.id = 'sessRosterBanner';
+    sb.style.cssText = 'margin:0 0 12px;padding:11px 14px;background:rgba(0,245,196,0.08);border:1px solid rgba(0,245,196,0.35);border-radius:12px;color:var(--aqua);font-weight:800;font-size:12.5px;';
+    step1.insertBefore(sb, step1.firstChild);
+  }
+  sb.textContent = '✅ ' + roster.length + ' players loaded from "' + (s.title || 'session') + '" — pick a format below';
+  sb.style.display = 'block';
 };
 
 window.scheduleNextWeek = async function(sid) {
@@ -5551,7 +5574,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-08.2';
+window.BUILD_TAG = 'v2026-08-08.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
