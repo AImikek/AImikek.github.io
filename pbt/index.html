@@ -224,6 +224,7 @@
 
   /* ── ROSTER PLAYER SHEET ── */
   #rosterPlayerSheet.hidden { display:none !important; }
+  #venueSheet.hidden { display:none !important; }
   #phoneLinkOverlay.hidden { display:none !important; }
 
   /* ── EVENT INFO EDITOR ── */
@@ -651,19 +652,22 @@
   </div>
 </div>
 
+<!-- VENUE SHEET (tap location on session) -->
+<div id="venueSheet" class="hidden" style="position:fixed;inset:0;z-index:585;display:flex;flex-direction:column;justify-content:flex-end;">
+  <div onclick="document.getElementById('venueSheet').classList.add('hidden')" style="position:absolute;inset:0;background:rgba(4,6,15,0.72);backdrop-filter:blur(6px);"></div>
+  <div style="position:relative;background:var(--card);border-radius:22px 22px 0 0;padding:22px 20px 40px;max-height:75vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;"></div>
+    <div id="venueContent"></div>
+  </div>
+</div>
+
 <!-- EVENT INFO EDITOR (session owner/admin) -->
 <div id="sessionInfoEdit" class="hidden">
   <div class="modal" style="max-width:520px;">
     <div class="mtitle">📋 Event Info</div>
-    <div class="msub">Everything players need — format, rules, parking. Shows on this session's page.</div>
-    <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;">
-      💡 Start a line with <span style="color:var(--cyan);font-weight:800;">##&nbsp;</span>to make a tappable section (e.g. <span style="color:var(--cyan);">## Parking</span>). Links become tappable automatically.
-    </div>
-    <button onclick="insertInfoTemplate()" style="width:100%;padding:10px;background:transparent;
-      border:1px dashed rgba(0,240,255,0.3);color:var(--cyan);border-radius:10px;
-      font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;
-      cursor:pointer;margin-bottom:10px;">📋 Insert Template</button>
-    <textarea id="siText" placeholder="## Format&#10;Round robin, rally scoring to 21...&#10;&#10;## Parking&#10;Free valet or guest parking down the ramp..."></textarea>
+    <div class="msub">Fill in what applies — leave the rest blank. Tap a chip to drop in common wording.</div>
+    <div id="siSections"></div>
+    <textarea id="siText" style="display:none;"></textarea>
     <button onclick="saveSessionInfo()"
       style="width:100%;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));
       color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;
@@ -2854,7 +2858,7 @@ window.hideAllPages = function() {
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
    'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
    'adPlayerModal','adCourtModal','qrOverlay','quickStartPage','courtsPage','courtSubmit',
-   'sessionInfoEdit','rosterPlayerSheet'].forEach(id => {
+   'sessionInfoEdit','rosterPlayerSheet','venueSheet'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -3074,7 +3078,10 @@ function renderScSuggestions() {
   if (locBox) {
     const q = (document.getElementById('scLocation').value || '').trim().toLowerCase();
     const chip = (name, style) => '<span onclick="document.getElementById(\'scLocation\').value=\''+name.replace(/'/g,'')+'\';renderScSuggestions();" style="cursor:pointer;padding:6px 11px;border-radius:99px;font-size:11px;font-weight:700;'+style+'">'+name.split('(')[0].trim()+'</span>';
-    const mine = window._myVenues.filter(v => !q || v.toLowerCase().includes(q));
+    // canonicalize: a venue that's a shorthand of a known court ("Woodside" → "Woodside Park") shows once, as the court
+    const canon = (v) => { const lv = v.toLowerCase().trim(); const hit = COURTS.find(c => { const lc = c.n.toLowerCase(); return lc === lv || lc.startsWith(lv + ' ') || lv.startsWith(lc + ' '); }); return hit ? hit.n : v; };
+    const seenV = new Set();
+    const mine = window._myVenues.map(canon).filter(v => { const k = v.toLowerCase(); if (seenV.has(k)) return false; seenV.add(k); return true; }).filter(v => !q || v.toLowerCase().includes(q));
     let courts = COURTS.slice();
     if (courtUserLoc) courts.sort((a,b) => (courtDist(a) ?? 999) - (courtDist(b) ?? 999));
     const mineLower = new Set(mine.map(v=>v.toLowerCase()));
@@ -3174,13 +3181,13 @@ function renderSessionDetail(sid, s) {
   let h = '<div style="padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:14px;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:20px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' <span style="font-size:12px;color:var(--cyan);">🔁 weekly</span>':'')+'</div>'
     +'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:6px;">📅 '+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+'</div>'
-    +(s.location?'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:2px;">📍 '+s.location+'</div>':'')
+    +(s.location?'<div onclick="openVenueSheet(\''+sid+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--cyan);font-weight:700;margin-top:4px;text-decoration:underline;text-decoration-color:rgba(0,240,255,0.35);text-underline-offset:3px;">📍 '+s.location+' <span style="font-size:11px;opacity:0.7;">›</span></div>':'')
     +(s.level?'<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-top:2px;">🎚 Level '+s.level+'</div>':'')
     +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+(isOwner?' <span onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;color:var(--cyan);font-size:12px;margin-left:6px;">✎ edit</span>':'')+'</div>':(isOwner?'<div onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;font-size:12px;color:var(--cyan);font-weight:700;margin-top:8px;">➕ Add a note for the group</div>':''))
     +(s.tournamentId?'<div onclick="joinLiveTournament(\''+s.tournamentId+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:12px;color:white;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,45,120,0.3);">🔴 TOURNAMENT IS LIVE — VIEW GAMES</div>':'')
     +(s.info?'<div onclick="jumpToInfo(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.35);border-radius:10px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📋 FULL DETAILS ↓</div>':'')
     +(s.ownerName?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organized by '+s.ownerName+'</div>':'')
-    +(isOwner?'<div onclick="editSession(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:7px 13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-weight:800;font-size:11px;letter-spacing:1px;">✎ EDIT SESSION</div>':'')
+    +(isOwner?'<div onclick="editSession(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.4);border-radius:10px;color:var(--cyan);font-weight:800;font-size:11px;letter-spacing:1px;">✎ EDIT SESSION</div>':'')
     +'</div>';
 
   h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">Roster · '+roster.length+'/'+spots+'</div>';
@@ -3307,34 +3314,102 @@ window.toggleInfoSec = function(k) {
   if (b) b.style.display = window._infoOpen[k] ? '' : 'none';
   if (a) a.style.transform = window._infoOpen[k] ? 'rotate(90deg)' : '';
 };
+// Structured Event Info: fixed categories, each a textarea + quick-fill chips.
+// Stored as the same "## Section" text so display + old sessions keep working.
+const SI_SECTIONS = [
+  { key:'intro',   title:'',                    label:'👋 Welcome note (always visible at top)', ph:'e.g. Welcome! Tap a section below for details 🏓', chips:['Welcome! Everything you need is below — tap a section to open it. 🏓','We start SHARP — please be on time!'] },
+  { key:'format',  title:'Format',              label:'🎾 Format', ph:'Round robin? Rally scoring? How are winners decided?', chips:['Round robin — randomized partners, no repeats','Rally scoring to 21 (no win by 2)','Ranked by TOTAL points — don\'t get blown out!','Log your score in the app after each game','Best 2 out of 3 per matchup'] },
+  { key:'finals',  title:'Finals',              label:'🏆 Finals', ph:'Optional — how do finals work?', chips:['Top 4 by points: 1&4 vs 2&3 — championship game!','Next 4: 5&8 vs 6&7','Finals are optional if people need to head home'] },
+  { key:'address', title:'Address & Parking',   label:'📍 Address & Parking', ph:'Address · unit / buzz · who to text · where to park', chips:['📍 Address: ','🏢 Unit / Buzz: ','📞 Contact: ','🚗 Parking: Free valet (tip) — or guest parking down the ramp','🚗 Parking: Free street parking','⏰ Arrive 15 minutes early — we start SHARP'] },
+  { key:'bring',   title:'What to Bring',       label:'🎒 What to Bring', ph:'Balls, water, etc.', chips:['2 balls','Water — no fountain at the courts','Paddle + a backup if you have one','Sunscreen / hat'] },
+  { key:'rules',   title:'House Rules',         label:'📜 House Rules', ph:'Expectations for the group', chips:['Please stay until the end — leaving early disrupts the rotation','Can\'t make it? Tap "I\'m out" so your spot opens up. ALSO notify the group chat and help find a replacement if there\'s no waitlist — we need at least 8 to play!','Send this page\'s link to same-level friends to fill your spot','Switch sides at 11 points'] },
+  { key:'other',   title:'Other',               label:'➕ Anything else', ph:'Optional', chips:[] },
+];
+function siParse(info) {
+  const out = {}; SI_SECTIONS.forEach(s => out[s.key] = '');
+  const extra = [];
+  const lines = String(info || '').split('\n'); let cur = 'intro', curTitle = null;
+  lines.forEach(line => {
+    if (line.trim().startsWith('## ')) {
+      curTitle = line.trim().slice(3).trim();
+      const lt = curTitle.toLowerCase();
+      const hit = SI_SECTIONS.find(s => s.title && (s.title.toLowerCase() === lt
+        || (s.key==='address' && (lt.includes('address') || lt.includes('parking') || lt.includes('arrival')))
+        || (s.key==='bring' && lt.includes('bring'))
+        || (s.key==='rules' && lt.includes('rule'))
+        || (s.key==='format' && lt.includes('format'))
+        || (s.key==='finals' && lt.includes('final'))));
+      if (hit) { cur = hit.key; }
+      else { cur = 'other'; extra.push('## ' + curTitle); }
+      return;
+    }
+    if (cur === 'other' && extra.length) { extra.push(line); return; }
+    out[cur] += (out[cur] ? '\n' : '') + line;
+  });
+  if (extra.length) out.other = (out.other ? out.other + '\n' : '') + extra.join('\n');
+  Object.keys(out).forEach(k => out[k] = out[k].trim());
+  return out;
+}
+function siAssemble() {
+  let parts = [];
+  SI_SECTIONS.forEach(s => {
+    const el = document.getElementById('si_' + s.key); if (!el) return;
+    const v = (el.value || '').trim(); if (!v) return;
+    if (s.key === 'intro') { parts.push(v); return; }
+    if (s.key === 'other') { parts.push(v.startsWith('## ') ? v : '## Other\n' + v); return; }
+    parts.push('## ' + s.title + '\n' + v);
+  });
+  return parts.join('\n\n').trim();
+}
+window.siChip = function(key, text) {
+  const el = document.getElementById('si_' + key); if (!el) return;
+  const cur = el.value.trim();
+  const line = (key === 'intro' || key === 'address' || text.endsWith(': ')) ? text : '- ' + text;
+  el.value = cur ? cur + '\n' + line : line;
+  el.focus();
+  try { el.setSelectionRange(el.value.length, el.value.length); } catch(e) {}
+  window.siAutoGrow(el);
+};
+window.siAutoGrow = function(el) { el.style.height = 'auto'; el.style.height = Math.min(320, Math.max(64, el.scrollHeight)) + 'px'; };
 window.editSessionInfo = async function(sid) {
   const snap = await get(ref(db, 'sessions/' + sid));
   const s = snap.val(); if (!s) return;
   if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
   window._siSid = sid;
-  const ta = document.getElementById('siText');
-  if (ta) ta.value = s.info || '';
+  const vals = siParse(s.info || '');
+  const box = document.getElementById('siSections');
+  box.innerHTML = SI_SECTIONS.map(sec => {
+    const chips = sec.chips.map(c => '<span onclick="siChip(\''+sec.key+'\',\''+c.replace(/\\/g,'\\\\').replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'\')" style="cursor:pointer;display:inline-block;padding:5px 10px;margin:0 6px 6px 0;background:var(--surface2);border:1px solid rgba(0,240,255,0.25);color:var(--cyan);border-radius:99px;font-size:11px;font-weight:700;">+ '+escInfo(c.length>44?c.slice(0,42)+'…':c)+'</span>').join('');
+    return '<div style="margin-bottom:14px;">'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1.5px;color:var(--white);text-transform:uppercase;margin-bottom:6px;">'+sec.label+'</div>'
+      +'<textarea id="si_'+sec.key+'" placeholder="'+sec.ph.replace(/"/g,'&quot;')+'" oninput="siAutoGrow(this)" style="width:100%;min-height:64px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--white);font-family:\'DM Sans\',sans-serif;font-size:15px;font-weight:500;line-height:1.45;resize:none;">'+escInfo(vals[sec.key]||'')+'</textarea>'
+      +(chips?'<div style="margin-top:6px;">'+chips+'</div>':'')
+      +'</div>';
+  }).join('');
   document.getElementById('sessionInfoEdit').classList.remove('hidden');
+  setTimeout(() => box.querySelectorAll('textarea').forEach(t => window.siAutoGrow(t)), 30);
 };
 window.saveSessionInfo = async function() {
   const sid = window._siSid; if (!sid) return;
-  const ta = document.getElementById('siText');
-  try { ta.blur(); } catch(e) {}
+  try { document.activeElement && document.activeElement.blur(); } catch(e) {}
+  const text = siAssemble();
   try {
-    await set(ref(db, 'sessions/' + sid + '/info'), (ta.value || '').trim() || null);
+    await set(ref(db, 'sessions/' + sid + '/info'), text || null);
     document.getElementById('sessionInfoEdit').classList.add('hidden');
     copiedToast('✓ Event Info Saved!');
   } catch(e) { alert('Could not save: ' + (e.message||e)); }
 };
 window.insertInfoTemplate = function() {
   const ta = document.getElementById('siText'); if (!ta) return;
-  if (ta.value.trim() && !confirm('Replace what you\'ve written with the template?')) return;
   ta.value = 'Welcome! Everything you need to know is below — tap a section to open it. 🏓\n\n'
     + '## Format\n- Round robin — randomized partners, you won\'t partner the same player twice\n- Rally scoring to 21 (no win by 2)\n- Rankings by TOTAL points — don\'t get blown out!\n- After each match, log your score in the app\n\n'
     + '## Finals\nTop 4 by points: 1&4 vs 2&3 — championship game!\nNext 4: 5&8 vs 6&7\n\n'
     + '## What to Bring\n- 2 balls\n- Water — check if there\'s a fountain at the courts\n\n'
     + '## Address & Parking\n📍 Address: 1901 Brickell Ave, Miami, FL\n🏢 Unit / Buzz: Unit B 908 (tell the guard you\'re visiting Patrick)\n📞 Contact: Patrick +1 (305) 975-3709\n🚗 Parking: Free valet (tip) — or take the ramp on the left to guest parking\n⏰ Arrive 15 minutes early — we start SHARP.\n\n'
     + '## House Rules\n- Please stay until the end — leaving early disrupts the rotation\n- Can\'t make it? Tap "I\'m out" on this page so your spot opens up. ALSO notify the group chat and help find a replacement if there\'s no waitlist — this is extremely important, we need at least 8 to play!\n- Send this page\'s link to same-level friends to fill your spot';
+  // mirror into the structured fields if the editor is open
+  const vals = siParse(ta.value);
+  SI_SECTIONS.forEach(s => { const el = document.getElementById('si_' + s.key); if (el) { el.value = vals[s.key] || ''; window.siAutoGrow(el); } });
 };
 
 window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
@@ -3407,6 +3482,42 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
   const safeNameForAttr = String(name).replace(/'/g, '\\x27');
   h += '<div onclick="closeRosterPlayerSheet();openPlayerDetail(\'' + safeNameForAttr + '\')" style="cursor:pointer;text-align:center;margin-top:4px;padding:11px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.25);border-radius:12px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📊 VIEW GAME HISTORY →</div>';
   el.innerHTML = h;
+};
+window.openVenueSheet = async function(sid) {
+  const snap = await get(ref(db, 'sessions/' + sid));
+  const s = snap.val(); if (!s || !s.location) return;
+  const el = document.getElementById('venueContent'); if (!el) return;
+  const loc = s.location.trim(); const lv = loc.toLowerCase();
+  const court = COURTS.find(c => { const lc = c.n.toLowerCase(); return lc === lv || lc.startsWith(lv + ' ') || lv.startsWith(lc + ' '); }) || null;
+  const row = (icon, label, val) => (val && String(val).trim().toLowerCase() !== label.toLowerCase()) ? '<div style="display:flex;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;align-items:flex-start;">'
+    +'<span style="font-size:15px;flex-shrink:0;">'+icon+'</span><div><div style="font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;">'+label+'</div><div style="font-size:14px;font-weight:700;color:var(--white);">'+val+'</div></div></div>' : '';
+  // pull the "Address & Parking" section (or "Parking") out of Event Info, if the organizer wrote one
+  let infoBlock = '';
+  if (s.info) {
+    const lines = String(s.info).split('\n'); let cur = null, buf = [];
+    lines.forEach(line => { if (line.trim().startsWith('## ')) { cur = line.trim().slice(3).toLowerCase(); } else if (cur && (cur.includes('address') || cur.includes('parking') || cur.includes('arrival') || cur.includes('venue'))) buf.push(line); });
+    const t = buf.join('\n').trim();
+    if (t) infoBlock = '<div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:12px 0 6px;">📋 From the organizer</div><div class="info-sec-body" style="padding:6px 2px 4px;">'+infoBody(t)+'</div>';
+  }
+  const q = encodeURIComponent(court ? (court.n + ' ' + (court.a||'') + ' ' + (court.c||'')) : loc + ' Miami FL');
+  const mapsBtn = '<a href="https://maps.apple.com/?q='+q+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;margin-top:6px;">🗺 Open in Maps</a>'
+    + '<a href="https://www.google.com/maps/search/?api=1&query='+q+'" target="_blank" rel="noopener" style="display:block;text-align:center;padding:10px;color:var(--muted);font-size:12px;font-weight:700;text-decoration:underline;margin-top:4px;">Google Maps instead</a>';
+  let h = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><div style="font-size:30px;">📍</div><div><div style="font-family:\'Russo One\',sans-serif;font-size:19px;color:var(--white);">'+escInfo(court ? court.n : loc)+'</div>'
+    +(court&&court.c?'<div style="font-size:12px;color:var(--muted);font-weight:600;">'+escInfo(court.c)+(court.z?' '+escInfo(court.z):'')+'</div>':'')+'</div></div>';
+  if (court) {
+    h += row('🏠','Address', escInfo((court.a||'')+(court.c?', '+court.c:'')+(court.z?' '+court.z:'')));
+    h += row('🏟','Courts', escInfo(court.ct||''));
+    h += row('🕐','Hours', escInfo(court.h||''));
+    h += row('💡','Lights', escInfo(court.l||''));
+    h += row('💵','Cost', escInfo(court.p||''));
+    h += row('🌤','Type', escInfo(court.io||''));
+    if (court.u) h += '<a href="'+escInfo(court.u)+'" target="_blank" rel="noopener" style="display:block;font-size:12px;color:var(--cyan);font-weight:700;margin:2px 0 6px;">🔗 Court info page</a>';
+  } else {
+    h += '<div style="color:var(--muted);font-size:13px;font-weight:600;margin-bottom:6px;">Not one of the listed public courts — check the organizer\'s notes below for the address.</div>';
+  }
+  h += infoBlock + mapsBtn;
+  el.innerHTML = h;
+  document.getElementById('venueSheet').classList.remove('hidden');
 };
 window.closeRosterPlayerSheet = function() {
   document.getElementById('rosterPlayerSheet').classList.add('hidden');
@@ -5613,7 +5724,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-09.1';
+window.BUILD_TAG = 'v2026-08-09.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -5656,6 +5767,9 @@ function editSessionInfo(s)  { if(window.editSessionInfo) window.editSessionInfo
 function saveSessionInfo()   { if(window.saveSessionInfo) window.saveSessionInfo(); }
 function insertInfoTemplate(){ if(window.insertInfoTemplate) window.insertInfoTemplate(); }
 function toggleInfoSec(k)    { if(window.toggleInfoSec) window.toggleInfoSec(k); }
+function siChip(k,t)         { if(window.siChip) window.siChip(k,t); }
+function siAutoGrow(el)      { if(window.siAutoGrow) window.siAutoGrow(el); }
+function openVenueSheet(s)   { if(window.openVenueSheet) window.openVenueSheet(s); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 function adApproveCourt(i)   { if(window.adApproveCourt) window.adApproveCourt(i); }
 function adRejectCourt(i)    { if(window.adRejectCourt) window.adRejectCourt(i); }
