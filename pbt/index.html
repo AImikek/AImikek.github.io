@@ -118,16 +118,19 @@
   .rhdr { font-family:'Russo One',sans-serif; font-size:13px; letter-spacing:4px;
     color:var(--muted); text-transform:uppercase; padding:8px 0 5px;
     border-bottom:1px solid var(--border); margin-bottom:12px; margin-top:8px; }
-  .gcard { background:var(--surface); border:1px solid var(--border); border-radius:16px;
-    margin-bottom:12px; overflow:hidden; }
+  .gcard { background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    margin-bottom:8px; overflow:hidden; }
   .gcard.done { border-color:rgba(0,240,255,0.35); }
-  .ghdr { display:flex; justify-content:space-between; align-items:center; padding:9px 14px;
+  .gcard.done .sinput { height:48px; font-size:28px !important; width:76px; }
+  .gcard.done .gbody { padding:8px 12px 8px; }
+  .gcard.done .matchup { margin-bottom:6px; }
+  .ghdr { display:flex; justify-content:space-between; align-items:center; padding:6px 12px;
     background:linear-gradient(90deg,rgba(0,144,255,0.1),transparent); border-bottom:1px solid var(--border); }
   .glbl { font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:2px;
     color:var(--cyan); text-transform:uppercase; }
-  .gbody { padding:14px; }
-  .matchup { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
-  .team { flex:1; font-family:'Exo 2',sans-serif; font-size:16px; font-weight:900;
+  .gbody { padding:10px 12px 10px; }
+  .matchup { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .team { flex:1; font-family:'Exo 2',sans-serif; font-size:15px; font-weight:900;
     line-height:1.2; text-transform:uppercase; }
   .team.r { text-align:right; }
   .vs { font-family:'Russo One',sans-serif; font-size:11px; letter-spacing:2px; color:var(--muted); }
@@ -136,15 +139,15 @@
     color:var(--white); padding:2px 7px; border-radius:4px; text-transform:uppercase;
     margin-left:4px; vertical-align:middle; }
   .srow { display:flex; align-items:center; gap:12px; justify-content:center; }
-  .sinput { width:112px; height:92px; background:var(--surface2); border:2px solid var(--border);
-    border-radius:16px; color:var(--white); font-family:'Russo One',sans-serif; font-size:56px !important;
+  .sinput { width:88px; height:64px; background:var(--surface2); border:2px solid var(--border);
+    border-radius:14px; color:var(--white); font-family:'Russo One',sans-serif; font-size:40px !important;
     text-align:center; outline:none; transition:border-color 0.2s; -moz-appearance:textfield; }
   .sinput::-webkit-inner-spin-button,.sinput::-webkit-outer-spin-button { -webkit-appearance:none; }
   .sinput:focus { border-color:var(--cyan); box-shadow:0 0 0 3px rgba(0,240,255,0.12); }
   .sdash { color:var(--muted); font-size:24px; font-family:'Russo One',sans-serif; }
-  .savebtn { display:block; width:100%; margin-top:14px; padding:15px;
+  .savebtn { display:block; width:100%; margin-top:10px; padding:11px;
     background:linear-gradient(135deg,var(--pink),var(--purple)); color:var(--white);
-    border:none; border-radius:12px; font-family:'Russo One',sans-serif; font-size:18px;
+    border:none; border-radius:12px; font-family:'Russo One',sans-serif; font-size:15px;
     letter-spacing:2px; text-transform:uppercase; cursor:pointer;
     box-shadow:0 4px 16px rgba(255,45,120,0.3); transition:all 0.2s; }
   .savebtn:hover { opacity:0.9; }
@@ -1108,7 +1111,7 @@
       <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;">➕ New Session</div>
     </div>
     <label class="flabel">Location</label>
-    <input class="finput" id="scLocation" placeholder="Woodside Courts">
+    <input class="finput" id="scLocation" placeholder="Woodside Park, Brickell Place…" oninput="scLocTyped()" autocomplete="off">
     <div id="scLocSuggest" style="display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 12px;"></div>
     <label class="flabel">Date</label>
     <input class="finput" id="scDate" type="date">
@@ -2209,7 +2212,7 @@ window.deleteFeedback = async function(id) {
 };
 
 // ── LEADERBOARD ──
-let lbTime = 'all', lbSort = 'avg', lbData = null, lbType = 'doubles';
+let lbTime = '30', lbSort = 'avg', lbData = null, lbType = 'doubles';
 const LB_MIN_GAMES = 3;
 
 window.openLeaderboard = async function() {
@@ -2298,18 +2301,18 @@ async function loadLeaderboardData() {
 
 window.renderLeaderboard = function() {
   if (!lbData) return;
-  const cutoff = 0;
+  const cutoff = lbTime==='all' ? 0 : Date.now() - (parseInt(lbTime,10) * 86400000);
   const cityFilter = '';
 
-  // Type toggle (time/city filters still hidden)
   const tr = document.getElementById('lbTimeRow');
   tr.style.display = '';
   tr.innerHTML = [['doubles','👥 Doubles'],['singles','🙋 Singles']].map(([v,l]) =>
     '<button class="rtbtn'+(lbType===v?' active':'')+'" onclick="setLbType(\''+v+'\')">'+l+'</button>').join('');
   document.getElementById('lbCity').parentElement.style.display = 'none';
+  // rolling window — recomputes every time it renders, so "30 days" is always today minus 30
   document.getElementById('lbSortRow').innerHTML =
-    [['avg','Avg Diff'],['wins','Wins'],['pts','Points']].map(([v,l]) =>
-      '<button class="rtbtn'+(lbSort===v?' active':'')+'" onclick="setLbSort(\''+v+'\')">'+l+'</button>').join('');
+    [['7','7 Days'],['30','30 Days'],['all','All Time']].map(([v,l]) =>
+      '<button class="rtbtn'+(lbTime===v?' active':'')+'" onclick="setLbTime(\''+v+'\')">'+l+'</button>').join('');
 
   // Aggregate
   const stats = {};
@@ -2337,8 +2340,11 @@ window.renderLeaderboard = function() {
 
   const qualified = list.filter(p => p.games >= LB_MIN_GAMES);
   const unqualified = list.filter(p => p.games < LB_MIN_GAMES);
+  const wp = p => p.games ? p.wins/p.games : 0;
   const sortFn = lbSort==='wins' ? (a,b)=>b.wins-a.wins||b.avgDiff-a.avgDiff
     : lbSort==='pts' ? (a,b)=>b.ptsFor-a.ptsFor||b.avgDiff-a.avgDiff
+    : lbSort==='pct' ? (a,b)=>wp(b)-wp(a)||b.avgDiff-a.avgDiff
+    : lbSort==='games' ? (a,b)=>b.games-a.games||b.avgDiff-a.avgDiff
     : (a,b)=>b.avgDiff-a.avgDiff||b.wins-a.wins;
   qualified.sort(sortFn);
   unqualified.sort((a,b)=>b.games-a.games);
@@ -2348,22 +2354,24 @@ window.renderLeaderboard = function() {
   if (!qualified.length && !unqualified.length) {
     h = '<div class="empty"><div class="empty-icon">🏆</div><div class="empty-t">No Games Yet</div><div style="color:var(--muted);font-size:13px;font-weight:600;margin-top:8px;">Play some games and the leaderboard comes alive!</div></div>';
   } else {
-    h += '<table class="stbl"><thead><tr><th></th><th>Player</th><th>W-L</th><th>W%</th><th>G</th><th>'+(lbSort==='pts'?'Pts':'Avg')+'</th></tr></thead><tbody>';
+    const th = (key, label) => '<th onclick="setLbSort(\''+key+'\')" style="cursor:pointer;white-space:nowrap;'+(lbSort===key?'color:var(--cyan);border-bottom:2px solid var(--cyan);':'')+'">'+label+(lbSort===key?' ▾':'')+'</th>';
+    h += '<table class="stbl"><thead><tr><th></th><th>Player</th>'+th('wins','W-L')+th('pct','W%')+th('games','G')+th('pts','Pts')+th('avg','Avg')+'</tr></thead><tbody>';
     qualified.forEach((p, i) => {
       const isMe = p.name.toLowerCase() === myName;
       const medal = i===0?'👑':i===1?'🥈':i===2?'🥉':(i+1);
       const streakBadge = p.streak >= 3 ? ' <span style="font-size:11px;">🔥'+p.streak+'</span>' : '';
       const gap = i>0 && lbSort==='avg' ? '<div style="font-size:10px;color:var(--muted);font-weight:600;">'+(qualified[i-1].avgDiff - p.avgDiff).toFixed(1)+' behind '+qualified[i-1].name+'</div>' : '';
-      const metric = lbSort==='pts' ? '<span class="ptsf">'+p.ptsFor+'</span>'
-        : '<span class="'+(p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'')+'">'+(p.avgDiff>=0?'+':'')+p.avgDiff.toFixed(1)+'</span>';
+      const metricAvg = '<span class="'+(p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'')+'">'+(p.avgDiff>=0?'+':'')+p.avgDiff.toFixed(1)+'</span>';
+      const hl = (k) => lbSort===k ? 'background:rgba(0,240,255,0.07);font-weight:800;' : '';
       h += '<tr onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;'+(isMe?'background:rgba(0,240,255,0.07);box-shadow:inset 3px 0 0 var(--cyan);':'')+'">'
         +'<td style="font-size:'+(i<3?'18':'14')+'px;">'+medal+'</td>'
         +'<td><span class="pname">'+p.name+'</span>'+streakBadge
         +(p.city?'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+p.city+'</div>':'')+gap+'</td>'
-        +'<td>'+p.wins+'-'+p.losses+'</td>'
-        +'<td style="font-weight:800;color:'+(p.games&&p.wins/p.games>=0.5?'var(--aqua)':'var(--muted)')+';">'+(p.games?Math.round(100*p.wins/p.games):0)+'%</td>'
-        +'<td style="color:var(--muted);">'+p.games+'</td>'
-        +'<td>'+metric+'</td></tr>';
+        +'<td style="'+hl('wins')+'">'+p.wins+'-'+p.losses+'</td>'
+        +'<td style="font-weight:800;color:'+(p.games&&p.wins/p.games>=0.5?'var(--aqua)':'var(--muted)')+';'+hl('pct')+'">'+(p.games?Math.round(100*p.wins/p.games):0)+'%</td>'
+        +'<td style="color:var(--muted);'+hl('games')+'">'+p.games+'</td>'
+        +'<td style="'+hl('pts')+'"><span class="ptsf">'+p.ptsFor+'</span></td>'
+        +'<td style="'+hl('avg')+'">'+metricAvg+'</td></tr>';
     });
     h += '</tbody></table>';
     if (unqualified.length) {
@@ -2376,7 +2384,7 @@ window.renderLeaderboard = function() {
       });
     }
     if (qualified.length) {
-      h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(lbType==='singles'?'Singles':'Doubles')+' champ · min '+LB_MIN_GAMES+' games to rank</div>';
+      h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(lbType==='singles'?'Singles':'Doubles')+' champ · '+(lbTime==='all'?'all time':'last '+lbTime+' days')+' · min '+LB_MIN_GAMES+' games to rank</div>';
     }
   }
   document.getElementById('lbContent').innerHTML = h;
@@ -2945,6 +2953,7 @@ window.editSession = async function(sid) {
   const s = snap.val(); if (!s) return;
   if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
   window._editSid = sid;
+  loadMyVenues().then(() => renderScSuggestions());
   // reuse the create form
   window._pushNav('sessionCreate');
   document.getElementById('sessionCreate').classList.remove('hidden');
@@ -3021,6 +3030,7 @@ window.saveEditSession = async function() {
 };
 window.openSessionCreate = function() {
   window._editSid = null;
+  loadMyVenues().then(() => renderScSuggestions());
   // ensure form is in create state (not edit state from a previous editSession call)
   const btn = document.querySelector('#sessionCreate button[onclick="saveEditSession()"]');
   if (btn) { btn.textContent = '🚀 Create Session'; btn.setAttribute('onclick','createSession()'); }
@@ -3045,21 +3055,43 @@ window.openSessionCreate = function() {
   }
 };
 
+window._myVenues = window._myVenues || [];
+async function loadMyVenues() {
+  // venues from sessions I organized, most recent first, deduped
+  try {
+    if (!currentUser) return;
+    const snap = await get(ref(db, 'sessions'));
+    const all = Object.values(snap.val() || {}).filter(s => s && s.ownerUid === currentUser.uid && s.location);
+    all.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    const seen = new Set(); const out = [];
+    all.forEach(s => { const k = s.location.trim(); const lk = k.toLowerCase(); if (!seen.has(lk)) { seen.add(lk); out.push(k); } });
+    window._myVenues = out.slice(0, 8);
+  } catch(e) {}
+}
+window.scLocTyped = function() { renderScSuggestions(); };
 function renderScSuggestions() {
   const locBox = document.getElementById('scLocSuggest');
   if (locBox) {
-    let list = COURTS.slice();
-    if (courtUserLoc) list.sort((a,b) => (courtDist(a) ?? 999) - (courtDist(b) ?? 999));
-    const chips = list.slice(0, 6).map(c =>
-      '<span onclick="document.getElementById(\'scLocation\').value=\''+c.n.replace(/'/g,'')+'\'" style="cursor:pointer;padding:6px 11px;background:var(--surface2);border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:99px;font-size:11px;font-weight:700;">'+c.n.split('(')[0].trim()+'</span>');
-    if (!courtUserLoc && navigator.geolocation) {
+    const q = (document.getElementById('scLocation').value || '').trim().toLowerCase();
+    const chip = (name, style) => '<span onclick="document.getElementById(\'scLocation\').value=\''+name.replace(/'/g,'')+'\';renderScSuggestions();" style="cursor:pointer;padding:6px 11px;border-radius:99px;font-size:11px;font-weight:700;'+style+'">'+name.split('(')[0].trim()+'</span>';
+    const mine = window._myVenues.filter(v => !q || v.toLowerCase().includes(q));
+    let courts = COURTS.slice();
+    if (courtUserLoc) courts.sort((a,b) => (courtDist(a) ?? 999) - (courtDist(b) ?? 999));
+    const mineLower = new Set(mine.map(v=>v.toLowerCase()));
+    courts = courts.filter(c => !mineLower.has(c.n.toLowerCase()) && (!q || c.n.toLowerCase().includes(q)));
+    let chips = [];
+    // typing → matches only, no geo chip; idle → my venues (⭐) + nearby courts
+    chips = chips.concat(mine.slice(0, q ? 8 : 4).map(v => chip(v, 'background:rgba(0,245,196,0.10);border:1px solid rgba(0,245,196,0.45);color:var(--aqua);')));
+    chips = chips.concat(courts.slice(0, q ? 8 : 6).map(c => chip(c.n, 'background:var(--surface2);border:1px solid rgba(0,240,255,0.3);color:var(--cyan);')));
+    if (!q && !courtUserLoc && navigator.geolocation) {
       chips.unshift('<span onclick="scUseMyLocation()" style="cursor:pointer;padding:6px 11px;background:rgba(0,240,255,0.12);border:1px solid var(--cyan);color:var(--cyan);border-radius:99px;font-size:11px;font-weight:800;">📍 Near me</span>');
     }
+    if (q && !chips.length) chips.push('<span style="padding:6px 11px;color:var(--muted);font-size:11px;font-weight:600;">No matches — that\'s fine, custom spots work too</span>');
     locBox.innerHTML = chips.join('');
   }
   const lvBox = document.getElementById('scLevelSuggest');
   if (lvBox) {
-    lvBox.innerHTML = ['All levels','Beginner','2.5 - 3.0','3.0 - 3.5','3.5 - 4.0','4.0+'].map(l =>
+    lvBox.innerHTML = ['All levels','Beginner','2.5 - 3.0','3.0 - 3.5','3.5 - 4.0','4.0+','4.5+','5.0+'].map(l =>
       '<span onclick="document.getElementById(\'scLevel\').value=\''+l+'\'" style="cursor:pointer;padding:6px 11px;background:var(--surface2);border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:99px;font-size:11px;font-weight:700;">'+l+'</span>').join('');
   }
 }
@@ -3210,6 +3242,13 @@ function infoBody(text) {
   text.split('\n').forEach(line => {
     let l = escInfo(line);
     l = l.replace(/(https?:\/\/[^\s&]+[^\s&.,)])/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    // phone numbers → tap to call/text
+    l = l.replace(/(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})(?![^<]*<\/a>)/g, (m0) => {
+      const digits = m0.replace(/\D/g,''); if (digits.length < 10) return m0;
+      return '<a href="tel:+' + (digits.length===10?'1':'') + digits + '" style="color:var(--cyan);font-weight:800;text-decoration:underline;white-space:nowrap;">' + m0.trim() + '</a>';
+    });
+    // "Label: value" lines (e.g. 📍 Address: ...) → bold label
+    l = l.replace(/^(\s*(?:\S{1,3}\s)?[A-Za-z][A-Za-z /]{1,18}):\s/, '<strong style="color:var(--white);">$1:</strong> ');
     const t = l.trim();
     if (!t) { out.push('<div style="height:8px;"></div>'); return; }
     if (t.startsWith('- ') || t.startsWith('• '))
@@ -3294,8 +3333,8 @@ window.insertInfoTemplate = function() {
     + '## Format\n- Round robin — randomized partners, you won\'t partner the same player twice\n- Rally scoring to 21 (no win by 2)\n- Rankings by TOTAL points — don\'t get blown out!\n- After each match, log your score in the app\n\n'
     + '## Finals\nTop 4 by points: 1&4 vs 2&3 — championship game!\nNext 4: 5&8 vs 6&7\n\n'
     + '## What to Bring\n- 2 balls\n- Water — check if there\'s a fountain at the courts\n\n'
-    + '## Parking & Arrival\nArrive 15 minutes early — we start SHARP.\n\n'
-    + '## House Rules\n- Please stay until the end — leaving early disrupts the rotation\n- Can\'t make it? Tap "I\'m out" on this page so your spot opens up\n- Send this page\'s link to same-level friends to fill your spot';
+    + '## Address & Parking\n📍 Address: 1901 Brickell Ave, Miami, FL\n🏢 Unit / Buzz: Unit B 908 (tell the guard you\'re visiting Patrick)\n📞 Contact: Patrick +1 (305) 975-3709\n🚗 Parking: Free valet (tip) — or take the ramp on the left to guest parking\n⏰ Arrive 15 minutes early — we start SHARP.\n\n'
+    + '## House Rules\n- Please stay until the end — leaving early disrupts the rotation\n- Can\'t make it? Tap "I\'m out" on this page so your spot opens up. ALSO notify the group chat and help find a replacement if there\'s no waitlist — this is extremely important, we need at least 8 to play!\n- Send this page\'s link to same-level friends to fill your spot';
 };
 
 window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
@@ -4152,7 +4191,7 @@ function gameCard(g, s, done, w, label) {
     +'<span class="sdash">—</span>'
     +'<input class="sinput'+(s.s2===null&&!done?' await':'')+'" type="number" inputmode="numeric" min="0" max="99" id="s2_'+g.key+'" value="'+(s.s2!==null?s.s2:'')+'" placeholder="0" oninput="scoreTyped(\''+g.key+'\')">'
     +'</div>'
-    +(done?'<div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;margin:2px 0 4px;">tap a score to edit</div>':'')
+    +(done?'<div style="text-align:center;font-size:9px;color:var(--muted);font-weight:600;margin:1px 0 0;">tap a score to edit</div>':'')
     +'<button class="savebtn'+(done?' saved':'')+'" id="save_'+g.key+'" style="'+(done?'display:none;':((s.s1!==null&&s.s2!==null)?'':'opacity:0.3;'))+'" onclick="saveScore(\''+g.key+'\')">'+(done?'✓ Saved':'Save Score')+'</button>'
     +'</div></div>';
 }
@@ -5574,7 +5613,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-08.3';
+window.BUILD_TAG = 'v2026-08-09.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -5609,6 +5648,7 @@ function toggleMenuMore() {
   if (b) b.textContent = open ? '⋯ More' : '⋯ Less';
 }
 function scUseMyLocation()   { if(window.scUseMyLocation) window.scUseMyLocation(); }
+function scLocTyped()        { if(window.scLocTyped) window.scLocTyped(); }
 function editSessionNote(s)  { if(window.editSessionNote) window.editSessionNote(s); }
 function openRosterPlayerSheet(u,n,t) { if(window.openRosterPlayerSheet) window.openRosterPlayerSheet(u,n,t); }
 function closeRosterPlayerSheet()     { if(window.closeRosterPlayerSheet) window.closeRosterPlayerSheet(); }
