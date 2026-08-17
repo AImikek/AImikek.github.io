@@ -1614,8 +1614,7 @@ async function bootApp() {
       const sSnap = await get(ref(db, 'sessions/' + _sessParam));
       const sVal = sSnap.val();
       if (sVal && sVal.tournamentId) {
-        const tSnap = await get(ref(db, 'tournaments/' + sVal.tournamentId));
-        if (tSnap.exists()) _sLive = sVal.tournamentId;
+        if (await checkSessionLive(_sessParam, sVal)) _sLive = sVal.tournamentId;
       }
     } catch(e) {}
     if (_sLive) {
@@ -2959,9 +2958,11 @@ window.editSession = async function(sid) {
   if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
   window._editSid = sid;
   loadMyVenues().then(() => renderScSuggestions());
-  // reuse the create form
+  // reuse the create form — sessionDetail is a higher z-index overlay, so it MUST close first
+  closeSessionDetail();
   window._pushNav('sessionCreate');
   document.getElementById('sessionCreate').classList.remove('hidden');
+  document.getElementById('sessionCreate').scrollTop = 0;
   // fill fields
   document.getElementById('scTitle').value    = s.title || '';
   document.getElementById('scLocation').value = s.location || '';
@@ -3074,10 +3075,13 @@ async function loadMyVenues() {
   } catch(e) {}
 }
 window.scLocTyped = function() { renderScSuggestions(); };
+window.renderScSuggestions = function() { renderScSuggestions(); };
 function renderScSuggestions() {
   const locBox = document.getElementById('scLocSuggest');
   if (locBox) {
-    const q = (document.getElementById('scLocation').value || '').trim().toLowerCase();
+    let q = (document.getElementById('scLocation').value || '').trim().toLowerCase();
+    // if the box holds an exact pick (tapped chip / saved venue), show the full idle list, not a 1-item filter
+    if (q && (COURTS.some(c => c.n.toLowerCase() === q) || (window._myVenues||[]).some(v => v.toLowerCase() === q))) q = '';
     const chip = (name, style) => '<span onclick="document.getElementById(\'scLocation\').value=\''+name.replace(/'/g,'')+'\';renderScSuggestions();" style="cursor:pointer;padding:6px 11px;border-radius:99px;font-size:11px;font-weight:700;'+style+'">'+name.split('(')[0].trim()+'</span>';
     // canonicalize: a venue that's a shorthand of a known court ("Woodside" → "Woodside Park") shows once, as the court
     const canon = (v) => { const lv = v.toLowerCase().trim(); const hit = COURTS.find(c => { const lc = c.n.toLowerCase(); return lc === lv || lc.startsWith(lv + ' ') || lv.startsWith(lc + ' '); }); return hit ? hit.n : v; };
@@ -3159,10 +3163,31 @@ window.openSessionDetail = function(sid) {
   sdUnsub = onValue(ref(db, 'sessions/' + sid), (snap) => {
     const s = snap.val();
     if (!s) { document.getElementById('sdContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">This session was deleted.</div>'; return; }
-    renderSessionDetail(sid, s);
+    // verify LIVE status (async), then render; if a stale id gets cleared, onValue re-fires and re-renders
+    checkSessionLive(sid, s).then(() => { if (sdCurrent === sid) renderSessionDetail(sid, s); });
   });
 };
 
+// A session's tournamentId only counts as LIVE if that tournament exists AND happened on the session's date
+// (±1 day). Stale ids (from a cloned/recurring session or an old event) are ignored, and cleared by the owner.
+window._liveOk = window._liveOk || {};
+async function checkSessionLive(sid, s) {
+  const tid = s && s.tournamentId;
+  if (!tid) { delete window._liveOk[sid]; return false; }
+  try {
+    const tSnap = await get(ref(db, 'tournaments/' + tid));
+    const t = tSnap.val();
+    if (!t) { delete window._liveOk[sid]; return false; }
+    const when = t.updatedAt || t.createdAt || 0;
+    const sessNoon = s.date ? new Date(s.date + 'T12:00').getTime() : 0;
+    const ok = !sessNoon || Math.abs(when - sessNoon) < 36 * 3600 * 1000;
+    if (ok) window._liveOk[sid] = tid; else {
+      delete window._liveOk[sid];
+      if (currentUser && (s.ownerUid === currentUser.uid || isAdmin())) { try { set(ref(db, 'sessions/' + sid + '/tournamentId'), null); } catch(e) {} }
+    }
+    return ok;
+  } catch(e) { delete window._liveOk[sid]; return false; }
+}
 window.closeSessionDetail = function() {
   document.getElementById('sessionDetail').classList.add('hidden');
   if (sdUnsub) { try { sdUnsub(); } catch(e) {} sdUnsub = null; }
@@ -3185,7 +3210,7 @@ function renderSessionDetail(sid, s) {
     +(s.location?'<div onclick="openVenueSheet(\''+sid+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--cyan);font-weight:700;margin-top:4px;text-decoration:underline;text-decoration-color:rgba(0,240,255,0.35);text-underline-offset:3px;">📍 '+s.location+' <span style="font-size:11px;opacity:0.7;">›</span></div>':'')
     +(s.level?'<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-top:2px;">🎚 Level '+s.level+'</div>':'')
     +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+(isOwner?' <span onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;color:var(--cyan);font-size:12px;margin-left:6px;">✎ edit</span>':'')+'</div>':(isOwner?'<div onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;font-size:12px;color:var(--cyan);font-weight:700;margin-top:8px;">➕ Add a note for the group</div>':''))
-    +(s.tournamentId?'<div onclick="joinLiveTournament(\''+s.tournamentId+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:12px;color:white;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,45,120,0.3);">🔴 TOURNAMENT IS LIVE — VIEW GAMES</div>':'')
+    +((s.tournamentId && window._liveOk && window._liveOk[sid] === s.tournamentId)?'<div onclick="joinLiveTournament(\''+s.tournamentId+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:12px;color:white;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,45,120,0.3);">🔴 TOURNAMENT IS LIVE — VIEW GAMES</div>':'')
     +(s.info?'<div onclick="jumpToInfo(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.35);border-radius:10px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📋 FULL DETAILS ↓</div>':'')
     +(s.ownerName?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organized by '+s.ownerName+'</div>':'')
     +(isOwner?'<div onclick="editSession(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.4);border-radius:10px;color:var(--cyan);font-weight:800;font-size:11px;letter-spacing:1px;">✎ EDIT SESSION</div>':'')
@@ -3695,13 +3720,15 @@ window.startFromSession = async function(sid) {
   const snap = await get(ref(db, 'sessions/' + sid));
   const s = snap.val(); if (!s) return;
   const roster = s.roster ? (Array.isArray(s.roster)?s.roster:Object.values(s.roster)) : [];
-  if (roster.length < 2) { alert('Need at least 2 players on the roster!'); return; }
   closeSessionDetail();
   document.getElementById('sessionsPage').classList.add('hidden');
   openSetup(true);
   window._fromSid = sid;  // carried into cfg so the tournament links back to Event Info
   // Park the roster; land on the FORMAT picker so organizer chooses RR / Best 2 of 3 / Log
-  window._sessRoster = { name: s.title || 'Session', players: roster.map(r => r.name) };
+  // few/no sign-ups yet → still go, pad to 4 blanks so the organizer can type names courtside
+  const rNames = roster.map(r => r.name).filter(Boolean);
+  while (rNames.length < 4) rNames.push('');
+  window._sessRoster = { name: s.title || 'Session', players: rNames };
   setPlayType('doubles');
   document.getElementById('setupStep1').style.display = 'block';
   document.getElementById('setupStep2').style.display = 'none';
@@ -3713,9 +3740,11 @@ window.startFromSession = async function(sid) {
     sb.style.cssText = 'margin:0 0 12px;padding:11px 14px;background:rgba(0,245,196,0.08);border:1px solid rgba(0,245,196,0.35);border-radius:12px;color:var(--aqua);font-weight:800;font-size:12.5px;';
     step1.insertBefore(sb, step1.firstChild);
   }
-  sb.innerHTML = '✅ <b>' + roster.length + ' players</b> loaded from "' + escInfo(s.title || 'session') + '" — pick a format below'
-    + '<div style="margin-top:6px;font-size:11.5px;color:var(--white);font-weight:600;line-height:1.5;">' + escInfo(roster.map(r => r.name).join(' · ')) + '</div>'
-    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Names are locked to the sign-ups so stats go to the right accounts</div>';
+  sb.innerHTML = (roster.length
+      ? '✅ <b>' + roster.length + ' player' + (roster.length===1?'':'s') + '</b> loaded from "' + escInfo(s.title || 'session') + '" — pick a format below'
+        + '<div style="margin-top:6px;font-size:11.5px;color:var(--white);font-weight:600;line-height:1.5;">' + escInfo(roster.map(r => r.name).join(' · ')) + '</div>'
+        + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Use the sign-up spelling so stats land on the right accounts' + (roster.length < 4 ? ' — add the rest on the next screen' : '') + '</div>'
+      : '⚠️ No sign-ups on "' + escInfo(s.title || 'session') + '" yet — pick a format, then type the players in');
   sb.style.display = 'block';
 };
 
@@ -3726,7 +3755,7 @@ window.scheduleNextWeek = async function(sid) {
   const nsid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   const me = { name: userProfile?.name || s.ownerName || 'Organizer', uid: currentUser.uid, comment: '', at: Date.now() };
   try {
-    await set(ref(db, 'sessions/' + nsid), Object.assign({}, s, { date: d.toISOString().slice(0,10), roster: [me], waitlist: null, createdAt: Date.now() }));
+    await set(ref(db, 'sessions/' + nsid), Object.assign({}, s, { date: d.toISOString().slice(0,10), roster: [me], waitlist: null, createdAt: Date.now(), tournamentId: null }));
     openSessionDetail(nsid);
     copiedToast('✓ Next week scheduled!');
   } catch(e) { alert('Error: ' + (e.message||e)); }
@@ -5751,7 +5780,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-09.3';
+window.BUILD_TAG = 'v2026-08-09.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -5787,6 +5816,7 @@ function toggleMenuMore() {
 }
 function scUseMyLocation()   { if(window.scUseMyLocation) window.scUseMyLocation(); }
 function scLocTyped()        { if(window.scLocTyped) window.scLocTyped(); }
+function renderScSuggestions(){ if(window.renderScSuggestions) window.renderScSuggestions(); }
 function editSessionNote(s)  { if(window.editSessionNote) window.editSessionNote(s); }
 function openRosterPlayerSheet(u,n,t) { if(window.openRosterPlayerSheet) window.openRosterPlayerSheet(u,n,t); }
 function closeRosterPlayerSheet()     { if(window.closeRosterPlayerSheet) window.closeRosterPlayerSheet(); }
