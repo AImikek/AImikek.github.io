@@ -1564,6 +1564,9 @@ async function bootApp() {
     } catch(e) {}
   })();
 
+  // Community court details available app-wide (venue sheet, session suggestions), not just on Find Courts
+  mergeCommunityCourts(true).catch(() => {});
+
   // NAME SELF-HEAL: my display name follows my account (phone = truth, name = label)
   window._healNames = async function() {
     try {
@@ -2729,6 +2732,27 @@ window.submitTip = async function() {
   } catch(e) { alert('Could not submit: ' + (e.message||e)); }
 };
 
+// Community-approved court details (Firebase 'courts') override/extend the built-in list.
+// Cached for 60s; force=true refetches. Safe to call from anywhere (boot, venue sheet, session form).
+let _courtsMergedAt = 0;
+async function mergeCommunityCourts(force) {
+  if (!force && Date.now() - _courtsMergedAt < 60000) return false;
+  try {
+    const snap = await get(ref(db, 'courts'));
+    const extra = snap.val();
+    _courtsMergedAt = Date.now();
+    if (!extra) return false;
+    let changed = false;
+    Object.entries(extra).forEach(([id, c]) => {
+      if (!c || !c.n) return;
+      const i = COURTS.findIndex(x => x.n.toLowerCase() === c.n.toLowerCase());
+      const rec = Object.assign({}, c, { _id: id });
+      if (i >= 0) COURTS[i] = Object.assign({}, COURTS[i], rec); else COURTS.push(rec);
+      changed = true;
+    });
+    return changed;
+  } catch(e) { return false; }
+}
 window.openCourts = async function() {
   window._pushNav('courts');
   window.hideAllPages();
@@ -2736,20 +2760,8 @@ window.openCourts = async function() {
   renderCourtsList();
   setTimeout(initCourtMap, 60);
   // merge community-approved courts
-  try {
-    const snap = await get(ref(db, 'courts'));
-    const extra = snap.val();
-    if (extra) {
-      Object.values(extra).forEach(c => {
-        if (!c || !c.n) return;
-        const i = COURTS.findIndex(x => x.n.toLowerCase() === c.n.toLowerCase());
-        if (i >= 0) COURTS[i] = Object.assign({}, COURTS[i], c);  // approved data wins
-        else COURTS.push(c);
-      });
-      renderCourtsList();
-      refreshCourtMarkers();
-    }
-  } catch(e) {}
+  const merged = await mergeCommunityCourts(true);
+  if (merged) { renderCourtsList(); refreshCourtMarkers(); }
 };
 
 function courtDist(c) {
@@ -3185,6 +3197,54 @@ window.openSessionDetail = function(sid) {
   });
 };
 
+// ── Add to Calendar ──
+function calParts(s) {
+  const d = (s.date || '').replace(/-/g,'');
+  const st = (s.startTime || '07:30').replace(':','') + '00';
+  const en = (s.endTime   || '09:30').replace(':','') + '00';
+  return { start: d + 'T' + st, end: d + 'T' + en };
+}
+function calDesc(sid, s) {
+  const lines = [];
+  if (s.level) lines.push('Level ' + s.level);
+  if (s.note) lines.push(s.note);
+  lines.push('Roster, rules & details: https://mikek.ai/pbt/?s=' + sid);
+  return lines.join('\n');
+}
+function calGoogleUrl(sid, s) {
+  const p = calParts(s);
+  const q = 'action=TEMPLATE'
+    + '&text=' + encodeURIComponent('🏓 ' + (s.title || 'Pickleball'))
+    + '&dates=' + p.start + '/' + p.end
+    + '&ctz=' + encodeURIComponent('America/New_York')
+    + '&details=' + encodeURIComponent(calDesc(sid, s))
+    + (s.location ? '&location=' + encodeURIComponent(s.location) : '');
+  return 'https://calendar.google.com/calendar/render?' + q;
+}
+window.downloadIcs = async function(sid) {
+  const snap = await get(ref(db, 'sessions/' + sid));
+  const s = snap.val(); if (!s) return;
+  const p = calParts(s);
+  const esc = t => String(t||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  const stamp = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PB Tourney//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    'BEGIN:VEVENT','UID:pbt-' + sid + '@mikek.ai','DTSTAMP:' + stamp,
+    'DTSTART;TZID=America/New_York:' + p.start, 'DTEND;TZID=America/New_York:' + p.end,
+    'SUMMARY:' + esc('🏓 ' + (s.title || 'Pickleball')),
+    (s.location ? 'LOCATION:' + esc(s.location) : ''),
+    'DESCRIPTION:' + esc(calDesc(sid, s)),
+    'URL:https://mikek.ai/pbt/?s=' + sid,
+    'BEGIN:VALARM','TRIGGER:-PT2H','ACTION:DISPLAY','DESCRIPTION:Pickleball in 2 hours 🏓','END:VALARM',
+    'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
+  try {
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = (s.title || 'pickleball').replace(/[^a-z0-9]+/gi,'-').toLowerCase() + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch(e) { alert('Could not create calendar file: ' + (e.message||e)); }
+};
+
 // Scan sessions where I'm on the roster/waitlist and today is the session date (±1 day);
 // return the tournamentId if that session's tournament is live. Most recent session wins.
 async function findMyLiveRosterTournament(uid) {
@@ -3294,7 +3354,11 @@ function renderSessionDetail(sid, s) {
 
   h += '<div style="margin-top:18px;">'
     +'<button onclick="shareSession(\'' + sid + '\')" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📤 Share Invite Link</button>'
-    +'<button onclick="copySessionRoster(\'' + sid + '\')" style="display:block;width:100%;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📋 Copy Roster for Group Chat</button>';
+    +'<button onclick="copySessionRoster(\'' + sid + '\')" style="display:block;width:100%;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📋 Copy Roster for Group Chat</button>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px;">'
+      +'<a href="'+calGoogleUrl(sid, s)+'" target="_blank" rel="noopener" style="flex:1;display:block;text-align:center;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">📅 Google Calendar</a>'
+      +'<button onclick="downloadIcs(\'' + sid + '\')" style="flex:1;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📅 Apple / Outlook</button>'
+    +'</div>';
   if (isOwner) {
     h += '<button onclick="startFromSession(\'' + sid + '\')" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">▶ Start Tournament with this Roster</button>';
     if (s.recurring === 'weekly') {
@@ -3550,9 +3614,11 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
   el.innerHTML = h;
 };
 window.openVenueSheet = async function(sid) {
+  await mergeCommunityCourts(false);
   const snap = await get(ref(db, 'sessions/' + sid));
   const s = snap.val(); if (!s || !s.location) return;
   const el = document.getElementById('venueContent'); if (!el) return;
+  window._venueSid = sid;
   const loc = s.location.trim(); const lv = loc.toLowerCase();
   const court = COURTS.find(c => { const lc = c.n.toLowerCase(); return lc === lv || lc.startsWith(lv + ' ') || lv.startsWith(lc + ' '); }) || null;
   const row = (icon, label, val) => (val && String(val).trim().toLowerCase() !== label.toLowerCase()) ? '<div style="display:flex;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;align-items:flex-start;">'
@@ -3571,7 +3637,9 @@ window.openVenueSheet = async function(sid) {
   let h = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;"><div style="font-size:30px;">📍</div><div><div style="font-family:\'Russo One\',sans-serif;font-size:19px;color:var(--white);">'+escInfo(court ? court.n : loc)+'</div>'
     +(court&&court.c?'<div style="font-size:12px;color:var(--muted);font-weight:600;">'+escInfo(court.c)+(court.z?' '+escInfo(court.z):'')+'</div>':'')+'</div></div>';
   if (court) {
-    h += row('🏠','Address', escInfo((court.a||'')+(court.c?', '+court.c:'')+(court.z?' '+court.z:'')));
+    const realAddr = court.a && court.a.toLowerCase() !== court.n.toLowerCase().split(' ')[0];
+    h += row('🏠','Address', realAddr ? escInfo(court.a+(court.c?', '+court.c:'')+(court.z?' '+court.z:'')) : '');
+    if (!realAddr) h += '<div style="color:var(--muted);font-size:12px;font-weight:600;margin:2px 0 8px;">Street address not on file yet' + ((currentUser && (s.ownerUid===currentUser.uid||isAdmin())) ? ' — tap Edit Venue Details below to add it' : '') + '</div>';
     h += row('🏟','Courts', escInfo(court.ct||''));
     h += row('🕐','Hours', escInfo(court.h||''));
     h += row('💡','Lights', escInfo(court.l||''));
@@ -3582,8 +3650,45 @@ window.openVenueSheet = async function(sid) {
     h += '<div style="color:var(--muted);font-size:13px;font-weight:600;margin-bottom:6px;">Not one of the listed public courts — check the organizer\'s notes below for the address.</div>';
   }
   h += infoBlock + mapsBtn;
+  const canEdit = currentUser && (s.ownerUid === currentUser.uid || isAdmin());
+  if (canEdit) {
+    h += '<div onclick="editVenueDetails(\''+escInfo(court ? court.n : loc).replace(/'/g,'')+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:10px;border:1px dashed rgba(0,240,255,0.35);border-radius:12px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">✎ '+(court && (court.a && court.a.toLowerCase()!==court.n.toLowerCase().split(' ')[0]) ? 'EDIT' : 'ADD')+' VENUE DETAILS — address, courts, lights, hours…</div>';
+  }
   el.innerHTML = h;
   document.getElementById('venueSheet').classList.remove('hidden');
+};
+// Owner/admin: fill in venue facts once; saved to Firebase 'courts' so everyone (and every future session) sees them
+window.editVenueDetails = function(name) {
+  const el = document.getElementById('venueContent'); if (!el) return;
+  const c = COURTS.find(x => x.n.toLowerCase() === String(name).toLowerCase()) || { n: name };
+  const f = (id, label, val, ph, type) => '<div style="margin-bottom:9px;"><div style="font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:3px;">'+label+'</div>'
+    +'<input id="vd_'+id+'" type="'+(type||'text')+'" value="'+escInfo(val||'')+'" placeholder="'+escInfo(ph||'')+'" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--white);font-family:\'DM Sans\',sans-serif;font-size:14px;font-weight:600;"></div>';
+  let h = '<div style="font-family:\'Russo One\',sans-serif;font-size:16px;color:var(--white);margin-bottom:12px;">✎ Venue details · '+escInfo(c.n)+'</div>'
+    + f('a','Street address', c.a && c.a.toLowerCase()!==c.n.toLowerCase().split(' ')[0] ? c.a : '', '2650 SW 27th Ave')
+    + f('c','City', c.c || 'Miami', 'Miami') + f('z','Zip', c.z || '', '33133')
+    + f('ct','Courts', c.ct && c.ct!=='Courts' ? c.ct : '', '4 dedicated courts')
+    + f('l','Lights', c.l && c.l!=='Lights' ? c.l : '', 'Lights until 10pm')
+    + f('h','Hours', c.h || '', 'Sunrise to 10pm')
+    + f('p','Cost', c.p || '', 'Free')
+    + f('io','Indoor / Outdoor', c.io || 'Outdoor', 'Outdoor')
+    + f('u','Website', c.u || '', 'https://…', 'url')
+    + f('lat','Latitude (optional)', c.lat || '', '25.74') + f('lng','Longitude (optional)', c.lng || '', '-80.28')
+    + '<button onclick="saveVenueDetails(\''+escInfo(c.n).replace(/'/g,'')+'\')" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:6px;">💾 Save Venue</button>'
+    + '<button onclick="openVenueSheet(\''+(window._venueSid||'')+'\')" style="width:100%;padding:10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;">Cancel</button>';
+  el.innerHTML = h;
+};
+window.saveVenueDetails = async function(name) {
+  const g = id => (document.getElementById('vd_'+id)?.value || '').trim();
+  const existing = COURTS.find(x => x.n.toLowerCase() === String(name).toLowerCase());
+  const id = (existing && existing._id) || ('c_' + String(name).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''));
+  const rec = { n: name, a: g('a'), c: g('c') || 'Miami', z: g('z'), ct: g('ct') || 'Courts', l: g('l') || '', h: g('h'), p: g('p'), io: g('io') || 'Outdoor', u: g('u'),
+    lat: parseFloat(g('lat')) || (existing && existing.lat) || null, lng: parseFloat(g('lng')) || (existing && existing.lng) || null };
+  try {
+    await set(ref(db, 'courts/' + id), rec);
+    await mergeCommunityCourts(true);
+    copiedToast('✓ Venue saved for everyone');
+    if (window._venueSid) openVenueSheet(window._venueSid);
+  } catch(e) { alert('Could not save venue: ' + (e.message||e)); }
 };
 window.closeRosterPlayerSheet = function() {
   document.getElementById('rosterPlayerSheet').classList.add('hidden');
@@ -3651,7 +3756,9 @@ window.removeRosterEntry = async function(sid, uid, name) {
     await set(ref(db, 'sessions/'+sid+'/waitlist'), wait.length ? wait : null);
     promoted.forEach(p => sendWaitlistPromotionEmail(p, s, sid, false));
     if (promoted.length && s.ownerEmail) sendWaitlistPromotionEmail({ name: s.ownerName || 'Organizer', email: s.ownerEmail }, s, sid, true, promoted);
-    copiedToast('✓ Removed' + (promoted.length ? ' — waitlist promoted!' : ''));
+    const openSpots2 = Math.max(0, (s.spots||4) - roster.length);
+    if (!promoted.length) notifyRosterOfDrop(sid, s, name, roster, openSpots2);
+    copiedToast('✓ Removed' + (promoted.length ? ' — waitlist promoted!' : (openSpots2 ? ' — roster emailed to help fill the spot' : '')));
   } catch(e) { alert('Error: ' + (e.message||e)); }
 };
 
@@ -3671,8 +3778,48 @@ window.releaseSpot = async function(sid) {
     // Auto-notify: promoted players + the organizer get an email
     promoted.forEach(p => sendWaitlistPromotionEmail(p, s, sid, false));
     if (promoted.length && s.ownerEmail) sendWaitlistPromotionEmail({ name: s.ownerName || 'Organizer', email: s.ownerEmail }, s, sid, true, promoted);
+    // Nobody to promote → alert the roster that a spot is open
+    const openSpots = Math.max(0, (s.spots||4) - roster.length);
+    if (!promoted.length) notifyRosterOfDrop(sid, s, userProfile?.name || 'A player', roster, openSpots);
   } catch(e) { alert('Error: ' + (e.message||e)); }
 };
+
+// When someone drops and NO waitlister fills the spot, tell the rest of the roster + organizer so they can recruit.
+async function notifyRosterOfDrop(sid, s, leaverName, roster, openSpots) {
+  try {
+    if (!openSpots) return;
+    const people = [];
+    for (const r of roster) {
+      if (!r) continue;
+      let em = r.email || null;
+      if (!em && r.uid) { try { const ps = await get(ref(db, 'users/' + r.uid + '/profile')); em = (ps.val()||{}).email || null; } catch(e) {} }
+      if (em) people.push({ name: r.name || 'Player', email: em });
+    }
+    if (s.ownerEmail && !people.some(p => p.email === s.ownerEmail)) people.push({ name: s.ownerName || 'Organizer', email: s.ownerEmail });
+    const headline = '🚨 ' + (leaverName || 'Someone') + ' dropped — ' + openSpots + ' spot' + (openSpots>1?'s':'') + ' open. Help find a replacement!';
+    people.forEach(p => sendSessionEmail(p, s, sid, headline));
+  } catch(e) {}
+}
+// generic session email via the waitlist template (headline drives the message)
+function sendSessionEmail(person, s, sid, headline) {
+  try {
+    if (!person || !person.email) return;
+    const tid2 = window.WAITLIST_TEMPLATE_ID || WAITLIST_TEMPLATE_ID;
+    const d = new Date(s.date + 'T12:00');
+    const ds = d.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+    const when = ds + ' \u00b7 ' + fmtSessTime(s.startTime) + '\u2013' + fmtSessTime(s.endTime);
+    const link = 'https://mikek.ai/pbt?s=' + sid;
+    const shareText = '\ud83c\udfd3 Spot just opened for ' + (s.title||'our pickleball session') + ' \u2014 ' + when + (s.location ? ' @ ' + s.location : '') + '. Grab it: ' + link;
+    fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service_id: 'service_gumjfq5', template_id: tid2, user_id: 'X2dC3mFeqOruG4n4S',
+        template_params: { to_email: person.email, to_name: person.name || 'Player', headline,
+          session_title: s.title || 'Pickleball Session', session_when: when, session_where: s.location || '',
+          session_level: s.level ? 'Level ' + s.level : '', session_link: link, share_text: shareText,
+          share_url: 'https://wa.me/?text=' + encodeURIComponent(shareText) } })
+    }).catch(() => {});
+  } catch(e) {}
+}
 
 // EmailJS template for waitlist promotions - paste the template ID here once created
 const WAITLIST_TEMPLATE_ID = window.WAITLIST_TEMPLATE_ID || 'template_0vbuhv9';
@@ -5814,7 +5961,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-09.5';
+window.BUILD_TAG = 'v2026-08-10.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -5861,6 +6008,9 @@ function toggleInfoSec(k)    { if(window.toggleInfoSec) window.toggleInfoSec(k);
 function siChip(k,t)         { if(window.siChip) window.siChip(k,t); }
 function siAutoGrow(el)      { if(window.siAutoGrow) window.siAutoGrow(el); }
 function openVenueSheet(s)   { if(window.openVenueSheet) window.openVenueSheet(s); }
+function editVenueDetails(n) { if(window.editVenueDetails) window.editVenueDetails(n); }
+function saveVenueDetails(n) { if(window.saveVenueDetails) window.saveVenueDetails(n); }
+function downloadIcs(s)      { if(window.downloadIcs) window.downloadIcs(s); }
 function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
 function adApproveCourt(i)   { if(window.adApproveCourt) window.adApproveCourt(i); }
 function adRejectCourt(i)    { if(window.adRejectCourt) window.adRejectCourt(i); }
