@@ -1367,6 +1367,14 @@ document.addEventListener('touchend',   _unlockAudio, true);
       <label class="flabel">Players <span id="pcnt" style="color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0;font-size:11px;text-transform:none;"></span></label>
       <div class="pgrid" id="pgrid"></div>
       <div class="pgrid"><button type="button" class="addbtn" onmousedown="event.preventDefault()" ontouchstart="" onclick="addPF()">+ Add Player</button></div>
+      <div id="rankRuleWrap" style="margin:14px 0 6px;">
+        <label class="flabel">🏆 Ranking rule</label>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="rr_wins" class="rtbtn" onclick="setRankRule('wins')" style="flex:1;">Wins first<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Avg Diff breaks ties</span></button>
+          <button type="button" id="rr_avg" class="rtbtn" onclick="setRankRule('avg')" style="flex:1;">Avg Diff first<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Wins break ties</span></button>
+        </div>
+        <div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:6px;">Remembered for your next tournament · printed into Event Info</div>
+      </div>
       <button class="startbtn" id="startBtn" onclick="doStart()" style="opacity:0.35;">🚀 Start Tournament</button>
     </div>
 
@@ -1481,6 +1489,7 @@ onAuthStateChanged(auth, user => {
 
 function subscribeTournament(tid) {
   if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
+  if (activeTid !== tid) _rankModeTouched = false;   // new tournament → sort follows its rule
   activeTid = tid;
   firstLoad = true;
   _tournamentUnsub = onValue(ref(db, 'tournaments/' + tid), snap => {
@@ -1603,6 +1612,7 @@ async function bootApp() {
   onValue(ref(db, 'users/' + uid + '/profile'), snap => {
     const wasNew = !userProfile.name;
     userProfile = snap.val() || {};
+    if (userProfile.rankRule === 'wins' || userProfile.rankRule === 'avg') { rankRule = userProfile.rankRule; try { localStorage.setItem('pbt_rankRule', rankRule); } catch(e) {} }
     updateProfileDisplay();
     if (wasNew && !userProfile.name) {
       document.getElementById('profileOverlay').classList.remove('hidden');
@@ -1648,6 +1658,9 @@ async function bootApp() {
     subscribeTournament(urlTid);
     return;
   }
+
+  // Refresh → same screen. Only when the URL isn't already steering somewhere (?s= ?t= ?p=).
+  if (!_sessParam && !urlTid && !_pageParam) setTimeout(() => { try { window._restoreScreen(); } catch(e) {} }, 700);
 
   // 1b. On a roster whose tournament is LIVE right now? Adopt it — no QR / link needed.
   //     (Wins over an older active pointer so people don't get stuck on last week's games.)
@@ -1822,6 +1835,7 @@ window.chooseFormat = function(m) {
     document.getElementById('tName').value = '';
   }
   applyModeToStep2();
+  window.setRankRule(rankRule, true);
   const first = document.querySelector('.pinput');
   if (first && !first.value && userProfile?.name) { first.value = userProfile.name; updPCnt(); }
 };
@@ -1925,8 +1939,9 @@ function _finalizeTournament() {
   const schedule = mode==='log' ? []
     : mode==='4p' ? make4PSchedule(players)
     : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players));
-  cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null}; scores={};
+  cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null,rankRule:rankRule}; scores={};
   window._fromSid = null; window._sessRoster = null;
+  rankMode = rankRule; _rankModeTouched = false;
   const tid = makeTid();
   activeTid = tid;
   set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
@@ -2516,11 +2531,38 @@ window.renameLbPlayer = async function(oldName) {
     for (const [tid, t] of Object.entries(tours)) {
       if (fixTournament(t)) { delete t.__tid; await set(ref(db, 'tournaments/' + tid), t); }
     }
+    // Sessions: roster / waitlist / organizer labels
+    let sessFixed = 0;
+    try {
+      const sSnap = await get(ref(db, 'sessions'));
+      for (const [sid2, s2] of Object.entries(sSnap.val() || {})) {
+        if (!s2) continue;
+        let ch = false;
+        const fixL = (lst) => { if (!lst) return lst; const arr = Array.isArray(lst)?lst:Object.values(lst); arr.forEach(e => { if (e && String(e.name||'').trim().toLowerCase() === oldName.toLowerCase()) { e.name = newName; ch = true; } }); return arr; };
+        const r2 = fixL(s2.roster), w2 = fixL(s2.waitlist);
+        const upd = {};
+        if (r2) upd.roster = r2; if (w2) upd.waitlist = w2;
+        if (String(s2.ownerName||'').trim().toLowerCase() === oldName.toLowerCase()) { upd.ownerName = newName; ch = true; }
+        if (ch) { await update(ref(db, 'sessions/' + sid2), upd); sessFixed++; }
+      }
+    } catch(e) {}
+    // Profiles + directory: if a registered account carries the old name, rename it (so their app shows the new name too)
+    let profFixed = 0;
+    try {
+      const dSnap = await get(ref(db, 'directory'));
+      for (const [uid2, d] of Object.entries(dSnap.val() || {})) {
+        if (d && String(d.name||'').trim().toLowerCase() === oldName.toLowerCase()) {
+          await update(ref(db, 'directory/' + uid2), { name: newName });
+          try { await update(ref(db, 'users/' + uid2 + '/profile'), { name: newName }); } catch(e) {}
+          profFixed++;
+        }
+      }
+    } catch(e) {}
     lbData = null;
     document.getElementById('playerDetail').classList.add('hidden');
     await loadLeaderboardData();
     renderLeaderboard();
-    alert('✓ Renamed everywhere');
+    alert('✓ Renamed everywhere' + (sessFixed ? ' · ' + sessFixed + ' session roster' + (sessFixed>1?'s':'') : '') + (profFixed ? ' · ' + profFixed + ' account' + (profFixed>1?'s':'') : ''));
   } catch(e) { alert('Rename failed: ' + (e.message||e)); }
 };
 
@@ -2621,10 +2663,34 @@ window._currentScreen = function() {
 };
 window._pushNav = function(targetId) {
   if (window._navBack) { window._navBack = false; return; }
+  window._userNavigated = true;
   const cur = window._currentScreen();
   if (cur.id === targetId) return;
   window._navStack.push(cur);
   if (window._navStack.length > 20) window._navStack.shift();
+  setTimeout(window._saveScreen, 80);
+};
+// Remember where the user is so a refresh brings them back to the SAME screen (not the Games page)
+window._saveScreen = function() {
+  try { const cur = window._currentScreen(); sessionStorage.setItem('pbt_screen', JSON.stringify(cur)); } catch(e) {}
+};
+window.addEventListener('pagehide', window._saveScreen);
+window.addEventListener('visibilitychange', () => { if (document.hidden) window._saveScreen(); });
+window._restoreScreen = function() {
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem('pbt_screen') || 'null'); } catch(e) {}
+  if (!saved || !saved.id) return false;
+  if (window._userNavigated) return false;   // they already went somewhere since load — don't yank them
+  const go = {
+    sessionDetail: () => saved.arg ? openSessionDetail(saved.arg) : openSessions(),
+    sessions: () => openSessions(), sessionCreate: () => openSessions(),
+    leaderboard: () => openLeaderboard(), history: () => openHistory(), profile: () => openProfile(),
+    guide: () => openGuide(), quickstart: () => openQuickStart(), courts: () => openCourts(), admin: () => openAdminDash(),
+    playerDetail: () => saved.arg ? openPlayerDetail(saved.arg) : openLeaderboard(),
+    standings: () => { if (typeof cfg !== 'undefined' && cfg) closeAllOverlaysAndShow('standings'); },
+  }[saved.id];
+  if (!go) return false;
+  try { window._navBack = true; go(); window._navBack = false; return true; } catch(e) { window._navBack = false; return false; }
 };
 window.goBack = function() {
   const prev = window._navStack.pop();
@@ -3192,10 +3258,38 @@ window.openSessionDetail = function(sid) {
   sdUnsub = onValue(ref(db, 'sessions/' + sid), (snap) => {
     const s = snap.val();
     if (!s) { document.getElementById('sdContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">This session was deleted.</div>'; return; }
-    // verify LIVE status (async), then render; if a stale id gets cleared, onValue re-fires and re-renders
-    checkSessionLive(sid, s).then(() => { if (sdCurrent === sid) renderSessionDetail(sid, s); });
+    // verify LIVE status + resolve roster names to current account names (async), then render
+    Promise.all([checkSessionLive(sid, s), resolveRosterNames(sid, s)]).then(() => { if (sdCurrent === sid) renderSessionDetail(sid, s); });
   });
 };
+// Names on a roster are labels; the account (uid) is the truth. Show the account's CURRENT name, and if the
+// viewer is owner/admin, write the corrected labels back so everyone sees them.
+window._nameCache = window._nameCache || {};
+async function resolveRosterNames(sid, s) {
+  try {
+    const lists = [];
+    if (s.roster) lists.push(Array.isArray(s.roster)?s.roster:Object.values(s.roster));
+    if (s.waitlist) lists.push(Array.isArray(s.waitlist)?s.waitlist:Object.values(s.waitlist));
+    const uids = new Set();
+    lists.forEach(l => l.forEach(e => { if (e && e.uid) uids.add(e.uid); }));
+    if (s.ownerUid) uids.add(s.ownerUid);
+    const need = [...uids].filter(u => !(u in window._nameCache));
+    await Promise.all(need.map(async u => {
+      try { const ps = await get(ref(db, 'users/' + u + '/profile')); window._nameCache[u] = ((ps.val()||{}).name || '').trim() || null; }
+      catch(e) { window._nameCache[u] = null; }
+    }));
+    let changed = false;
+    lists.forEach(l => l.forEach(e => { if (e && e.uid && window._nameCache[e.uid] && e.name !== window._nameCache[e.uid]) { e.name = window._nameCache[e.uid]; changed = true; } }));
+    if (s.ownerUid && window._nameCache[s.ownerUid] && s.ownerName !== window._nameCache[s.ownerUid]) { s.ownerName = window._nameCache[s.ownerUid]; changed = true; }
+    if (changed && currentUser && (s.ownerUid === currentUser.uid || isAdmin())) {
+      const upd = {};
+      if (s.roster) upd.roster = lists[0];
+      if (s.waitlist) upd.waitlist = lists[s.roster ? 1 : 0];
+      upd.ownerName = s.ownerName || null;
+      try { await update(ref(db, 'sessions/' + sid), upd); } catch(e) {}
+    }
+  } catch(e) {}
+}
 
 // ── Add to Calendar ──
 function calParts(s) {
@@ -3448,7 +3542,7 @@ window.toggleInfoSec = function(k) {
 // Stored as the same "## Section" text so display + old sessions keep working.
 const SI_SECTIONS = [
   { key:'intro',   title:'',                    label:'👋 Welcome note (always visible at top)', ph:'e.g. Welcome! Tap a section below for details 🏓', chips:['Welcome! Everything you need is below — tap a section to open it. 🏓','We start SHARP — please be on time!'] },
-  { key:'format',  title:'Format',              label:'🎾 Format', ph:'Round robin? Rally scoring? How are winners decided?', chips:['Round robin — randomized partners, no repeats','Rally scoring to 21 (no win by 2)','🏆 Winner = greatest AVERAGE POINT DIFFERENTIAL (Avg Diff); wins are the tiebreaker','Every rally counts — run up your score AND keep theirs low','Log your score in the app after each game','Best 2 out of 3 per matchup'] },
+  { key:'format',  title:'Format',              label:'🎾 Format', ph:'Round robin? Rally scoring? How are winners decided?', chips:['Round robin — randomized partners, no repeats','Rally scoring to 21 (no win by 2)','🏆 Ranked by WINS; ties broken by Avg Point Differential','🏆 Ranked by AVG POINT DIFFERENTIAL; wins are the tiebreaker','Every rally still counts — records bunch up, so margins decide a lot of the table','Log your score in the app after each game','Best 2 out of 3 per matchup'] },
   { key:'finals',  title:'Finals',              label:'🏆 Finals', ph:'Optional — how do finals work?', chips:['Top 4 by points: 1&4 vs 2&3 — championship game!','Next 4: 5&8 vs 6&7','Finals are optional if people need to head home'] },
   { key:'address', title:'Address & Parking',   label:'📍 Address & Parking', ph:'Address · unit / buzz · who to text · where to park', chips:['📍 Address: ','🏢 Unit / Buzz: ','📞 Contact: ','🚗 Parking: Free valet (tip) — or guest parking down the ramp','🚗 Parking: Free street parking','⏰ Arrive 15 minutes early — we start SHARP'] },
   { key:'bring',   title:'What to Bring',       label:'🎒 What to Bring', ph:'Balls, water, etc.', chips:['2 balls','Water — no fountain at the courts','Paddle + a backup if you have one','Sunscreen / hat'] },
@@ -3532,7 +3626,7 @@ window.saveSessionInfo = async function() {
 window.insertInfoTemplate = function() {
   const ta = document.getElementById('siText'); if (!ta) return;
   ta.value = 'Welcome! Everything you need to know is below — tap a section to open it. 🏓\n\n'
-    + '## Format\n- Round robin — randomized partners, you won\'t partner the same player twice\n- Rally scoring to 21 (no win by 2)\n- 🏆 WINNER = greatest AVERAGE POINT DIFFERENTIAL (Avg Diff). Wins are the tiebreaker.\n- Every rally counts — run up the score AND keep theirs low\n- After each match, log your score in the app\n\n'
+    + '## Format\n- Round robin — randomized partners, you won\'t partner the same player twice\n- Rally scoring to 21 (no win by 2)\n- 🏆 RANKED BY WINS. Ties broken by AVERAGE POINT DIFFERENTIAL (Avg Diff)\n- Every rally still counts — records bunch up, so margins decide a lot of the table\n- After each match, log your score in the app\n\n'
     + '## Finals\nTop 4 by points: 1&4 vs 2&3 — championship game!\nNext 4: 5&8 vs 6&7\n\n'
     + '## What to Bring\n- 2 balls\n- Water — check if there\'s a fountain at the courts\n\n'
     + '## Address & Parking\n📍 Address: 1901 Brickell Ave, Miami, FL\n🏢 Unit / Buzz: Unit B 908 (tell the guard you\'re visiting Patrick)\n📞 Contact: Patrick +1 (305) 975-3709\n🚗 Parking: Free valet (tip) — or take the ramp on the left to guest parking\n⏰ Arrive 15 minutes early — we start SHARP.\n\n'
@@ -4849,6 +4943,7 @@ window.addFinals = function() {
   const reg = cfg.schedule.filter(g => !g.added && !g.deleted);
   const unscored = reg.filter(g => { const s = scores[g.key]; return !s || s.s1 === null || s.s1 === undefined; });
   if (unscored.length && !confirm(unscored.length + ' game(s) still unscored — seed finals from CURRENT standings anyway?')) return;
+  if (!_rankModeTouched && cfg.rankRule) rankMode = cfg.rankRule;
   const { list } = calcStandings();
   const ranked = list.filter(p => p.games > 0).map(p => p.name);
   const per = (cfg.playType === 'singles') ? 2 : 4;
@@ -4950,7 +5045,19 @@ window.lgStartGame = function() {
   push(); renderGames(); updateNav();
 };
 
-let rankMode = 'avg'; // 'avg' | 'wins' | 'pts'
+// Ranking rule for a tournament: 'wins' (wins first, avg diff tiebreak) or 'avg' (avg diff first, wins tiebreak).
+// Organizer preference is remembered (localStorage + profile); each tournament stores its own rule in cfg.rankRule.
+let rankRule = (function(){ try { return localStorage.getItem('pbt_rankRule') || 'wins'; } catch(e) { return 'wins'; } })();
+window.setRankRule = function(r, silent) {
+  rankRule = (r === 'avg') ? 'avg' : 'wins';
+  try { localStorage.setItem('pbt_rankRule', rankRule); } catch(e) {}
+  if (!silent && currentUser) { try { update(ref(db, 'users/' + currentUser.uid + '/profile'), { rankRule }); } catch(e) {} }
+  const w = document.getElementById('rr_wins'), a = document.getElementById('rr_avg');
+  if (w) w.classList.toggle('active', rankRule === 'wins');
+  if (a) a.classList.toggle('active', rankRule === 'avg');
+};
+let rankMode = rankRule; // 'avg' | 'wins' | 'pts' — the current standings sort; defaults to the tournament's rule
+let _rankModeTouched = false;
 
 function calcStandings() {
   const stats = {};
@@ -4991,6 +5098,7 @@ function calcStandings() {
 function renderStandings() {
   const el = document.getElementById('pageStandings');
   if (!cfg?.players) { el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-t">No Tournament Yet</div></div>'; return; }
+  if (!_rankModeTouched) rankMode = (cfg.rankRule === 'avg' || cfg.rankRule === 'wins') ? cfg.rankRule : 'avg'; // tournaments created before the rule existed were played under Avg Diff
 
   const { list, uneven, effectiveMode } = calcStandings();
   const champ = list[0];
@@ -5005,17 +5113,20 @@ function renderStandings() {
     html += '<div class="champbox" id="statsChampBox"><div style="font-size:48px;margin-bottom:8px;">🏆</div>'
       +'<div class="clbl">Champion</div><div class="cname">'+champ.name+'</div>'
       +'<div class="cpts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.avgDiff>=0?'+':'')+champ.avgDiff.toFixed(1)+' avg diff</div></div>';
-    // Most Wins award — a separate, smaller callout when someone other than the champ has the most wins
-    const byWins = list.slice().sort((a,b) => b.wins-a.wins || b.avgDiff-a.avgDiff);
-    const winsLeader = byWins[0];
-    const tiedWins = byWins.filter(p => p.wins === winsLeader.wins);
-    if (winsLeader && winsLeader.name !== champ.name && effectiveMode === 'avg') {
-      const names = tiedWins.map(p => p.name).join(' & ');
+    // Secondary award — the OTHER stat's leader, when it's a different person than the champ
+    //   rule = wins → champ is Most Wins, callout is Best Avg Diff
+    //   rule = avg  → champ is Best Avg Diff, callout is Most Wins
+    const secondaryIsWins = effectiveMode !== 'wins';
+    const bySec = list.slice().sort(secondaryIsWins ? ((a,b) => b.wins-a.wins || b.avgDiff-a.avgDiff) : ((a,b) => b.avgDiff-a.avgDiff || b.wins-a.wins));
+    const secLeader = bySec[0];
+    const tiedSec = bySec.filter(p => secondaryIsWins ? p.wins === secLeader.wins : Math.abs(p.avgDiff - secLeader.avgDiff) < 1e-9);
+    if (secLeader && secLeader.name !== champ.name && effectiveMode !== 'pts') {
+      const names = tiedSec.map(p => p.name).join(' & ');
       html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;margin:-6px 0 14px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.35);border-radius:14px;">'
         +'<div style="font-size:26px;">🥇</div>'
-        +'<div><div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;">Most Wins</div>'
+        +'<div><div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;">'+(secondaryIsWins?'Most Wins':'Best Avg Diff')+'</div>'
         +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;color:var(--white);">'+escInfo(names)+'</div>'
-        +'<div style="font-size:11px;color:var(--muted);font-weight:700;">'+winsLeader.wins+' win'+(winsLeader.wins===1?'':'s')+' · '+(winsLeader.avgDiff>=0?'+':'')+winsLeader.avgDiff.toFixed(1)+' avg diff</div></div></div>';
+        +'<div style="font-size:11px;color:var(--muted);font-weight:700;">'+secLeader.wins+' win'+(secLeader.wins===1?'':'s')+' · '+(secLeader.avgDiff>=0?'+':'')+secLeader.avgDiff.toFixed(1)+' avg diff</div></div></div>';
     }
   }
 
@@ -5047,7 +5158,7 @@ function renderStandings() {
   });
 
   html += '</tbody></table>';
-  const modeLabel = effectiveMode==='avg'?'Avg Point Differential':effectiveMode==='wins'?'Most Wins':'Most Points';
+  const modeLabel = effectiveMode==='avg'?'Avg Point Differential (wins break ties)':effectiveMode==='wins'?'Wins (Avg Diff breaks ties)':'Most Points';
   html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong> · tap a column to re-rank</div>';
   if (allDone) {
     html += '<div style="margin-top:22px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:10px;">⚡ All Games</div>';
@@ -5134,7 +5245,7 @@ window.saveStatsImage = async function() {
 };
 
 window.setRankMode = function(mode) {
-  rankMode = mode;
+  rankMode = mode; _rankModeTouched = true;
   renderStandings();
 };
 
@@ -5233,6 +5344,7 @@ window.saveProfile = async function() {
   document.getElementById('profileOverlay').classList.add('hidden');
   updateProfileDisplay();
   if (window._healNames) window._healNames();
+  window._nameCache = {};
 };
 
 let _profileAutoWired = false;
@@ -5973,7 +6085,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-10.2';
+window.BUILD_TAG = 'v2026-08-11.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -6017,6 +6129,7 @@ function editSessionInfo(s)  { if(window.editSessionInfo) window.editSessionInfo
 function saveSessionInfo()   { if(window.saveSessionInfo) window.saveSessionInfo(); }
 function insertInfoTemplate(){ if(window.insertInfoTemplate) window.insertInfoTemplate(); }
 function toggleInfoSec(k)    { if(window.toggleInfoSec) window.toggleInfoSec(k); }
+function setRankRule(r)      { if(window.setRankRule) window.setRankRule(r); }
 function siChip(k,t)         { if(window.siChip) window.siChip(k,t); }
 function siAutoGrow(el)      { if(window.siAutoGrow) window.siAutoGrow(el); }
 function openVenueSheet(s)   { if(window.openVenueSheet) window.openVenueSheet(s); }
