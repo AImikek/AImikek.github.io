@@ -1366,7 +1366,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
 
       <label class="flabel">Players <span id="pcnt" style="color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0;font-size:11px;text-transform:none;"></span></label>
       <div class="pgrid" id="pgrid"></div>
-      <div class="pgrid"><button class="addbtn" onclick="addPF()">+ Add Player</button></div>
+      <div class="pgrid"><button type="button" class="addbtn" onmousedown="event.preventDefault()" ontouchstart="" onclick="addPF()">+ Add Player</button></div>
       <button class="startbtn" id="startBtn" onclick="doStart()" style="opacity:0.35;">🚀 Start Tournament</button>
     </div>
 
@@ -1646,6 +1646,16 @@ async function bootApp() {
     return;
   }
 
+  // 1b. On a roster whose tournament is LIVE right now? Adopt it — no QR / link needed.
+  //     (Wins over an older active pointer so people don't get stuck on last week's games.)
+  const rosterLive = await findMyLiveRosterTournament(uid);
+  if (rosterLive) {
+    const curPtr = await get(ref(db, 'users/' + uid + '/activeTournamentId'));
+    if (curPtr.val() !== rosterLive) await set(ref(db, 'users/' + uid + '/activeTournamentId'), rosterLive);
+    subscribeTournament(rosterLive);
+    return;
+  }
+
   // 2. Existing pointer to a shared tournament?
   const ptrSnap = await get(ref(db, 'users/' + uid + '/activeTournamentId'));
   if (ptrSnap.exists() && ptrSnap.val()) {
@@ -1828,14 +1838,21 @@ window.selMode = window._selMode = function(m) {
 };
 
 function buildPFields(arr) { document.getElementById('pgrid').innerHTML=''; arr.forEach(v=>addPFVal(v)); }
-window.addPF = window._addPF = ()=>addPFVal('');
 function addPFVal(val) {
   const g=document.getElementById('pgrid'), idx=g.querySelectorAll('.pwrap').length;
   const w=document.createElement('div'); w.className='pwrap';
   w.innerHTML='<input class="pinput" list="playerDir" placeholder="Player '+(idx+1)+'" value="'+val+'" oninput="updPCnt()">'
     +(idx>=2?'<button class="prmbtn" onclick="this.parentNode.remove();updPCnt()">×</button>':'');
   g.appendChild(w); updPCnt();
+  return w.querySelector('input');
 }
+// "Add Player" button: focus the new box without scrolling the page away from it
+window.addPF = window._addPF = function() {
+  const inp = addPFVal('');
+  if (inp) { try { inp.focus({ preventScroll: true }); } catch(e) { try { inp.focus(); } catch(e2) {} }
+    try { inp.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch(e) {} }
+  return false;
+};
 window.updPCnt = window._updPCnt = function() {
   const inputs=[...document.querySelectorAll('.pinput')];
   const filled=inputs.filter(i=>i.value.trim()).length;
@@ -3168,6 +3185,29 @@ window.openSessionDetail = function(sid) {
   });
 };
 
+// Scan sessions where I'm on the roster/waitlist and today is the session date (±1 day);
+// return the tournamentId if that session's tournament is live. Most recent session wins.
+async function findMyLiveRosterTournament(uid) {
+  try {
+    const snap = await get(ref(db, 'sessions'));
+    const all = snap.val() || {};
+    const now = Date.now();
+    let best = null, bestAt = -1;
+    for (const [sid2, s2] of Object.entries(all)) {
+      if (!s2 || !s2.tournamentId || !s2.date) continue;
+      const noon = new Date(s2.date + 'T12:00').getTime();
+      if (Math.abs(now - noon) > 36 * 3600 * 1000) continue;
+      const lst = [].concat(s2.roster ? (Array.isArray(s2.roster)?s2.roster:Object.values(s2.roster)) : [],
+                            s2.waitlist ? (Array.isArray(s2.waitlist)?s2.waitlist:Object.values(s2.waitlist)) : []);
+      const onIt = lst.some(e => e && e.uid === uid) || s2.ownerUid === uid;
+      if (!onIt) continue;
+      if (!(await checkSessionLive(sid2, s2))) continue;
+      const at = s2.createdAt || noon;
+      if (at > bestAt) { bestAt = at; best = s2.tournamentId; }
+    }
+    return best;
+  } catch(e) { return null; }
+}
 // A session's tournamentId only counts as LIVE if that tournament exists AND happened on the session's date
 // (±1 day). Stale ids (from a cloned/recurring session or an old event) are ignored, and cleared by the owner.
 window._liveOk = window._liveOk || {};
@@ -3344,7 +3384,7 @@ window.toggleInfoSec = function(k) {
 // Stored as the same "## Section" text so display + old sessions keep working.
 const SI_SECTIONS = [
   { key:'intro',   title:'',                    label:'👋 Welcome note (always visible at top)', ph:'e.g. Welcome! Tap a section below for details 🏓', chips:['Welcome! Everything you need is below — tap a section to open it. 🏓','We start SHARP — please be on time!'] },
-  { key:'format',  title:'Format',              label:'🎾 Format', ph:'Round robin? Rally scoring? How are winners decided?', chips:['Round robin — randomized partners, no repeats','Rally scoring to 21 (no win by 2)','Ranked by TOTAL points — don\'t get blown out!','Log your score in the app after each game','Best 2 out of 3 per matchup'] },
+  { key:'format',  title:'Format',              label:'🎾 Format', ph:'Round robin? Rally scoring? How are winners decided?', chips:['Round robin — randomized partners, no repeats','Rally scoring to 21 (no win by 2)','🏆 Winner = greatest AVERAGE POINT DIFFERENTIAL (Avg Diff); wins are the tiebreaker','Every rally counts — run up your score AND keep theirs low','Log your score in the app after each game','Best 2 out of 3 per matchup'] },
   { key:'finals',  title:'Finals',              label:'🏆 Finals', ph:'Optional — how do finals work?', chips:['Top 4 by points: 1&4 vs 2&3 — championship game!','Next 4: 5&8 vs 6&7','Finals are optional if people need to head home'] },
   { key:'address', title:'Address & Parking',   label:'📍 Address & Parking', ph:'Address · unit / buzz · who to text · where to park', chips:['📍 Address: ','🏢 Unit / Buzz: ','📞 Contact: ','🚗 Parking: Free valet (tip) — or guest parking down the ramp','🚗 Parking: Free street parking','⏰ Arrive 15 minutes early — we start SHARP'] },
   { key:'bring',   title:'What to Bring',       label:'🎒 What to Bring', ph:'Balls, water, etc.', chips:['2 balls','Water — no fountain at the courts','Paddle + a backup if you have one','Sunscreen / hat'] },
@@ -3428,7 +3468,7 @@ window.saveSessionInfo = async function() {
 window.insertInfoTemplate = function() {
   const ta = document.getElementById('siText'); if (!ta) return;
   ta.value = 'Welcome! Everything you need to know is below — tap a section to open it. 🏓\n\n'
-    + '## Format\n- Round robin — randomized partners, you won\'t partner the same player twice\n- Rally scoring to 21 (no win by 2)\n- Rankings by TOTAL points — don\'t get blown out!\n- After each match, log your score in the app\n\n'
+    + '## Format\n- Round robin — randomized partners, you won\'t partner the same player twice\n- Rally scoring to 21 (no win by 2)\n- 🏆 WINNER = greatest AVERAGE POINT DIFFERENTIAL (Avg Diff). Wins are the tiebreaker.\n- Every rally counts — run up the score AND keep theirs low\n- After each match, log your score in the app\n\n'
     + '## Finals\nTop 4 by points: 1&4 vs 2&3 — championship game!\nNext 4: 5&8 vs 6&7\n\n'
     + '## What to Bring\n- 2 balls\n- Water — check if there\'s a fountain at the courts\n\n'
     + '## Address & Parking\n📍 Address: 1901 Brickell Ave, Miami, FL\n🏢 Unit / Buzz: Unit B 908 (tell the guard you\'re visiting Patrick)\n📞 Contact: Patrick +1 (305) 975-3709\n🚗 Parking: Free valet (tip) — or take the ramp on the left to guest parking\n⏰ Arrive 15 minutes early — we start SHARP.\n\n'
@@ -4820,26 +4860,20 @@ function renderStandings() {
       +'<div class="cpts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.avgDiff>=0?'+':'')+champ.avgDiff.toFixed(1)+' avg diff</div></div>';
   }
 
-  // Rank toggle
-  html += '<div class="rank-toggle">'
-    +'<button class="rtbtn'+(rankMode==='avg'?' active':'')+'" onclick="setRankMode(\'avg\')">Avg Diff</button>'
-    +'<button class="rtbtn'+(rankMode==='wins'?' active':'')+'" onclick="setRankMode(\'wins\')">Most Wins</button>'
-    +'<button class="rtbtn'+(rankMode==='pts'?' active':'')+'" onclick="setRankMode(\'pts\')">Most Points</button>'
-    +'</div>';
-
   if (uneven) {
     html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">⚠ Uneven games played — Avg Diff recommended</div>';
   }
 
-  // Table — active sort column highlighted
+  // Table — tap a header to rank by it; active column highlighted (same behavior as the Leaderboard)
   const hW = effectiveMode==='wins', hP = effectiveMode==='pts', hA = effectiveMode==='avg';
   const hl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
+  const th = (key, label, on) => '<th onclick="setRankMode(\''+key+'\')" style="cursor:pointer;white-space:nowrap;'+(on?'color:var(--cyan);border-bottom:2px solid var(--cyan);':'')+'">'+label+(on?' ▾':'')+'</th>';
   html += '<table class="stbl"><thead><tr>'
     +'<th>Player</th>'
-    +'<th '+(hW?hl:'')+'>W</th>'
-    +'<th '+(hP?hl:'')+'>PTS</th>'
+    +th('wins','W',hW)
+    +th('pts','PTS',hP)
     +'<th>AG</th><th>G</th>'
-    +'<th '+(hA?hl:'')+'>Avg</th>'
+    +th('avg','Avg',hA)
     +'</tr></thead><tbody>';
 
   list.forEach((p,i) => {
@@ -4855,7 +4889,7 @@ function renderStandings() {
 
   html += '</tbody></table>';
   const modeLabel = effectiveMode==='avg'?'Avg Point Differential':effectiveMode==='wins'?'Most Wins':'Most Points';
-  html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong></div>';
+  html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong> · tap a column to re-rank</div>';
   if (allDone) {
     html += '<div style="margin-top:22px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:10px;">⚡ All Games</div>';
     const sched = cfg.schedule.filter(g => !g.deleted);
@@ -5780,7 +5814,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-09.4';
+window.BUILD_TAG = 'v2026-08-09.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
