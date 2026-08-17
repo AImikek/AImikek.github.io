@@ -226,6 +226,8 @@
   #rosterPlayerSheet.hidden { display:none !important; }
   #venueSheet.hidden { display:none !important; }
   #phoneLinkOverlay.hidden { display:none !important; }
+  #consentOverlay.hidden { display:none !important; }
+  #consentOverlay { transition: opacity 0.15s; }
 
   /* ── EVENT INFO EDITOR ── */
   #sessionInfoEdit { position:fixed; inset:0; z-index:460; background:rgba(4,6,15,0.95);
@@ -517,6 +519,7 @@
 
   <div class="auth-divider">or</div>
   <button class="alt-auth-btn" id="googleLoginBtn" onclick="signInGoogle()">Continue with Google 🔵</button>
+  <div style="margin-top:14px;font-size:11px;color:var(--muted);font-weight:600;text-align:center;line-height:1.5;">By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy Policy</a>.</div>
 
   <button class="tiny-help-btn" onclick="window.location.reload()">Refresh if stuck</button>
   <div class="login-footer">Use phone number or Google to sign in. Standard SMS rates may apply.</div>
@@ -691,7 +694,7 @@
     <label class="flabel">Your Name</label>
     <input class="finput" id="profileNameInput" placeholder="Full name" maxlength="30"
       style="font-size:18px;font-weight:700;text-align:center;">
-    <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-align:center;margin:6px 0 2px;">👤 This is your username — the exact name everyone sees in the app</div>
+    <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-align:center;margin:6px 0 2px;">👤 This is your username — the exact name on every roster, game and leaderboard. Tied to your phone number. Change it later in Profile and it updates everywhere.</div>
     <label class="flabel">I am</label>
     <div class="gender-row">
       <div class="gender-card" id="gMale" onclick="selectGender('M')">
@@ -701,13 +704,32 @@
         <div class="gender-icon">👩</div><div class="gender-label">Female</div>
       </div>
     </div>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin:14px 0 4px;cursor:pointer;">
+      <input type="checkbox" id="pSms" style="width:18px;height:18px;margin-top:1px;accent-color:var(--cyan);flex-shrink:0;">
+      <span style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.4;">📱 Text me about my sessions (spot alerts, reminders). Optional, reply STOP anytime.</span>
+    </label>
     <button onclick="saveProfile()"
       style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
       color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;
       font-size:18px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
       box-shadow:0 4px 20px rgba(255,45,120,0.4);">Let's Play 🏓</button>
-    <div style="margin-top:12px;font-size:12px;color:var(--muted);text-align:center;">
-      You can update this anytime in your profile
+    <div style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5;">
+      By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> &amp; <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy Policy</a>. You can update this anytime in your profile.
+    </div>
+  </div>
+</div>
+
+<!-- SMS + TERMS notice for existing accounts (once per terms version) — one line, one checkbox, one tap -->
+<div id="consentOverlay" class="hidden" style="position:fixed;inset:0;z-index:955;background:rgba(4,6,15,0.75);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:0;">
+  <div style="width:100%;max-width:440px;background:var(--card);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:18px 20px 24px;">
+    <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;"></div>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px;cursor:pointer;">
+      <input type="checkbox" id="cSms" style="width:18px;height:18px;margin-top:1px;accent-color:var(--cyan);flex-shrink:0;">
+      <span style="font-size:12.5px;color:var(--white);font-weight:600;line-height:1.45;">📱 Text me about my sessions (spot alerts, reminders). Optional, reply STOP anytime.</span>
+    </label>
+    <button onclick="acceptConsent()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Continue</button>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center;line-height:1.4;">
+      By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> &amp; <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy Policy</a>.
     </div>
   </div>
 </div>
@@ -754,7 +776,8 @@
     <div style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:2px;
       color:var(--white);text-transform:uppercase;">My Profile</div>
   </div>
-  <div class="profile-avatar" id="profileAvatarDisplay">👤</div>
+  <div class="profile-avatar" id="profileAvatarDisplay" onclick="document.getElementById('avatarFile').click()" style="cursor:pointer;overflow:hidden;background-size:cover;background-position:center;position:relative;">👤</div>
+  <div style="text-align:center;margin:-8px 0 8px;"><label style="font-size:11px;color:var(--cyan);font-weight:800;cursor:pointer;">📷 <span id="avatarLbl">Add a photo of your face</span><input id="avatarFile" type="file" accept="image/*" style="display:none;" onchange="uploadAvatar(this)"></label> <span id="avatarRemove" onclick="removeAvatar()" style="display:none;font-size:11px;color:var(--muted);font-weight:700;cursor:pointer;margin-left:8px;text-decoration:underline;">remove</span></div>
   <div class="profile-phone" id="profilePhoneDisplay"></div>
   <label class="flabel">Name</label>
   <input class="finput" id="editName" placeholder="Your name" maxlength="30">
@@ -781,6 +804,34 @@
   <input class="finput" id="editDob" type="date" style="color-scheme:dark;">
   <div style="font-size:12px;color:var(--muted);margin-top:-10px;margin-bottom:16px;font-weight:600;">
     Used to calculate your age for leaderboards
+  </div>
+
+  <label class="flabel">✈️ Away / Traveling</label>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;">
+    <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+      <span style="font-size:13.5px;font-weight:700;color:var(--white);">I'm away right now</span>
+      <input type="checkbox" id="awayOn" style="width:22px;height:22px;accent-color:var(--cyan);" onchange="toggleAwayFields()">
+    </label>
+    <div id="awayFields" style="display:none;margin-top:10px;">
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;"><div style="font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:3px;">Where</div><input class="finput" id="awayCity" placeholder="e.g. NYC" maxlength="40" style="margin-bottom:0;"></div>
+        <div style="flex:1;"><div style="font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:3px;">Back on</div><input class="finput" id="awayUntil" type="date" style="color-scheme:dark;margin-bottom:0;"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;">
+        <input type="checkbox" id="awayShare" checked style="width:18px;height:18px;accent-color:var(--cyan);">
+        <span style="font-size:12px;color:var(--white);font-weight:600;">Show my travel city so PB Tourney players there can meet up 🏓</span>
+      </label>
+    </div>
+    <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organizers see a ✈️ next to your name until you're back, and won't chase you for sessions.</div>
+  </div>
+
+  <label class="flabel">📱 Text messages</label>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;">
+    <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+      <span style="font-size:13.5px;font-weight:700;color:var(--white);">Text me about my sessions</span>
+      <input type="checkbox" id="smsToggle" style="width:22px;height:22px;accent-color:var(--cyan);" onchange="setSmsConsent(this.checked)">
+    </label>
+    <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:6px;">Confirmations, waitlist &amp; spot-open alerts, reminders, results. Msg &amp; data rates may apply. Reply STOP to opt out. <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy</a></div>
   </div>
   <button onclick="saveProfileEdits()"
     style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
@@ -1103,6 +1154,7 @@
     </div>
     <div style="color:var(--muted);font-size:13px;font-weight:600;margin-bottom:16px;">Claim a spot in an upcoming session — or create your own.</div>
     <button onclick="openSessionCreate()" style="display:block;width:100%;padding:15px;margin-bottom:18px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(255,45,120,0.3);">➕ Create a Session</button>
+    <div id="travelersStrip" style="display:none;margin-bottom:14px;"></div>
     <div id="sessionsList"></div>
   </div>
 </div>
@@ -1454,7 +1506,8 @@ const makeTid = () => 't' + Math.random().toString(36).slice(2,8) + Date.now().t
 const push = () => {
   if (!currentUser || !activeTid) return;
   skip = true;
-  set(ref(db, 'tournaments/' + activeTid), { cfg, scores, updatedAt: Date.now() });
+  // update (not set) so ownerUid / other top-level fields survive every score push
+  update(ref(db, 'tournaments/' + activeTid), { cfg, scores, updatedAt: Date.now() });
   // If this tournament is already in Past Tournaments, keep that copy in sync with edits
   if (window._archivedTids && window._archivedTids.has(activeTid)) {
     const hasScores = Object.values(scores).some(s => s && s.s1 !== null);
@@ -1496,6 +1549,18 @@ function subscribeTournament(tid) {
     document.getElementById('syncPill')?.classList.add('live');
     if(document.getElementById('syncLbl')) document.getElementById('syncLbl').textContent = 'Live';
     const d = snap.val();
+    window._tOwnerUid = d && d.ownerUid || null;
+    if (d && d.cancelled) {
+      // organizer undid the start → bounce everyone back to the session sign-up page
+      if (_tournamentUnsub) { try { _tournamentUnsub(); } catch(e) {} _tournamentUnsub = null; }
+      const backSid = d.cfg && d.cfg.fromSession;
+      activeTid = null; cfg = null; scores = {};
+      try { if (currentUser) set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), null); } catch(e) {}
+      updateNav();
+      copiedToast('↩ Organizer undid the start — back to sign-ups');
+      if (backSid) openSessionDetail(backSid); else openSessions();
+      return;
+    }
     if (d?.cfg) {
       if (firstLoad || !skip) {
         cfg = d.cfg;
@@ -1612,6 +1677,15 @@ async function bootApp() {
   onValue(ref(db, 'users/' + uid + '/profile'), snap => {
     const wasNew = !userProfile.name;
     userProfile = snap.val() || {};
+    // Lightweight consent notice — ONLY for existing users (a name already on file).
+    // Brand-new users get the same notice folded into the "Let's Play" name screen — never both.
+    if (userProfile.name && (userProfile.tosVersion || 0) < TOS_VERSION) {
+      const co = document.getElementById('consentOverlay');
+      if (co && co.classList.contains('hidden')) {
+        const cs = document.getElementById('cSms'); if (cs) cs.checked = !!userProfile.smsConsent;
+        co.classList.remove('hidden');
+      }
+    }
     if (userProfile.rankRule === 'wins' || userProfile.rankRule === 'avg') { rankRule = userProfile.rankRule; try { localStorage.setItem('pbt_rankRule', rankRule); } catch(e) {} }
     updateProfileDisplay();
     if (wasNew && !userProfile.name) {
@@ -1953,6 +2027,69 @@ function _finalizeTournament() {
       alert('⚠️ Could not save the tournament to the server.\n\nThis usually means the Firebase rules need the "tournaments" section added. The tournament is showing locally but will NOT sync or save until rules are updated.');
     });
   closeSetup(); showPage('games');
+}
+
+// ── TOURNAMENT PHOTOS ── photos/{tid}/{pid} = { data, by, byUid, at }, photoIdx/{tid} = { n, players, name, at }
+async function renderTournamentPhotos(tid) {
+  const el = document.getElementById('tPhotos'); if (!el || !tid) return;
+  try {
+    const snap = await get(ref(db, 'photos/' + tid));
+    const ph = Object.entries(snap.val() || {}).sort((a,b) => (a[1].at||0) - (b[1].at||0));
+    if (!ph.length) { el.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-weight:600;">No photos yet — add one from tonight 🏓</div>'; return; }
+    el.innerHTML = ph.map(([pid, p]) => '<div style="position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--surface2);border:1px solid var(--border);">'
+      +'<img src="'+p.data+'" onclick="viewPhoto(\''+tid+'\',\''+pid+'\')" style="width:100%;height:100%;object-fit:cover;cursor:pointer;display:block;">'
+      +((currentUser && (p.byUid === currentUser.uid || isAdmin())) ? '<span onclick="deleteTournamentPhoto(\''+tid+'\',\''+pid+'\')" style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(4,6,15,0.75);color:var(--danger);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;">✕</span>' : '')
+      +'</div>').join('');
+  } catch(e) { el.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-weight:600;">Photos unavailable (' + (e.message||e) + ')</div>'; }
+}
+window.uploadTournamentPhotos = async function(inp) {
+  const files = inp && inp.files ? [...inp.files] : []; if (!files.length || !activeTid) return;
+  const el = document.getElementById('tPhotos'); if (el) el.insertAdjacentHTML('afterbegin', '<div id="tPhotoBusy" style="grid-column:1/-1;color:var(--cyan);font-size:12px;font-weight:700;">Uploading ' + files.length + ' photo' + (files.length>1?'s':'') + '…</div>');
+  let ok = 0;
+  for (const f of files.slice(0, 10)) {
+    try {
+      const data = await resizeImageFile(f, 900, 0.72);
+      const pid = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+      await set(ref(db, 'photos/' + activeTid + '/' + pid), { data, by: userProfile?.name || 'Player', byUid: currentUser.uid, at: Date.now() });
+      ok++;
+    } catch(e) { console.log('photo upload failed', e); }
+  }
+  try {
+    const cnt = Object.keys((await get(ref(db, 'photos/' + activeTid))).val() || {}).length;
+    await set(ref(db, 'photoIdx/' + activeTid), { n: cnt, name: cfg?.name || 'Tournament', players: (cfg?.players||[]).slice(0,40), at: Date.now() });
+  } catch(e) {}
+  try { inp.value = ''; } catch(e) {}
+  const b = document.getElementById('tPhotoBusy'); if (b) b.remove();
+  renderTournamentPhotos(activeTid);
+  if (ok) copiedToast('✓ ' + ok + ' photo' + (ok>1?'s':'') + ' added'); else alert('Photo upload failed — check the Firebase rules for "photos" and "photoIdx".');
+};
+window.deleteTournamentPhoto = async function(tid, pid) {
+  if (!confirm('Delete this photo?')) return;
+  try { await set(ref(db, 'photos/' + tid + '/' + pid), null); } catch(e) {}
+  try { const cnt = Object.keys((await get(ref(db, 'photos/' + tid))).val() || {}).length; await update(ref(db, 'photoIdx/' + tid), { n: cnt }); } catch(e) {}
+  renderTournamentPhotos(tid);
+};
+window.viewPhoto = async function(tid, pid) {
+  try {
+    const snap = await get(ref(db, 'photos/' + tid + '/' + pid)); const p = snap.val(); if (!p) return;
+    let ov = document.getElementById('photoView');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'photoView'; ov.style.cssText = 'position:fixed;inset:0;z-index:990;background:rgba(4,6,15,0.94);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px;'; ov.onclick = () => ov.remove(); document.body.appendChild(ov); }
+    ov.innerHTML = '<img src="'+p.data+'" style="max-width:100%;max-height:82vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);"><div style="margin-top:10px;color:var(--muted);font-size:12px;font-weight:600;">📸 ' + escInfo(p.by||'') + ' · ' + new Date(p.at||0).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · tap to close</div>';
+  } catch(e) {}
+};
+// player sheet: recent tournament photos where this player appears
+async function playerPhotosHtml(name) {
+  try {
+    const idx = (await get(ref(db, 'photoIdx'))).val() || {};
+    const tids = Object.entries(idx).filter(([t,i]) => i && (i.players||[]).some(p => String(p).toLowerCase() === String(name).toLowerCase()) && i.n > 0).sort((a,b) => (b[1].at||0)-(a[1].at||0)).slice(0,3);
+    if (!tids.length) return '';
+    let h = '<div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:12px 0 6px;">📸 Photos</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">';
+    for (const [t] of tids) {
+      const ph = Object.entries((await get(ref(db, 'photos/' + t))).val() || {}).slice(0, 4);
+      ph.forEach(([pid, p]) => { h += '<img src="'+p.data+'" onclick="viewPhoto(\''+t+'\',\''+pid+'\')" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;">'; });
+    }
+    return h + '</div>';
+  } catch(e) { return ''; }
 }
 
 // ── TOURNAMENT ARCHIVING ──
@@ -2977,7 +3114,24 @@ window.scSetRec = function(r) {
   document.getElementById('scRecWeekly').classList.toggle('active', r === 'weekly');
 };
 
+// ✈️ Who's traveling — players who turned on "away" with a shared city (so you can meet up)
+async function renderTravelersStrip() {
+  const el = document.getElementById('travelersStrip'); if (!el) return;
+  try {
+    const snap = await get(ref(db, 'directory'));
+    const today = new Date().toISOString().slice(0,10);
+    const trav = Object.entries(snap.val() || {}).filter(([u,d]) => d && d.awayUntil && d.awayUntil >= today && d.awayShare !== false && d.awayCity);
+    if (!trav.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.style.display = 'block';
+    el.innerHTML = '<div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:6px;">✈️ Traveling now — meet up!</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + trav.map(([u,d]) =>
+        '<span onclick="openRosterPlayerSheet(\''+encodeURIComponent(u)+'\',\''+escInfo(String(d.name||'')).replace(/'/g,'')+'\',\'roster\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.3);border-radius:99px;font-size:12px;font-weight:700;color:var(--white);">'
+        + (d.avatar ? '<span style="width:18px;height:18px;border-radius:50%;background:url('+d.avatar+') center/cover;display:inline-block;"></span>' : '')
+        + escInfo(d.name||'?') + ' <span style="color:var(--yellow);">→ ' + escInfo(d.awayCity) + '</span> <span style="color:var(--muted);font-size:10px;">back ' + new Date(d.awayUntil+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '</span></span>').join('') + '</div>';
+  } catch(e) { el.style.display = 'none'; }
+}
 window.openSessions = async function() {
+  renderTravelersStrip();
   window._pushNav('sessions');
   window.hideAllPages();
   if (window.resetBars) resetBars();
@@ -3274,8 +3428,13 @@ async function resolveRosterNames(sid, s) {
     lists.forEach(l => l.forEach(e => { if (e && e.uid) uids.add(e.uid); }));
     if (s.ownerUid) uids.add(s.ownerUid);
     const need = [...uids].filter(u => !(u in window._nameCache));
+    window._avatarCache = window._avatarCache || {}; window._awayCache = window._awayCache || {};
+    const today1 = new Date().toISOString().slice(0,10);
     await Promise.all(need.map(async u => {
-      try { const ps = await get(ref(db, 'users/' + u + '/profile')); window._nameCache[u] = ((ps.val()||{}).name || '').trim() || null; }
+      try { const ps = await get(ref(db, 'users/' + u + '/profile')); const pv = ps.val() || {};
+        window._nameCache[u] = (pv.name || '').trim() || null;
+        window._avatarCache[u] = pv.avatar || null;
+        window._awayCache[u] = !!(pv.awayUntil && pv.awayUntil >= today1); }
       catch(e) { window._nameCache[u] = null; }
     }));
     let changed = false;
@@ -3375,6 +3534,9 @@ async function checkSessionLive(sid, s) {
     const when = t.updatedAt || t.createdAt || 0;
     const sessNoon = s.date ? new Date(s.date + 'T12:00').getTime() : 0;
     const ok = !sessNoon || Math.abs(when - sessNoon) < 36 * 3600 * 1000;
+    window._liveNoScores = window._liveNoScores || {};
+    window._liveNoScores[sid] = ok && !Object.values(t.scores || {}).some(sc => sc && sc.s1 !== null && sc.s1 !== undefined);
+    if (t.cancelled) { delete window._liveOk[sid]; return false; }
     if (ok) window._liveOk[sid] = tid; else {
       delete window._liveOk[sid];
       if (currentUser && (s.ownerUid === currentUser.uid || isAdmin())) { try { set(ref(db, 'sessions/' + sid + '/tournamentId'), null); } catch(e) {} }
@@ -3382,6 +3544,31 @@ async function checkSessionLive(sid, s) {
     return ok;
   } catch(e) { delete window._liveOk[sid]; return false; }
 }
+// Organizer hit Start by mistake: unlink the tournament from the session, mark it cancelled so anyone who
+// already opened it gets bounced back, and return to the sign-up page. Only while no scores exist.
+window.undoStartTournament = async function(sid) {
+  const snap = await get(ref(db, 'sessions/' + sid));
+  const s = snap.val(); if (!s || !s.tournamentId) return;
+  if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
+  const tid = s.tournamentId;
+  const tSnap = await get(ref(db, 'tournaments/' + tid));
+  const t = tSnap.val();
+  if (t && Object.values(t.scores || {}).some(sc => sc && sc.s1 !== null && sc.s1 !== undefined)) { alert('Scores have already been entered — undo isn\'t available. Use "New Tournament" on the Games page if you really want to start over.'); return; }
+  if (!confirm('Undo the start?\n\nThe tournament is removed, the session goes back to sign-ups, and anyone who opened the games is sent back to the session page.')) return;
+  try {
+    if (t) await update(ref(db, 'tournaments/' + tid), { cancelled: true, updatedAt: Date.now() });
+    await set(ref(db, 'sessions/' + sid + '/tournamentId'), null);
+    delete (window._liveOk||{})[sid];
+    if (activeTid === tid) {
+      if (_tournamentUnsub) { try { _tournamentUnsub(); } catch(e) {} _tournamentUnsub = null; }
+      activeTid = null; cfg = null; scores = {};
+      try { await set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), null); } catch(e) {}
+      updateNav();
+    }
+    copiedToast('↩ Start undone — back to sign-ups');
+    openSessionDetail(sid);
+  } catch(e) { alert('Could not undo: ' + (e.message||e)); }
+};
 window.closeSessionDetail = function() {
   document.getElementById('sessionDetail').classList.add('hidden');
   if (sdUnsub) { try { sdUnsub(); } catch(e) {} sdUnsub = null; }
@@ -3404,7 +3591,9 @@ function renderSessionDetail(sid, s) {
     +(s.location?'<div onclick="openVenueSheet(\''+sid+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--cyan);font-weight:700;margin-top:4px;text-decoration:underline;text-decoration-color:rgba(0,240,255,0.35);text-underline-offset:3px;">📍 '+s.location+' <span style="font-size:11px;opacity:0.7;">›</span></div>':'')
     +(s.level?'<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-top:2px;">🎚 Level '+s.level+'</div>':'')
     +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+(isOwner?' <span onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;color:var(--cyan);font-size:12px;margin-left:6px;">✎ edit</span>':'')+'</div>':(isOwner?'<div onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;font-size:12px;color:var(--cyan);font-weight:700;margin-top:8px;">➕ Add a note for the group</div>':''))
-    +((s.tournamentId && window._liveOk && window._liveOk[sid] === s.tournamentId)?'<div onclick="joinLiveTournament(\''+s.tournamentId+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:12px;color:white;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,45,120,0.3);">🔴 TOURNAMENT IS LIVE — VIEW GAMES</div>':'')
+    +((s.tournamentId && window._liveOk && window._liveOk[sid] === s.tournamentId)?'<div onclick="joinLiveTournament(\''+s.tournamentId+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:12px;color:white;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,45,120,0.3);">🔴 TOURNAMENT IS LIVE — VIEW GAMES</div>'
+      +(isOwner && window._liveNoScores && window._liveNoScores[sid] ? '<div onclick="undoStartTournament(\''+sid+'\')" style="cursor:pointer;text-align:center;margin-top:8px;padding:9px;border:1px solid rgba(255,79,107,0.4);border-radius:10px;color:var(--danger);font-weight:800;font-size:11px;letter-spacing:1px;">↩ STARTED BY ACCIDENT? UNDO — BACK TO SIGN-UPS</div>' : '')
+      :'')
     +(s.info?'<div onclick="jumpToInfo(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.35);border-radius:10px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📋 FULL DETAILS ↓</div>':'')
     +(s.ownerName?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organized by '+s.ownerName+'</div>':'')
     +(isOwner?'<div onclick="editSession(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.4);border-radius:10px;color:var(--cyan);font-weight:800;font-size:11px;letter-spacing:1px;">✎ EDIT SESSION</div>':'')
@@ -3416,7 +3605,10 @@ function renderSessionDetail(sid, s) {
     if (r) {
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
         +'<div style="min-width:0;"><span style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--aqua);margin-right:10px;">'+(i+1)+'</span>'
-        +'<span onclick="openRosterPlayerSheet(\''+encodeURIComponent(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'\\\'')+'\',\'roster\')" style="font-weight:700;color:var(--white);font-size:14px;cursor:pointer;">'+r.name+'</span>'
+        +'<span onclick="openRosterPlayerSheet(\''+encodeURIComponent(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'\\\'')+'\',\'roster\')" style="font-weight:700;color:var(--white);font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">'
+          +(window._avatarCache && window._avatarCache[r.uid] ? '<span style="width:24px;height:24px;border-radius:50%;background:url('+window._avatarCache[r.uid]+') center/cover;flex-shrink:0;display:inline-block;"></span>' : '')
+          +r.name
+          +(window._awayCache && window._awayCache[r.uid] ? '<span title="Away" style="font-size:12px;">✈️</span>' : '')+'</span>'
         +(!isNameEcho(r.comment, r.name) ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
         +(r.uid === currentUser?.uid
           ? '<button onclick="releaseSpot(\'' + sid + '\')" style="flex-shrink:0;padding:6px 12px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">I\'m out</button>'
@@ -3671,15 +3863,19 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
     } catch(e) {}
   }
   // render
+  const today0 = new Date().toISOString().slice(0,10);
+  const isAway = !!(prof && prof.awayUntil && prof.awayUntil >= today0);
   let h = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">'
-    +'<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:20px;color:#04060F;flex-shrink:0;">'
-    +(name ? escInfo(name.trim()[0].toUpperCase()) : '?')+'</div>'
+    +(prof && prof.avatar
+      ? '<div style="width:52px;height:52px;border-radius:50%;background:url('+prof.avatar+') center/cover;flex-shrink:0;border:2px solid rgba(0,240,255,0.35);"></div>'
+      : '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:20px;color:#04060F;flex-shrink:0;">'+(name ? escInfo(name.trim()[0].toUpperCase()) : '?')+'</div>')
     +'<div><div style="font-family:\'Russo One\',sans-serif;font-size:20px;color:var(--white);">'+escInfo(name)+'</div>'
     +'<div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">'+(listType==='waitlist'?'⏳ Waitlist':'✅ Roster')+'</div></div></div>';
   if (prof) {
     const row = (icon, val, style) => val ? '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">'
       +'<span style="font-size:16px;">'+icon+'</span>'
       +'<span style="font-size:14px;font-weight:700;color:'+(style||'var(--white)')+';">'+val+'</span></div>' : '';
+    if (isAway) h += row('✈️', 'Away' + (prof.awayShare !== false && prof.awayCity ? ' in ' + escInfo(prof.awayCity) : '') + ' · back ' + new Date(prof.awayUntil + 'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}), 'var(--yellow)');
     if (prof.city)       h += row('📍', escInfo(prof.city));
     if (prof.dupr)       h += row('🏆', 'DUPR ' + escInfo(String(prof.dupr)), 'var(--yellow)');
     if (prof.homeCourt)  h += row('🏟', escInfo(prof.homeCourt));
@@ -3702,6 +3898,7 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
     if (adminContact.email) h += '<div><a href="mailto:'+escInfo(adminContact.email)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">✉️ '+escInfo(adminContact.email)+'</a></div>';
     h += '</div>';
   }
+  h += await playerPhotosHtml(name);
   // "View full stats" link for leaderboard cross-reference
   const safeNameForAttr = String(name).replace(/'/g, '\\x27');
   h += '<div onclick="closeRosterPlayerSheet();openPlayerDetail(\'' + safeNameForAttr + '\')" style="cursor:pointer;text-align:center;margin-top:4px;padding:11px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.25);border-radius:12px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">📊 VIEW GAME HISTORY →</div>';
@@ -3744,7 +3941,7 @@ window.openVenueSheet = async function(sid) {
     h += '<div style="color:var(--muted);font-size:13px;font-weight:600;margin-bottom:6px;">Not one of the listed public courts — check the organizer\'s notes below for the address.</div>';
   }
   h += infoBlock + mapsBtn;
-  const canEdit = currentUser && (s.ownerUid === currentUser.uid || isAdmin());
+  const canEdit = currentUser && isAdmin();   // courts/ is admin-write in the DB rules
   if (canEdit) {
     h += '<div onclick="editVenueDetails(\''+escInfo(court ? court.n : loc).replace(/'/g,'')+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:10px;border:1px dashed rgba(0,240,255,0.35);border-radius:12px;color:var(--cyan);font-weight:800;font-size:12px;letter-spacing:1px;">✎ '+(court && (court.a && court.a.toLowerCase()!==court.n.toLowerCase().split(' ')[0]) ? 'EDIT' : 'ADD')+' VENUE DETAILS — address, courts, lights, hours…</div>';
   }
@@ -3820,9 +4017,12 @@ window.claimSpot = async function(sid) {
   if (roster.some(r=>r.uid===currentUser.uid) || wait.some(r=>r.uid===currentUser.uid)) { alert("You're already in!"); return; }
   let nm = (userProfile?.name || '').trim();
   if (!nm) {
-    nm = (prompt('Your name for the roster:\n\n(This is saved as your player name)')||'').trim(); if (!nm) return;
-    userProfile = Object.assign({}, userProfile || {}, { name: nm });
-    try { set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch(e) {}
+    // No username yet → the ONLY way to get one is the account setup screen (full name = username everywhere).
+    // The claim resumes automatically once they save it.
+    window._pendingClaimSid = sid;
+    document.getElementById('profileOverlay').classList.remove('hidden');
+    setTimeout(() => { try { document.getElementById('profileNameInput').focus(); } catch(e) {} }, 100);
+    return;
   }
   let comment = (prompt("You're in, " + nm + "! 🏓\n\nAdd a note for the group? (e.g. \"running 15 min late\")\nLeave EMPTY and press OK to skip:") || '').trim();
   if (isNameEcho(comment, nm)) comment = '';  // typed their name (or name + initial) — not a note
@@ -4325,6 +4525,7 @@ window.syncHistoryToGlobal = async function() {
 
 // ── PLAYER DIRECTORY (autocomplete) ──
 async function saveDirectoryEntry() {
+  // (away/avatar mirrored below in the write)
   if (!currentUser || !userProfile?.name) return;
   try {
     let joinedAt = Date.now();
@@ -4339,6 +4540,8 @@ async function saveDirectoryEntry() {
       email: userProfile.email || currentUser.email || null,
       phone: userProfile.phone || currentUser.phoneNumber || null,
       dupr: userProfile.dupr || null,
+      avatar: userProfile.avatar || null,
+      awayCity: userProfile.awayCity || null, awayUntil: userProfile.awayUntil || null, awayShare: userProfile.awayShare === false ? false : null,
       joinedAt, lastActive: Date.now()
     });
     // First-time signup → send welcome email (if template configured)
@@ -4674,6 +4877,9 @@ function renderGames() {
   }
   if (cfg.fromSession) {
     html += '<div onclick="openSessionDetail(\''+cfg.fromSession+'\')" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.3);border-radius:12px;margin-bottom:14px;color:var(--cyan);font-weight:800;font-size:13px;letter-spacing:1px;">📋 EVENT INFO &amp; RULES</div>';
+  }
+  if (cfg.fromSession && activeTid && !Object.values(scores).some(s => s && s.s1 !== null && s.s1 !== undefined) && (cfg.ownerUid === currentUser?.uid || (window._tOwnerUid === currentUser?.uid) || isAdmin())) {
+    html += '<div onclick="undoStartTournament(\''+cfg.fromSession+'\')" style="cursor:pointer;text-align:center;padding:9px;border:1px solid rgba(255,79,107,0.35);border-radius:12px;color:var(--danger);font-weight:800;font-size:11px;letter-spacing:1px;margin-bottom:10px;">↩ STARTED BY ACCIDENT? UNDO — BACK TO SIGN-UPS</div>';
   }
   if (cfg.mode === 'rr' && activeTid && !Object.values(scores).some(s => s && s.s1 !== null && s.s1 !== undefined)) {
     html += '<div onclick="addPlayerToTournament()" style="cursor:pointer;text-align:center;padding:11px;border:2px dashed rgba(0,245,196,0.35);border-radius:12px;color:var(--aqua);font-weight:800;font-size:12.5px;letter-spacing:0.5px;margin-bottom:14px;">👤 Someone extra show up? Add players — games re-deal fairly</div>';
@@ -5075,7 +5281,7 @@ function calcStandings() {
 
   // Detect uneven game counts (informational only — user's sort choice is always respected)
   const gameCounts = Object.values(stats).map(s=>s.games).filter(n=>n>0);
-  const uneven = gameCounts.length > 1 && (Math.max(...gameCounts) - Math.min(...gameCounts)) >= 2;
+  const uneven = gameCounts.length > 1 && (Math.max(...gameCounts) - Math.min(...gameCounts)) >= 1;
   const effectiveMode = rankMode;
 
   return {
@@ -5087,7 +5293,10 @@ function calcStandings() {
       const avgDiff = st.games > 0 ? diff / st.games : 0;
       return { name:p, ...st, diff, avgDiff };
     }).sort((a,b) => {
-      if (effectiveMode === 'wins') return b.wins-a.wins || b.avgDiff-a.avgDiff || b.ptsFor-a.ptsFor;
+      if (effectiveMode === 'wins') {
+        if (uneven) { const wp = p => p.games ? p.wins/p.games : 0; return wp(b)-wp(a) || b.avgDiff-a.avgDiff || b.wins-a.wins || b.ptsFor-a.ptsFor; }
+        return b.wins-a.wins || b.avgDiff-a.avgDiff || b.ptsFor-a.ptsFor;
+      }
       if (effectiveMode === 'pts')  return b.ptsFor-a.ptsFor || b.wins-a.wins || b.avgDiff-a.avgDiff;
       // avg (default)
       return b.avgDiff-a.avgDiff || b.wins-a.wins || b.ptsFor-a.ptsFor;
@@ -5130,8 +5339,10 @@ function renderStandings() {
     }
   }
 
-  if (uneven) {
-    html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">⚠ Uneven games played — Avg Diff recommended</div>';
+  if (uneven && effectiveMode === 'wins') {
+    html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">⚠ Uneven games (byes) — ranking by <b>Win %</b>, Avg Diff breaks ties</div>';
+  } else if (uneven) {
+    html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">⚠ Uneven games played (byes)</div>';
   }
 
   // Table — tap a header to rank by it; active column highlighted (same behavior as the Leaderboard)
@@ -5140,7 +5351,7 @@ function renderStandings() {
   const th = (key, label, on) => '<th onclick="setRankMode(\''+key+'\')" style="cursor:pointer;white-space:nowrap;'+(on?'color:var(--cyan);border-bottom:2px solid var(--cyan);':'')+'">'+label+(on?' ▾':'')+'</th>';
   html += '<table class="stbl"><thead><tr>'
     +'<th>Player</th>'
-    +th('wins','W',hW)
+    +th('wins', uneven ? 'W%' : 'W', hW)
     +th('pts','PTS',hP)
     +'<th>AG</th><th>G</th>'
     +th('avg','Avg',hA)
@@ -5150,7 +5361,7 @@ function renderStandings() {
     const dc = p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
     html += '<tr onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;">'
       +'<td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
-      +'<td '+(hW?hl:'')+'>'+p.wins+'</td>'
+      +'<td '+(hW?hl:'')+'>'+(uneven ? (p.games?Math.round(100*p.wins/p.games):0)+'% <span style="color:var(--muted);font-size:10px;">('+p.wins+'-'+(p.games-p.wins)+')</span>' : p.wins)+'</td>'
       +'<td '+(hP?hl:'')+' class="ptsf">'+p.ptsFor+'</td>'
       +'<td>'+p.ptsAgainst+'</td>'
       +'<td style="color:var(--muted);">'+p.games+'</td>'
@@ -5158,8 +5369,14 @@ function renderStandings() {
   });
 
   html += '</tbody></table>';
-  const modeLabel = effectiveMode==='avg'?'Avg Point Differential (wins break ties)':effectiveMode==='wins'?'Wins (Avg Diff breaks ties)':'Most Points';
+  const modeLabel = effectiveMode==='avg'?'Avg Point Differential (wins break ties)':effectiveMode==='wins'?(uneven?'Win % (Avg Diff breaks ties)':'Wins (Avg Diff breaks ties)'):'Most Points';
   html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong> · tap a column to re-rank</div>';
+  // 📸 Photos for this tournament (stored at photos/{tid}, small JPEGs)
+  html += '<div style="margin-top:22px;display:flex;align-items:center;justify-content:space-between;">'
+    +'<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;">📸 Photos</div>'
+    +'<label style="cursor:pointer;padding:7px 12px;border:1px solid rgba(0,240,255,0.35);border-radius:10px;color:var(--cyan);font-weight:800;font-size:11px;letter-spacing:1px;">+ ADD PHOTO<input type="file" accept="image/*" multiple style="display:none;" onchange="uploadTournamentPhotos(this)"></label></div>'
+    +'<div id="tPhotos" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;"><div style="grid-column:1/-1;color:var(--muted);font-size:12px;font-weight:600;">Loading…</div></div>';
+  setTimeout(() => renderTournamentPhotos(activeTid), 0);
   if (allDone) {
     html += '<div style="margin-top:22px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:10px;">⚡ All Games</div>';
     const sched = cfg.schedule.filter(g => !g.deleted);
@@ -5257,7 +5474,7 @@ function updateProfileDisplay() {
   const pd = document.getElementById('profilePhoneDisplay');
   if (pd) pd.textContent = phone;
   const av = document.getElementById('profileAvatarDisplay');
-  if (av) av.textContent = userProfile?.gender==='M' ? '👨' : userProfile?.gender==='F' ? '👩' : '👤';
+  if (av) { if (userProfile?.avatar) { av.style.backgroundImage = 'url(' + userProfile.avatar + ')'; av.textContent = ''; } else { av.style.backgroundImage = ''; av.textContent = userProfile?.gender==='M' ? '👨' : userProfile?.gender==='F' ? '👩' : '👤'; } }
 }
 
 // ── PROFILE FUNCTIONS ──
@@ -5267,6 +5484,28 @@ window.selectGender = function(g) {
   document.getElementById('gFemale').classList.toggle('active', g==='F');
 };
 
+const TOS_VERSION = 1;
+// One line, one optional checkbox, one tap — agreement to Terms/Privacy is implied by tapping Continue
+// (the same clickwrap pattern Instagram/Facebook use), same as the linked line under "Let's Play" for new users.
+window.acceptConsent = async function() {
+  const sms = !!document.getElementById('cSms')?.checked;
+  const now = Date.now();
+  const upd = { tosVersion: TOS_VERSION, tosAcceptedAt: now, smsConsent: sms };
+  if (sms) upd.smsConsentAt = now; else upd.smsOptOutAt = now;
+  if (currentUser?.phoneNumber) upd.smsNumber = currentUser.phoneNumber;
+  try { await update(ref(db, 'users/' + currentUser.uid + '/profile'), upd); } catch(e) {}
+  userProfile = Object.assign({}, userProfile, upd);
+  document.getElementById('consentOverlay').classList.add('hidden');
+};
+window.setSmsConsent = async function(on) {
+  const now = Date.now();
+  const upd = on ? { smsConsent: true, smsConsentAt: now } : { smsConsent: false, smsOptOutAt: now };
+  if (on && currentUser?.phoneNumber) upd.smsNumber = currentUser.phoneNumber;
+  try { await update(ref(db, 'users/' + currentUser.uid + '/profile'), upd); } catch(e) {}
+  userProfile = Object.assign({}, userProfile, upd);
+  const t = document.getElementById('smsToggle'); if (t) t.checked = !!on;
+  copiedToast(on ? '📱 Texts on' : '📵 Texts off');
+};
 window.plSendCode = async function() {
   const raw = (document.getElementById('plPhoneInput').value || '').trim();
   const errEl = document.getElementById('plError'); errEl.style.display = 'none';
@@ -5338,14 +5577,61 @@ window.plSignOut = async function() {
 window.saveProfile = async function() {
   const name = document.getElementById('profileNameInput').value.trim();
   if (!name) { document.getElementById('profileNameInput').focus(); return; }
+  const oldName = (userProfile?.name || '').trim();
+  const isFirstSave = !oldName;
+  const smsBox = document.getElementById('pSms');
+  const smsOn = isFirstSave && smsBox ? !!smsBox.checked : (userProfile?.smsConsent || false);
   userProfile = { ...userProfile, name, gender: selectedGender || userProfile.gender || null };
+  if (isFirstSave) {
+    const now = Date.now();
+    userProfile.tosVersion = TOS_VERSION; userProfile.tosAcceptedAt = now;
+    userProfile.smsConsent = smsOn; userProfile[smsOn ? 'smsConsentAt' : 'smsOptOutAt'] = now;
+    if (smsOn && currentUser?.phoneNumber) userProfile.smsNumber = currentUser.phoneNumber;
+  }
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
   document.getElementById('profileOverlay').classList.add('hidden');
   updateProfileDisplay();
   if (window._healNames) window._healNames();
   window._nameCache = {};
+  // Renamed? Carry it across MY game history so the leaderboard doesn't split me into two people
+  if (oldName && oldName.toLowerCase() !== name.toLowerCase()) renameMyselfInTournaments(oldName, name);
+  // Resume a claim that was waiting on a username
+  if (window._pendingClaimSid) { const sid = window._pendingClaimSid; window._pendingClaimSid = null; setTimeout(() => claimSpot(sid), 150); }
 };
+// Self-rename → tournaments I organized or was on the roster for (scoped by uid, so a namesake elsewhere is untouched)
+async function renameMyselfInTournaments(oldName, newName) {
+  try {
+    const uid = currentUser.uid;
+    const fix = arr => (arr||[]).map(p => String(p).trim().toLowerCase() === oldName.toLowerCase() ? newName : p);
+    const fixT = (t) => {
+      if (!t?.cfg) return false; let ch = false;
+      const sched = toArr(t.cfg.schedule);
+      sched.forEach(g => { const a = fix(toArr(g.t1)), b = fix(toArr(g.t2)); if (JSON.stringify(a)!==JSON.stringify(toArr(g.t1))||JSON.stringify(b)!==JSON.stringify(toArr(g.t2))) ch = true; g.t1 = a; g.t2 = b; });
+      t.cfg.schedule = sched;
+      const np = fix(toArr(t.cfg.players)); if (JSON.stringify(np)!==JSON.stringify(toArr(t.cfg.players))) ch = true; t.cfg.players = np;
+      return ch;
+    };
+    // sessions I was on → their tournaments are "mine"
+    const sSnap = await get(ref(db, 'sessions')); const mySessTids = new Set();
+    Object.values(sSnap.val() || {}).forEach(s => {
+      if (!s || !s.tournamentId) return;
+      const lst = [].concat(toArr(s.roster), toArr(s.waitlist));
+      if (s.ownerUid === uid || lst.some(e => e && e.uid === uid)) mySessTids.add(s.tournamentId);
+    });
+    const tSnap = await get(ref(db, 'tournaments'));
+    for (const [tid, t] of Object.entries(tSnap.val() || {})) {
+      if (!t) continue;
+      const mine = t.ownerUid === uid || mySessTids.has(tid) || (t.cfg && t.cfg.fromSession && mySessTids.has(tid));
+      if (!mine) continue;
+      if (fixT(t)) { delete t.__tid; await set(ref(db, 'tournaments/' + tid), t); }
+    }
+    const hSnap = await get(ref(db, 'users/' + uid + '/history'));
+    for (const [tid, t] of Object.entries(hSnap.val() || {})) { if (fixT(t)) await set(ref(db, 'users/' + uid + '/history/' + tid), t); }
+    lbData = null;
+    if (cfg && activeTid) { /* live view will refresh via onValue */ }
+  } catch(e) {}
+}
 
 let _profileAutoWired = false;
 function wireProfileAutoSave() {
@@ -5417,6 +5703,20 @@ window.openProfile = function() {
   document.getElementById('editInsta').value = userProfile.instagram || '';
   document.getElementById('editDupr').value  = userProfile.dupr  || '';
   document.getElementById('editCourt').value = userProfile.homeCourt || '';
+  // avatar
+  const av0 = document.getElementById('profileAvatarDisplay');
+  if (av0) { if (userProfile.avatar) { av0.style.backgroundImage = 'url(' + userProfile.avatar + ')'; av0.textContent = ''; } else { av0.style.backgroundImage = ''; } }
+  const al = document.getElementById('avatarLbl'); if (al) al.textContent = userProfile.avatar ? 'Change photo' : 'Add a photo of your face';
+  const ar = document.getElementById('avatarRemove'); if (ar) ar.style.display = userProfile.avatar ? 'inline' : 'none';
+  // away
+  const awayActive = !!(userProfile.awayUntil && userProfile.awayUntil >= new Date().toISOString().slice(0,10));
+  document.getElementById('awayOn').checked = awayActive;
+  document.getElementById('awayCity').value = userProfile.awayCity || '';
+  document.getElementById('awayUntil').value = userProfile.awayUntil || '';
+  document.getElementById('awayShare').checked = userProfile.awayShare !== false;
+  document.getElementById('awayFields').style.display = awayActive ? 'block' : 'none';
+  // sms
+  const st = document.getElementById('smsToggle'); if (st) st.checked = !!userProfile.smsConsent;
   if (window._wireProfileAutosave) window._wireProfileAutosave();
   wireProfileAutoSave();
   editSelectedGender = userProfile.gender || null;
@@ -5446,6 +5746,54 @@ window.editSelectGender = function(g) {
   autoSaveProfile();
 };
 
+// Client-side resize → small JPEG data URL (avatars ~4KB, game photos ~100KB) stored in Realtime DB
+function resizeImageFile(file, maxPx, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', quality));
+      } catch(e) { reject(e); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+    img.src = url;
+  });
+}
+window.uploadAvatar = async function(inp) {
+  const f = inp && inp.files && inp.files[0]; if (!f) return;
+  try {
+    // square-crop by drawing center; simple approach: resize then let CSS cover
+    const data = await resizeImageFile(f, 160, 0.82);
+    await update(ref(db, 'users/' + currentUser.uid + '/profile'), { avatar: data });
+    userProfile = Object.assign({}, userProfile, { avatar: data });
+    try { await update(ref(db, 'directory/' + currentUser.uid), { avatar: data }); } catch(e) {}
+    const av = document.getElementById('profileAvatarDisplay'); if (av) { av.style.backgroundImage = 'url(' + data + ')'; av.textContent = ''; }
+    const al = document.getElementById('avatarLbl'); if (al) al.textContent = 'Change photo';
+    const ar = document.getElementById('avatarRemove'); if (ar) ar.style.display = 'inline';
+    window._nameCache = {};
+    copiedToast('✓ Photo saved');
+  } catch(e) { alert('Could not save photo: ' + (e.message||e)); }
+  try { inp.value = ''; } catch(e) {}
+};
+window.removeAvatar = async function() {
+  try { await update(ref(db, 'users/' + currentUser.uid + '/profile'), { avatar: null }); await update(ref(db, 'directory/' + currentUser.uid), { avatar: null }); } catch(e) {}
+  userProfile = Object.assign({}, userProfile, { avatar: null });
+  const av = document.getElementById('profileAvatarDisplay'); if (av) { av.style.backgroundImage = ''; av.textContent = userProfile.gender==='M'?'👨':userProfile.gender==='F'?'👩':'👤'; }
+  const al = document.getElementById('avatarLbl'); if (al) al.textContent = 'Add a photo of your face';
+  const ar = document.getElementById('avatarRemove'); if (ar) ar.style.display = 'none';
+};
+window.toggleAwayFields = function() {
+  const on = document.getElementById('awayOn')?.checked;
+  document.getElementById('awayFields').style.display = on ? 'block' : 'none';
+  if (on && !document.getElementById('awayUntil').value) { const d = new Date(Date.now() + 7*86400000); document.getElementById('awayUntil').value = d.toISOString().slice(0,10); }
+  if (window.saveProfileEdits) window.saveProfileEdits(true);
+};
 window.saveProfileEdits = async function(silent) {
   const name  = document.getElementById('editName').value.trim();
   const email = document.getElementById('editEmail').value.trim();
@@ -5454,11 +5802,15 @@ window.saveProfileEdits = async function(silent) {
   const insta = document.getElementById('editInsta').value.trim();
   const dupr  = document.getElementById('editDupr').value.trim();
   const court = document.getElementById('editCourt').value.trim();
+  const awayOn = document.getElementById('awayOn')?.checked;
   userProfile = { ...userProfile,
     name: name || userProfile.name || null,
     gender: editSelectedGender || userProfile.gender || null,
     email: email || null, city: city || null, dob: dob || null,
-    instagram: insta || null, dupr: dupr ? parseFloat(dupr) : null, homeCourt: court || null };
+    instagram: insta || null, dupr: dupr ? parseFloat(dupr) : null, homeCourt: court || null,
+    awayCity: awayOn ? (document.getElementById('awayCity').value.trim() || null) : null,
+    awayUntil: awayOn ? (document.getElementById('awayUntil').value || null) : null,
+    awayShare: awayOn ? !!document.getElementById('awayShare')?.checked : null };
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
   updateProfileDisplay();
@@ -6085,7 +6437,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-11.1';
+window.BUILD_TAG = 'v2026-08-12.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -6130,6 +6482,15 @@ function saveSessionInfo()   { if(window.saveSessionInfo) window.saveSessionInfo
 function insertInfoTemplate(){ if(window.insertInfoTemplate) window.insertInfoTemplate(); }
 function toggleInfoSec(k)    { if(window.toggleInfoSec) window.toggleInfoSec(k); }
 function setRankRule(r)      { if(window.setRankRule) window.setRankRule(r); }
+function undoStartTournament(s){ if(window.undoStartTournament) window.undoStartTournament(s); }
+function acceptConsent()     { if(window.acceptConsent) window.acceptConsent(); }
+function setSmsConsent(v)    { if(window.setSmsConsent) window.setSmsConsent(v); }
+function uploadAvatar(i)     { if(window.uploadAvatar) window.uploadAvatar(i); }
+function removeAvatar()      { if(window.removeAvatar) window.removeAvatar(); }
+function toggleAwayFields()  { if(window.toggleAwayFields) window.toggleAwayFields(); }
+function uploadTournamentPhotos(i){ if(window.uploadTournamentPhotos) window.uploadTournamentPhotos(i); }
+function deleteTournamentPhoto(t,p){ if(window.deleteTournamentPhoto) window.deleteTournamentPhoto(t,p); }
+function viewPhoto(t,p)      { if(window.viewPhoto) window.viewPhoto(t,p); }
 function siChip(k,t)         { if(window.siChip) window.siChip(k,t); }
 function siAutoGrow(el)      { if(window.siAutoGrow) window.siAutoGrow(el); }
 function openVenueSheet(s)   { if(window.openVenueSheet) window.openVenueSheet(s); }
