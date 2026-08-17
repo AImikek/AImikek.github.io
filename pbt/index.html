@@ -1793,16 +1793,17 @@ window.chooseFormat = function(m) {
   selMode_ = m;
   document.getElementById('setupStep1').style.display = 'none';
   document.getElementById('setupStep2').style.display = 'block';
-  // Editing the active tournament? Prefill its name + players.
-  if (cfg && (cfg.mode === m || (m === 'rr' && cfg.mode === '4p'))) {
+  if (window._sessRoster) {
+    // Coming from a session: the signed-up roster ALWAYS wins over any old active tournament
+    document.getElementById('tName').value = window._sessRoster.name;
+    playType_ = 'doubles';
+    buildPFields(window._sessRoster.players);
+    updPCnt();
+  } else if (cfg && (cfg.mode === m || (m === 'rr' && cfg.mode === '4p'))) {
+    // Editing the active tournament? Prefill its name + players.
     document.getElementById('tName').value = cfg.name || '';
     playType_ = cfg.playType || 'doubles';
     buildPFields(cfg.players || []);
-  } else if (window._sessRoster) {
-    // Coming from a session: roster + title pre-loaded regardless of format
-    document.getElementById('tName').value = window._sessRoster.name;
-    buildPFields(window._sessRoster.players);
-    updPCnt();
   } else {
     // Fresh: right-sized defaults (singles → 2 slots, doubles → 4)
     buildPFields(playType_ === 'singles' ? ['',''] : ['','','','']);
@@ -3712,7 +3713,9 @@ window.startFromSession = async function(sid) {
     sb.style.cssText = 'margin:0 0 12px;padding:11px 14px;background:rgba(0,245,196,0.08);border:1px solid rgba(0,245,196,0.35);border-radius:12px;color:var(--aqua);font-weight:800;font-size:12.5px;';
     step1.insertBefore(sb, step1.firstChild);
   }
-  sb.textContent = '✅ ' + roster.length + ' players loaded from "' + (s.title || 'session') + '" — pick a format below';
+  sb.innerHTML = '✅ <b>' + roster.length + ' players</b> loaded from "' + escInfo(s.title || 'session') + '" — pick a format below'
+    + '<div style="margin-top:6px;font-size:11.5px;color:var(--white);font-weight:600;line-height:1.5;">' + escInfo(roster.map(r => r.name).join(' · ')) + '</div>'
+    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Names are locked to the sign-ups so stats go to the right accounts</div>';
   sb.style.display = 'block';
 };
 
@@ -4219,14 +4222,38 @@ function makeRRSchedule(players) {
 
 // Bye-balanced round builder: byes equalized, NEVER back-to-back, repeats spread out.
 // opts seeds history for mid-tournament rebuilds: {PC,OC,byes,played,lastSat,rounds,startGN,startRound}
+// Run the greedy builder many times from different random orders and keep the schedule
+// with the flattest partner/opponent distribution (fewest max repeats, then fewest total repeats).
 function makeBalancedRounds(players, opts) {
+  opts = opts || {};
+  if (opts._single) return _makeBalancedRoundsOnce(players, opts);
+  const clone = o => JSON.parse(JSON.stringify(o || {}));
+  // time-budgeted: as many restarts as fit in ~700ms (phones are slower than laptops), min 3, max 80
+  const t0 = Date.now(), budgetMs = 700, maxTries = 80;
+  let best = null, bestCost = Infinity;
+  for (let t = 0; t < maxTries && (t < 3 || Date.now() - t0 < budgetMs); t++) {
+    const o = Object.assign({}, opts, { _single: true,
+      PC: clone(opts.PC), OC: clone(opts.OC), byes: clone(opts.byes), played: clone(opts.played),
+      lastByeR: clone(opts.lastByeR), lastSat: new Set(opts.lastSat ? [...opts.lastSat] : []) });
+    const s = _makeBalancedRoundsOnce(players, o);
+    // cost from the FULL picture (prior games + new ones): o.PC / o.OC were mutated in place
+    let maxP = 0, maxO = 0, sumP = 0, sumO = 0;
+    Object.values(o.PC).forEach(v => { maxP = Math.max(maxP, v); sumP += v * v; });
+    Object.values(o.OC).forEach(v => { maxO = Math.max(maxO, v); sumO += v * v; });
+    const cost = maxP * 1e6 + maxO * 1e4 + sumP * 10 + sumO;
+    if (cost < bestCost) { bestCost = cost; best = s; }
+  }
+  return best || [];
+}
+function _makeBalancedRoundsOnce(players, opts) {
   opts = opts || {};
   const pairKey=(a,b)=>[a,b].sort().join('||');
   const PC=opts.PC||{}, OC=opts.OC||{};
   const gP=(a,b)=>PC[pairKey(a,b)]||0, gO=(a,b)=>OC[pairKey(a,b)]||0;
   const iP=(a,b)=>{const k=pairKey(a,b);PC[k]=(PC[k]||0)+1;};
   const iO=(a,b)=>{const k=pairKey(a,b);OC[k]=(OC[k]||0)+1;};
-  const gScore=(t1a,t1b,t2a,t2b)=>(gP(t1a,t1b)*gP(t1a,t1b)+gP(t2a,t2b)*gP(t2a,t2b))*100+(gO(t1a,t2a)+gO(t1a,t2b)+gO(t1b,t2a)+gO(t1b,t2b))*10;
+  const sq=x=>x*x;
+  const gScore=(t1a,t1b,t2a,t2b)=>(sq(gP(t1a,t1b))+sq(gP(t2a,t2b)))*100+(sq(gO(t1a,t2a))+sq(gO(t1a,t2b))+sq(gO(t1b,t2a))+sq(gO(t1b,t2b)))*10;
   const n=players.length;
   if(n<4) return [];
   const byes=opts.byes||{}, played=opts.played||{};
@@ -5724,7 +5751,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-09.2';
+window.BUILD_TAG = 'v2026-08-09.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
