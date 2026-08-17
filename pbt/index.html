@@ -5005,6 +5005,18 @@ function renderStandings() {
     html += '<div class="champbox" id="statsChampBox"><div style="font-size:48px;margin-bottom:8px;">🏆</div>'
       +'<div class="clbl">Champion</div><div class="cname">'+champ.name+'</div>'
       +'<div class="cpts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.avgDiff>=0?'+':'')+champ.avgDiff.toFixed(1)+' avg diff</div></div>';
+    // Most Wins award — a separate, smaller callout when someone other than the champ has the most wins
+    const byWins = list.slice().sort((a,b) => b.wins-a.wins || b.avgDiff-a.avgDiff);
+    const winsLeader = byWins[0];
+    const tiedWins = byWins.filter(p => p.wins === winsLeader.wins);
+    if (winsLeader && winsLeader.name !== champ.name && effectiveMode === 'avg') {
+      const names = tiedWins.map(p => p.name).join(' & ');
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;margin:-6px 0 14px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.35);border-radius:14px;">'
+        +'<div style="font-size:26px;">🥇</div>'
+        +'<div><div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;">Most Wins</div>'
+        +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;color:var(--white);">'+escInfo(names)+'</div>'
+        +'<div style="font-size:11px;color:var(--muted);font-weight:700;">'+winsLeader.wins+' win'+(winsLeader.wins===1?'':'s')+' · '+(winsLeader.avgDiff>=0?'+':'')+winsLeader.avgDiff.toFixed(1)+' avg diff</div></div></div>';
+    }
   }
 
   if (uneven) {
@@ -5961,7 +5973,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-10.1';
+window.BUILD_TAG = 'v2026-08-10.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
