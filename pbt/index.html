@@ -1419,6 +1419,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
       <label class="flabel">Players <span id="pcnt" style="color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0;font-size:11px;text-transform:none;"></span></label>
       <div class="pgrid" id="pgrid"></div>
       <div class="pgrid"><button type="button" class="addbtn" onmousedown="event.preventDefault()" ontouchstart="" onclick="addPF()">+ Add Player</button></div>
+      <div id="wlQuickAdd" style="display:none;margin:10px 0 4px;"></div>
       <div id="rankRuleWrap" style="margin:14px 0 6px;">
         <label class="flabel">🏆 Ranking rule</label>
         <div style="display:flex;gap:8px;">
@@ -1909,6 +1910,7 @@ window.chooseFormat = function(m) {
     document.getElementById('tName').value = '';
   }
   applyModeToStep2();
+  renderWlQuickAdd();
   window.setRankRule(rankRule, true);
   const first = document.querySelector('.pinput');
   if (first && !first.value && userProfile?.name) { first.value = userProfile.name; updPCnt(); }
@@ -1928,6 +1930,24 @@ window.selMode = window._selMode = function(m) {
   if (typeof applyModeToStep2 === 'function') applyModeToStep2();
 };
 
+// Waitlist quick-add: when starting from a session, waitlisters show as tap-to-add chips (numbered
+// by their spot in line) so expanding 8 → 10 is two taps. Anyone else can still be typed via + Add Player.
+function renderWlQuickAdd() {
+  const box = document.getElementById('wlQuickAdd'); if (!box) return;
+  const wl = (window._sessRoster && window._sessRoster.waitlist) || [];
+  if (!wl.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const inSlots = new Set([...document.querySelectorAll('.pinput')].map(i => i.value.trim().toLowerCase()).filter(Boolean));
+  const rem = wl.map((n, i) => ({ n: String(n), pos: i + 1 })).filter(e => e.n && !inSlots.has(e.n.trim().toLowerCase()));
+  if (!rem.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  box.innerHTML = '<div style="font-size:10px;letter-spacing:1.5px;color:var(--yellow);text-transform:uppercase;font-weight:800;margin-bottom:6px;">⏳ On the waitlist — tap to add</div>'
+    + rem.map(e => '<span onclick="wlAdd(\'' + e.n.replace(/'/g,'') + '\')" style="cursor:pointer;display:inline-block;padding:6px 11px;margin:0 6px 6px 0;background:rgba(255,224,0,0.07);border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:99px;font-size:12px;font-weight:800;">+ W' + e.pos + ' · ' + escInfo(e.n) + '</span>').join('');
+}
+window.wlAdd = function(n) {
+  const empty = [...document.querySelectorAll('.pinput')].find(i => !i.value.trim());
+  if (empty) empty.value = n; else addPFVal(n);
+  updPCnt(); renderWlQuickAdd();
+};
 function buildPFields(arr) { document.getElementById('pgrid').innerHTML=''; arr.forEach(v=>addPFVal(v)); }
 function addPFVal(val) {
   const g=document.getElementById('pgrid'), idx=g.querySelectorAll('.pwrap').length;
@@ -2618,6 +2638,11 @@ window.openPlayerDetail = async function(name) {
       +'<div style="display:flex;gap:8px;margin-bottom:12px;">'
       +'<input class="finput" id="pdRenameInput" value="'+name.replace(/"/g,'&quot;')+'" style="margin-bottom:0;flex:1;">'
       +'<button onclick="renameLbPlayer(\''+name.replace(/'/g,"\\'")+'\')" style="padding:0 16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Rename</button></div>';
+    admin += '<label class="flabel">Merge into another player</label>'
+      +'<div style="display:flex;gap:8px;margin-bottom:4px;">'
+      +'<input class="finput" id="pdMergeInput" placeholder="Name that should remain" style="margin-bottom:0;flex:1;">'
+      +'<button onclick="mergeLbPlayer(\''+name.replace(/'/g,"\\'")+'\')" style="padding:0 16px;background:transparent;border:1px solid rgba(255,224,0,0.5);color:var(--yellow);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Merge</button></div>'
+      +'<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:12px;">Same person under two names (e.g. they renamed themselves)? Merge THIS player into the name that should stay — games, rosters and stats combine.</div>';
     const srcIds = Object.keys(sources);
     if (srcIds.length) {
       admin += '<label class="flabel">Source tournaments</label>';
@@ -2633,11 +2658,10 @@ window.openPlayerDetail = async function(name) {
   document.getElementById('playerDetail').classList.remove('hidden');
 };
 
-window.renameLbPlayer = async function(oldName) {
-  if (!isAdmin()) return;
-  const newName = document.getElementById('pdRenameInput').value.trim();
-  if (!newName || newName === oldName) return;
-  if (!confirm('Rename "'+oldName+'" to "'+newName+'" across ALL tournaments?')) return;
+// Cascade a name change through EVERY record: shared tournaments, my archived history, session
+// rosters/waitlists, organizer labels, the directory, and any account whose profile carries the old name.
+// Used by both Rename (fix a spelling) and Merge (unify duplicate people) — same operation, different intent.
+async function renamePlayerEverywhere(oldName, newName) {
   const fixNames = arr => arr.map(p => p.trim().toLowerCase() === oldName.toLowerCase() ? newName : p);
   const fixTournament = (t) => {
     if (!t?.cfg) return false;
@@ -2655,52 +2679,78 @@ window.renameLbPlayer = async function(oldName) {
     t.cfg.players = np;
     return changed;
   };
+  // Own history
+  const hSnap = await get(ref(db, 'users/' + currentUser.uid + '/history'));
+  const hist = hSnap.val() || {};
+  for (const [tid, t] of Object.entries(hist)) {
+    if (fixTournament(t)) await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), t);
+  }
+  // Shared tournaments
+  const tSnap = await get(ref(db, 'tournaments'));
+  const tours = tSnap.val() || {};
+  for (const [tid, t] of Object.entries(tours)) {
+    if (fixTournament(t)) { delete t.__tid; await set(ref(db, 'tournaments/' + tid), t); }
+  }
+  // Sessions: roster / waitlist / organizer labels
+  let sessFixed = 0;
   try {
-    // Own history
-    const hSnap = await get(ref(db, 'users/' + currentUser.uid + '/history'));
-    const hist = hSnap.val() || {};
-    for (const [tid, t] of Object.entries(hist)) {
-      if (fixTournament(t)) await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), t);
+    const sSnap = await get(ref(db, 'sessions'));
+    for (const [sid2, s2] of Object.entries(sSnap.val() || {})) {
+      if (!s2) continue;
+      let ch = false;
+      const fixL = (lst) => { if (!lst) return lst; const arr = Array.isArray(lst)?lst:Object.values(lst); arr.forEach(e => { if (e && String(e.name||'').trim().toLowerCase() === oldName.toLowerCase()) { e.name = newName; ch = true; } }); return arr; };
+      const r2 = fixL(s2.roster), w2 = fixL(s2.waitlist);
+      const upd = {};
+      if (r2) upd.roster = r2; if (w2) upd.waitlist = w2;
+      if (String(s2.ownerName||'').trim().toLowerCase() === oldName.toLowerCase()) { upd.ownerName = newName; ch = true; }
+      if (ch) { await update(ref(db, 'sessions/' + sid2), upd); sessFixed++; }
     }
-    // Shared tournaments (any I can write)
-    const tSnap = await get(ref(db, 'tournaments'));
-    const tours = tSnap.val() || {};
-    for (const [tid, t] of Object.entries(tours)) {
-      if (fixTournament(t)) { delete t.__tid; await set(ref(db, 'tournaments/' + tid), t); }
+  } catch(e) {}
+  // Profiles + directory: accounts carrying the old name follow it (so their app shows the new name too)
+  let profFixed = 0;
+  try {
+    const dSnap = await get(ref(db, 'directory'));
+    for (const [uid2, d] of Object.entries(dSnap.val() || {})) {
+      if (d && String(d.name||'').trim().toLowerCase() === oldName.toLowerCase()) {
+        await update(ref(db, 'directory/' + uid2), { name: newName });
+        try { await update(ref(db, 'users/' + uid2 + '/profile'), { name: newName }); } catch(e) {}
+        profFixed++;
+      }
     }
-    // Sessions: roster / waitlist / organizer labels
-    let sessFixed = 0;
-    try {
-      const sSnap = await get(ref(db, 'sessions'));
-      for (const [sid2, s2] of Object.entries(sSnap.val() || {})) {
-        if (!s2) continue;
-        let ch = false;
-        const fixL = (lst) => { if (!lst) return lst; const arr = Array.isArray(lst)?lst:Object.values(lst); arr.forEach(e => { if (e && String(e.name||'').trim().toLowerCase() === oldName.toLowerCase()) { e.name = newName; ch = true; } }); return arr; };
-        const r2 = fixL(s2.roster), w2 = fixL(s2.waitlist);
-        const upd = {};
-        if (r2) upd.roster = r2; if (w2) upd.waitlist = w2;
-        if (String(s2.ownerName||'').trim().toLowerCase() === oldName.toLowerCase()) { upd.ownerName = newName; ch = true; }
-        if (ch) { await update(ref(db, 'sessions/' + sid2), upd); sessFixed++; }
-      }
-    } catch(e) {}
-    // Profiles + directory: if a registered account carries the old name, rename it (so their app shows the new name too)
-    let profFixed = 0;
-    try {
-      const dSnap = await get(ref(db, 'directory'));
-      for (const [uid2, d] of Object.entries(dSnap.val() || {})) {
-        if (d && String(d.name||'').trim().toLowerCase() === oldName.toLowerCase()) {
-          await update(ref(db, 'directory/' + uid2), { name: newName });
-          try { await update(ref(db, 'users/' + uid2 + '/profile'), { name: newName }); } catch(e) {}
-          profFixed++;
-        }
-      }
-    } catch(e) {}
+  } catch(e) {}
+  window._nameCache = {};
+  return { sessFixed, profFixed };
+}
+window.renameLbPlayer = async function(oldName) {
+  if (!isAdmin()) return;
+  const newName = document.getElementById('pdRenameInput').value.trim();
+  if (!newName || newName === oldName) return;
+  if (!confirm('Rename "'+oldName+'" to "'+newName+'" across ALL tournaments?')) return;
+  try {
+    const r = await renamePlayerEverywhere(oldName, newName);
     lbData = null;
     document.getElementById('playerDetail').classList.add('hidden');
     await loadLeaderboardData();
     renderLeaderboard();
-    alert('✓ Renamed everywhere' + (sessFixed ? ' · ' + sessFixed + ' session roster' + (sessFixed>1?'s':'') : '') + (profFixed ? ' · ' + profFixed + ' account' + (profFixed>1?'s':'') : ''));
+    alert('✓ Renamed everywhere' + (r.sessFixed ? ' · ' + r.sessFixed + ' session roster' + (r.sessFixed>1?'s':'') : '') + (r.profFixed ? ' · ' + r.profFixed + ' account' + (r.profFixed>1?'s':'') : ''));
   } catch(e) { alert('Rename failed: ' + (e.message||e)); }
+};
+// MERGE: "Al" and "Donald Trumpo" are the same person → fold one name into the other. Same cascade as
+// rename; the leaderboard recomputes from game records, so the two stat lines combine automatically.
+window.mergeLbPlayer = async function(oldName) {
+  if (!isAdmin()) return;
+  const target = (document.getElementById('pdMergeInput')?.value || '').trim();
+  if (!target) { alert('Type the player name to merge into (the name that should remain).'); return; }
+  if (target.toLowerCase() === oldName.toLowerCase()) { alert('That is the same player — nothing to merge.'); return; }
+  if (!confirm('Merge "'+oldName+'" INTO "'+target+'"?\n\nEvery game, roster spot and record of "'+oldName+'" becomes "'+target+'", and their stats combine. This cannot be undone.')) return;
+  try {
+    const r = await renamePlayerEverywhere(oldName, target);
+    lbData = null;
+    document.getElementById('playerDetail').classList.add('hidden');
+    await loadLeaderboardData();
+    renderLeaderboard();
+    alert('✓ Merged — "'+oldName+'" is now "'+target+'" everywhere' + (r.profFixed ? ' (their account was updated too)' : ''));
+  } catch(e) { alert('Merge failed: ' + (e.message||e)); }
 };
 
 window.deleteLbSource = async function(tid) {
@@ -4189,6 +4239,14 @@ window.copySessionRoster = async function(sid) {
     const note = r0 && !isNameEcho(r0.comment, r0.name) ? ' (' + r0.comment + ')' : '';
     txt += (i+1) + '. ' + (r0 ? r0.name + note : '?') + '\n';
   }
+  const wait = s.waitlist ? (Array.isArray(s.waitlist)?s.waitlist:Object.values(s.waitlist)) : [];
+  if (wait.length) {
+    txt += '— Waitlist (first in line = W1, auto-promoted) —\n';
+    wait.forEach((w0, i) => {
+      const wnote = w0 && !isNameEcho(w0.comment, w0.name) ? ' (' + w0.comment + ')' : '';
+      txt += 'W' + (i+1) + '. ' + ((w0 && w0.name) || '?') + wnote + '\n';
+    });
+  }
   const left = spots - roster.length;
   const sUrl = window.location.origin + window.location.pathname + '?s=' + sid;
   txt += left > 0 ? left + ' spot' + (left>1?'s':'') + ' left — claim yours: ' + sUrl
@@ -4207,9 +4265,10 @@ window.startFromSession = async function(sid) {
   window._fromSid = sid;  // carried into cfg so the tournament links back to Event Info
   // Park the roster; land on the FORMAT picker so organizer chooses RR / Best 2 of 3 / Log
   // few/no sign-ups yet → still go, pad to 4 blanks so the organizer can type names courtside
+  const wlist = s.waitlist ? (Array.isArray(s.waitlist)?s.waitlist:Object.values(s.waitlist)) : [];
   const rNames = roster.map(r => r.name).filter(Boolean);
   while (rNames.length < 4) rNames.push('');
-  window._sessRoster = { name: s.title || 'Session', players: rNames };
+  window._sessRoster = { name: s.title || 'Session', players: rNames, waitlist: wlist.map(w => w && w.name).filter(Boolean) };
   setPlayType('doubles');
   document.getElementById('setupStep1').style.display = 'block';
   document.getElementById('setupStep2').style.display = 'none';
@@ -5905,6 +5964,29 @@ window.sortHistoryDetail = function(tid, mode) {
   histSort = mode;
   viewHistoryDetail(tid);
 };
+// Fixing a score in a PAST tournament: writes to the shared record (tournaments/{tid} — the leaderboard's
+// source of truth) AND the viewer's own archived copy, then re-renders so standings recalc on the spot.
+window.histEditGame = function(tid, key) {
+  if (!currentUser) return;
+  window._histEdit = { tid, key };
+  viewHistoryDetail(tid);
+  setTimeout(() => { try { document.getElementById('he1').focus({ preventScroll: true }); } catch(e) {} }, 60);
+};
+window.histCancelEdit = function(tid) { window._histEdit = null; viewHistoryDetail(tid); };
+window.saveHistGame = async function(tid, key) {
+  const v1 = parseInt(document.getElementById('he1')?.value, 10);
+  const v2 = parseInt(document.getElementById('he2')?.value, 10);
+  if (isNaN(v1) || isNaN(v2) || v1 < 0 || v2 < 0 || v1 > 99 || v2 > 99) { alert('Enter both scores (0\u201399).'); return; }
+  let sharedOk = false;
+  try { await update(ref(db, 'tournaments/' + tid + '/scores/' + key), { s1: v1, s2: v2 }); sharedOk = true; } catch(e) {}
+  try { await update(ref(db, 'users/' + currentUser.uid + '/history/' + tid + '/scores/' + key), { s1: v1, s2: v2 }); } catch(e) {}
+  const t = window._historyData?.[tid];
+  if (t) { t.scores = t.scores || {}; t.scores[key] = Object.assign({}, t.scores[key], { s1: v1, s2: v2 }); }
+  window._histEdit = null;
+  lbData = null;   // leaderboard recomputes from the corrected record next open
+  viewHistoryDetail(tid);
+  copiedToast(sharedOk ? '\u2713 Score fixed \u2014 standings + leaderboard updated' : '\u2713 Score fixed in your copy');
+};
 window.viewHistoryDetail = function(tid) {
   const t = window._historyData?.[tid];
   if (!t) return;
@@ -5962,9 +6044,29 @@ window.viewHistoryDetail = function(tid) {
     if(g.deleted)return;
     const s=tScores[g.key]||{s1:null,s2:null};
     const done=s.s1!==null&&s.s2!==null;
+    const editing = window._histEdit && window._histEdit.tid===tid && window._histEdit.key===g.key;
+    let scoreHtml;
+    if (editing) {
+      const inp = 'width:54px;height:42px;background:var(--surface2);border:2px solid var(--cyan);border-radius:8px;color:var(--white);font-family:\'Russo One\',sans-serif;font-size:18px;text-align:center;';
+      scoreHtml = '<span style="display:inline-flex;align-items:center;gap:6px;">'
+        +'<input id="he1" type="number" inputmode="numeric" value="'+(s.s1??'')+'" style="'+inp+'">'
+        +'<span style="color:var(--muted);">—</span>'
+        +'<input id="he2" type="number" inputmode="numeric" value="'+(s.s2??'')+'" style="'+inp+'">'
+        +'<button onclick="saveHistGame(\''+tid+'\',\''+g.key+'\')" style="width:42px;height:42px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:8px;font-size:18px;font-weight:900;cursor:pointer;">✓</button>'
+        +'<button onclick="histCancelEdit(\''+tid+'\')" style="width:36px;height:42px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:15px;cursor:pointer;">✕</button>'
+        +'</span>';
+    } else {
+      const canEdit = !!currentUser;   // any signed-in player can fix a wrong score; standings re-rank instantly
+      const inner = done
+        ? '<span style="color:'+(s.s1>s.s2?'var(--cyan)':'var(--white)')+'">'+s.s1+'</span><span style="color:var(--muted);font-size:12px;margin:0 3px;">—</span><span style="color:'+(s.s2>s.s1?'var(--cyan)':'var(--white)')+'">'+s.s2+'</span>'
+        : '<span style="color:var(--muted)">—</span>';
+      scoreHtml = canEdit
+        ? '<span onclick="histEditGame(\''+tid+'\',\''+g.key+'\')" style="cursor:pointer;">'+inner+' <span style="font-size:11px;color:var(--muted);">✎</span></span>'
+        : inner;
+    }
     html+='<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:6px;">'
       +'<div style="font-family:\'Exo 2\',sans-serif;font-size:13px;font-weight:900;text-transform:uppercase;flex:1;">'+g.t1.join(' & ')+' vs '+g.t2.join(' & ')+'</div>'
-      +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;white-space:nowrap;margin-left:10px;">'+(done?'<span style="color:'+(s.s1>s.s2?'var(--cyan)':'var(--white)')+'">'+s.s1+'</span><span style="color:var(--muted);font-size:12px;margin:0 3px;">—</span><span style="color:'+(s.s2>s.s1?'var(--cyan)':'var(--white)')+'">'+s.s2+'</span>':'<span style="color:var(--muted)">—</span>')+'</div>'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;white-space:nowrap;margin-left:10px;">'+scoreHtml+'</div>'
       +'</div>';
   });
 
@@ -6437,7 +6539,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-12.2';
+window.BUILD_TAG = 'v2026-08-13.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -6491,6 +6593,11 @@ function toggleAwayFields()  { if(window.toggleAwayFields) window.toggleAwayFiel
 function uploadTournamentPhotos(i){ if(window.uploadTournamentPhotos) window.uploadTournamentPhotos(i); }
 function deleteTournamentPhoto(t,p){ if(window.deleteTournamentPhoto) window.deleteTournamentPhoto(t,p); }
 function viewPhoto(t,p)      { if(window.viewPhoto) window.viewPhoto(t,p); }
+function wlAdd(n)            { if(window.wlAdd) window.wlAdd(n); }
+function mergeLbPlayer(o)    { if(window.mergeLbPlayer) window.mergeLbPlayer(o); }
+function histEditGame(t,k)   { if(window.histEditGame) window.histEditGame(t,k); }
+function saveHistGame(t,k)   { if(window.saveHistGame) window.saveHistGame(t,k); }
+function histCancelEdit(t)   { if(window.histCancelEdit) window.histCancelEdit(t); }
 function siChip(k,t)         { if(window.siChip) window.siChip(k,t); }
 function siAutoGrow(el)      { if(window.siAutoGrow) window.siAutoGrow(el); }
 function openVenueSheet(s)   { if(window.openVenueSheet) window.openVenueSheet(s); }
