@@ -2512,6 +2512,18 @@ async function loadLeaderboardData() {
 
 window.renderLeaderboard = function() {
   if (!lbData) return;
+  // SMART WINDOWS: only offer 7 Days / 30 Days when the current view (doubles or singles) actually
+  // has games inside that window; the remaining buttons fill the row. If the selected window has
+  // no games (e.g. nobody logged anything this week), fall to the next wider one automatically.
+  const _nowLb = Date.now();
+  const _typeGames = lbData.games.filter(g => (g.gtype || 'doubles') === lbType);
+  const _has7  = _typeGames.some(g => g.when >= _nowLb -  7 * 86400000);
+  const _has30 = _typeGames.some(g => g.when >= _nowLb - 30 * 86400000);
+  const _windows = [];
+  if (_has7)  _windows.push(['7','7 Days']);
+  if (_has30) _windows.push(['30','30 Days']);
+  _windows.push(['all','All Time']);
+  if (!_windows.some(([v]) => v === lbTime)) lbTime = _windows[0][0];
   const cutoff = lbTime==='all' ? 0 : Date.now() - (parseInt(lbTime,10) * 86400000);
   const cityFilter = '';
 
@@ -2522,7 +2534,7 @@ window.renderLeaderboard = function() {
   document.getElementById('lbCity').parentElement.style.display = 'none';
   // rolling window — recomputes every time it renders, so "30 days" is always today minus 30
   document.getElementById('lbSortRow').innerHTML =
-    [['7','7 Days'],['30','30 Days'],['all','All Time']].map(([v,l]) =>
+    _windows.map(([v,l]) =>
       '<button class="rtbtn'+(lbTime===v?' active':'')+'" onclick="setLbTime(\''+v+'\')">'+l+'</button>').join('');
 
   // Aggregate
@@ -3537,7 +3549,11 @@ function calGoogleUrl(sid, s) {
     + '&ctz=' + encodeURIComponent('America/New_York')
     + '&details=' + encodeURIComponent(calDesc(sid, s))
     + (s.location ? '&location=' + encodeURIComponent(s.location) : '');
-  return 'https://calendar.google.com/calendar/render?' + q;
+  // www.google.com (not calendar.google.com) on purpose: calendar.google.com links get grabbed
+  // by the Google Calendar iOS app, which often opens WITHOUT the event template — the classic
+  // "tapped it, nothing was added". Google redirects this server-side to the web event editor,
+  // which keeps the prefilled event and works signed-in in Safari.
+  return 'https://www.google.com/calendar/render?' + q;
 }
 window.downloadIcs = async function(sid) {
   const snap = await get(ref(db, 'sessions/' + sid));
@@ -3727,7 +3743,7 @@ function renderSessionDetail(sid, s) {
     +'<button onclick="shareSession(\'' + sid + '\')" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📤 Share Invite Link</button>'
     +'<button onclick="copySessionRoster(\'' + sid + '\')" style="display:block;width:100%;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📋 Copy Roster for Group Chat</button>'
     +'<div style="display:flex;gap:8px;margin-bottom:8px;">'
-      +'<a href="'+calGoogleUrl(sid, s)+'" target="_blank" rel="noopener" style="flex:1;display:block;text-align:center;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">📅 Google Calendar</a>'
+      +'<a href="'+calGoogleUrl(sid, s)+'" target="_blank" rel="noopener" onclick="var a=this;setTimeout(function(){if(!document.hidden){location.href=a.href;}},900);" style="flex:1;display:block;text-align:center;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">📅 Google Calendar</a>'
       +'<button onclick="downloadIcs(\'' + sid + '\')" style="flex:1;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📅 Apple / Outlook</button>'
     +'</div>';
   if (isOwner) {
@@ -6578,7 +6594,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-08-13.2';
+window.BUILD_TAG = 'v2026-09-23.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
