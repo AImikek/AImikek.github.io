@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Opening Google Calendar…</title>
+<style>
+  :root { --bg:#04060F; --card:#0A0F1E; --border:rgba(0,240,255,0.14); --cyan:#00F0FF; --white:#F4F7FF; --muted:#8A97B8; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--white); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px; text-align:center; }
+  .box { max-width:340px; }
+  .ball { font-size:44px; margin-bottom:14px; }
+  h1 { font-size:18px; margin:0 0 8px; letter-spacing:0.5px; }
+  p { font-size:13.5px; color:var(--muted); line-height:1.55; margin:0 0 18px; }
+  a.go { display:block; padding:14px 18px; background:linear-gradient(135deg,#00F0FF,#0090FF); color:#04060F; border-radius:12px;
+         font-weight:800; font-size:14px; letter-spacing:1px; text-transform:uppercase; text-decoration:none; }
+  a.back { display:inline-block; margin-top:16px; color:var(--muted); font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="ball">📅</div>
+  <h1>Opening Google Calendar…</h1>
+  <p id="msg">Your event is prefilled — just tap <b style="color:var(--white)">Save</b> on the next screen.</p>
+  <a class="go" id="go" href="#" rel="noopener">Tap here if it didn't open</a>
+  <a class="back" href="./">← Back to PB Tourney</a>
+</div>
+<script>
+(function () {
+  // This page exists to dodge the iOS Google Calendar app's link takeover: taps on
+  // calendar.google.com links open the app, which drops the prefilled event. Landing here
+  // first (same domain as the app, nothing intercepts it) and then redirecting via script
+  // keeps the navigation in the browser, where the web event editor gets the full template.
+  var u = '';
+  try { u = decodeURIComponent((location.hash || '').slice(1)); } catch (e) {}
+  var ok = u.indexOf('https://calendar.google.com/') === 0;   // never redirect anywhere else
+  var go = document.getElementById('go');
+  if (ok) {
+    window.__navTo = u;          // test hook
+    go.href = u;
+    setTimeout(function () { location.replace(u); }, 150);
+  } else {
+    document.getElementById('msg').textContent = 'This link is missing its event details — go back to the session and tap Google Calendar again.';
+    go.style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>

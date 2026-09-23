@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Calendar Link Test</title>
+<style>
+  :root { --bg:#04060F; --card:#0A0F1E; --border:rgba(0,240,255,0.14); --cyan:#00F0FF; --white:#F4F7FF; --muted:#8A97B8; --aqua:#00F5C4; --yellow:#FFE000; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--white); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; padding:28px 16px 60px; }
+  .wrap { max-width:440px; margin:0 auto; }
+  h1 { font-size:20px; margin:0 0 6px; }
+  p.sub { font-size:13.5px; color:var(--muted); line-height:1.55; margin:0 0 20px; }
+  .v { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px; }
+  .v a { display:block; text-align:center; padding:13px; border-radius:10px; font-weight:800; font-size:14px; letter-spacing:1px;
+         text-transform:uppercase; text-decoration:none; background:rgba(0,240,255,0.08); border:1px solid rgba(0,240,255,0.4); color:var(--cyan); }
+  .v .lbl { font-weight:800; font-size:13px; margin-bottom:4px; }
+  .v .hint { font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:8px; }
+  .win { margin-top:18px; padding:14px; background:rgba(0,245,196,0.06); border:1px solid rgba(0,245,196,0.35); border-radius:12px; font-size:13px; line-height:1.6; }
+  .win b { color:var(--aqua); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📅 Google Calendar Link Test</h1>
+  <p class="sub">Every button below tries to add the same test event (next Sunday, 6:30–9:30pm, "Brickell Pickle TEST"). Tap each one, come back, and note what happened. <b style="color:var(--white)">Working looks like:</b> Google Calendar opens with the title, date and location already filled in, and a Save button.</p>
+
+  <div class="v">
+    <div class="lbl">A — Classic link</div>
+    <a id="vA" href="#" target="_blank" rel="noopener">Try A</a>
+    <div class="hint">Direct calendar.google.com link (the original build). On iPhones with the Google Calendar app this often opens the app <i>empty</i>.</div>
+  </div>
+
+  <div class="v">
+    <div class="lbl">B — Event-edit link</div>
+    <a id="vB" href="#" target="_blank" rel="noopener">Try B</a>
+    <div class="hint">Alternate Google format some apps handle better.</div>
+  </div>
+
+  <div class="v">
+    <div class="lbl">C — google.com hop</div>
+    <a id="vC" href="#" target="_blank" rel="noopener">Try C</a>
+    <div class="hint">What v2026-09-23.1 shipped (the one that still failed for you).</div>
+  </div>
+
+  <div class="v">
+    <div class="lbl">D — PB Tourney relay ← the new build uses this</div>
+    <a id="vD" href="#" target="_blank" rel="noopener">Try D</a>
+    <div class="hint">Opens a page on mikek.ai first, which forwards to Google Calendar in the browser — the Calendar app can't grab it on the way.</div>
+  </div>
+
+  <div class="win">Text me the letter(s) that showed the event <b>filled in</b> — and for the broken ones, what they did instead (nothing at all, app opened empty, or a sign-in page). <b>D</b> is what the app now uses; if D works here, the Google Calendar button works.</div>
+</div>
+<script>
+(function () {
+  // Next Sunday, 6:30–9:30pm local
+  var d = new Date();
+  d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7));
+  var y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
+  var start = y + m + dd + 'T183000', end = y + m + dd + 'T213000';
+  var text = encodeURIComponent('🏓 Brickell Pickle TEST');
+  var det = encodeURIComponent('If you can read this in the event details, this link format works. You can discard the event.');
+  var loc = encodeURIComponent('Brickell Place, Miami');
+  var ctz = encodeURIComponent('America/New_York');
+  var q = 'text=' + text + '&dates=' + start + '/' + end + '&ctz=' + ctz + '&details=' + det + '&location=' + loc;
+  var classic = 'https://calendar.google.com/calendar/render?action=TEMPLATE&' + q;
+  document.getElementById('vA').href = classic;
+  document.getElementById('vB').href = 'https://calendar.google.com/calendar/u/0/r/eventedit?' + q;
+  document.getElementById('vC').href = 'https://www.google.com/calendar/render?action=TEMPLATE&' + q;
+  document.getElementById('vD').href = 'cal.html#' + encodeURIComponent(classic);
+})();
+</script>
+</body>
+</html>
