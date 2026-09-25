@@ -40,7 +40,14 @@
   if (ok) {
     window.__navTo = u;          // test hook
     go.href = u;
-    setTimeout(function () { location.replace(u); }, 150);
+    // Meta refresh, not a scripted tap-adjacent navigation: iOS treats it as a pure client
+    // redirect, which universal links are documented NOT to intercept — so the Google Calendar
+    // app can't grab this hop and drop the event. JS replace stays as a late fallback.
+    var m = document.createElement('meta');
+    m.httpEquiv = 'refresh';
+    m.content = '0;url=' + u;
+    document.head.appendChild(m);
+    setTimeout(function () { try { location.replace(u); } catch (e) {} }, 600);
   } else {
     document.getElementById('msg').textContent = 'This link is missing its event details — go back to the session and tap Google Calendar again.';
     go.style.display = 'none';

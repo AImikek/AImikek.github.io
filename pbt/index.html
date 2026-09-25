@@ -3529,10 +3529,33 @@ async function resolveRosterNames(sid, s) {
 
 // ── Add to Calendar ──
 function calParts(s) {
-  const d = (s.date || '').replace(/-/g,'');
-  const st = (s.startTime || '07:30').replace(':','') + '00';
-  const en = (s.endTime   || '09:30').replace(':','') + '00';
-  return { start: d + 'T' + st, end: d + 'T' + en };
+  // Returns null when the session has no usable date (caller then omits the dates).
+  // Handles: unpadded times ("8:00"), garbage times (falls back), zero-length events
+  // (start == end → 2 hours), and games that end at/past midnight ("8pm–12am"), which must
+  // end on the NEXT day — Google silently rejects an event whose end is before its start
+  // (you get a blank calendar, no editor), and Apple refuses the .ics import the same way.
+  const d = (s.date || '').replace(/-/g, '');
+  if (!/^\d{8}$/.test(d)) return null;
+  const pad = (t, fb) => {
+    const m = /^(\d{1,2}):?(\d{2})/.exec(String(t == null ? '' : t).trim());
+    if (!m) return fb;
+    return String(Math.min(23, parseInt(m[1], 10))).padStart(2, '0') + m[2];
+  };
+  const st = pad(s.startTime, '0730'), en0 = pad(s.endTime, '0930');
+  const toMin = x => parseInt(x.slice(0, 2), 10) * 60 + parseInt(x.slice(2, 4), 10);
+  const stM = toMin(st);
+  let enM = toMin(en0), addDay = 0;
+  if (enM === stM) enM += 120;                    // zero-length → assume 2 hours
+  if (enM < stM) addDay = 1;                      // ends after midnight → next day
+  if (enM >= 1440) { addDay = 1; enM -= 1440; }   // 2h bump rolled past midnight
+  let ed = d;
+  if (addDay) {
+    const dt = new Date(s.date + 'T12:00');
+    dt.setDate(dt.getDate() + 1);
+    ed = dt.getFullYear() + String(dt.getMonth() + 1).padStart(2, '0') + String(dt.getDate()).padStart(2, '0');
+  }
+  const enS = String(Math.floor(enM / 60)).padStart(2, '0') + String(enM % 60).padStart(2, '0');
+  return { start: d + 'T' + st + '00', end: ed + 'T' + enS + '00' };
 }
 function calDesc(sid, s) {
   const lines = [];
@@ -3545,10 +3568,15 @@ function calGoogleUrl(sid, s) {
   const p = calParts(s);
   const q = 'action=TEMPLATE'
     + '&text=' + encodeURIComponent('🏓 ' + (s.title || 'Pickleball'))
-    + '&dates=' + p.start + '/' + p.end
+    + (p ? '&dates=' + p.start + '/' + p.end : '')
     + '&ctz=' + encodeURIComponent('America/New_York')
     + '&details=' + encodeURIComponent(calDesc(sid, s))
-    + (s.location ? '&location=' + encodeURIComponent(s.location) : '');
+    + (s.location ? '&location=' + encodeURIComponent(s.location) : '')
+    // Pin the Google account: authuser tells Google which signed-in account gets the event,
+    // ending the "saved to the wrong account / bounced through the account chooser and dropped
+    // the template" roulette. Each viewer pins their own via their PBT profile email; an email
+    // Google doesn't recognize falls back to the default account (today's behavior); guests none.
+    + (userProfile?.email ? '&authuser=' + encodeURIComponent(String(userProfile.email).trim()) : '');
   // Standard web event-editor URL (what every add-to-calendar library emits). The button does
   // NOT link here directly: on iPhones, taps on calendar.google.com links are grabbed by the
   // Google Calendar app, which opens WITHOUT the event ("tapped it, nothing was added").
@@ -3561,6 +3589,7 @@ window.downloadIcs = async function(sid) {
   const snap = await get(ref(db, 'sessions/' + sid));
   const s = snap.val(); if (!s) return;
   const p = calParts(s);
+  if (!p) { alert('This session has no date set — add a date first, then try again.'); return; }
   const esc = t => String(t||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
   const stamp = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
   const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PB Tourney//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH',
@@ -6596,7 +6625,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-09-23.2';
+window.BUILD_TAG = 'v2026-09-25.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
