@@ -50,7 +50,13 @@
     <div class="hint">Opens a page on mikek.ai first, which forwards to Google Calendar in the browser — the Calendar app can't grab it on the way.</div>
   </div>
 
-  <div class="win">Text me the letter(s) that showed the event <b>filled in</b> — and for the broken ones, what they did instead (nothing at all, app opened empty, or a sign-in page). <b>D</b> is what the app now uses; if D works here, the Google Calendar button works.</div>
+  <div class="v">
+    <div class="lbl">E — Modern editor route</div>
+    <a id="vE" href="#" target="_blank" rel="noopener">Try E</a>
+    <div class="hint">Google's newer event editor URL, through the mikek.ai relay. Best candidate if A–D all fail.</div>
+  </div>
+
+  <div class="win">Text me the letter(s) that showed the event <b>filled in</b> — and for the broken ones, what they did instead (nothing at all, calendar with no event, or a sign-in page). Whichever letter works becomes the app's Google button.</div>
 </div>
 <script>
 (function () {
@@ -69,6 +75,7 @@
   document.getElementById('vB').href = 'https://calendar.google.com/calendar/u/0/r/eventedit?' + q;
   document.getElementById('vC').href = 'https://www.google.com/calendar/render?action=TEMPLATE&' + q;
   document.getElementById('vD').href = 'cal.html#' + encodeURIComponent(classic);
+  document.getElementById('vE').href = 'cal.html#' + encodeURIComponent('https://calendar.google.com/calendar/u/0/r/eventedit?' + q);
 })();
 </script>
 </body>
