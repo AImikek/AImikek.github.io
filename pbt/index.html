@@ -1599,7 +1599,26 @@ function subscribeTournament(tid) {
           return;
         }
         if (_h==='games'||_h==='standings') { showPage(_h); }
-        else renderCurrent();
+        else {
+          renderCurrent();
+          // SMART LANDING: tournament fully scored and last touched over 6h ago → this is last
+          // night's (or last week's) event. If scheduled games are coming up, land on the
+          // Schedule instead of the stale Games page. Explicit destinations always win:
+          // URL params and hashes never reach this branch, an open session page blocks it,
+          // and a remembered screen other than games/standings is honored by refresh-restore.
+          const _gs = toArr(d.cfg.schedule).filter(g => !g.deleted);
+          const _allScored = _gs.length > 0 && _gs.every(g => { const sc = (d.scores || {})[g.key]; return sc && sc.s1 !== null && sc.s1 !== undefined; });
+          if (_allScored && Date.now() - (d.updatedAt || 0) > 6 * 3600 * 1000) {
+            let _saved = null; try { _saved = JSON.parse(sessionStorage.getItem('pbt_screen') || 'null'); } catch (e) {}
+            const _savedElsewhere = _saved && _saved.id && _saved.id !== 'games' && _saved.id !== 'standings';
+            const _sdOpen = !document.getElementById('sessionDetail').classList.contains('hidden');
+            if (!_sessParam && !urlTid && !_pageParam && !_savedElsewhere && !_sdOpen && !window._userNavigated) {
+              hasUpcomingSessions().then(up => {
+                if (up && !window._userNavigated && document.getElementById('sessionDetail').classList.contains('hidden')) window.openSessions();
+              });
+            }
+          }
+        }
       } else if (skip) {
         skip = false;
         renderCurrent(); updateNav();
@@ -1781,11 +1800,13 @@ async function bootApp() {
     return;
   }
 
-  // 4. Nothing — fresh start
+  // 4. Nothing — fresh start. If there are scheduled games to join, land there instead of
+  //    an empty tournament-setup screen (crew members usually come to sign up, not to organize).
   firstLoad = false;
   cfg = null; scores = {}; activeTid = null;
   updateNav();
   if (startHash==='leaderboard') { openLeaderboard(); return; }
+  if (await hasUpcomingSessions()) { window.openSessions(); return; }
   openSetup();
 }
 
@@ -2219,9 +2240,17 @@ window.duplicateTournament = function(src) {
     sb.style.cssText = 'margin:0 0 12px;padding:11px 14px;background:rgba(0,245,196,0.08);border:1px solid rgba(0,245,196,0.35);border-radius:12px;color:var(--aqua);font-weight:800;font-size:12.5px;';
     step1.insertBefore(sb, step1.firstChild);
   }
-  sb.innerHTML = '🔁 <b>Duplicating "' + escInfo(src.name || 'tournament') + '"</b> — ' + window._dupPrefill.players.length + ' players, settings and ranking rule carried over. Pick a format to continue.'
-    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">On the next screen you can keep the lineup, tweak it, or clear it and start from just you.</div>';
+  const fmtLabel = ({ rr:'Round Robin', '4p':'Best 2 out of 3', log:'Log Games' })[window._dupPrefill.mode] || 'Round Robin';
+  sb.innerHTML = '🔁 <b>Duplicating "' + escInfo(src.name || 'tournament') + '"</b>'
+    + '<div style="margin-top:6px;font-size:12px;color:var(--white);font-weight:700;">' + escInfo(window._dupPrefill.name) + ' · ' + (window._dupPrefill.playType === 'singles' ? 'Singles' : 'Doubles') + ' · ' + fmtLabel + ' · ' + (window._dupPrefill.rankRule === 'avg' ? 'Avg Diff first' : 'Wins first') + ' · ' + window._dupPrefill.players.length + ' players</div>'
+    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Happy with it? Proceed straight to the lineup. Want different settings? The cards below are the settings — tap to change game or format.</div>'
+    + '<div onclick="dupProceed()" style="cursor:pointer;text-align:center;margin-top:10px;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;">🚀 Proceed — Review Players &amp; Start</div>';
   sb.style.display = 'block';
+};
+// Proceed = keep every carried-over setting, jump straight to the lineup
+window.dupProceed = function() {
+  if (!window._dupPrefill) return;
+  window.chooseFormat(window._dupPrefill.mode);
 };
 window.runItBack = function() {
   if (!cfg) return;
@@ -3689,6 +3718,22 @@ window.downloadIcs = async function(sid) {
   } catch(e) { alert('Could not create calendar file: ' + (e.message||e)); }
 };
 
+// Any scheduled game today or later that this viewer can see (public, theirs, or one they're on)?
+async function hasUpcomingSessions() {
+  try {
+    const snap = await get(ref(db, 'sessions'));
+    const all = snap.val() || {};
+    const d0 = new Date();
+    const today = new Date(d0.getTime() - d0.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    return Object.values(all).some(s => {
+      if (!s || !s.date || s.date < today) return false;
+      if (s.visibility !== 'private') return true;
+      if (!currentUser) return false;
+      const lst = [].concat(toArr(s.roster), toArr(s.waitlist));
+      return s.ownerUid === currentUser.uid || lst.some(e => e && e.uid === currentUser.uid);
+    });
+  } catch (e) { return false; }
+}
 // Scan sessions where I'm on the roster/waitlist and today is the session date (±1 day);
 // return the tournamentId if that session's tournament is live. Most recent session wins.
 async function findMyLiveRosterTournament(uid) {
@@ -6707,7 +6752,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-06.1';
+window.BUILD_TAG = 'v2026-10-06.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -6769,6 +6814,7 @@ function histCancelEdit(t)   { if(window.histCancelEdit) window.histCancelEdit(t
 function runItBack()         { if(window.runItBack) window.runItBack(); }
 function dupFromHistory(t)   { if(window.dupFromHistory) window.dupFromHistory(t); }
 function clearPlayersJustMe(){ if(window.clearPlayersJustMe) window.clearPlayersJustMe(); }
+function dupProceed()        { if(window.dupProceed) window.dupProceed(); }
 function guestSignIn(m)      { if(window.guestSignIn) window.guestSignIn(m); }
 function siChip(k,t)         { if(window.siChip) window.siChip(k,t); }
 function siAutoGrow(el)      { if(window.siAutoGrow) window.siAutoGrow(el); }
