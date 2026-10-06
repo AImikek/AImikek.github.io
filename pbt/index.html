@@ -1998,7 +1998,7 @@ window.wlAdd = function(n) {
 // prefilled setups where this week's crowd is different. Also disarms the duplicate prefill
 // so tapping Back and returning doesn't resurrect the cleared names.
 window.clearPlayersJustMe = function() {
-  window._dupPrefill = null; window._sessRoster = null;
+  window._dupPrefill = null; window._sessRoster = null; window._dupCarry = null;
   buildPFields([(userProfile?.name || ''), '', '', '']);
   window.updPCnt();
   renderWlQuickAdd();
@@ -2090,7 +2090,7 @@ function _finalizeTournament() {
     : mode==='4p' ? make4PSchedule(players)
     : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players));
   cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null,rankRule:rankRule}; scores={};
-  window._fromSid = null; window._sessRoster = null; window._dupPrefill = null;
+  window._fromSid = null; window._sessRoster = null; window._dupPrefill = null; window._dupCarry = null;
   rankMode = rankRule; _rankModeTouched = false;
   const tid = makeTid();
   activeTid = tid;
@@ -2219,33 +2219,64 @@ function bumpDateInName(name) {
   }
   return s;
 }
-window.duplicateTournament = function(src) {
+// Parse a trailing date out of a name ("… Oct 4", "… 9/28") → ISO date, or null
+function nameDateISO(name) {
+  const s = String(name || '').trim();
+  const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  let dt = null;
+  let m = /(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})\s*$/i.exec(s);
+  if (m) dt = new Date(new Date().getFullYear(), months.indexOf(m[1].toLowerCase().slice(0, 3)), parseInt(m[2], 10), 12);
+  else { m = /(\d{1,2})\/(\d{1,2})\s*$/.exec(s); if (m) dt = new Date(new Date().getFullYear(), parseInt(m[1], 10) - 1, parseInt(m[2], 10), 12); }
+  if (!dt || isNaN(dt)) return null;
+  if (dt.getTime() < Date.now() - 180 * 86400000) dt.setFullYear(dt.getFullYear() + 1);
+  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+}
+// Duplicate = set up next week's EVENT first. Lands on the New Session screen with every detail
+// prefilled (title date-bumped, date +7, same location/times/spots/level/note). The old lineup and
+// tournament settings ride along and reappear when the organizer hits Start Tournament.
+window.duplicateTournament = async function(src) {
   if (!src || !src.players || !src.players.length) { alert('Nothing to duplicate yet.'); return; }
-  const ph = document.getElementById('pageHistory'); if (ph) ph.style.display = 'none';
-  window.openSetup(true);   // clears session/dup state, lands on step 1 — so arm the prefill AFTER
-  window._dupPrefill = {
+  const carry = {
     name: bumpDateInName(src.name),
     players: src.players.slice(),
     mode: src.mode || 'rr',
     playType: src.playType || 'doubles',
     rankRule: (src.rankRule === 'avg' || src.rankRule === 'wins') ? src.rankRule : null
   };
-  // Start on the format screen (it's the natural first step); preselect singles/doubles,
-  // and the format card tap is what advances to Who's Playing (prefilled).
-  if (window.setPlayType) window.setPlayType(window._dupPrefill.playType || 'doubles');
-  let sb = document.getElementById('sessRosterBanner');
-  if (!sb) {
-    const step1 = document.getElementById('setupStep1');
-    sb = document.createElement('div'); sb.id = 'sessRosterBanner';
-    sb.style.cssText = 'margin:0 0 12px;padding:11px 14px;background:rgba(0,245,196,0.08);border:1px solid rgba(0,245,196,0.35);border-radius:12px;color:var(--aqua);font-weight:800;font-size:12.5px;';
-    step1.insertBefore(sb, step1.firstChild);
+  let sess = null;
+  if (src.fromSession) { try { sess = (await get(ref(db, 'sessions/' + src.fromSession))).val(); } catch (e) {} }
+  const plus7 = iso => { const d = new Date(iso + 'T12:00'); d.setDate(d.getDate() + 7);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  let newDate = sess && sess.date ? plus7(sess.date) : null;
+  if (!newDate) { const nd = nameDateISO(src.name); if (nd) newDate = plus7(nd); }
+  if (!newDate) { const t0 = new Date(); newDate = plus7(new Date(t0.getTime() - t0.getTimezoneOffset() * 60000).toISOString().slice(0, 10)); }
+  const ph = document.getElementById('pageHistory'); if (ph) ph.style.display = 'none';
+  window.openSessionCreate();
+  document.getElementById('scTitle').value = carry.name || '';
+  document.getElementById('scDate').value = newDate;
+  if (sess) {
+    document.getElementById('scLocation').value = sess.location || '';
+    document.getElementById('scStart').value = sess.startTime || '07:30';
+    document.getElementById('scEnd').value = sess.endTime || '09:30';
+    document.getElementById('scSpots').value = String(sess.spots || Math.max(4, carry.players.length));
+    document.getElementById('scLevel').value = sess.level || '';
+    document.getElementById('scNote').value = sess.note || '';
+    window.scSetVis(sess.visibility || 'public');
+    window.scSetRec(sess.recurring || null);
+  } else {
+    document.getElementById('scSpots').value = String(Math.max(4, carry.players.length));
   }
-  const fmtLabel = ({ rr:'Round Robin', '4p':'Best 2 out of 3', log:'Log Games' })[window._dupPrefill.mode] || 'Round Robin';
-  sb.innerHTML = '🔁 <b>Duplicating "' + escInfo(src.name || 'tournament') + '"</b>'
-    + '<div style="margin-top:6px;font-size:12px;color:var(--white);font-weight:700;">' + escInfo(window._dupPrefill.name) + ' · ' + (window._dupPrefill.playType === 'singles' ? 'Singles' : 'Doubles') + ' · ' + fmtLabel + ' · ' + (window._dupPrefill.rankRule === 'avg' ? 'Avg Diff first' : 'Wins first') + ' · ' + window._dupPrefill.players.length + ' players</div>'
-    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Happy with it? Proceed straight to the lineup. Want different settings? The cards below are the settings — tap to change game or format.</div>'
-    + '<div onclick="dupProceed()" style="cursor:pointer;text-align:center;margin-top:10px;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;">🚀 Proceed — Review Players &amp; Start</div>';
-  sb.style.display = 'block';
+  window._dupPrefill = carry;   // createSession binds this to the new session as _dupCarry
+  let bn = document.getElementById('dupSessBanner');
+  if (!bn) {
+    const wrap = document.querySelector('#sessionCreate > div');
+    bn = document.createElement('div'); bn.id = 'dupSessBanner';
+    bn.style.cssText = 'margin:0 0 14px;padding:11px 14px;background:rgba(0,245,196,0.08);border:1px solid rgba(0,245,196,0.35);border-radius:12px;color:var(--aqua);font-weight:800;font-size:12.5px;';
+    if (wrap) wrap.insertBefore(bn, wrap.children[1] || null);
+  }
+  bn.innerHTML = '🔁 <b>Duplicating "' + escInfo(src.name || 'tournament') + '"</b> — details below, date already moved a week. Rename or tweak anything, then Create.'
+    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Your ' + carry.players.length + ' players and the ' + (carry.rankRule === 'avg' ? 'Avg Diff first' : 'Wins first') + ' ranking rule carry over when you hit Start Tournament on the new session.</div>';
+  bn.style.display = 'block';
 };
 // Proceed = keep every carried-over setting, jump straight to the lineup
 window.dupProceed = function() {
@@ -2254,12 +2285,12 @@ window.dupProceed = function() {
 };
 window.runItBack = function() {
   if (!cfg) return;
-  window.duplicateTournament({ name: cfg.name, players: toArr(cfg.players), mode: cfg.mode, playType: cfg.playType, rankRule: cfg.rankRule });
+  window.duplicateTournament({ name: cfg.name, players: toArr(cfg.players), mode: cfg.mode, playType: cfg.playType, rankRule: cfg.rankRule, fromSession: cfg.fromSession || null });
 };
 window.dupFromHistory = function(tid) {
   const t = window._historyData?.[tid]; if (!t || !t.cfg) return;
   const c = t.cfg;
-  window.duplicateTournament({ name: c.name, players: Array.isArray(c.players) ? c.players.slice() : Object.values(c.players || {}), mode: c.mode, playType: c.playType, rankRule: c.rankRule });
+  window.duplicateTournament({ name: c.name, players: Array.isArray(c.players) ? c.players.slice() : Object.values(c.players || {}), mode: c.mode, playType: c.playType, rankRule: c.rankRule, fromSession: c.fromSession || null });
 };
 window.newTournament = window._newTournament = function() {
   if (!confirm('Start completely fresh? The current tournament will be saved to Past Tournaments.')) return;
@@ -3391,6 +3422,7 @@ window.editSession = async function(sid) {
   const s = snap.val(); if (!s) return;
   if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
   window._editSid = sid;
+  const _bn1 = document.getElementById('dupSessBanner'); if (_bn1) _bn1.style.display = 'none';
   loadMyVenues().then(() => renderScSuggestions());
   // reuse the create form — sessionDetail is a higher z-index overlay, so it MUST close first
   closeSessionDetail();
@@ -3470,6 +3502,8 @@ window.saveEditSession = async function() {
 };
 window.openSessionCreate = function() {
   window._editSid = null;
+  window._dupPrefill = null;   // re-armed right after by duplicateTournament when it's a duplicate
+  const _bn0 = document.getElementById('dupSessBanner'); if (_bn0) _bn0.style.display = 'none';
   loadMyVenues().then(() => renderScSuggestions());
   // ensure form is in create state (not edit state from a previous editSession call)
   const btn = document.querySelector('#sessionCreate button[onclick="saveEditSession()"]');
@@ -3583,6 +3617,12 @@ window.createSession = async function() {
       roster: [me]
     });
     document.getElementById('sessionCreate').classList.add('hidden');
+    if (window._dupPrefill) {
+      // This session was created by Run It Back — the old lineup + settings now belong to it
+      window._dupCarry = Object.assign({ forSid: sid }, window._dupPrefill);
+      window._dupPrefill = null;
+      const _bn = document.getElementById('dupSessBanner'); if (_bn) _bn.style.display = 'none';
+    }
     openSessionDetail(sid);
     setTimeout(() => { if (confirm('Session created — you\'ve got spot #1! 🏓\n\nShare the invite link now?')) shareSession(sid); }, 400);
   } catch(e) { alert('Create failed: ' + (e.message||e)); }
@@ -4495,6 +4535,16 @@ window.startFromSession = async function(sid) {
         + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Use the sign-up spelling so stats land on the right accounts' + (roster.length < 4 ? ' — add the rest on the next screen' : '') + '</div>'
       : '⚠️ No sign-ups on "' + escInfo(s.title || 'session') + '" yet — pick a format, then type the players in');
   sb.style.display = 'block';
+  // Session born from Run It Back → re-arm last week's lineup + settings for this start
+  if (window._dupCarry && window._dupCarry.forSid === sid) {
+    window._dupPrefill = Object.assign({}, window._dupCarry);
+    window.setPlayType(window._dupPrefill.playType || 'doubles');
+    const fmtLabel = ({ rr:'Round Robin', '4p':'Best 2 out of 3', log:'Log Games' })[window._dupPrefill.mode] || 'Round Robin';
+    sb.innerHTML = '🔁 <b>' + escInfo(s.title || window._dupPrefill.name || 'Next week') + '</b> — last week\'s setup rides along'
+      + '<div style="margin-top:6px;font-size:12px;color:var(--white);font-weight:700;">' + (window._dupPrefill.playType === 'singles' ? 'Singles' : 'Doubles') + ' · ' + fmtLabel + ' · ' + (window._dupPrefill.rankRule === 'avg' ? 'Avg Diff first' : 'Wins first') + ' · ' + window._dupPrefill.players.length + ' players carried over</div>'
+      + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Proceed to review the lineup (keep it, tweak it, or Clear — Just Me), or tap the cards below to change the settings.</div>'
+      + '<div onclick="dupProceed()" style="cursor:pointer;text-align:center;margin-top:10px;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;">🚀 Proceed — Review Players &amp; Start</div>';
+  }
 };
 
 window.scheduleNextWeek = async function(sid) {
@@ -6752,7 +6802,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-06.2';
+window.BUILD_TAG = 'v2026-10-06.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
