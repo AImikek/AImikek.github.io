@@ -5,24 +5,26 @@
 <aside class="registration-story"><img src="/assets/guest/original/register-banner.jpg" alt="The rooftop pool and Miami skyline" width="1284" height="1348"><div class="registration-story-copy"><span class="eyebrow light">THE PENTHOUSE · PH 4910</span><h1>A warm welcome <br><em>starts here.</em></h1><p>A few details for a thoughtful arrival. <br>We’ll take care of the rest.</p><span class="story-location">BRICKELL, MIAMI <span>1300 S MIAMI AVENUE</span></span></div></aside>
 <section class="registration-panel" id="registration"><div class="form-intro"><span class="eyebrow">BEFORE YOU ARRIVE <span class="form-duration">ABOUT 2 MINUTES</span></span><h2>Your visit, <br><em>made personal.</em></h2><p>So reception can welcome you up and the kitchen is ready for you.</p></div>
 <div id="formError" class="form-error" role="alert" tabindex="-1"></div>
-<form id="formBody"><p class="required-note">All fields are required.</p>
+<form id="formBody"><p class="required-note"><span class="required-mark" aria-hidden="true">*</span> Required field. Please complete every field.</p>
 <fieldset><legend><span>01</span> A little about you</legend><div class="form-grid">
-<div class="field full"><label for="email">Email address</label><input type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com" required></div>
-<div class="field"><label for="fullName">Full name</label><input type="text" id="fullName" name="fullName" autocomplete="name" required></div>
-<div class="field"><label for="phone">Phone number</label><input type="tel" id="phone" name="phone" autocomplete="tel" required></div>
+<div class="field full"><label for="email">Email address <span class="required-mark" aria-hidden="true">*</span></label><input type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com" required></div>
+<div class="field"><label for="fullName">Full name <span class="required-mark" aria-hidden="true">*</span></label><input type="text" id="fullName" name="fullName" autocomplete="name" required></div>
+<div class="field"><label for="phone">Phone number <span class="required-mark" aria-hidden="true">*</span></label><input type="tel" id="phone" name="phone" autocomplete="tel" required></div>
 </div></fieldset>
 <fieldset><legend><span>02</span> Make yourself expected</legend><div class="form-grid">
-<div class="field"><label for="arrivalDate">Arrival date</label><input type="date" id="arrivalDate" name="arrivalDate" required></div>
-<div class="field"><label for="arrivalTime">Arrival time</label><input type="time" id="arrivalTime" name="arrivalTime" required></div>
-<div class="field"><label for="departureDate">Departure date</label><input type="date" id="departureDate" name="departureDate" required></div>
-<div class="field"><label for="departureTime">Departure time</label><input type="time" id="departureTime" name="departureTime" required></div>
-<div class="field full"><label for="food">Food allergies &amp; preferences</label><textarea id="food" name="food" aria-describedby="foodHint" placeholder="Tell us what to keep in mind. If none, just say so." required></textarea><small id="foodHint">Be as simple or specific as you like. We’ll take care of the rest.</small></div>
+<div class="field"><label for="arrivalDate">Arrival date <span class="required-mark" aria-hidden="true">*</span></label><input type="date" id="arrivalDate" name="arrivalDate" required></div>
+<div class="field"><label for="arrivalTime">Arrival time <span class="required-mark" aria-hidden="true">*</span></label><input type="time" id="arrivalTime" name="arrivalTime" required></div>
+<div class="field"><label for="departureDate">Departure date <span class="required-mark" aria-hidden="true">*</span></label><input type="date" id="departureDate" name="departureDate" required></div>
+<div class="field"><label for="departureTime">Departure time <span class="required-mark" aria-hidden="true">*</span></label><input type="time" id="departureTime" name="departureTime" required></div>
+<div class="field full"><label for="food">Food allergies &amp; preferences <span class="required-mark" aria-hidden="true">*</span></label><textarea id="food" name="food" aria-describedby="foodHint" placeholder="Tell us what to keep in mind. If none, just say so." required></textarea><small id="foodHint">Be as simple or specific as you like. We’ll take care of the rest.</small></div>
 </div></fieldset>
 <fieldset><legend><span>03</span> Just in case</legend><p class="fieldset-note">Two emergency contacts to keep on hand.</p><div class="form-grid">
-<div class="field"><label for="ec1Name">Contact 1 · name &amp; relation</label><input type="text" id="ec1Name" name="ec1Name" required></div>
-<div class="field"><label for="ec1Phone">Contact 1 · phone</label><input type="tel" id="ec1Phone" name="ec1Phone" required></div>
-<div class="field"><label for="ec2Name">Contact 2 · name &amp; relation</label><input type="text" id="ec2Name" name="ec2Name" required></div>
-<div class="field"><label for="ec2Phone">Contact 2 · phone</label><input type="tel" id="ec2Phone" name="ec2Phone" required></div>
+<div class="field full"><label for="ec1Name">Contact 1 · full name <span class="required-mark" aria-hidden="true">*</span></label><input type="text" id="ec1Name" name="ec1Name" required></div>
+<div class="field"><label for="ec1Relation">Contact 1 · relationship to you <span class="required-mark" aria-hidden="true">*</span></label><input type="text" id="ec1Relation" name="ec1Relation" placeholder="e.g., Parent, partner, friend" required></div>
+<div class="field"><label for="ec1Phone">Contact 1 · phone <span class="required-mark" aria-hidden="true">*</span></label><input type="tel" id="ec1Phone" name="ec1Phone" required></div>
+<div class="field full"><label for="ec2Name">Contact 2 · full name <span class="required-mark" aria-hidden="true">*</span></label><input type="text" id="ec2Name" name="ec2Name" required></div>
+<div class="field"><label for="ec2Relation">Contact 2 · relationship to you <span class="required-mark" aria-hidden="true">*</span></label><input type="text" id="ec2Relation" name="ec2Relation" placeholder="e.g., Parent, partner, friend" required></div>
+<div class="field"><label for="ec2Phone">Contact 2 · phone <span class="required-mark" aria-hidden="true">*</span></label><input type="tel" id="ec2Phone" name="ec2Phone" required></div>
 </div></fieldset>
 <button class="button submit-button" id="submitBtn" type="submit">Register my visit <span aria-hidden="true">↗</span></button><p class="privacy-note">Sent privately to our household. A copy is emailed to you.</p>
 </form>

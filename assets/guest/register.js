@@ -2,7 +2,7 @@
   const form = document.getElementById('formBody');
   const button = document.getElementById('submitBtn');
   const error = document.getElementById('formError');
-  const fields = ['email', 'fullName', 'phone', 'arrivalDate', 'arrivalTime', 'departureDate', 'departureTime', 'food', 'ec1Name', 'ec1Phone', 'ec2Name', 'ec2Phone'];
+  const fields = ['email', 'fullName', 'phone', 'arrivalDate', 'arrivalTime', 'departureDate', 'departureTime', 'food', 'ec1Name', 'ec1Relation', 'ec1Phone', 'ec2Name', 'ec2Relation', 'ec2Phone'];
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (button.disabled) return;
@@ -18,6 +18,12 @@
         return;
       }
       data.append(name, field.value.trim());
+    }
+    // Preserve the existing sheet and email contract: each contact name includes
+    // their relationship, collected and validated separately in the form.
+    for (const contact of ['ec1', 'ec2']) {
+      data.set(`${contact}Name`, `${data.get(`${contact}Name`)} (${data.get(`${contact}Relation`)})`);
+      data.delete(`${contact}Relation`);
     }
     button.disabled = true;
     button.textContent = 'Sending your registration…';

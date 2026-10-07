@@ -125,3 +125,24 @@ fieldset{border-color:#e3eaf3}legend>span{font-family:var(--display);font-size:2
  .registration-page .back-link{font-size:13px}
  .visit-switch button{font-size:14px}
 }
+
+/* Put visit choices and arrival directions within easy reach. */
+.visit-toolbar{display:flex;justify-content:center;align-items:center;gap:24px;padding-block:14px}
+.visit-toolbar p{font-size:17px;font-weight:600;color:var(--ink)}
+.visit-toolbar .visit-switch{width:auto}
+.visit-toolbar .visit-switch button{font-size:16px;min-height:48px}
+.visit-toolbar .visit-switch button.active{background:linear-gradient(120deg,#d3fbff,#ebf1ff);color:#17354b;box-shadow:0 3px 12px #43cbe526,inset 0 -2px 0 #4dddeb}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;width:100%}
+.hero-actions .button{justify-content:center;gap:14px}
+.hero-actions .button-arrival{background:linear-gradient(135deg,#fff,#defaff);border:1px solid #61cddd;color:#183c4d;box-shadow:0 5px 18px #42c7db26}
+.hero-actions .button-arrival:hover{background:#c9f8ff;box-shadow:0 7px 24px #42c7db40}
+.required-mark{color:#b12965;font-weight:800}
+@media(max-width:760px){
+ .visit-toolbar{flex-direction:column;gap:8px;padding-block:10px 14px}
+ .visit-toolbar p{font-size:16px}
+ .visit-toolbar .visit-switch{width:100%}
+ .visit-toolbar .visit-switch button{font-size:15px;padding:10px 8px}
+ .hero-actions{display:grid;grid-template-columns:1fr}
+ .hero-actions .button{font-size:16px;min-height:50px}
+ .hero{min-height:0;padding-bottom:125px}
+}
