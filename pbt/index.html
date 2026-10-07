@@ -2266,6 +2266,7 @@ window.duplicateTournament = async function(src) {
   } else {
     document.getElementById('scSpots').value = String(Math.max(4, carry.players.length));
   }
+  carry.sessInfo = (sess && sess.info) ? String(sess.info) : null;   // Event Info rides to the new session too
   window._dupPrefill = carry;   // createSession binds this to the new session as _dupCarry
   let bn = document.getElementById('dupSessBanner');
   if (!bn) {
@@ -2275,7 +2276,7 @@ window.duplicateTournament = async function(src) {
     if (wrap) wrap.insertBefore(bn, wrap.children[1] || null);
   }
   bn.innerHTML = '🔁 <b>Duplicating "' + escInfo(src.name || 'tournament') + '"</b> — details below, date already moved a week. Rename or tweak anything, then Create.'
-    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Your ' + carry.players.length + ' players and the ' + (carry.rankRule === 'avg' ? 'Avg Diff first' : 'Wins first') + ' ranking rule carry over when you hit Start Tournament on the new session.</div>';
+    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Your ' + carry.players.length + ' players and the ' + (carry.rankRule === 'avg' ? 'Avg Diff first' : 'Wins first') + ' ranking rule carry over when you hit Start Tournament on the new session.' + (carry.sessInfo ? ' Event Info (format, parking, rules) is copied too.' : '') + '</div>';
   bn.style.display = 'block';
 };
 // Proceed = keep every carried-over setting, jump straight to the lineup
@@ -3611,6 +3612,7 @@ window.createSession = async function() {
       note: document.getElementById('scNote').value.trim() || null,
       visibility: scVis,
       recurring: scRec,
+      info: (window._dupPrefill && window._dupPrefill.sessInfo) || null,
       ownerUid: currentUser.uid,
       ownerName: userProfile?.name || null,
       createdAt: Date.now(),
@@ -4100,6 +4102,33 @@ window.editSessionInfo = async function(sid) {
   }).join('');
   document.getElementById('sessionInfoEdit').classList.remove('hidden');
   setTimeout(() => box.querySelectorAll('textarea').forEach(t => window.siAutoGrow(t)), 30);
+  // Nothing here yet? Offer one-tap copy from this organizer's most recent event that HAS info.
+  if (!s.info) {
+    try {
+      const all = (await get(ref(db, 'sessions'))).val() || {};
+      const cands = Object.entries(all)
+        .filter(([k, v]) => k !== sid && v && v.info && String(v.info).trim() && v.ownerUid === s.ownerUid)
+        .sort((a, b) => String(b[1].date || '').localeCompare(String(a[1].date || '')) || (b[1].createdAt || 0) - (a[1].createdAt || 0));
+      if (cands.length && window._siSid === sid) {
+        const csid = cands[0][0], cs = cands[0][1];
+        box.insertAdjacentHTML('afterbegin',
+          '<div id="siCopyRow" style="margin:0 0 14px;padding:11px 14px;background:rgba(0,245,196,0.08);border:1px solid rgba(0,245,196,0.35);border-radius:12px;">'
+          + '<div style="color:var(--aqua);font-weight:800;font-size:12.5px;margin-bottom:8px;">This event\'s info is empty — grab last time\'s?</div>'
+          + '<button type="button" onclick="siCopyFrom(\'' + csid + '\')" style="width:100%;padding:11px;background:rgba(0,245,196,0.14);border:1px solid rgba(0,245,196,0.5);border-radius:10px;color:var(--aqua);font-weight:800;font-size:13px;cursor:pointer;">📋 Copy from &quot;' + escInfo(cs.title || 'previous event') + '&quot;</button>'
+          + '</div>');
+      }
+    } catch (e) {}
+  }
+};
+window.siCopyFrom = async function(srcSid) {
+  try {
+    const sv = (await get(ref(db, 'sessions/' + srcSid))).val();
+    if (!sv || !sv.info) { alert('That event\'s info is gone.'); return; }
+    const vals = siParse(sv.info);
+    SI_SECTIONS.forEach(sec => { const el = document.getElementById('si_' + sec.key); if (el) { el.value = vals[sec.key] || ''; window.siAutoGrow(el); } });
+    const row = document.getElementById('siCopyRow'); if (row) row.style.display = 'none';
+    copiedToast('✓ Copied — review, then Save!');
+  } catch (e) { alert('Could not copy: ' + (e.message || e)); }
 };
 window.saveSessionInfo = async function() {
   const sid = window._siSid; if (!sid) return;
@@ -6802,7 +6831,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-06.3';
+window.BUILD_TAG = 'v2026-10-06.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -6867,6 +6896,7 @@ function clearPlayersJustMe(){ if(window.clearPlayersJustMe) window.clearPlayers
 function dupProceed()        { if(window.dupProceed) window.dupProceed(); }
 function guestSignIn(m)      { if(window.guestSignIn) window.guestSignIn(m); }
 function siChip(k,t)         { if(window.siChip) window.siChip(k,t); }
+function siCopyFrom(s)       { if(window.siCopyFrom) window.siCopyFrom(s); }
 function siAutoGrow(el)      { if(window.siAutoGrow) window.siAutoGrow(el); }
 function openVenueSheet(s)   { if(window.openVenueSheet) window.openVenueSheet(s); }
 function editVenueDetails(n) { if(window.editVenueDetails) window.editVenueDetails(n); }
