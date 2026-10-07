@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Mike Krilivsky — mikek.ai</title>
+<link rel="canonical" href="https://mikek.ai/h/">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06060a;
+  --bg2:#0c0c14;
+  --bg3:#11111c;
+  --white:#f0f0f8;
+  --accent:#7b9fff;
+  --accent2:#5f7df5;
+  --accentglow:rgba(123,159,255,0.15);
+  --cyan:#4dd9c0;
+  --muted:#9494aa;
+  --border:rgba(123,159,255,0.13);
+  --border2:rgba(123,159,255,0.24);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--white);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-weight:400;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;text-rendering:optimizeLegibility}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:flex;justify-content:space-between;align-items:center;background:rgba(13,13,15,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--white);text-decoration:none;letter-spacing:-0.03em}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-size:14px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color 0.2s}
+.nav-links a:hover{color:var(--accent)}
+.nav-cta{background:var(--accent);color:#fff!important;padding:8px 20px;border-radius:999px;font-size:12px!important;letter-spacing:0.06em}
+.nav-cta:hover{background:var(--accent2);color:#fff!important}
+
+/* ── HERO ── */
+.hero{min-height:78vh;display:flex;align-items:center;padding:84px 32px 24px;position:relative;overflow:hidden}
+.hero-glow{position:absolute;top:-200px;right:-200px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(123,159,255,0.13) 0%,transparent 65%);pointer-events:none}
+.hero-glow2{position:absolute;bottom:-200px;left:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(123,159,255,0.08) 0%,transparent 65%);pointer-events:none}
+.hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 380px;gap:64px;align-items:center}
+.hero-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(44px,6vw,76px);font-weight:700;line-height:1.06;letter-spacing:-0.03em;margin-bottom:16px;padding-bottom:0.08em}
+.hero-title em{font-style:italic;color:var(--accent)}
+.hero-sub{font-size:19px;font-weight:300;font-weight:300;color:var(--muted);line-height:1.75;max-width:520px;margin-bottom:36px}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px}
+.hero-stat{border:1px solid var(--border);border-radius:12px;padding:16px 18px;background:var(--bg2)}
+.hero-stat-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:4px}
+.hero-stat-label{font-size:14px;font-weight:400;color:var(--muted);line-height:1.4}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn-primary{background:var(--accent);color:#fff;font-size:14px;font-weight:600;letter-spacing:0.04em;padding:14px 32px;border-radius:999px;text-decoration:none;transition:all 0.2s}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{border:1px solid var(--border2);color:var(--white);font-size:14px;font-weight:500;letter-spacing:0.02em;padding:14px 32px;border-radius:999px;text-decoration:none;transition:all 0.2s}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);background:var(--accentglow)}
+.hero-photo{position:relative}
+.hero-photo img{width:100%;border-radius:20px;object-fit:cover;aspect-ratio:3/4;filter:grayscale(20%)}
+.hero-photo::before{content:'';position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);z-index:-1;opacity:0.4}
+
+/* ── SECTIONS ── */
+.section{padding:84px 32px}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+.section-title{font-family:'Syne',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:700;line-height:1.1;letter-spacing:-0.03em;margin-bottom:24px}
+.section-title em{font-style:italic;color:var(--accent)}
+.section-body{font-size:17px;font-weight:300;font-weight:300;color:var(--muted);line-height:1.9;max-width:680px;margin-bottom:16px}
+.alt{background:var(--bg2)}
+
+/* ── CREDENTIALS ── */
+
+/* ── LOGO STRIP ── */
+.logo-strip{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;margin-top:36px}
+.logo-strip-label{font-size:13px;font-weight:700;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+.logo-row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+.logo-img{height:36px;object-fit:contain;filter:grayscale(100%) brightness(2.0);opacity:0.65;transition:all 0.3s ease}
+.logo-img:hover{filter:grayscale(0%) brightness(1);opacity:1}
+.dupr-logo{height:24px;max-width:92px;filter:grayscale(100%) brightness(2.15);opacity:0.92;transition:all 0.3s ease}
+.dupr-logo:hover{filter:brightness(0) saturate(100%) invert(60%) sepia(68%) saturate(1221%) hue-rotate(194deg) brightness(103%) contrast(101%);opacity:1}
+.logo-sq{height:36px;width:36px;border-radius:8px;object-fit:cover}
+.logo-sm{height:30px}
+.logo-md{height:40px}
+.logo-lg{height:44px}
+.logo-xl{height:50px}
+.logo-plain{filter:none!important;opacity:0.95}
+.logo-badge{display:flex;align-items:center;justify-content:center;height:42px;min-width:42px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);transition:all 0.3s ease}
+.logo-badge img{display:block;max-height:24px;max-width:110px;object-fit:contain;filter:grayscale(100%) brightness(1.9);opacity:0.72;transition:all 0.3s ease}
+.logo-badge:hover img{filter:grayscale(0%) brightness(1);opacity:1}
+.logo-badge.square{padding:8px;min-width:42px;width:42px}
+.logo-badge.square img{max-height:24px;max-width:24px}
+.logo-badge.dupr{background:transparent;border-color:transparent;padding:0;min-width:auto;height:auto;border-radius:0}
+.logo-badge.dupr img{max-height:24px;max-width:92px;filter:grayscale(100%) brightness(2.15)!important;opacity:0.92!important}.logo-badge.dupr:hover img{filter:brightness(0) saturate(100%) invert(60%) sepia(68%) saturate(1221%) hue-rotate(194deg) brightness(103%) contrast(101%)!important;opacity:1!important}
+.investor-logo-row{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.investor-logo{display:flex;align-items:center;justify-content:center;height:48px;min-width:48px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)}
+.investor-logo img{display:block;max-height:28px;max-width:120px;object-fit:contain}
+.investor-logo.square{padding:10px;min-width:48px;width:48px}
+.investor-logo.square img{max-height:28px;max-width:28px}
+.investor-logo.wide{min-width:56px;padding:10px 12px}
+.investor-logo.wide img{max-height:30px;max-width:34px}
+
+/* ── CRED LOGOS ── */
+.cred-logo{width:56px;height:56px;object-fit:contain;border-radius:12px;margin-bottom:14px}
+.cred-logo-wide{width:auto;height:40px;margin-bottom:16px;object-fit:contain}
+.cred-logo-svg{width:140px;height:40px;margin-bottom:14px;display:flex;align-items:center;background:rgba(255,255,255,0.08);padding:10px 14px;border-radius:10px}
+.cred-logo-sm{width:40px;height:40px;object-fit:cover;border-radius:8px}
+.cred-logo-white{background:white;padding:8px;border-radius:10px}
+
+.cred-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:48px}
+.cred-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:26px;transition:border-color 0.2s}.cred-card:hover{border-color:var(--border2)}
+.cred-card-label{font-size:13px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.cred-card-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:600;color:var(--white);margin-bottom:6px}
+.cred-card-sub{font-size:15px;font-weight:300;color:var(--muted);line-height:1.55}
+
+/* ── VENTURES ── */
+.ventures{display:flex;flex-direction:column;gap:16px;margin-top:48px}
+.venture{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px 32px;display:flex;justify-content:space-between;align-items:center;gap:20px;text-decoration:none;transition:all 0.25s}
+.venture:hover{border-color:var(--border2);background:var(--bg3);transform:translateX(6px)}
+.venture-left{}
+.venture-role{font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.venture-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:600;color:var(--white);margin-bottom:4px}
+.venture-desc{font-size:15px;font-weight:300;color:var(--muted);line-height:1.5;max-width:500px}
+.venture-arrow{font-size:22px;color:var(--accent);flex-shrink:0;opacity:0.5}
+
+/* ── CONTACT FORM ── */
+.form-wrap{max-width:680px;margin:48px 0 0}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:7px}
+label{font-size:13px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+label .req{color:var(--accent);margin-left:2px}
+label .opt{color:rgba(107,107,128,0.6);font-size:9px;margin-left:4px;text-transform:none;letter-spacing:0}
+input,textarea{background:transparent;border:none;border-bottom:1px solid rgba(108,139,255,0.2);border-radius:0;padding:12px 0;font-family:'Inter',sans-serif;font-size:16px;font-weight:300;color:var(--white);outline:none;transition:border-color 0.25s;width:100%;-webkit-appearance:none}
+input::placeholder,textarea::placeholder{color:rgba(107,107,128,0.45);font-weight:300}
+input:focus,textarea:focus{border-bottom-color:var(--accent)}
+textarea{resize:none;min-height:100px;padding-top:14px}
+.form-divider{grid-column:1/-1;height:1px;background:var(--border);margin:8px 0}
+.form-submit{width:auto;padding-left:48px;padding-right:48px;background:transparent;color:var(--accent);font-family:'Inter',sans-serif;font-size:15px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:18px;border:1px solid var(--border2);border-radius:999px;cursor:pointer;transition:all 0.25s;margin-top:16px}
+.form-submit:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.form-success{display:none;text-align:left;padding:48px 0}
+.form-success-icon{font-size:32px;margin-bottom:16px;opacity:0.8}
+.form-success h3{font-family:'Syne',sans-serif;font-size:26px;font-weight:400;color:var(--white);margin-bottom:10px}
+.form-success p{font-size:15px;color:var(--muted);font-weight:300}
+
+/* ── SOCIAL / FOOTER ── */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:48px 32px 36px;text-align:center}
+.footer-inner{max-width:1100px;margin:0 auto}
+.footer-logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--white);margin-bottom:24px}
+.footer-logo span{color:var(--accent)}
+.social-row{display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:28px;flex-wrap:wrap}
+.social-btn{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:11px 20px;color:var(--white);text-decoration:none;font-size:14px;font-weight:700;transition:all 0.2s}
+.social-btn:hover{border-color:var(--accent);color:var(--accent)}
+.social-btn svg{width:16px;height:16px;fill:currentColor;flex-shrink:0}
+.share-btn{background:var(--accent);color:#fff;border-color:var(--accent)}
+.share-btn:hover{background:var(--accent2);color:#fff}
+.footer-copy{font-size:13px;color:rgba(138,138,154,0.5);margin-top:24px}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity 0.7s ease,transform 0.7s ease}
+.reveal.vis{opacity:1;transform:translateY(0)}
+
+@media(max-width:768px){
+  nav{padding:14px 20px}
+  .nav-links{gap:16px}
+  .nav-links a:not(.nav-cta){display:none}
+  .hero{padding:74px 20px 22px;min-height:auto}
+  .hero-inner{grid-template-columns:1fr;gap:48px}
+  .hero-photo{order:-1;max-width:280px;margin:0 auto}
+  .hero-stats{grid-template-columns:1fr 1fr}
+  .section{padding:60px 20px}
+  .cred-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  footer{padding:40px 20px 28px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" aria-label="Back to all links" class="nav-logo">mike<span>k.ai</span></a>
+  <div class="nav-links">
+    <a href="#about">About</a>
+    <a href="#ventures">Ventures</a>
+    <a href="#contact" class="nav-cta">Contact</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag">mikek.ai</div>
+      <h1 class="hero-title">0→1 Builder.<br><em>Revenue Operator.</em></h1>
+      <p class="hero-sub">Founder and executive who builds companies from zero to scale. Specializing in product-market fit, elite teams, and AI-powered revenue systems for the physical world.</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num">$50M+</div>
+          <div class="hero-stat-label">Revenue generated across ventures</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">$10M+</div>
+          <div class="hero-stat-label">Raised from top-tier investors</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">100M+</div>
+          <div class="hero-stat-label">Products generated on patented tech</div>
+        </div>
+      </div>
+      <div class="hero-btns">
+        <a href="#contact" class="btn-primary">Get in Touch</a>
+        <a href="#ventures" class="btn-secondary">See My Work</a>
+      </div>
+    </div>
+    <div class="hero-photo">
+      <img src="/assets/home/mike-portrait.jpg" alt="Mike Krilivsky">
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="section alt" id="about">
+  <div class="section-inner">
+    <div class="section-tag reveal">About</div>
+    <h2 class="section-title reveal">Builder. Investor. <em>Operator.</em></h2>
+    <p class="section-body reveal">Mike Krilivsky is a founder, operator, investor, and executive who builds companies from zero to scale. He has generated tens of millions in revenue, raised over $10 million from top tier investors, and helped create products used across major consumer platforms.</p>
+    <p class="section-body reveal">His work spans revenue, partnerships, product market fit, brand, and disciplined execution. He is known for building real world businesses, creating momentum quickly, and turning vision into measurable growth.</p>
+    <p class="section-body reveal">Today he is focused on AI powered revenue systems for physical businesses, applying the same operating frameworks, growth instincts, and execution standards that have powered his past ventures.</p>
+
+    <!-- LOGO STRIP -->
+    <div class="logo-strip reveal">
+      <div class="logo-strip-label">Selected Platforms & Portfolio</div>
+      <div class="logo-row">
+        <img src="/stanford.jpeg"            alt="Stanford"     class="logo-img logo-sq logo-md">
+        <img src="/startx-wordmark-white.png" alt="StartX"     class="logo-img logo-sm">
+        <img src="/alchemist-white.png"       alt="Alchemist"   class="logo-img logo-sm">
+        <img src="/facebook.png"              alt="Facebook"    class="logo-img logo-sq logo-md">
+        <img src="/mlp-official.png"          alt="MLP"         class="logo-img logo-md">
+        <img src="/ppa-fixed.png"             alt="PPA"         class="logo-img logo-sq logo-xl">
+        <img src="/dupr-wordmark.png" alt="DUPR" class="logo-img dupr-logo">
+        <img src="/texas-ranchers-fixed.png"  alt="TX Ranchers" class="logo-img logo-sq logo-xl">
+        <img src="/hackcancer-white.png"      alt="HackCancer"  class="logo-img logo-lg">
+        <img src="/pickleheads-ball.png"      alt="Pickleheads" class="logo-img logo-sq logo-md">
+        <img src="/pupsnchill-horizontal.png" alt="Pups N Chill" class="logo-img logo-xl">
+        <img src="/nftpay-dark.png"           alt="NFTpay"      class="logo-img logo-md">
+        <img src="/rageon-cutout.png"         alt="RageOn"      class="logo-img logo-md">
+        <div class="logo-badge square"><img src="/Shopify-com_Logo_1.png" alt="Shopify"></div>
+        <div class="logo-badge square"><img src="/bolt-electric.png" alt="Bolt"></div>
+        <div class="logo-badge square"><img src="/Tesla_Symbol_16.png" alt="Tesla"></div>
+      </div>
+    </div>
+
+    <div class="cred-grid">
+      <div class="cred-card reveal">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
+          <img src="/stanford.jpeg" alt="Stanford" style="width:48px;height:48px;object-fit:contain;border-radius:10px">
+          <img src="/startx-wordmark-white.png" alt="StartX" style="height:28px;object-fit:contain">
+        </div>
+        <div class="cred-card-label">Alum</div>
+        <div class="cred-card-title">Stanford StartX</div>
+        <div class="cred-card-sub">Stanford's top entrepreneur accelerator · 2016–2017 · Takes no equity · Extremely selective</div>
+      </div>
+      <div class="cred-card reveal">
+        <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;display:inline-flex;align-items:center;margin-bottom:14px;max-width:180px">
+          <img src="/alchemist-white.png" alt="Alchemist" style="height:28px;width:auto">
+        </div>
+        <div class="cred-card-label">Alum · Mentor · Lecturer</div>
+        <div class="cred-card-title">Alchemist Accelerator</div>
+        <div class="cred-card-sub">#1 Enterprise B2B Accelerator · MIT · Fundraising & Strategy</div>
+      </div>
+      <div class="cred-card reveal">
+        <img src="/hackcancer-white.png" alt="HackCancer" style="height:40px;width:auto;margin-bottom:14px;opacity:0.9">
+        <div class="cred-card-label">Mr. Silicon Valley</div>
+        <div class="cred-card-title">HackCancer</div>
+        <div class="cred-card-sub">Most raised in 5+ years — in under 2.5 weeks. Breaking the all-time fundraising record.</div>
+      </div>
+      <div class="cred-card reveal">
+        <div class="investor-logo-row">
+          <div class="investor-logo square"><img src="/facebook.png" alt="Facebook"></div>
+          <div class="investor-logo square"><img src="/Shopify-com_Logo_1.png" alt="Shopify"></div>
+          <div class="investor-logo square"><img src="/bolt-electric.png" alt="Bolt"></div>
+          <div class="investor-logo wide"><img src="/Tesla_Symbol_16.png" alt="Tesla"></div>
+        </div>
+        <div class="cred-card-label">Investor · Portfolio Returns</div>
+        <div class="cred-card-title">Facebook · Shopify · Bolt · Tesla</div>
+        <div class="cred-card-sub">Early investor exposure across 50+ startups, crypto, and public companies, including marquee names like Facebook, Shopify, Bolt, and Tesla.</div>
+      </div>
+      <div class="cred-card reveal">
+        <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+          <img src="/mlp-official.png"         alt="MLP"        style="height:40px;width:auto;object-fit:contain">
+          <img src="/ppa-fixed.png"            alt="PPA"        style="width:40px;height:40px;object-fit:cover;border-radius:8px">
+          <img src="/dupr-wordmark.png" alt="DUPR" style="height:22px;width:auto;object-fit:contain;opacity:1;filter:brightness(1.35)">
+          <img src="/texas-ranchers-fixed.png" alt="TX Ranchers" style="width:40px;height:40px;object-fit:cover;border-radius:8px">
+          <img src="/pickleheads-ball.png"     alt="Pickleheads" style="width:40px;height:40px;object-fit:cover;border-radius:50%">
+        </div>
+        <div class="cred-card-label">Investor</div>
+        <div class="cred-card-title">Pickleball Portfolio</div>
+        <div class="cred-card-sub">MLP · UPA · PPA · TX Ranchers · DUPR · Pickleheads</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VENTURES -->
+<section class="section" id="ventures">
+  <div class="section-inner">
+    <div class="section-tag reveal">Ventures</div>
+    <h2 class="section-title reveal">What I'm <em>Building.</em></h2>
+    <p class="section-body reveal">Current and past ventures — from AI revenue infrastructure to community platforms, NFT payments, and print-on-demand marketplaces.</p>
+
+    <div class="ventures">
+      <a href="https://autonomous-ai-revenue-op-t5xofmu.gamma.site/" target="_blank" class="venture reveal">
+        <div class="venture-left">
+          <div class="venture-role">Founder · Current</div>
+          <div class="venture-name">mikek.ai — AI Revenue Operator</div>
+          <div class="venture-desc">Autonomous AI system turning existing demand into revenue for physical businesses. V1: longevity clinics. Reactivation, upsell, and retention — automated.</div>
+        </div>
+        <div class="venture-arrow">→</div>
+      </a>
+      <a href="https://pupsnchill.com" target="_blank" class="venture reveal">
+        <div class="venture-left">
+          <div style="margin-bottom:14px"><img src="/pupsnchill-horizontal.png" alt="Pups N Chill" style="height:52px;object-fit:contain"></div>
+          <div class="venture-role">CEO & Founder · Current</div>
+          <div class="venture-name">Pups N Chill</div>
+          <div class="venture-desc">Miami's leading health, wellness, and animal advocacy event. 500 to 4000+ attendees, millions of reach online, worked with hundreds of incredible brands like Equinox, Starbucks, Lamborghini, and more. Dozens of animal lives saved, $10,000 donated to local animal shelters and rescues!</div>
+        </div>
+        <div class="venture-arrow">→</div>
+      </a>
+      <div class="venture reveal" style="cursor:default">
+        <div class="venture-left">
+          <div style="margin-bottom:14px"><img src="/nftpay-dark.png" alt="NFTpay" style="height:34px;object-fit:contain"></div>
+          <div class="venture-role">CEO & Co-founder · Exit</div>
+          <div class="venture-name">NFTpay</div>
+          <div class="venture-desc">First and best credit card payment solution for NFTs. Patent pending. Pioneered NFT infrastructure starting 2016.</div>
+        </div>
+        <div class="venture-arrow" style="opacity:0.2">→</div>
+      </div>
+      <div class="venture reveal" style="cursor:default">
+        <div class="venture-left">
+          <div style="margin-bottom:14px"><img src="/rageon-cutout.png" alt="RageOn" style="height:36px;object-fit:contain;filter:brightness(2)"></div>
+          <div class="venture-role">CEO & Co-founder · Acquired</div>
+          <div class="venture-name">RageOn!</div>
+          <div class="venture-desc">World's largest all-over-print online store. $30M+ revenue. Patented POD technology. 100M+ products. Licensed and worked with Netflix, T-Mobile, KISS, Black Eyed Peas, Shaq, Dennis Rodman, Lisa Frank and more.</div>
+        </div>
+        <div class="venture-arrow" style="opacity:0.2">→</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="section alt" id="contact">
+  <div class="section-inner">
+    <div class="section-tag reveal">Contact</div>
+    <h2 class="section-title reveal">Let's <em>Connect.</em></h2>
+    <p class="section-body reveal">Investor, partnership, advisory, or business inquiries welcome.</p>
+
+    <div class="form-wrap">
+      <form id="contactForm" onsubmit="submitForm(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Your Name <span class="req">*</span></label>
+            <input type="text" name="name" placeholder="John Smith" required>
+          </div>
+          <div class="form-group">
+            <label>Company <span class="req">*</span></label>
+            <input type="text" name="company" placeholder="Acme Inc." required>
+          </div>
+          <div class="form-group">
+            <label>Phone <span class="req">*</span></label>
+            <input type="tel" name="phone" placeholder="+1 (555) 000-0000" required>
+          </div>
+          <div class="form-group">
+            <label>Email <span class="req">*</span></label>
+            <input type="email" name="email" placeholder="you@company.com" required>
+          </div>
+          <div class="form-group form-full">
+            <label>What brings you here? <span class="req">*</span></label>
+            <textarea name="reason" placeholder="Tell me what you have in mind..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Instagram <span class="opt">optional</span></label>
+            <input type="url" name="instagram" placeholder="instagram.com/yourhandle">
+          </div>
+          <div class="form-group">
+            <label>LinkedIn <span class="opt">optional</span></label>
+            <input type="url" name="linkedin" placeholder="linkedin.com/in/yourname">
+          </div>
+        </div>
+        <button type="submit" class="form-submit">Send Message →</button>
+      </form>
+      <div class="form-success" id="formSuccess">
+        <div class="form-success-icon">✦</div>
+        <h3>Message received.</h3>
+        <p>I'll be in touch shortly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">mike<span>k.ai</span></div>
+    <div class="social-row">
+      <!-- LinkedIn -->
+      <a href="http://linkedin.com/in/michaelkrilivsky" target="_blank" class="social-btn">
+        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        LinkedIn
+      </a>
+      <!-- Facebook -->
+      <a href="https://facebook.com/mdadk" target="_blank" class="social-btn">
+        <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        Facebook
+      </a>
+      <!-- Linktree -->
+      <a href="https://linktr.ee/mdadk" target="_blank" class="social-btn">
+        <svg viewBox="0 0 24 24"><path d="M7.953 15.066c-.08.163-.08.324-.08.486 0 1.296.972 2.43 2.268 2.43.648 0 1.215-.243 1.62-.648l4.86-4.86c.567-.567.567-1.539 0-2.106l-4.86-4.86c-.405-.405-.972-.648-1.62-.648-1.296 0-2.268 1.134-2.268 2.43 0 .162 0 .323.08.486L5.847 9.882C5.28 10.449 5.28 11.421 5.847 11.988l2.106 2.106c-.08.162-.08.324 0 .486zM12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0z"/></svg>
+        Linktree
+      </a>
+      <!-- Share -->
+      <button onclick="shareSite()" class="social-btn share-btn">
+        <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+        Share
+      </button>
+    </div>
+    <div class="footer-copy">© 2026 Mike Krilivsky · mikek.ai</div>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add('vis') }), {threshold:0.08});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// Contact form — sends to Google Form / linked Google Sheet
+const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScdMOB-U2hwx_NMgi069y1Oqi0bBnIRCud7toaYPl9v_pBMeg/formResponse';
+const FIELD_MAP = {
+  name: 'entry.1805292766',
+  company: 'entry.857428000',
+  phone: 'entry.62471081',
+  email: 'entry.1438320057',
+  reason: 'entry.1391928046',
+  instagram: 'entry.1872101300',
+  linkedin: 'entry.93254045',
+};
+
+function submitForm(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = new FormData(form);
+
+  // If Google Form is not set up yet, just show success
+  if (GOOGLE_FORM_URL === 'YOUR_GOOGLE_FORM_ACTION_URL_HERE') {
+    form.style.display = 'none';
+    document.getElementById('formSuccess').style.display = 'block';
+    return;
+  }
+
+  const params = new URLSearchParams();
+  for (const [key, field] of Object.entries(FIELD_MAP)) {
+    params.append(field, data.get(key) || '');
+  }
+
+  fetch(GOOGLE_FORM_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: params.toString()
+  }).then(() => {
+    form.style.display = 'none';
+    document.getElementById('formSuccess').style.display = 'block';
+  }).catch(() => {
+    form.style.display = 'none';
+    document.getElementById('formSuccess').style.display = 'block';
+  });
+}
+
+// Share
+function shareSite() {
+  if (navigator.share) {
+    navigator.share({title: 'Mike Krilivsky — mikek.ai', url: 'https://mikek.ai'});
+  } else {
+    navigator.clipboard.writeText('https://mikek.ai');
+    alert('Link copied to clipboard!');
+  }
+}
+</script>
+</body>
+</html>
