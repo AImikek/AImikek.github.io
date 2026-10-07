@@ -2889,6 +2889,22 @@ async function renamePlayerEverywhere(oldName, newName) {
   window._nameCache = {};
   return { sessFixed, profFixed };
 }
+// The Past Tournaments page renders from a snapshot, so after a rename/merge/delete the page
+// underneath still shows the OLD name. Re-pull the archive and re-render whatever is open.
+window._refreshHistoryAfterAdmin = async function() {
+  try {
+    const ph = document.getElementById('pageHistory');
+    if (!ph || ph.style.display === 'none') return;
+    const snap = await get(ref(db, 'users/' + currentUser.uid + '/history'));
+    window._historyData = snap.val() || {};
+    const hd = document.getElementById('historyDetail');
+    if (hd && hd.style.display !== 'none') {
+      const tid = window._histDetailTid;
+      if (tid && window._historyData[tid]) window.viewHistoryDetail(tid);
+      else { hd.style.display = 'none'; document.getElementById('historyList').style.display = 'block'; }
+    }
+  } catch (e) {}
+};
 window.renameLbPlayer = async function(oldName) {
   if (!isAdmin()) return;
   const newName = document.getElementById('pdRenameInput').value.trim();
@@ -2900,6 +2916,7 @@ window.renameLbPlayer = async function(oldName) {
     document.getElementById('playerDetail').classList.add('hidden');
     await loadLeaderboardData();
     renderLeaderboard();
+    await window._refreshHistoryAfterAdmin();
     alert('✓ Renamed everywhere' + (r.sessFixed ? ' · ' + r.sessFixed + ' session roster' + (r.sessFixed>1?'s':'') : '') + (r.profFixed ? ' · ' + r.profFixed + ' account' + (r.profFixed>1?'s':'') : ''));
   } catch(e) { alert('Rename failed: ' + (e.message||e)); }
 };
@@ -2959,6 +2976,7 @@ window.mergeLbPlayer = async function(oldName) {
     document.getElementById('playerDetail').classList.add('hidden');
     await loadLeaderboardData();
     renderLeaderboard();
+    await window._refreshHistoryAfterAdmin();
     alert('✓ Merged — "'+oldName+'" is now "'+target+'" everywhere' + (r.profFixed ? ' (their account was updated too)' : ''));
   } catch(e) { alert('Merge failed: ' + (e.message||e)); }
 };
@@ -2973,6 +2991,7 @@ window.deleteLbSource = async function(tid) {
     document.getElementById('playerDetail').classList.add('hidden');
     await loadLeaderboardData();
     renderLeaderboard();
+    await window._refreshHistoryAfterAdmin();
   } catch(e) { alert('Delete failed: ' + (e.message||e)); }
 };
 
@@ -6878,7 +6897,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-06.5';
+window.BUILD_TAG = 'v2026-10-06.6';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
