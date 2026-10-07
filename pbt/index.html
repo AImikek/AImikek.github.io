@@ -2807,9 +2807,10 @@ window.openPlayerDetail = async function(name) {
       +'<button onclick="renameLbPlayer(\''+name.replace(/'/g,"\\'")+'\')" style="padding:0 16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Rename</button></div>';
     admin += '<label class="flabel">Merge into another player</label>'
       +'<div style="display:flex;gap:8px;margin-bottom:4px;">'
-      +'<input class="finput" id="pdMergeInput" placeholder="Name that should remain" style="margin-bottom:0;flex:1;">'
+      +'<input class="finput" id="pdMergeInput" placeholder="Name that should remain" oninput="pdMergeTyped()" autocomplete="off" style="margin-bottom:0;flex:1;">'
       +'<button onclick="mergeLbPlayer(\''+name.replace(/'/g,"\\'")+'\')" style="padding:0 16px;background:transparent;border:1px solid rgba(255,224,0,0.5);color:var(--yellow);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Merge</button></div>'
-      +'<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:12px;">Same person under two names (e.g. they renamed themselves)? Merge THIS player into the name that should stay — games, rosters and stats combine.</div>';
+      +'<div id="pdMergeSugs" style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px;"></div>'
+      +'<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:12px;">Same person under two names (e.g. they renamed themselves)? Merge THIS player into the name that should stay — games, rosters and stats combine. Start typing and tap the name when it pops up.</div>';
     const srcIds = Object.keys(sources);
     if (srcIds.length) {
       admin += '<label class="flabel">Source tournaments</label>';
@@ -2904,11 +2905,53 @@ window.renameLbPlayer = async function(oldName) {
 };
 // MERGE: "Al" and "Donald Trumpo" are the same person → fold one name into the other. Same cascade as
 // rename; the leaderboard recomputes from game records, so the two stat lines combine automatically.
+// Every player name the app knows (all games across tournaments + registered directory),
+// display casing preserved, minus the player being merged away.
+window._pdKnownNames = function(exclude) {
+  const seen = new Map();
+  const ex = String(exclude || '').trim().toLowerCase();
+  const add = n => {
+    if (!n) return; const t = String(n).trim(); const k = t.toLowerCase();
+    if (!k || k === ex) return;
+    if (!seen.has(k)) seen.set(k, t);
+  };
+  if (lbData) {
+    (lbData.games || []).forEach(g => { (g.t1 || []).forEach(add); (g.t2 || []).forEach(add); });
+    Object.values(lbData.dirByName || {}).forEach(p => add(p && p.name));
+  }
+  return [...seen.values()];
+};
+window.pdMergeTyped = function() {
+  const inp = document.getElementById('pdMergeInput'), box = document.getElementById('pdMergeSugs');
+  if (!inp || !box) return;
+  const q = inp.value.trim().toLowerCase();
+  if (!q) { box.innerHTML = ''; return; }
+  const score = n => { const l = n.toLowerCase();
+    if (l === q) return 0;
+    if (l.startsWith(q)) return 1;
+    if (l.split(/\s+/).some(w => w.startsWith(q))) return 2;
+    if (l.includes(q)) return 3;
+    return 9; };
+  const hits = window._pdKnownNames(window._pdName).map(n => [score(n), n])
+    .filter(x => x[0] < 9).sort((a, b) => a[0] - b[0] || a[1].localeCompare(b[1])).slice(0, 6);
+  box.innerHTML = hits.length
+    ? hits.map(x => '<span onclick="pdPickMerge(\'' + x[1].replace(/\\/g, '\\\\').replace(/'/g, '\\\'').replace(/"/g, '&quot;') + '\')" style="cursor:pointer;padding:7px 13px;background:rgba(255,224,0,0.08);border:1px solid rgba(255,224,0,0.45);color:var(--yellow);border-radius:99px;font-size:12.5px;font-weight:800;">' + escInfo(x[1]) + '</span>').join('')
+    : '<span style="font-size:11px;color:var(--muted);font-weight:600;">No player matches that — keep typing or check the spelling</span>';
+};
+window.pdPickMerge = function(n) {
+  const inp = document.getElementById('pdMergeInput'); if (inp) inp.value = n;
+  const box = document.getElementById('pdMergeSugs');
+  if (box) box.innerHTML = '<span style="font-size:12px;color:var(--aqua);font-weight:800;">✓ ' + escInfo(n) + ' — now hit Merge</span>';
+};
 window.mergeLbPlayer = async function(oldName) {
   if (!isAdmin()) return;
-  const target = (document.getElementById('pdMergeInput')?.value || '').trim();
+  let target = (document.getElementById('pdMergeInput')?.value || '').trim();
   if (!target) { alert('Type the player name to merge into (the name that should remain).'); return; }
   if (target.toLowerCase() === oldName.toLowerCase()) { alert('That is the same player — nothing to merge.'); return; }
+  const _known = window._pdKnownNames ? window._pdKnownNames(oldName) : [];
+  const _exact = _known.find(n => n.toLowerCase() === target.toLowerCase());
+  if (_exact) target = _exact;   // off by casing/spacing → snap to the real player's exact name
+  else if (!confirm('"' + target + '" doesn\'t match any existing player, so this would move "' + oldName + '" under a brand-new name.\n\nIf you meant an existing player, cancel and tap their name in the suggestions instead. Continue with "' + target + '"?')) return;
   if (!confirm('Merge "'+oldName+'" INTO "'+target+'"?\n\nEvery game, roster spot and record of "'+oldName+'" becomes "'+target+'", and their stats combine. This cannot be undone.')) return;
   try {
     const r = await renamePlayerEverywhere(oldName, target);
@@ -3009,7 +3052,10 @@ window._currentScreen = function() {
   if (vis('playerDetail')) return { id:'playerDetail', arg: window._pdName || null };
   if (vis('guidePage')) return { id:'guide' };
   if (vis('leaderboardPage')) return { id:'leaderboard' };
-  const ph = document.getElementById('pageHistory'); if (ph && ph.style.display !== 'none') return { id:'history' };
+  const ph = document.getElementById('pageHistory'); if (ph && ph.style.display !== 'none') {
+    const hd = document.getElementById('historyDetail');
+    return { id:'history', arg: (hd && hd.style.display !== 'none' && window._histDetailTid) || null };
+  }
   const pp = document.getElementById('pageProfile'); if (pp && pp.style.display === 'block') return { id:'profile' };
   const so = document.getElementById('setupOverlay'); if (so && !so.classList.contains('hidden')) return { id:'home' };
   const ps = document.getElementById('pageStandings'); if (ps && ps.style.display !== 'none') return { id:'standings' };
@@ -3057,7 +3103,7 @@ window.goBack = function() {
     case 'standings': (typeof cfg !== 'undefined' && cfg) ? closeAllOverlaysAndShow('standings') : openSetup(); break;
     case 'profile': openProfile(); break;
     case 'leaderboard': openLeaderboard(); break;
-    case 'history': openHistory(); break;
+    case 'history': openHistory(); if (prev.arg && window._historyData && window._historyData[prev.arg]) window.viewHistoryDetail(prev.arg); break;
     case 'guide': openGuide(); break;
     case 'sessions': openSessions(); break;
     case 'sessionCreate': openSessions(); break;
@@ -6280,6 +6326,7 @@ window.saveHistGame = async function(tid, key) {
 window.viewHistoryDetail = function(tid) {
   const t = window._historyData?.[tid];
   if (!t) return;
+  window._histDetailTid = tid;
   const tCfg = t.cfg;
   tCfg.schedule = (Array.isArray(tCfg.schedule)?tCfg.schedule:Object.values(tCfg.schedule||{})).map(g=>({...g,
     t1:Array.isArray(g.t1)?g.t1:Object.values(g.t1||{}), t2:Array.isArray(g.t2)?g.t2:Object.values(g.t2||{})}));
@@ -6319,7 +6366,7 @@ window.viewHistoryDetail = function(tid) {
   const cellHl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
   list.forEach((p,i)=>{
     const dc=p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
-    html+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname"'+(isAdmin()?' onclick="adEditPlayerByName(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;border-bottom:1px dotted rgba(0,240,255,0.5);"':'')+'>'+p.name+'</span></td>'
+    html+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname" onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;border-bottom:1px dotted rgba(0,240,255,0.5);">'+p.name+'</span></td>'
       +'<td '+(hs==='wins'?cellHl:'')+'>'+p.wins+'</td>'
       +'<td '+(hs==='pts'?cellHl:'')+' class="ptsf">'+p.ptsFor+'</td>'
       +'<td '+(hs==='ag'?cellHl:'')+'>'+p.ptsAgainst+'</td>'
@@ -6831,7 +6878,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-06.4';
+window.BUILD_TAG = 'v2026-10-06.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -6887,6 +6934,8 @@ function deleteTournamentPhoto(t,p){ if(window.deleteTournamentPhoto) window.del
 function viewPhoto(t,p)      { if(window.viewPhoto) window.viewPhoto(t,p); }
 function wlAdd(n)            { if(window.wlAdd) window.wlAdd(n); }
 function mergeLbPlayer(o)    { if(window.mergeLbPlayer) window.mergeLbPlayer(o); }
+function pdMergeTyped()      { if(window.pdMergeTyped) window.pdMergeTyped(); }
+function pdPickMerge(n)      { if(window.pdPickMerge) window.pdPickMerge(n); }
 function histEditGame(t,k)   { if(window.histEditGame) window.histEditGame(t,k); }
 function saveHistGame(t,k)   { if(window.saveHistGame) window.saveHistGame(t,k); }
 function histCancelEdit(t)   { if(window.histCancelEdit) window.histCancelEdit(t); }
