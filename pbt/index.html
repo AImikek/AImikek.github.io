@@ -2600,6 +2600,49 @@ window.setLbTime = function(t) { lbTime = t; renderLeaderboard(); };
 window.setLbSort = function(s) { lbSort = s; renderLeaderboard(); };
 window.setLbType = function(t) { lbType = t; renderLeaderboard(); };
 
+// ── PBT RATING — our in-house DUPR ──────────────────────────────────────────
+// Modeled on DUPR's 2025 algorithm: every point counts, judged against expectation.
+// Team strength = average of the pair. Expected point share comes from the rating gap
+// (logistic; a 0.1 gap ≈ 1.2 points in an 11-point game, same calibration DUPR cites).
+// Beat the expected score and you rise — even in a loss. Blowouts beyond expectation are
+// capped so running up the score barely matters. Moves shrink as your game count grows
+// (new players settle fast, veterans are stable). Everyone starts at 4.25; six converging
+// passes over the full history make the result deterministic for every viewer.
+function computePbtRatings(games) {
+  const SEED = 4.25, SCALE = 2.0, CAP = 0.35, LO = 2.0, HI = 8.0;
+  const PASSES = [1.0, 0.6, 0.36, 0.22, 0.13, 0.08];
+  const kfor = n => n < 10 ? 0.40 : (n < 25 ? 0.24 : 0.14);
+  const gs = (games || []).filter(g => g && g.s1 != null && g.s2 != null && (g.s1 + g.s2) > 0 && g.t1 && g.t2 && g.t1.length && g.t2.length)
+    .map(g => ({ when: g.when || 0, t1: g.t1.map(p => String(p).trim()), t2: g.t2.map(p => String(p).trim()), s1: g.s1, s2: g.s2 }))
+    .sort((a, b) => a.when - b.when);
+  const R = {}, G = {}, DISP = {};
+  const key = p => p.toLowerCase();
+  PASSES.forEach((mult, pi) => {
+    gs.forEach(g => {
+      const k1 = g.t1.map(key), k2 = g.t2.map(key);
+      g.t1.concat(g.t2).forEach(p => { const k = key(p); if (!(k in R)) { R[k] = SEED; G[k] = 0; DISP[k] = p; } });
+      const ra = k1.reduce((s, k) => s + R[k], 0) / k1.length;
+      const rb = k2.reduce((s, k) => s + R[k], 0) / k2.length;
+      const E = 1 / (1 + Math.pow(10, -(ra - rb) / SCALE));
+      const A = g.s1 / (g.s1 + g.s2);
+      const perf = Math.max(-CAP, Math.min(CAP, A - E));
+      k1.forEach(k => { R[k] = Math.max(LO, Math.min(HI, R[k] + kfor(G[k]) * mult * perf)); });
+      k2.forEach(k => { R[k] = Math.max(LO, Math.min(HI, R[k] - kfor(G[k]) * mult * perf)); });
+      if (pi === 0) k1.concat(k2).forEach(k => { G[k]++; });
+    });
+  });
+  const out = {};
+  Object.keys(R).forEach(k => { out[k] = { rating: R[k], games: G[k], name: DISP[k] }; });
+  return out;
+}
+window.computePbtRatings = computePbtRatings;
+// Ratings per play type (doubles / singles, like DUPR keeps them separate), cached per data load
+window.pbtRatingsFor = function(type) {
+  if (!lbData) return {};
+  lbData._pbt = lbData._pbt || {};
+  if (!lbData._pbt[type]) lbData._pbt[type] = computePbtRatings(lbData.games.filter(g => (g.gtype || 'doubles') === type));
+  return lbData._pbt[type];
+};
 async function loadLeaderboardData() {
   try {
     const results = await Promise.allSettled([
@@ -2729,6 +2772,8 @@ window.renderLeaderboard = function() {
       h += '<tr onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;'+(isMe?'background:rgba(0,240,255,0.07);box-shadow:inset 3px 0 0 var(--cyan);':'')+'">'
         +'<td style="font-size:'+(i<3?'18':'14')+'px;">'+medal+'</td>'
         +'<td><span class="pname">'+p.name+'</span>'+streakBadge
+        +(function(){ const pr = window.pbtRatingsFor(lbType)[p.name.trim().toLowerCase()];
+           return pr ? '<div style="font-size:10.5px;color:var(--cyan);font-weight:800;letter-spacing:0.5px;">💎 '+pr.rating.toFixed(3)+(pr.games<10?'<span style="color:var(--muted);font-weight:600;"> prov</span>':'')+'</div>' : ''; })()
         +(p.city?'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+p.city+'</div>':'')+gap+'</td>'
         +'<td style="'+hl('wins')+'">'+p.wins+'-'+p.losses+'</td>'
         +'<td style="font-weight:800;color:'+(p.games&&p.wins/p.games>=0.5?'var(--aqua)':'var(--muted)')+';'+hl('pct')+'">'+(p.games?Math.round(100*p.wins/p.games):0)+'%</td>'
@@ -2750,6 +2795,7 @@ window.renderLeaderboard = function() {
       h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(lbType==='singles'?'Singles':'Doubles')+' champ · '+(lbTime==='all'?'all time':'last '+lbTime+' days')+' · min '+LB_MIN_GAMES+' games to rank</div>';
     }
   }
+  h += '<div class="tieinfo" style="margin-top:10px;">💎 PBT Rating = our in-house DUPR. Every point counts against expectation: who you played WITH, who you played AGAINST, and the score. Win as the underdog and you jump; squeak by as the favorite and you can still dip. Under 10 games shows as provisional.</div>';
   document.getElementById('lbContent').innerHTML = h;
 };
 
@@ -2780,7 +2826,11 @@ window.openPlayerDetail = async function(name) {
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;color:'+(color||'var(--white)')+';">'+val+'</div>'
     +'<div style="font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;">'+lbl+'</div></div>';
   const diff = games.length ? ((pf-pa)/games.length).toFixed(1) : '0';
-  document.getElementById('pdStats').innerHTML =
+  const prt = window.pbtRatingsFor(lbType)[nm] || null;
+  const rbanner = prt ? '<div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;padding:12px;text-align:center;">'
+    +'<div style="font-family:\'Russo One\',sans-serif;font-size:28px;color:var(--cyan);">💎 '+prt.rating.toFixed(3)+'</div>'
+    +'<div style="font-size:9.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">PBT Rating · our in-house DUPR · '+prt.games+' games'+(prt.games<10?' · provisional':'')+'</div></div>' : '';
+  document.getElementById('pdStats').innerHTML = rbanner +
     box('Record', w+'-'+l) + box('Games', games.length) + box('Pts For', pf, 'var(--cyan)') + box('Avg Diff', (diff>=0?'+':'')+diff, diff>=0?'var(--aqua)':'var(--danger)');
   document.getElementById('pdGames').innerHTML = rows || '<div style="color:var(--muted);text-align:center;padding:20px;font-weight:600;">No games found</div>';
   // Player profile (if registered)
@@ -6897,7 +6947,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-06.6';
+window.BUILD_TAG = 'v2026-10-07.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
