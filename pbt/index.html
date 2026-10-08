@@ -803,6 +803,10 @@
   <input class="finput" id="editCity" placeholder="e.g. Fort Lauderdale" maxlength="40">
   <label class="flabel">Instagram</label>
   <input class="finput" id="editInsta" placeholder="@yourhandle" maxlength="40">
+  <div id="myDprCard" style="display:none;margin:4px 0 14px;padding:11px 14px;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;">
+    <span style="font-family:'Russo One',sans-serif;font-size:20px;color:var(--cyan);">💎 <span id="myDprVal">—</span></span>
+    <span id="myDprSub" style="font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-left:8px;"></span>
+  </div>
   <label class="flabel">DUPR Rating</label>
   <input class="finput" id="editDupr" type="number" inputmode="decimal" step="0.01" min="1" max="8" placeholder="e.g. 3.75 (leave blank if none)">
   <label class="flabel">Home Court</label>
@@ -3090,6 +3094,20 @@ window.runImport = async function() {
       const tid = 'imported' + finishedAt + Math.random().toString(36).slice(2,5);
       await set(ref(db, 'users/' + currentUser.uid + '/history/' + tid), { cfg, scores, finishedAt, imported: true });
       try { await set(ref(db, 'tournaments/' + tid), { cfg, scores, ownerUid: currentUser.uid, updatedAt: finishedAt }); } catch(e) {}
+      // Optional duprs map: {"Player Name": 3.896, ...} → unclaimed directory profiles, so their
+      // official DUPR shows on the player page. Names that already have a profile are left alone.
+      if (t.duprs && typeof t.duprs === 'object') {
+        const dSnap = await get(ref(db, 'directory'));
+        const have = new Set(Object.values(dSnap.val() || {}).map(p => (p && p.name || '').trim().toLowerCase()).filter(Boolean));
+        for (const nm of Object.keys(t.duprs)) {
+          const k = String(nm).trim(); const lk = k.toLowerCase();
+          if (!k || have.has(lk)) continue;
+          const slug = 'n_' + lk.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+          const dv = parseFloat(t.duprs[nm]);
+          await set(ref(db, 'directory/' + slug), { name: k, dupr: isNaN(dv) ? null : dv, unclaimed: true });
+          have.add(lk);
+        }
+      }
       imported++;
     } catch(e) { errors.push((t.name||'?') + ': ' + e.message); }
   }
@@ -6169,6 +6187,20 @@ window._wireProfileAutosave = function() {
 window.openProfile = function() {
   window._pushNav('profile');
   window.hideAllPages();
+  // my DPR, computed from every logged game (shows from the very first game, provisional under 10)
+  (async () => {
+    try {
+      if (!lbData) await loadLeaderboardData();
+      const nm = (userProfile?.name || '').trim().toLowerCase();
+      const r = nm && window.pbtRatingsFor('doubles')[nm];
+      const card = document.getElementById('myDprCard');
+      if (r && card) {
+        document.getElementById('myDprVal').textContent = r.rating.toFixed(3);
+        document.getElementById('myDprSub').textContent = 'DPR · our in-house DUPR · ' + r.games + ' games' + (r.games < 10 ? ' · provisional' : '');
+        card.style.display = 'block';
+      } else if (card) card.style.display = 'none';
+    } catch(e) {}
+  })();
   if (window.resetBars) resetBars();
   setActiveTab('profile');
   var gp = document.getElementById('guidePage'); if (gp) gp.classList.add('hidden');
@@ -6959,7 +6991,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-07.5';
+window.BUILD_TAG = 'v2026-10-07.6';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
