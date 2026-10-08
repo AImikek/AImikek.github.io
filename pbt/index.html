@@ -2800,8 +2800,8 @@ window.renderLeaderboard = function() {
       h += '<div style="margin-top:16px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Almost There</div>';
       unqualified.forEach(p => {
         const need = LB_MIN_GAMES - p.games;
-        h += '<div style="display:flex;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;opacity:0.7;">'
-          +'<span style="font-weight:700;color:var(--white);font-size:14px;">'+p.name+'</span>'
+        h += '<div onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="display:flex;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;opacity:0.7;cursor:pointer;">'
+          +'<span style="font-weight:700;color:var(--white);font-size:14px;border-bottom:1px dotted rgba(0,240,255,0.5);">'+p.name+'</span>'
           +'<span style="font-size:12px;color:var(--yellow);font-weight:600;">'+need+' more game'+(need>1?'s':'')+' to qualify 🎯</span></div>';
       });
     }
@@ -3035,7 +3035,19 @@ window.mergeLbPlayer = async function(oldName) {
   const _exact = _known.find(n => n.toLowerCase() === target.toLowerCase());
   if (_exact) target = _exact;   // off by casing/spacing → snap to the real player's exact name
   else if (!confirm('"' + target + '" doesn\'t match any existing player, so this would move "' + oldName + '" under a brand-new name.\n\nIf you meant an existing player, cancel and tap their name in the suggestions instead. Continue with "' + target + '"?')) return;
-  if (!confirm('Merge "'+oldName+'" INTO "'+target+'"?\n\nEvery game, roster spot and record of "'+oldName+'" becomes "'+target+'", and their stats combine. This cannot be undone.')) return;
+  const _pSum = (nm) => {
+    const l = nm.trim().toLowerCase();
+    const gs = (lbData && lbData.games || []).filter(g => g.t1.some(p=>p.trim().toLowerCase()===l) || g.t2.some(p=>p.trim().toLowerCase()===l));
+    if (!gs.length) return nm + ': no games on record';
+    let w = 0, first = Infinity, last = 0; const tn = [];
+    gs.forEach(g => { const on1 = g.t1.some(p=>p.trim().toLowerCase()===l);
+      if ((on1?g.s1:g.s2) > (on1?g.s2:g.s1)) w++;
+      if (g.when < first) first = g.when; if (g.when > last) last = g.when;
+      if (g.tname && tn[tn.length-1] !== g.tname) tn.push(g.tname); });
+    const d = ts => new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return nm + ': ' + gs.length + ' games, ' + w + '-' + (gs.length-w) + ', ' + d(first) + ' → ' + d(last) + '\n   events: ' + tn.slice(-3).join(' · ');
+  };
+  if (!confirm('CHECK BOTH PLAYERS FIRST:\n\n🔻 GOES AWAY —\n' + _pSum(oldName) + '\n\n✅ KEEPS THE NAME —\n' + _pSum(target) + '\n\nIf those look like two DIFFERENT people (different days, different crowds), hit Cancel.\n\nMerge "'+oldName+'" INTO "'+target+'"? Every game and roster spot combines. This cannot be undone.')) return;
   try {
     const r = await renamePlayerEverywhere(oldName, target);
     lbData = null;
@@ -4917,6 +4929,36 @@ window.adOpenTournament = async function(tid) {
 };
 
 window._apUid = null;
+// Surgical rename, scoped to ONE tournament (shared copy + the archive copy + the title).
+// This is the undo for a bad merge: flip just the affected tournaments back, nothing else moves.
+window.histRenameLocal = async function(tid) {
+  if (!isAdmin()) return;
+  const from = document.getElementById('hrlFrom')?.value || '';
+  const to = (document.getElementById('hrlTo')?.value || '').trim();
+  if (!from || !to) { alert('Pick the player and type the correct name.'); return; }
+  if (from === to) { alert('That is the same name.'); return; }
+  if (!confirm('In THIS tournament only: every game of "' + from + '" becomes "' + to + '", and the title updates if it mentions them. Nothing else in the app changes. Continue?')) return;
+  const fixCfg = (cfg) => {
+    if (!cfg) return cfg;
+    const ren = n => (String(n).trim() === from ? to : n);
+    cfg.players = (Array.isArray(cfg.players) ? cfg.players : Object.values(cfg.players || {})).map(ren);
+    const sched = (Array.isArray(cfg.schedule) ? cfg.schedule : Object.values(cfg.schedule || {})).map(g => ({ ...g,
+      t1: (Array.isArray(g.t1) ? g.t1 : Object.values(g.t1 || {})).map(ren),
+      t2: (Array.isArray(g.t2) ? g.t2 : Object.values(g.t2 || {})).map(ren) }));
+    cfg.schedule = sched;
+    if (cfg.name) cfg.name = String(cfg.name).split(from).join(to);
+    return cfg;
+  };
+  try {
+    const tSnap = await get(ref(db, 'tournaments/' + tid));
+    if (tSnap.val()) await update(ref(db, 'tournaments/' + tid), { cfg: fixCfg(tSnap.val().cfg) });
+    const hSnap = await get(ref(db, 'users/' + currentUser.uid + '/history/' + tid));
+    if (hSnap.val()) await update(ref(db, 'users/' + currentUser.uid + '/history/' + tid), { cfg: fixCfg(hSnap.val().cfg) });
+    lbData = null;
+    await window._refreshHistoryAfterAdmin();
+    copiedToast('✓ Fixed in this tournament only');
+  } catch(e) { alert('Rename failed: ' + (e.message||e)); }
+};
 window.adEditPlayer = async function(uid) {
   if (!isAdmin()) return;
   try {
@@ -4946,6 +4988,9 @@ window.adSavePlayer = async function() {
       phone: document.getElementById('apPhone').value.trim() || null,
       dupr:  d ? parseFloat(d) : null
     });
+    // keep the account's own profile name in sync, so their app shows the fixed name too
+    const _nn = document.getElementById('apName').value.trim();
+    if (_nn && _nn !== (p.name || '')) { try { await set(ref(db, 'users/' + window._apUid + '/profile/name'), _nn); } catch(e) {} }
     document.getElementById('adPlayerModal').classList.add('hidden');
     if (!document.getElementById('adminDash').classList.contains('hidden')) openAdminDash();
   } catch(e) { alert('Save failed (publish latest Firebase rules): ' + (e.message||e)); }
@@ -6534,6 +6579,14 @@ window.viewHistoryDetail = function(tid) {
       +'<label class="flabel">Tournament Date (admin)</label>'
       +'<input class="finput" type="date" id="histDateInput" value="'+dstr+'" style="color-scheme:dark;margin-bottom:8px;">'
       +'<button onclick="saveHistoryMeta(\''+tid+'\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">💾 Save Name &amp; Date</button></div>';
+    html += '<div style="margin-top:14px;padding:14px;background:var(--surface2);border:1px solid rgba(255,224,0,0.25);border-radius:12px;">'
+      +'<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:6px;">🩹 Fix a Name in THIS Tournament</div>'
+      +'<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:10px;">For merge mistakes: swaps the name in this tournament\'s games and title ONLY — the rest of the app is untouched.</div>'
+      +'<div style="display:flex;gap:8px;">'
+      +'<select id="hrlFrom" class="finput" style="flex:1;margin-bottom:0;">'+[...allP].sort().map(p=>'<option>'+escInfo(p)+'</option>').join('')+'</select>'
+      +'<input id="hrlTo" class="finput" placeholder="Correct name" autocomplete="off" style="flex:1;margin-bottom:0;">'
+      +'</div>'
+      +'<button onclick="histRenameLocal(\''+tid+'\')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid rgba(255,224,0,0.5);color:var(--yellow);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Fix Name Here Only</button></div>';
     html += '<button onclick="copyHistoryJson(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📋 Copy JSON (Admin)</button>';
     html += '<button onclick="restoreTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(255,224,0,0.35);color:var(--yellow);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🛠 Admin: Load Into App to Edit</button>';
     html += '<div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-weight:600;">Current active tournament will be archived first</div>';
@@ -6961,6 +7014,7 @@ function adDeletePlayer(u,n) { if(window.adDeletePlayer) window.adDeletePlayer(u
 function adOpenTournament(t) { if(window.adOpenTournament) window.adOpenTournament(t); }
 function adEditPlayer(u)     { if(window.adEditPlayer) window.adEditPlayer(u); }
 function adSavePlayer()      { if(window.adSavePlayer) window.adSavePlayer(); }
+function histRenameLocal(t)  { if(window.histRenameLocal) window.histRenameLocal(t); }
 function adEditPlayerByName(n){ if(window.adEditPlayerByName) window.adEditPlayerByName(n); }
 function openSessions()      { if(window.openSessions) window.openSessions(); }
 function openSessionCreate() { if(window.openSessionCreate) window.openSessionCreate(); }
@@ -6991,7 +7045,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-07.6';
+window.BUILD_TAG = 'v2026-10-07.7';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
