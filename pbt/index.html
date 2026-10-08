@@ -2863,11 +2863,10 @@ window.openPlayerDetail = async function(name) {
   }
   // Admin tools: rename player + manage source tournaments
   if (isAdmin()) {
-    let acctUid = null, acct = null;
+    let accts = [];
     try {
       const _dsnap = await get(ref(db, 'directory'));
-      const _hit = Object.entries(_dsnap.val() || {}).find(([u, p]) => p && String(p.name || '').trim().toLowerCase() === nm);
-      if (_hit) { acctUid = _hit[0]; acct = _hit[1]; }
+      accts = Object.entries(_dsnap.val() || {}).filter(([u, p]) => p && String(p.name || '').trim().toLowerCase() === nm);
     } catch(e) {}
     const sources = {};
     games.forEach(g => { if (g.tid) sources[g.tid] = g.tname; });
@@ -2884,16 +2883,19 @@ window.openPlayerDetail = async function(name) {
       +'<div id="pdMergeSugs" style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px;"></div>'
       +'<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:12px;">Same person under two names (e.g. they renamed themselves)? Merge THIS player into the name that should stay — games, rosters and stats combine. Start typing and tap the name when it pops up.</div>';
     admin += '<label class="flabel">Account</label>';
-    if (acct) {
-      admin += '<div style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--white);line-height:1.7;">'
-        + (acct.phone ? '📱 ' + escInfo(acct.phone) + '<br>' : '')
-        + (acct.email ? '✉️ ' + escInfo(acct.email) + '<br>' : '')
-        + (acct.dupr ? '<span style="color:var(--yellow);">DUPR ' + escInfo(String(acct.dupr)) + '</span><br>' : '')
-        + (acct.unclaimed ? '<span style="color:var(--muted);font-size:11px;">Unclaimed profile — created by import, no login yet</span>' : (!acct.phone && !acct.email ? '<span style="color:var(--muted);font-size:11px;">No contact info on file</span>' : ''))
-        + '</div>'
-        + '<button onclick="adEditPlayer(\'' + acctUid + '\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:12px;">✏️ Edit Account Info</button>';
+    if (accts.length > 1) admin += '<div style="font-size:11px;color:var(--yellow);font-weight:700;margin-bottom:8px;">⚠️ ' + accts.length + ' accounts share this name — check the phone/email before editing. Usually one belongs to someone else after a merge.</div>';
+    if (accts.length) {
+      accts.forEach(([aUid, acct]) => {
+        admin += '<div style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--white);line-height:1.7;">'
+          + (acct.phone ? '📱 ' + escInfo(acct.phone) + '<br>' : '')
+          + (acct.email ? '✉️ ' + escInfo(acct.email) + '<br>' : '')
+          + (acct.dupr ? '<span style="color:var(--yellow);">DUPR ' + escInfo(String(acct.dupr)) + '</span><br>' : '')
+          + (acct.unclaimed ? '<span style="color:var(--muted);font-size:11px;">Unclaimed profile — no login yet</span>' : (!acct.phone && !acct.email ? '<span style="color:var(--muted);font-size:11px;">No contact info on file</span>' : ''))
+          + '<button onclick="adEditPlayer(\'' + aUid + '\')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">✏️ Edit Account Info</button></div>';
+      });
+      admin += '<div style="margin-bottom:12px;"></div>';
     } else {
-      admin += '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:12px;">No registered account under this name.</div>';
+      admin += '<button onclick="adCreateProfile(\'' + name.replace(/'/g, "\\'") + '\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,245,196,0.4);color:var(--aqua);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:12px;">➕ Create Profile for ' + escInfo(name) + '</button>';
     }
     const srcIds = Object.keys(sources);
     if (srcIds.length) {
@@ -4977,6 +4979,19 @@ window.histRenameLocal = async function(tid) {
     copiedToast('✓ Fixed in this tournament only');
   } catch(e) { alert('Rename failed: ' + (e.message||e)); }
 };
+// Admin: give any player name an unclaimed profile so contact info / DUPR can live on it
+// before they ever sign up. Same shape the importer creates; editable like any account.
+window.adCreateProfile = async function(name) {
+  if (!isAdmin()) return;
+  const k = String(name || '').trim();
+  if (!k) return;
+  const slug = 'n_' + k.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  try {
+    const ex = (await get(ref(db, 'directory/' + slug))).val();
+    if (!ex) await set(ref(db, 'directory/' + slug), { name: k, unclaimed: true });
+    window.adEditPlayer(slug);
+  } catch(e) { alert('Could not create profile: ' + (e.message||e)); }
+};
 window.adEditPlayer = async function(uid) {
   if (!isAdmin()) return;
   try {
@@ -7031,6 +7046,7 @@ function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments) window.
 function adDeletePlayer(u,n) { if(window.adDeletePlayer) window.adDeletePlayer(u,n); }
 function adOpenTournament(t) { if(window.adOpenTournament) window.adOpenTournament(t); }
 function adEditPlayer(u)     { if(window.adEditPlayer) window.adEditPlayer(u); }
+function adCreateProfile(n)  { if(window.adCreateProfile) window.adCreateProfile(n); }
 function adSavePlayer()      { if(window.adSavePlayer) window.adSavePlayer(); }
 function histRenameLocal(t)  { if(window.histRenameLocal) window.histRenameLocal(t); }
 function adEditPlayerByName(n){ if(window.adEditPlayerByName) window.adEditPlayerByName(n); }
@@ -7063,7 +7079,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-07.8';
+window.BUILD_TAG = 'v2026-10-07.9';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
