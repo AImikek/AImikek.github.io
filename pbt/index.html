@@ -2863,6 +2863,12 @@ window.openPlayerDetail = async function(name) {
   }
   // Admin tools: rename player + manage source tournaments
   if (isAdmin()) {
+    let acctUid = null, acct = null;
+    try {
+      const _dsnap = await get(ref(db, 'directory'));
+      const _hit = Object.entries(_dsnap.val() || {}).find(([u, p]) => p && String(p.name || '').trim().toLowerCase() === nm);
+      if (_hit) { acctUid = _hit[0]; acct = _hit[1]; }
+    } catch(e) {}
     const sources = {};
     games.forEach(g => { if (g.tid) sources[g.tid] = g.tname; });
     let admin = '<div style="margin-top:20px;padding:14px;background:var(--surface2);border:1px solid rgba(255,224,0,0.25);border-radius:12px;">'
@@ -2877,6 +2883,18 @@ window.openPlayerDetail = async function(name) {
       +'<button onclick="mergeLbPlayer(\''+name.replace(/'/g,"\\'")+'\')" style="padding:0 16px;background:transparent;border:1px solid rgba(255,224,0,0.5);color:var(--yellow);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Merge</button></div>'
       +'<div id="pdMergeSugs" style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px;"></div>'
       +'<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:12px;">Same person under two names (e.g. they renamed themselves)? Merge THIS player into the name that should stay — games, rosters and stats combine. Start typing and tap the name when it pops up.</div>';
+    admin += '<label class="flabel">Account</label>';
+    if (acct) {
+      admin += '<div style="padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--white);line-height:1.7;">'
+        + (acct.phone ? '📱 ' + escInfo(acct.phone) + '<br>' : '')
+        + (acct.email ? '✉️ ' + escInfo(acct.email) + '<br>' : '')
+        + (acct.dupr ? '<span style="color:var(--yellow);">DUPR ' + escInfo(String(acct.dupr)) + '</span><br>' : '')
+        + (acct.unclaimed ? '<span style="color:var(--muted);font-size:11px;">Unclaimed profile — created by import, no login yet</span>' : (!acct.phone && !acct.email ? '<span style="color:var(--muted);font-size:11px;">No contact info on file</span>' : ''))
+        + '</div>'
+        + '<button onclick="adEditPlayer(\'' + acctUid + '\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:12px;">✏️ Edit Account Info</button>';
+    } else {
+      admin += '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:12px;">No registered account under this name.</div>';
+    }
     const srcIds = Object.keys(sources);
     if (srcIds.length) {
       admin += '<label class="flabel">Source tournaments</label>';
@@ -7045,7 +7063,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-07.7';
+window.BUILD_TAG = 'v2026-10-07.8';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
