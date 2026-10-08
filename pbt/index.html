@@ -177,8 +177,10 @@
   .stbl td:first-child { text-align:left; }
   .stbl tr:last-child td { border-bottom:none; }
   .lbscroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .stbl.lbw { min-width:600px; }
-  .lbw th:first-child, .lbw td:first-child { position:sticky; left:0; z-index:2; background:var(--bg); min-width:146px; max-width:170px; }
+  .stbl.lbw { min-width:580px; border-collapse:separate; border-spacing:0; }  /* separate borders: Safari repaints sticky cells correctly during scroll */
+  .lbw th, .lbw td { padding-left:6px; padding-right:6px; }
+  .lbw th:first-child, .lbw td:first-child { position:sticky; left:0; z-index:2; background:var(--bg); width:112px; min-width:112px; max-width:112px; }
+  .lbw .pname { display:inline-block; font-size:13.5px; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:bottom; }
   .lbw td.meCell { background:#081626; }
   .stbl tbody tr:hover td { background:rgba(0,240,255,0.03); }
   .snum { font-family:'Russo One',sans-serif; font-size:20px; color:var(--muted); margin-right:8px; }
@@ -2773,7 +2775,7 @@ window.renderLeaderboard = function() {
       const isMe = p.name.toLowerCase() === myName;
       const medal = i===0?'👑':i===1?'🥈':i===2?'🥉':(i+1);
       const streakBadge = p.streak >= 3 ? ' <span style="font-size:11px;">🔥'+p.streak+'</span>' : '';
-      const gap = i>0 && lbSort==='avg' ? '<div style="font-size:10px;color:var(--muted);font-weight:600;">'+(qualified[i-1].avgDiff - p.avgDiff).toFixed(1)+' behind '+qualified[i-1].name+'</div>' : '';
+      const gap = i>0 && lbSort==='avg' ? '<div style="font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(qualified[i-1].avgDiff - p.avgDiff).toFixed(1)+' behind '+qualified[i-1].name+'</div>' : '';
       const metricAvg = '<span class="'+(p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'')+'">'+(p.avgDiff>=0?'+':'')+p.avgDiff.toFixed(1)+'</span>';
       const hl = (k) => lbSort===k ? 'background:rgba(0,240,255,0.07);font-weight:800;' : '';
       const pr = window.pbtRatingsFor(lbType)[p.name.trim().toLowerCase()];
@@ -2803,8 +2805,10 @@ window.renderLeaderboard = function() {
       h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(lbType==='singles'?'Singles':'Doubles')+' champ · '+(lbTime==='all'?'all time':'last '+lbTime+' days')+' · min '+LB_MIN_GAMES+' games to rank</div>';
     }
   }
+  const _slKeep = (function(){ const sc = document.querySelector('#lbContent .lbscroll'); return sc ? sc.scrollLeft : 0; })();
   h += '<div class="tieinfo" style="margin-top:10px;">💎 DPR (Diamond Performance Rating) = our in-house DUPR. Every point counts against expectation: who you played WITH, who you played AGAINST, and the score. Win as the underdog and you jump; squeak by as the favorite and you can still dip. Under 10 games shows as provisional.</div>';
   document.getElementById('lbContent').innerHTML = h;
+  if (_slKeep) { const sc = document.querySelector('#lbContent .lbscroll'); if (sc) sc.scrollLeft = _slKeep; }
 };
 
 window.openPlayerDetail = async function(name) {
@@ -6955,7 +6959,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-07.3';
+window.BUILD_TAG = 'v2026-10-07.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
