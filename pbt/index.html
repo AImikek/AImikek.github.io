@@ -229,6 +229,7 @@
   #addGameOverlay.hidden { display:none; }
 
   /* ── ROSTER PLAYER SHEET ── */
+  #pwaInstallSheet.hidden { display:none !important; }
   #rosterPlayerSheet.hidden { display:none !important; }
   #venueSheet.hidden { display:none !important; }
   #phoneLinkOverlay.hidden { display:none !important; }
@@ -7271,7 +7272,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-09.3';
+window.BUILD_TAG = 'v2026-10-09.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
