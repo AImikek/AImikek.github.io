@@ -305,6 +305,11 @@
     border-bottom:1px solid var(--border);
     transition:transform 0.25s ease; }
   #topBar.bar-hidden { transform:translateY(-100%); }
+  /* Home-screen (standalone) mode: iOS paints its clock/battery OVER the top of the page, which buried the ☰ and 🏆
+     buttons under the status bar. Every top-anchored surface steps down by the safe-area inset (0 in a normal browser). */
+  #topBar { padding-top:calc(10px + env(safe-area-inset-top)); }
+  [style*="padding:60px 16px"], #pageProfile { padding-top:calc(60px + env(safe-area-inset-top)) !important; }
+  [style*="padding:16px 16px 60px"] { padding-top:calc(16px + env(safe-area-inset-top)) !important; }
   #pageHistory [style*='Russo One'][style*='letter-spacing:2px'] { font-size:15px !important; }
   .topbar-title { font-family:'Russo One',sans-serif; font-size:14px; letter-spacing:3px;
     color:var(--cyan); text-transform:uppercase; }
@@ -325,7 +330,7 @@
   .bbtn .blbl { font-family:'Russo One',sans-serif; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; }
   .bbtn.active .blbl { color:var(--cyan); }
 
-  body { padding-top:52px !important; padding-bottom:76px !important; }
+  body { padding-top:calc(52px + env(safe-area-inset-top)) !important; padding-bottom:76px !important; }
 
   /* Drawer: centered + scrollable */
   #settingsMenu { display:flex !important; align-items:center; justify-content:center; }
@@ -404,7 +409,7 @@
   #setupStep1 .mtitle { font-size:22px !important; margin-bottom:2px; }
   #setupStep1 .msub { margin-bottom:10px !important; font-size:13px; }
   #setupStep1 .mtoggle { gap:8px; }
-  #setupOverlay { padding-top:58px; padding-bottom:calc(150px + env(safe-area-inset-bottom)); }
+  #setupOverlay { padding-top:calc(58px + env(safe-area-inset-top)); padding-bottom:calc(150px + env(safe-area-inset-bottom)); }
 
   @keyframes savedPulse {
     0%   { box-shadow: 0 0 0 3px rgba(0,245,196,0.9), 0 0 30px 8px rgba(0,245,196,0.35); border-color: var(--aqua); transform: scale(1); }
@@ -7423,7 +7428,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-11.3';
+window.BUILD_TAG = 'v2026-10-11.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
