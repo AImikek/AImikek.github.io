@@ -230,6 +230,8 @@
 
   /* ── ROSTER PLAYER SHEET ── */
   #pwaInstallSheet.hidden { display:none !important; }
+  #rrRoundsSheet.hidden { display:none !important; }
+  #installBar.hidden { display:none !important; }
   #rosterPlayerSheet.hidden { display:none !important; }
   #venueSheet.hidden { display:none !important; }
   #phoneLinkOverlay.hidden { display:none !important; }
@@ -1361,6 +1363,18 @@ document.addEventListener('touchend',   _unlockAudio, true);
 <span id="tabSummary" style="display:none;"></span>
 <span id="tabFeedback" style="display:none;"></span>
 
+<div id="installBar" class="hidden" style="position:fixed;left:12px;right:12px;bottom:calc(70px + env(safe-area-inset-bottom));z-index:379;display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(135deg,rgba(0,240,255,0.18),rgba(155,93,229,0.18));backdrop-filter:blur(12px);border:1px solid rgba(0,240,255,0.45);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,0.45);">
+  <span onclick="installApp()" style="flex:1;cursor:pointer;font-weight:800;font-size:13px;color:var(--white);line-height:1.3;">📲 Get the app on your home screen<br><span style="color:var(--cyan);font-size:11px;font-weight:700;">10 seconds · no app store · tap for steps</span></span>
+  <span onclick="dismissInstallBar()" style="cursor:pointer;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid var(--border);font-size:12px;flex-shrink:0;">✕</span>
+</div>
+<div id="rrRoundsSheet" class="hidden" style="position:fixed;inset:0;z-index:560;background:rgba(4,6,15,0.95);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px;">
+  <div style="max-width:400px;width:100%;max-height:88vh;overflow-y:auto;background:var(--surface);border:1px solid rgba(0,240,255,0.3);border-radius:18px;padding:20px;">
+    <div style="font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:1px;color:var(--cyan);text-transform:uppercase;margin-bottom:6px;">🎮 How many games tonight?</div>
+    <div id="rrRoundsSub" style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.6;margin-bottom:12px;"></div>
+    <div id="rrRoundsList"></div>
+    <button onclick="cancelRounds()" style="width:100%;margin-top:6px;padding:12px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">← Back</button>
+  </div>
+</div>
 <div id="pwaInstallSheet" class="hidden" style="position:fixed;inset:0;z-index:700;background:rgba(4,6,15,0.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.classList.add('hidden')">
   <div style="max-width:380px;width:100%;background:var(--surface);border:1px solid rgba(0,240,255,0.3);border-radius:18px;padding:22px;">
     <div style="font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:1px;color:var(--cyan);text-transform:uppercase;margin-bottom:10px;">📲 Install PB Tourney</div>
@@ -1582,8 +1596,27 @@ function _isStandalone() {
   try { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; } catch (e) { return false; }
 }
 try { if (_isStandalone()) { const mi = document.getElementById('menuInstall'); if (mi) mi.style.display = 'none'; } } catch (e) {}
+// Install nudge: a slim bar above the tab bar for anyone using the browser version (hidden once installed;
+// ✕ snoozes it a week), plus the instructions sheet opens ONCE automatically on the first login after this build.
+window.refreshInstallBar = function() {
+  const b = document.getElementById('installBar'); if (!b) return;
+  let dismissed = 0; try { dismissed = parseInt(localStorage.getItem('pbt_ibar_dismiss') || '0', 10) || 0; } catch (e) {}
+  const show = !!currentUser && !_isStandalone() && (Date.now() - dismissed > 7 * 864e5);
+  b.classList.toggle('hidden', !show);
+};
+window.dismissInstallBar = function() {
+  try { localStorage.setItem('pbt_ibar_dismiss', String(Date.now())); } catch (e) {}
+  const b = document.getElementById('installBar'); if (b) b.classList.add('hidden');
+};
+function maybeAutoInstallPrompt() {
+  try {
+    if (!currentUser || _isStandalone() || localStorage.getItem('pbt_install_seen')) return;
+    localStorage.setItem('pbt_install_seen', '1');
+    window.installApp();
+  } catch (e) {}
+}
 window.installApp = async function() {
-  if (_isStandalone()) { copiedToast('✓ Already installed!'); return; }
+  if (_isStandalone()) { copiedToast('✓ Already installed!'); window.refreshInstallBar(); return; }
   if (window._bip) {                       // Android / Chrome: real install prompt
     try { window._bip.prompt(); const r = await window._bip.userChoice; if (r && r.outcome === 'accepted') copiedToast('✓ Installed — check your home screen!'); window._bip = null; return; } catch (e) {}
   }
@@ -1614,8 +1647,11 @@ onAuthStateChanged(auth, user => {
     document.getElementById('loginScreen').style.display = 'none';
     presenceBeat(user.uid);
     bootApp();
+    window.refreshInstallBar();
+    setTimeout(maybeAutoInstallPrompt, 3000);
   } else {
     currentUser = null;
+    window.refreshInstallBar();
     document.getElementById('setupOverlay').classList.add('hidden');
     cfg = null; scores = {}; activeTid = null;
     if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
@@ -2165,10 +2201,13 @@ async function _finalizeTournament() {
   }
   // ⚖️ load DPR ratings first so the schedule generator can balance the matchups
   try { if (!lbData) await loadLeaderboardData(); if (lbData) window.pbtRatingsFor('doubles'); } catch (e) {}
+  const isDoublesRR = mode === 'rr' && playType_ !== 'singles';
+  if (isDoublesRR && players.length >= 9 && !window._pendingSetup.rounds) { window.showRoundsChooser(players.length); return; }
+  const rrRounds = isDoublesRR ? (window._pendingSetup.rounds || rrDefaultRounds(players.length)) : null;
   const schedule = mode==='log' ? []
     : mode==='4p' ? make4PSchedule(players)
-    : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players));
-  cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null,rankRule:rankRule}; scores={};
+    : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players, rrRounds));
+  cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null,rankRule:rankRule,rounds:rrRounds}; scores={};
   window._fromSid = null; window._sessRoster = null; window._dupPrefill = null; window._dupCarry = null;
   rankMode = rankRule; _rankModeTouched = false;
   const tid = makeTid();
@@ -2183,6 +2222,30 @@ async function _finalizeTournament() {
     });
   closeSetup(); showPage('games');
 }
+
+// ── HOW MANY GAMES TONIGHT? (9+ players) ── organizer picks rounds; byes + fairness are explained up front
+window.showRoundsChooser = function(n) {
+  const opts = window.rrOptions(n);
+  const courts = Math.floor(n / 4);
+  document.getElementById('rrRoundsSub').innerHTML = '<b>' + n + ' players</b> · ' + courts + ' court' + (courts === 1 ? '' : 's') + ' · ' + (n - rrSlots(n)) + ' sit out each round<br>'
+    + 'Byes rotate evenly and never twice in a row · nobody partners twice · teams balanced by 💎 DPR';
+  document.getElementById('rrRoundsList').innerHTML = opts.map(o => {
+    const tag = o.perfect ? '🤝 everyone partners once' : o.full ? '🔥 max games' : o.rec ? '⭐ Recommended' : '';
+    const hl = o.rec;
+    return '<button onclick="pickRounds(' + o.rounds + ')" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:12px 14px;border-radius:12px;cursor:pointer;background:' + (hl ? 'rgba(0,240,255,0.1)' : 'var(--surface2)') + ';border:1px solid ' + (hl ? 'rgba(0,240,255,0.6)' : 'var(--border)') + ';color:var(--white);">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-family:\'Russo One\',sans-serif;font-size:15px;letter-spacing:0.5px;">' + o.each + ' games each</span>'
+      + (tag ? '<span style="font-size:10.5px;font-weight:800;color:' + (hl ? 'var(--cyan)' : 'var(--aqua)') + ';">' + tag + '</span>' : '') + '</div>'
+      + '<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:3px;">' + o.games + ' total games · ' + o.rounds + ' rounds · each player sits ' + o.sits + 'x</div>'
+      + '</button>';
+  }).join('');
+  document.getElementById('rrRoundsSheet').classList.remove('hidden');
+};
+window.pickRounds = function(R) {
+  if (window._pendingSetup) window._pendingSetup.rounds = R;
+  document.getElementById('rrRoundsSheet').classList.add('hidden');
+  _finalizeTournament();
+};
+window.cancelRounds = function() { document.getElementById('rrRoundsSheet').classList.add('hidden'); };
 
 // ── TOURNAMENT PHOTOS ── photos/{tid}/{pid} = { data, by, byUid, at }, photoIdx/{tid} = { n, players, name, at }
 async function renderTournamentPhotos(tid) {
@@ -5496,33 +5559,50 @@ function makeSinglesRRSchedule(players) {
   return sched;
 }
 
-function makeRRSchedule(players) {
-  const n=players.length;
-  if (n===8) {
-    // The perfect-8 rotation is fixed by POSITION (every pair partners exactly once),
-    // so fairness = choosing WHICH player sits in which position. Score orderings by
-    // total team-DPR gap across all 14 games and keep the fairest within a time budget.
-    const build = (p) => [
-      {r:1,t1:[p[0],p[1]],t2:[p[2],p[3]]},{r:1,t1:[p[4],p[5]],t2:[p[6],p[7]]},
-      {r:2,t1:[p[0],p[2]],t2:[p[4],p[6]]},{r:2,t1:[p[1],p[3]],t2:[p[5],p[7]]},
-      {r:3,t1:[p[0],p[3]],t2:[p[5],p[6]]},{r:3,t1:[p[1],p[2]],t2:[p[4],p[7]]},
-      {r:4,t1:[p[0],p[4]],t2:[p[1],p[5]]},{r:4,t1:[p[2],p[6]],t2:[p[3],p[7]]},
-      {r:5,t1:[p[0],p[5]],t2:[p[3],p[6]]},{r:5,t1:[p[1],p[4]],t2:[p[2],p[7]]},
-      {r:6,t1:[p[0],p[6]],t2:[p[1],p[7]]},{r:6,t1:[p[2],p[5]],t2:[p[3],p[4]]},
-      {r:7,t1:[p[0],p[7]],t2:[p[2],p[4]]},{r:7,t1:[p[1],p[6]],t2:[p[3],p[5]]},
-    ].map((g,i)=>({key:'g'+(i+1),round:g.r,t1:g.t1,t2:g.t2}));
-    const cost = (sched) => sched.reduce((c,g) => c + Math.abs(dprOrSeed(g.t1[0])+dprOrSeed(g.t1[1])-dprOrSeed(g.t2[0])-dprOrSeed(g.t2[1])), 0);
+const RR_PATTERNS = {
+  8: [[[0,1,2,4],[3,6,5,7]],[[1,2,3,5],[4,0,6,7]],[[2,3,4,6],[5,1,0,7]],[[3,4,5,0],[6,2,1,7]],[[4,5,6,1],[0,3,2,7]],[[5,6,0,2],[1,4,3,7]],[[6,0,1,3],[2,5,4,7]]],
+  9: [[[1,2,3,4],[5,6,7,8]],[[0,5,2,6],[3,7,4,8]],[[0,7,1,8],[3,5,4,6]],[[0,4,6,8],[1,7,2,5]],[[0,3,5,7],[1,6,2,8]],[[0,8,2,3],[1,4,6,7]],[[0,2,4,7],[1,5,3,8]],[[0,6,1,3],[2,4,5,8]],[[0,1,4,5],[2,7,3,6]]],
+  10: [[[0,1,2,9],[4,5,6,8]],[[0,7,3,5],[1,2,4,6]],[[0,4,1,7],[3,6,8,9]],[[0,9,3,4],[1,8,2,5]],[[1,4,2,7],[3,9,5,6]],[[0,6,5,7],[1,3,4,8]],[[0,2,5,8],[1,9,3,7]],[[0,5,4,9],[2,8,6,7]],[[1,6,3,8],[2,4,7,9]],[[0,3,2,6],[5,9,7,8]]],
+  11: [[[8,9,1,4],[5,2,6,0]],[[7,1,6,3],[9,10,5,0]],[[10,3,2,1],[8,4,0,7]],[[9,2,8,3],[10,4,6,5]],[[9,5,0,2],[6,1,8,7]],[[3,4,10,0],[5,7,1,9]],[[7,4,8,2],[10,6,3,0]],[[1,5,2,4],[6,8,3,9]],[[7,6,0,9],[1,8,10,5]],[[0,4,1,3],[9,7,2,10]],[[4,5,7,3],[6,2,8,10]]],
+  12: [[[0,1,2,5],[3,7,8,10],[4,9,6,11]],[[1,2,3,6],[4,8,9,0],[5,10,7,11]],[[2,3,4,7],[5,9,10,1],[6,0,8,11]],[[3,4,5,8],[6,10,0,2],[7,1,9,11]],[[4,5,6,9],[7,0,1,3],[8,2,10,11]],[[5,6,7,10],[8,1,2,4],[9,3,0,11]],[[6,7,8,0],[9,2,3,5],[10,4,1,11]],[[7,8,9,1],[10,3,4,6],[0,5,2,11]],[[8,9,10,2],[0,4,5,7],[1,6,3,11]],[[9,10,0,3],[1,5,6,8],[2,7,4,11]],[[10,0,1,4],[2,6,7,9],[3,8,5,11]]],
+  13: [[[1,4,2,7],[3,12,6,8],[5,11,9,10]],[[2,5,3,8],[4,0,7,9],[6,12,10,11]],[[3,6,4,9],[5,1,8,10],[7,0,11,12]],[[4,7,5,10],[6,2,9,11],[8,1,12,0]],[[5,8,6,11],[7,3,10,12],[9,2,0,1]],[[6,9,7,12],[8,4,11,0],[10,3,1,2]],[[7,10,8,0],[9,5,12,1],[11,4,2,3]],[[8,11,9,1],[10,6,0,2],[12,5,3,4]],[[9,12,10,2],[11,7,1,3],[0,6,4,5]],[[10,0,11,3],[12,8,2,4],[1,7,5,6]],[[11,1,12,4],[0,9,3,5],[2,8,6,7]],[[12,2,0,5],[1,10,4,6],[3,9,7,8]],[[0,3,1,6],[2,11,5,7],[4,10,8,9]]]
+};
+// Pre-solved round-robin designs by POSITION (0-based): every pair partners at most once, opponents
+// at most twice, byes even and never back-to-back. 8/9/12/13 are perfect whist tournaments
+// (exactly once / exactly twice). Fairness = choosing WHICH player sits in which position,
+// scored by total team-DPR gap, so matchups are as even as the design allows.
+function rrSlots(n) { return 4 * Math.floor(n / 4); }
+function rrFullRounds(n) { return RR_PATTERNS[n] ? RR_PATTERNS[n].length : ((n % 2 === 1) ? n : n - 1); }
+function rrDefaultRounds(n) { if (n < 9) return rrFullRounds(n); return Math.min(rrFullRounds(n), Math.ceil(7 * n / rrSlots(n))); }
+window.rrOptions = function(n) {
+  const S = rrSlots(n), full = rrFullRounds(n), out = [];
+  for (let R = Math.max(1, Math.ceil(6 * n / S)); R <= full; R++) {
+    const slots = R * S, lo = Math.floor(slots / n), hi = Math.ceil(slots / n);
+    const byes = R * (n - S), blo = Math.floor(byes / n), bhi = Math.ceil(byes / n);
+    out.push({ rounds: R, games: slots / 4, each: lo === hi ? String(lo) : lo + '–' + hi, sits: blo === bhi ? String(blo) : blo + '–' + bhi,
+      full: R === full, perfect: R === full && [8, 9, 12, 13].includes(n), rec: R === rrDefaultRounds(n) });
+  }
+  return out;
+};
+function makeRRSchedule(players, rounds) {
+  const n = players.length;
+  const pat = RR_PATTERNS[n];
+  const R = Math.max(1, Math.min(rounds || rrDefaultRounds(n), pat ? pat.length : 99));
+  if (pat) {
+    const rds = pat.slice(0, R);
+    const build = (p) => { const out = []; let k = 0; rds.forEach((rd, ri) => rd.forEach(t => out.push({ key: 'g' + (++k), round: ri + 1, t1: [p[t[0]], p[t[1]]], t2: [p[t[2]], p[t[3]]] }))); return out; };
+    const cost = (sched) => sched.reduce((c, g) => c + Math.abs(dprOrSeed(g.t1[0]) + dprOrSeed(g.t1[1]) - dprOrSeed(g.t2[0]) - dprOrSeed(g.t2[1])), 0);
     let bestP = players.slice(), bestC = cost(build(bestP));
     const t0 = Date.now();
     for (let t = 0; t < 400 && Date.now() - t0 < 300; t++) {
       const p = players.slice();
-      for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [p[i],p[j]] = [p[j],p[i]]; }
+      for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
       const c = cost(build(p));
       if (c < bestC) { bestC = c; bestP = p; }
     }
     return randomizeSchedule(build(bestP));
   }
-  return randomizeSchedule(makeBalancedRounds(players, {}));
+  return randomizeSchedule(makeBalancedRounds(players, { rounds: R }));
 }
 window.makeRRSchedule = makeRRSchedule;
 
@@ -5702,7 +5782,9 @@ function renderGames() {
     const byRound={};
     cfg.schedule.forEach(g=>{if(g.added)return;if(!byRound[g.round])byRound[g.round]=[];byRound[g.round].push(g);});
     Object.keys(byRound).sort((a,b)=>+a-+b).forEach(r=>{
-      html+='<div class="rhdr">Round '+r+'</div>';
+      const _inR = new Set(); byRound[r].forEach(g => { (g.t1||[]).forEach(p=>_inR.add(p)); (g.t2||[]).forEach(p=>_inR.add(p)); });
+      const _sit = (cfg.players||[]).filter(p => !_inR.has(p));
+      html+='<div class="rhdr">Round '+r+(_sit.length?'<span style="margin-left:8px;font-size:10px;letter-spacing:0;color:var(--muted);font-family:\'DM Sans\',sans-serif;font-weight:700;text-transform:none;">🪑 sitting: '+_sit.join(', ')+'</span>':'')+'</div>';
       byRound[r].forEach((g,gi)=>{
         const s=scores[g.key]||{s1:null,s2:null};
         const done=s.s1!==null&&s.s2!==null;
@@ -5999,7 +6081,7 @@ window.addPlayerToTournament = async function() {
   const _maxByes = Math.max(0, ...cfg.players.map(p=>byes[p]||0));
   fresh0.forEach(p=>{ byes[p]=_maxByes; });
   const gamesPerRound = Math.floor(players.length/4);
-  const totalRounds = (players.length%2===1) ? players.length : players.length-1;
+  const totalRounds = cfg.rounds || ((players.length%2===1) ? players.length : players.length-1);
   const playedSched = keep.filter(g=>!g.deleted&&!g.added).length;
   const doneRounds = gamesPerRound ? Math.floor(playedSched/gamesPerRound) : 0;
   const remRounds = Math.max(1, totalRounds - doneRounds);
@@ -7295,6 +7377,9 @@ function syncHistoryToGlobal(){ if(window.syncHistoryToGlobal) window.syncHistor
 function openAdminDash()     { if(window.openAdminDash) window.openAdminDash(); }
 function openGuide()         { if(window.openGuide) window.openGuide(); }
 function installApp()        { if(window.installApp) window.installApp(); }
+function pickRounds(r)       { if(window.pickRounds) window.pickRounds(r); }
+function cancelRounds()      { if(window.cancelRounds) window.cancelRounds(); }
+function dismissInstallBar() { if(window.dismissInstallBar) window.dismissInstallBar(); }
 function shareAppLink()      { if(window.shareAppLink) window.shareAppLink(); }
 function adDeleteTournament(t){ if(window.adDeleteTournament) window.adDeleteTournament(t); }
 function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments) window.adDeleteEmptyTournaments(); }
@@ -7334,7 +7419,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-11.1';
+window.BUILD_TAG = 'v2026-10-11.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
