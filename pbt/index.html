@@ -3752,7 +3752,10 @@ window.openSessions = async function() {
   const list = document.getElementById('sessionsList');
   list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading sessions...</div>';
   try {
+    // 💎 ratings ride along so each card can show the lineup's average DPR next to the posted level
+    const _lbReady = (async () => { try { if (!lbData) await loadLeaderboardData(); if (lbData) window.pbtRatingsFor('doubles'); } catch (e) {} })();
     const snap = await get(ref(db, 'sessions'));
+    await _lbReady;
     const all = snap.val() || {};
     const today = new Date(); today.setHours(0,0,0,0);
     const upcoming = Object.entries(all)
@@ -3773,11 +3776,12 @@ window.openSessions = async function() {
       const spotsLeft = Math.max(0, (s.spots||4) - roster.length);
       const d = new Date(s.date + 'T12:00');
       const ds = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+      const _ad = window.avgDpr ? window.avgDpr(roster.map(r=>r.name)) : null;
       return '<div onclick="openSessionDetail(\'' + s.sid + '\')" style="cursor:pointer;padding:14px;background:var(--surface);border:1px solid '+(spotsLeft?'rgba(0,240,255,0.3)':'var(--border)')+';border-radius:14px;margin-bottom:10px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;">'
         +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' 🔁':'')+(s.visibility==='private'?' 🔒':'')+'</div>'
         +'<div style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;'+(spotsLeft?'background:rgba(0,245,196,0.12);color:var(--aqua);':'background:rgba(255,224,0,0.1);color:var(--yellow);')+'">'+(spotsLeft ? spotsLeft+' open' : 'Full · waitlist open')+'</div></div>'
-        +'<div style="font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;">'+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+(s.location?' · 📍 '+s.location:'')+(s.level?' · 🎚 '+s.level:'')+'</div>'
+        +'<div style="font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;">'+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+(s.location?' · 📍 '+s.location:'')+(s.level?' · 🎚 '+s.level:'')+(_ad?' · <span style="color:var(--cyan);">💎 avg '+_ad.avg.toFixed(2)+'</span>':'')+'</div>'
         +'<div style="font-size:12px;color:var(--white);font-weight:600;margin-top:6px;">'+roster.map(r=>r.name).join(' · ')+'</div>'
         +'</div>';
     }).join('') : '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">No upcoming public sessions yet.<br>Create one and get the crew together! 🏓</div>';
@@ -7419,7 +7423,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-11.2';
+window.BUILD_TAG = 'v2026-10-11.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
