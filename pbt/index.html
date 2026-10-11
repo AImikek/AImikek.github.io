@@ -459,6 +459,13 @@
   /* iOS: 16px inputs prevent focus auto-zoom */
   input, select, textarea { font-size:16px; }  /* >=16px stops iOS zoom; specific styles may go bigger */
 </style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#04060F">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PB Tourney">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 </head>
@@ -1036,7 +1043,7 @@
       <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">✨ App Guide</div>
     </div>
-    <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:22px;">Everything PB Tourney can do — free, no downloads, works on any phone.</div>
+    <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:22px;">Everything PB Tourney can do — free, no downloads, works on any phone. Updated with 💎 DPR ratings, player stats, calendar buttons, and one-tap weekly reruns.</div>
 
     <div class="guide-card"><div class="guide-icon">🚀</div><div><div class="guide-t">Tournaments in 30 Seconds</div><div class="guide-s">Pick a format, type player names, hit Start. The full schedule generates instantly — courts, sides, and matchups included. <b>Round Robin</b> rotates partners so everyone plays with everyone. <b>4-Player Rotation</b> runs best-of-3 matchups with rotating partners — and it flexes to any player count. Best part: <b>zero DUPR pressure</b> — play loose, try new partners, and compete hard without anything touching your official rating.</div></div></div>
 
@@ -1050,13 +1057,23 @@
 
     <div class="guide-card"><div class="guide-icon">📅</div><div><div class="guide-t">Games to Join — Reserve Your Spot</div><div class="guide-s">Planning a session? Create it in <b class="glink" onclick="openSessions()">Games to Join</b> (menu): set the location, date, time, spots, and level — then share ONE link. Friends tap it, sign in, and claim numbered spots. Full sessions get an automatic <b>waitlist</b> that promotes people when someone drops. Make it <b>Public</b> so the whole community can find it, or <b>Private</b> for just your crew. Weekly games can repeat with one tap, and when everyone shows up — start the tournament straight from the roster. 🥒</div></div></div>
 
-    <div class="guide-card"><div class="guide-icon">👑</div><div><div class="guide-t">The Leaderboard</div><div class="guide-s">Tap the <span class="glink" onclick="openLeaderboard()">🏆 Leaderboard</span> anytime to see the all-time rankings — who's the real champ in your city. Sort by Average Point Differential (the fair way), Wins, or Points. Win streaks get 🔥 badges, the #1 spot gets the crown, and every row shows how far you are behind the player above you. Tap any player to see their full match history. Play 3+ games to get ranked.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">🗓</div><div><div class="guide-t">One-Tap Calendar</div><div class="guide-s">Every scheduled game has <b>Google Calendar</b> and <b>Apple Calendar</b> buttons — tap once and the event lands with the right time, place, and details. No more "wait, what time Sunday?"</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">💎</div><div><div class="guide-t">DPR — Our In-House DUPR</div><div class="guide-s">Every player gets a <b>DPR</b> (Diamond Performance Rating) on the familiar DUPR scale, computed from every game ever logged here. It works like the pros' rating: <b>every point counts against expectation</b> — who you played WITH, who you played AGAINST, and the score. Hang close as the underdog and your rating climbs even in a loss. Under 10 games shows <b>PROV</b> (provisional) until your number settles. Updates the moment scores go in.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">📊</div><div><div class="guide-t">Your Stats Tell Your Story</div><div class="guide-s">Tap any player — including yourself — for the full story: 💎 rating with your <b>rating journey graph</b>, club ranking, 🔥 best win streak, 🤝 best partner (who you actually win with), 😈 top rival with the head-to-head record, 🧊 clutch record in 2-point games, and your games-per-month. Receipts are forever — settle the argument with data.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">🔁</div><div><div class="guide-t">Run It Back</div><div class="guide-s">When a tournament ends, organizers hit <b>Run It Back</b> and next week's session posts in seconds — same place, same time, same rules, date moved a week, with last week's lineup ready to ride along. That's why the next game is already up before you've left the court. Grab your spot early!</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">📸</div><div><div class="guide-t">Group Photos</div><div class="guide-s">After you play, hit <b>+ Add Photo</b> in the Photos section on the Stats page. Anyone can add them, and they save to that tournament forever — a year from now the archive will be gold.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">👑</div><div><div class="guide-t">The Leaderboard</div><div class="guide-s">Tap the <span class="glink" onclick="openLeaderboard()">🏆 Leaderboard</span> for the rankings: your name stays frozen on the left while you <b>swipe sideways</b> through 💎 DPR, W-L, Win %, Avg Diff, games, and points. <b>Tap any column header to re-rank</b> — including 💎 to sort the whole club by rating. Switch Doubles/Singles and 7-day, 30-day, or all-time windows (quiet weeks hide themselves). Tap any player for their full profile. Play 3+ games to get ranked.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">🏆</div><div><div class="guide-t">Champions & Stats</div><div class="guide-s">Finish a session and the Stats page crowns your champion with a celebration. Standings auto-calculate wins, points for/against, and average differential. Share a public results link anyone can view without signing in, or save the standings as an image for the group chat.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">📜</div><div><div class="guide-t">Past Tournaments</div><div class="guide-s">Every finished session is archived automatically in <span class="glink" onclick="openHistory()">Past Tournaments</span>. Reopen any past tournament to relive the standings, sort the stats, and share the results — your whole pickleball history in one place.</div></div></div>
 
-    <div class="guide-card"><div class="guide-icon">👤</div><div><div class="guide-t">Your Player Profile</div><div class="guide-s">Head to <span class="glink" onclick="openProfile()">My Profile</span> and add your name, city, Instagram, DUPR rating, and home court. Your profile connects your games to your leaderboard identity — and it auto-saves as you type.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">👤</div><div><div class="guide-t">Your Player Profile</div><div class="guide-s">Head to <span class="glink" onclick="openProfile()">My Profile</span> and add your name, city, Instagram, official DUPR, home court, and a photo. Your 💎 DPR card sits right at the top, computed live from your games. One login connects everything — your sign-ups, your scores, your stats, your spot on the leaderboard.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Shape What Gets Built</div><div class="guide-s">This app is built WITH its players. Tap <span class="glink" onclick="openFeedback()">Give Feedback</span> in the menu — feature requests go straight to the builder, and the best ideas ship. Brackets, city battles, and more are on the roadmap.</div></div></div>
 
@@ -1288,6 +1305,8 @@
       <span style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1px;color:var(--yellow);">REVIEW →</span>
     </div>
     <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;"></div>
+    <div id="adActiveNames" style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;margin:-8px 0 16px;"></div>
+    <div id="adCharts" style="margin:0 0 20px;scroll-margin-top:70px;"></div>
     <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">👥 Registered Players</div>
     <div id="adSignups" style="margin-bottom:20px;"></div>
     <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">🏟 Court Submissions (Pending)</div>
@@ -1341,6 +1360,14 @@ document.addEventListener('touchend',   _unlockAudio, true);
 <span id="tabSummary" style="display:none;"></span>
 <span id="tabFeedback" style="display:none;"></span>
 
+<div id="pwaInstallSheet" class="hidden" style="position:fixed;inset:0;z-index:700;background:rgba(4,6,15,0.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div style="max-width:380px;width:100%;background:var(--surface);border:1px solid rgba(0,240,255,0.3);border-radius:18px;padding:22px;">
+    <div style="font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:1px;color:var(--cyan);text-transform:uppercase;margin-bottom:10px;">📲 Install PB Tourney</div>
+    <div id="pwaSteps" style="font-size:14px;color:var(--white);font-weight:600;line-height:1.9;"></div>
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:10px;">Free, takes 10 seconds, no app store needed. You get our icon on your home screen and the app opens full-screen like a real app.</div>
+    <button onclick="document.getElementById('pwaInstallSheet').classList.add('hidden')" style="width:100%;margin-top:14px;padding:13px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Got It</button>
+  </div>
+</div>
 <div id="settingsMenu" class="settings-menu hidden">
   <div class="settings-overlay" onclick="closeSettings()"></div>
   <div class="settings-panel">
@@ -1349,6 +1376,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item" onclick="closeSettings();openGuide();">✨ App Guide</button>
     <button class="settings-item" onclick="closeSettings();openSessions();">📅 Schedule/Join Games!</button>
     <button class="settings-item" onclick="closeSettings();openCourts();">🏟 Find Courts</button>
+    <button class="settings-item" id="menuInstall" onclick="closeSettings();installApp();">📲 Install the App</button>
     <button class="settings-item" onclick="closeSettings();openQuickStart();">📖 Quick Start Guide</button>
     <div class="settings-divider"></div>
     <button class="settings-item" onclick="closeSettings();newTournament();">🏠 New Tournament</button>
@@ -1542,10 +1570,48 @@ document.getElementById('pageGames').style.display = 'block';
 document.getElementById('pageStandings').style.display = 'none';
 
 // ── AUTH STATE ──
+// ── PWA: installable app. The service worker is network-first for the page itself,
+// so deploys keep landing instantly — it only adds the home-screen install + offline shell.
+try {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+} catch (e) {}
+window._bip = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window._bip = e; });
+function _isStandalone() {
+  try { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; } catch (e) { return false; }
+}
+try { if (_isStandalone()) { const mi = document.getElementById('menuInstall'); if (mi) mi.style.display = 'none'; } } catch (e) {}
+window.installApp = async function() {
+  if (_isStandalone()) { copiedToast('✓ Already installed!'); return; }
+  if (window._bip) {                       // Android / Chrome: real install prompt
+    try { window._bip.prompt(); const r = await window._bip.userChoice; if (r && r.outcome === 'accepted') copiedToast('✓ Installed — check your home screen!'); window._bip = null; return; } catch (e) {}
+  }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  document.getElementById('pwaSteps').innerHTML = ios
+    ? '1️⃣ Tap the <b>Share</b> button <span style="color:var(--cyan);">⎋</span> at the bottom of Safari<br>2️⃣ Scroll down and tap <b>Add to Home Screen</b> <span style="color:var(--cyan);">➕</span><br>3️⃣ Tap <b>Add</b> — done!'
+    : '1️⃣ Open the browser menu <b>⋮</b><br>2️⃣ Tap <b>Add to Home screen</b> (or <b>Install app</b>)<br>3️⃣ Confirm — done!';
+  document.getElementById('pwaInstallSheet').classList.remove('hidden');
+};
+async function presenceBeat(uid) {
+  // Who's actually using the app: stamp directory lastActive at most once an hour per device.
+  try {
+    const k = 'pbt_hb_' + uid;
+    const last = parseInt(localStorage.getItem(k) || '0', 10);
+    if (Date.now() - last < 3600000) return;
+    localStorage.setItem(k, String(Date.now()));
+    const cur = (await get(ref(db, 'directory/' + uid))).val();
+    const upd = { lastActive: Date.now() };
+    if (!cur) { upd.joinedAt = Date.now(); upd.name = (userProfile && userProfile.name) || null; }
+    else if (!cur.joinedAt) upd.joinedAt = Date.now();
+    await update(ref(db, 'directory/' + uid), upd);
+  } catch (e) {}
+}
+window.presenceBeat = presenceBeat;
 onAuthStateChanged(auth, user => {
   if (user) {
     currentUser = user;
     document.getElementById('loginScreen').style.display = 'none';
+    presenceBeat(user.uid);
     bootApp();
   } else {
     currentUser = null;
@@ -2625,12 +2691,13 @@ function computePbtRatings(games) {
   const gs = (games || []).filter(g => g && g.s1 != null && g.s2 != null && (g.s1 + g.s2) > 0 && g.t1 && g.t2 && g.t1.length && g.t2.length)
     .map(g => ({ when: g.when || 0, t1: g.t1.map(p => String(p).trim()), t2: g.t2.map(p => String(p).trim()), s1: g.s1, s2: g.s2 }))
     .sort((a, b) => a.when - b.when);
-  const R = {}, G = {}, DISP = {};
+  const R = {}, G = {}, DISP = {}, HIST = {};
   const key = p => p.toLowerCase();
+  const show = r => SEED + (r - SEED) * SQUEEZE + BOOST;
   PASSES.forEach((mult, pi) => {
     gs.forEach(g => {
       const k1 = g.t1.map(key), k2 = g.t2.map(key);
-      g.t1.concat(g.t2).forEach(p => { const k = key(p); if (!(k in R)) { R[k] = SEED; G[k] = 0; DISP[k] = p; } });
+      g.t1.concat(g.t2).forEach(p => { const k = key(p); if (!(k in R)) { R[k] = SEED; G[k] = 0; DISP[k] = p; HIST[k] = []; } });
       const ra = k1.reduce((s, k) => s + R[k], 0) / k1.length;
       const rb = k2.reduce((s, k) => s + R[k], 0) / k2.length;
       const E = 1 / (1 + Math.pow(10, -(ra - rb) / SCALE));
@@ -2638,11 +2705,15 @@ function computePbtRatings(games) {
       const perf = Math.max(-CAP, Math.min(CAP, A - E));
       k1.forEach(k => { R[k] = Math.max(LO, Math.min(HI, R[k] + kfor(G[k]) * mult * perf)); });
       k2.forEach(k => { R[k] = Math.max(LO, Math.min(HI, R[k] - kfor(G[k]) * mult * perf)); });
-      if (pi === 0) k1.concat(k2).forEach(k => { G[k]++; });
+      if (pi === 0) k1.concat(k2).forEach(k => { G[k]++; HIST[k].push({ w: g.when, r: show(R[k]) }); });
     });
   });
   const out = {};
-  Object.keys(R).forEach(k => { out[k] = { rating: SEED + (R[k] - SEED) * SQUEEZE + BOOST, games: G[k], name: DISP[k] }; });
+  Object.keys(R).forEach(k => {
+    const fin = show(R[k]);
+    const h = HIST[k]; if (h.length) h[h.length - 1] = { w: h[h.length - 1].w, r: fin };  // journey settles at the official number
+    out[k] = { rating: fin, games: G[k], name: DISP[k], hist: h };
+  });
   return out;
 }
 window.computePbtRatings = computePbtRatings;
@@ -2843,12 +2914,80 @@ window.openPlayerDetail = async function(name) {
     +'<div style="font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;">'+lbl+'</div></div>';
   const diff = games.length ? ((pf-pa)/games.length).toFixed(1) : '0';
   const prt = window.pbtRatingsFor(lbType)[nm] || null;
+  let spark = '', pctl = '';
+  if (prt && prt.hist && prt.hist.length >= 5) {
+    const h = prt.hist, lo = Math.min(...h.map(p=>p.r)), hi = Math.max(...h.map(p=>p.r)), span = Math.max(0.08, hi-lo);
+    const pts = h.map((p,i) => (i/(h.length-1)*300).toFixed(1) + ',' + (30 - (p.r-lo)/span*26 + 2).toFixed(1)).join(' ');
+    const lastY = (30 - (h[h.length-1].r-lo)/span*26 + 2).toFixed(1);
+    spark = '<svg viewBox="0 0 300 36" style="width:100%;height:36px;display:block;margin-top:8px;">'
+      +'<polyline points="'+pts+'" fill="none" stroke="#00F0FF" stroke-width="2" stroke-linejoin="round" opacity="0.85"/>'
+      +'<circle cx="300" cy="'+lastY+'" r="3" fill="#00F5C4"/></svg>'
+      +'<div style="font-size:8.5px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;">rating journey · first game → today</div>';
+  }
+  if (prt && prt.games >= 10) {
+    const pool = Object.values(window.pbtRatingsFor(lbType)).filter(x => x.games >= 10);
+    if (pool.length >= 3) {
+      const rank = pool.filter(x => x.rating > prt.rating).length + 1;
+      pctl = '<div style="font-size:10.5px;color:var(--aqua);font-weight:800;margin-top:3px;">#'+rank+' of '+pool.length+' rated players · top '+Math.max(1, Math.ceil(rank/pool.length*100))+'%</div>';
+    }
+  }
   const rbanner = prt ? '<div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;padding:12px;text-align:center;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:28px;color:var(--cyan);">💎 '+prt.rating.toFixed(3)+'</div>'
-    +'<div style="font-size:9.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">DPR · our in-house DUPR · '+prt.games+' games'+(prt.games<10?' · provisional':'')+'</div></div>' : '';
+    +'<div style="font-size:9.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">DPR · our in-house DUPR · '+prt.games+' games'+(prt.games<10?' · provisional':'')+'</div>'
+    + pctl + spark + '</div>' : '';
   document.getElementById('pdStats').innerHTML = rbanner +
     box('Record', w+'-'+l) + box('Win %', (games.length?Math.round(100*w/games.length):0)+'%', 'var(--aqua)') + box('Pts For', pf, 'var(--cyan)') + box('Avg Diff', (diff>=0?'+':'')+diff, diff>=0?'var(--aqua)':'var(--danger)');
   document.getElementById('pdGames').innerHTML = rows || '<div style="color:var(--muted);text-align:center;padding:20px;font-weight:600;">No games found</div>';
+  // ── Fun stats: streaks, chemistry, rivalry, clutch — computed from this player's games ──
+  if (games.length >= 3) {
+    const chron = games.slice().reverse();
+    let streak = 0, bestStreak = 0;
+    const partners = {}, opps = {};
+    let cw = 0, cl = 0;
+    chron.forEach(g => {
+      const onT1 = g.t1.some(p=>p.trim().toLowerCase()===nm);
+      const my = onT1?g.s1:g.s2, op = onT1?g.s2:g.s1, won = my>op;
+      streak = won ? streak+1 : 0; if (streak > bestStreak) bestStreak = streak;
+      (onT1?g.t1:g.t2).forEach(p => { const k=p.trim(); if (k.toLowerCase()===nm) return;
+        const s = partners[k] = partners[k] || {w:0,n:0}; s.n++; if (won) s.w++; });
+      (onT1?g.t2:g.t1).forEach(p => { const k=p.trim();
+        const s = opps[k] = opps[k] || {w:0,n:0}; s.n++; if (won) s.w++; });
+      if (Math.abs(my-op) <= 2) { if (won) cw++; else cl++; }
+    });
+    const bp = Object.entries(partners).filter(([,s])=>s.n>=3).sort((a,b)=>(b[1].w/b[1].n)-(a[1].w/a[1].n)||b[1].n-a[1].n)[0];
+    const nem = Object.entries(opps).sort((a,b)=>b[1].n-a[1].n||Math.abs(0.5-a[1].w/a[1].n)-Math.abs(0.5-b[1].w/b[1].n))[0];
+    const chip = (ico, lbl, val) => '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 6px;text-align:center;">'
+      +'<div style="font-size:15px;">'+ico+'</div><div style="font-family:\'Russo One\',sans-serif;font-size:12.5px;color:var(--white);margin:2px 0;">'+val+'</div>'
+      +'<div style="font-size:8.5px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;">'+lbl+'</div></div>';
+    let fs = '';
+    if (bestStreak >= 2) fs += chip('🔥','Best Streak', bestStreak + ' wins');
+    if (bp) fs += chip('🤝','Best Partner', escInfo(bp[0]) + ' <span style="color:var(--aqua);font-size:10px;">' + bp[1].w + '-' + (bp[1].n-bp[1].w) + '</span>');
+    if (nem && nem[1].n >= 3) fs += chip('😈','Top Rival', escInfo(nem[0]) + ' <span style="color:var(--yellow);font-size:10px;">' + nem[1].w + '-' + (nem[1].n-nem[1].w) + '</span>');
+    if (cw + cl >= 3) fs += chip('🧊','Clutch (≤2 pts)', cw + '-' + cl);
+    if (fs) document.getElementById('pdStats').innerHTML += '<div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(' + Math.min(4, fs.split('Russo One').length-1) + ',1fr);gap:8px;">' + fs + '</div>';
+    // attendance: games per month, last 6 months
+    const mB = [];
+    const nowD = new Date(); nowD.setDate(1); nowD.setHours(0,0,0,0);
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1);
+      mB.push({ s: d.getTime(), e: new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime(), v: 0,
+        lab: d.toLocaleDateString('en-US', { month: 'short' }) });
+    }
+    games.forEach(g => { const b = mB.find(b => g.when >= b.s && g.when < b.e); if (b) b.v++; });
+    if (mB.some(b => b.v)) {
+      const mx = Math.max(...mB.map(b => b.v));
+      let bars = '';
+      mB.forEach((b, i) => {
+        const h = Math.round(b.v / mx * 30), x = i * 50 + 5, y = 38 - h;
+        bars += '<rect x="'+x+'" y="'+y+'" width="40" height="'+Math.max(h, b.v?2:0)+'" rx="2" fill="#0090FF" opacity="'+(b.v?'0.85':'0.15')+'"/>'
+          + (b.v ? '<text x="'+(x+20)+'" y="'+(y-3)+'" font-size="9" fill="#8A97B8" text-anchor="middle" font-weight="700">'+b.v+'</text>' : '')
+          + '<text x="'+(x+20)+'" y="48" font-size="8" fill="#8A97B8" text-anchor="middle">'+b.lab+'</text>';
+      });
+      document.getElementById('pdStats').innerHTML += '<div style="grid-column:1/-1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px 4px;">'
+        + '<div style="font-size:8.5px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:4px;">📅 Games / Month</div>'
+        + '<svg viewBox="0 0 305 52" style="width:100%;height:auto;display:block;">'+bars+'</svg></div>';
+    }
+  }
   // Player profile (if registered)
   const prof = lbData.dirByName && lbData.dirByName[nm];
   if (prof && (prof.city || prof.dupr || prof.instagram || prof.homeCourt)) {
@@ -4775,6 +4914,52 @@ window.deleteSession = async function(sid) {
   } catch(e) { alert('Error: ' + (e.message||e)); }
 };
 
+// Tiny hand-rolled bar charts (SVG, no libraries): weekly buckets, newest on the right.
+function _weeklySvg(title, buckets, color) {
+  const max = Math.max(1, ...buckets.map(b => b.v));
+  const W = 320, H = 92, bw = Math.floor(W / buckets.length) - 3;
+  let bars = '';
+  buckets.forEach((b, i) => {
+    const h = Math.round((b.v / max) * 62);
+    const x = i * (bw + 3), y = 76 - h;
+    bars += '<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+Math.max(h, b.v ? 2 : 0)+'" rx="2" fill="'+color+'" opacity="'+(b.v?'0.9':'0.15')+'"><title>'+b.label+': '+b.v+'</title></rect>'
+      + (b.v ? '<text x="'+(x+bw/2)+'" y="'+(y-4)+'" font-size="8.5" fill="#8A97B8" text-anchor="middle" font-weight="700">'+b.v+'</text>' : '');
+    if (i === 0 || i === buckets.length-1 || i === Math.floor(buckets.length/2))
+      bars += '<text x="'+(x+bw/2)+'" y="88" font-size="7.5" fill="#8A97B8" text-anchor="middle">'+b.label+'</text>';
+  });
+  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">'
+    + '<div style="font-family:\'Russo One\',sans-serif;font-size:10.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">'+title+'</div>'
+    + '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;">'+bars+'</svg></div>';
+}
+function _weekBuckets(n) {
+  const out = [], now = new Date(); now.setHours(0,0,0,0);
+  const monday = new Date(now.getTime() - ((now.getDay()+6)%7)*86400000);
+  for (let i = n-1; i >= 0; i--) {
+    const start = monday.getTime() - i*7*86400000;
+    out.push({ start, end: start + 7*86400000, v: 0,
+      label: new Date(start).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) });
+  }
+  return out;
+}
+function renderAdCharts(players, tourList) {
+  const el = document.getElementById('adCharts'); if (!el) return;
+  // Signups per week: joinedAt, backfilled from each player's first tournament appearance by name
+  const firstSeen = {};
+  tourList.slice().reverse().forEach(t => t.players.forEach(p => {
+    const k = String(p).trim().toLowerCase();
+    if (!(k in firstSeen)) firstSeen[k] = t.when;
+  }));
+  const su = _weekBuckets(12), gm = _weekBuckets(12);
+  players.forEach(p => {
+    const ts = p.joinedAt || firstSeen[String(p.name||'').trim().toLowerCase()] || 0;
+    const b = su.find(b => ts >= b.start && ts < b.end); if (b) b.v++;
+  });
+  tourList.forEach(t => {
+    const b = gm.find(b => t.when >= b.start && b.end > t.when); if (b) b.v += t.played;
+  });
+  el.innerHTML = _weeklySvg('📈 New Players Per Week', su, '#00F0FF')
+               + _weeklySvg('🏓 Games Logged Per Week', gm, '#00F5C4');
+}
 window.openAdminDash = async function() {
   window._pushNav('admin');
   window.hideAllPages();
@@ -4789,6 +4974,7 @@ window.openAdminDash = async function() {
   const players = Object.entries(dir).map(([uid, p]) => ({ uid, ...p }));
   let totalGames = 0, activeWeek = 0;
   const now = Date.now(), week = 7*86400000;
+  const activeUsers = players.filter(p => (p.lastActive || 0) > now - week);
   const tourList = Object.entries(tours).map(([tid, t]) => {
     const sched = t?.cfg?.schedule ? (Array.isArray(t.cfg.schedule)?t.cfg.schedule:Object.values(t.cfg.schedule)) : [];
     const played = sched.filter(g => { const s = t.scores?.[g.key]; return s && s.s1 !== null && s.s1 !== undefined && !g.deleted; }).length;
@@ -4808,7 +4994,12 @@ window.openAdminDash = async function() {
     boxT(players.length, 'Registered Players', null, 'adSignups') +
     boxT(tourList.length, 'Tournaments', 'var(--pink)', 'adActivity') +
     boxT(totalGames, 'Games Played', 'var(--aqua)', 'adActivity') +
-    boxT(activeWeek, 'Active This Week', 'var(--yellow)', 'adActivity');
+    boxT(activeUsers.length, 'Active Users (7d)', 'var(--yellow)', 'adCharts');
+  const _au = document.getElementById('adActiveNames');
+  if (_au) _au.innerHTML = activeUsers.length
+    ? '🟢 On this week: ' + activeUsers.sort((a,b)=>(b.lastActive||0)-(a.lastActive||0)).map(p => '<b>'+escInfo(p.name || p.phone || '?')+'</b>').join(', ')
+    : 'Nobody stamped yet — the activity beacon ships with this build, so this fills in as people open the app.';
+  try { renderAdCharts(players, tourList); } catch(e) {}
 
   // Court submissions
   const subs = Object.entries(courtSubs || {});
@@ -7040,6 +7231,7 @@ function runImport()         { if(window.runImport) window.runImport(); }
 function syncHistoryToGlobal(){ if(window.syncHistoryToGlobal) window.syncHistoryToGlobal(); }
 function openAdminDash()     { if(window.openAdminDash) window.openAdminDash(); }
 function openGuide()         { if(window.openGuide) window.openGuide(); }
+function installApp()        { if(window.installApp) window.installApp(); }
 function shareAppLink()      { if(window.shareAppLink) window.shareAppLink(); }
 function adDeleteTournament(t){ if(window.adDeleteTournament) window.adDeleteTournament(t); }
 function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments) window.adDeleteEmptyTournaments(); }
@@ -7079,7 +7271,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-07.9';
+window.BUILD_TAG = 'v2026-10-09.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
