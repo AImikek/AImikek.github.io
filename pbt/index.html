@@ -2107,7 +2107,7 @@ window.updPCnt = window._updPCnt = function() {
   sb.style.boxShadow = filled < 2 ? 'none' : '0 4px 24px rgba(255,45,120,0.45)';
 };
 
-window.doStart = window._doStart = function() {
+window.doStart = window._doStart = async function() {
   const name=document.getElementById('tName').value.trim()||'Pickleball Tournament';
   const players=[...document.querySelectorAll('.pinput')].map(i=>i.value.trim()).filter(Boolean);
   let mode=selMode_;
@@ -2136,7 +2136,7 @@ window.doStart = window._doStart = function() {
   });
 };
 
-function _finalizeTournament() {
+async function _finalizeTournament() {
   const _hadPrev = !!activeTid;
   if (_hadPrev) setTimeout(() => copiedToast('Previous tournament saved in 📜 Past Tournaments'), 1500);
   // Never land anywhere but Games after starting
@@ -2163,6 +2163,8 @@ function _finalizeTournament() {
     const month = d.toLocaleDateString('en-US',{month:'long'});
     name = (firsts.join(' ') + ' ' + month + ' ' + d.getDate()).trim() || 'Open Play';
   }
+  // ⚖️ load DPR ratings first so the schedule generator can balance the matchups
+  try { if (!lbData) await loadLeaderboardData(); if (lbData) window.pbtRatingsFor('doubles'); } catch (e) {}
   const schedule = mode==='log' ? []
     : mode==='4p' ? make4PSchedule(players)
     : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players));
@@ -2718,6 +2720,18 @@ function computePbtRatings(games) {
   return out;
 }
 window.computePbtRatings = computePbtRatings;
+// DPR lookups for balancing + level badges. dprOf: a player's computed rating or null;
+// dprOrSeed: falls back to the 4.45 center so unrated players weigh neutrally in balancing.
+function dprOf(name) {
+  try { const m = lbData && lbData._pbt && lbData._pbt.doubles; const r = m && m[String(name).trim().toLowerCase()]; return r ? r.rating : null; } catch (e) { return null; }
+}
+function dprOrSeed(n) { const r = dprOf(n); return r == null ? 4.45 : r; }
+window.dprOf = dprOf;
+window.avgDpr = function(names) {
+  const vals = (names || []).filter(Boolean).map(n => dprOf(n && n.name !== undefined ? n.name : n)).filter(v => v != null);
+  if (!vals.length) return null;
+  return { avg: vals.reduce((a, b) => a + b, 0) / vals.length, rated: vals.length, total: (names || []).filter(Boolean).length };
+};
 // Ratings per play type (doubles / singles, like DUPR keeps them separate), cached per data load
 window.pbtRatingsFor = function(type) {
   if (!lbData) return {};
@@ -4214,7 +4228,11 @@ function renderSessionDetail(sid, s) {
     +(isOwner?'<div onclick="editSession(\''+sid+'\')" style="cursor:pointer;display:inline-block;margin-top:10px;padding:8px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.4);border-radius:10px;color:var(--cyan);font-weight:800;font-size:11px;letter-spacing:1px;">✎ EDIT SESSION</div>':'')
     +'</div>';
 
-  h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">Roster · '+roster.length+'/'+spots+'</div>';
+  if (!lbData && !window._lbKick) { window._lbKick = true; try { loadLeaderboardData().then(() => { try { window.pbtRatingsFor('doubles'); } catch(e){} if (sdCurrent === sid) renderSessionDetail(sid, s); }); } catch(e){} }
+  else if (lbData) { try { window.pbtRatingsFor('doubles'); } catch(e){} }
+  const _rAvg = window.avgDpr ? window.avgDpr(roster.map(r => r && r.name)) : null;
+  h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">Roster · '+roster.length+'/'+spots
+    + (_rAvg ? ' <span style="color:var(--aqua);letter-spacing:0.5px;font-size:11px;">· 💎 avg '+_rAvg.avg.toFixed(2)+'</span>' : '') + '</div>';
   for (let i = 0; i < spots; i++) {
     const r = roster[i];
     if (r) {
@@ -4223,6 +4241,7 @@ function renderSessionDetail(sid, s) {
         +'<span onclick="openRosterPlayerSheet(\''+encodeURIComponent(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'\\\'')+'\',\'roster\')" style="font-weight:700;color:var(--white);font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">'
           +(window._avatarCache && window._avatarCache[r.uid] ? '<span style="width:24px;height:24px;border-radius:50%;background:url('+window._avatarCache[r.uid]+') center/cover;flex-shrink:0;display:inline-block;"></span>' : '')
           +r.name
+          +(function(){ const d = window.dprOf && window.dprOf(r.name); return d ? '<span style="font-size:10px;color:var(--cyan);font-weight:800;">💎'+d.toFixed(2)+'</span>' : ''; })()
           +(window._awayCache && window._awayCache[r.uid] ? '<span title="Away" style="font-size:12px;">✈️</span>' : '')+'</span>'
         +(!isNameEcho(r.comment, r.name) ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
         +(r.uid === currentUser?.uid
@@ -5480,8 +5499,10 @@ function makeSinglesRRSchedule(players) {
 function makeRRSchedule(players) {
   const n=players.length;
   if (n===8) {
-    const p=players;
-    const perfect8 = [
+    // The perfect-8 rotation is fixed by POSITION (every pair partners exactly once),
+    // so fairness = choosing WHICH player sits in which position. Score orderings by
+    // total team-DPR gap across all 14 games and keep the fairest within a time budget.
+    const build = (p) => [
       {r:1,t1:[p[0],p[1]],t2:[p[2],p[3]]},{r:1,t1:[p[4],p[5]],t2:[p[6],p[7]]},
       {r:2,t1:[p[0],p[2]],t2:[p[4],p[6]]},{r:2,t1:[p[1],p[3]],t2:[p[5],p[7]]},
       {r:3,t1:[p[0],p[3]],t2:[p[5],p[6]]},{r:3,t1:[p[1],p[2]],t2:[p[4],p[7]]},
@@ -5490,10 +5511,20 @@ function makeRRSchedule(players) {
       {r:6,t1:[p[0],p[6]],t2:[p[1],p[7]]},{r:6,t1:[p[2],p[5]],t2:[p[3],p[4]]},
       {r:7,t1:[p[0],p[7]],t2:[p[2],p[4]]},{r:7,t1:[p[1],p[6]],t2:[p[3],p[5]]},
     ].map((g,i)=>({key:'g'+(i+1),round:g.r,t1:g.t1,t2:g.t2}));
-    return randomizeSchedule(perfect8);
+    const cost = (sched) => sched.reduce((c,g) => c + Math.abs(dprOrSeed(g.t1[0])+dprOrSeed(g.t1[1])-dprOrSeed(g.t2[0])-dprOrSeed(g.t2[1])), 0);
+    let bestP = players.slice(), bestC = cost(build(bestP));
+    const t0 = Date.now();
+    for (let t = 0; t < 400 && Date.now() - t0 < 300; t++) {
+      const p = players.slice();
+      for (let i = p.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [p[i],p[j]] = [p[j],p[i]]; }
+      const c = cost(build(p));
+      if (c < bestC) { bestC = c; bestP = p; }
+    }
+    return randomizeSchedule(build(bestP));
   }
   return randomizeSchedule(makeBalancedRounds(players, {}));
 }
+window.makeRRSchedule = makeRRSchedule;
 
 // Bye-balanced round builder: byes equalized, NEVER back-to-back, repeats spread out.
 // opts seeds history for mid-tournament rebuilds: {PC,OC,byes,played,lastSat,rounds,startGN,startRound}
@@ -5528,7 +5559,8 @@ function _makeBalancedRoundsOnce(players, opts) {
   const iP=(a,b)=>{const k=pairKey(a,b);PC[k]=(PC[k]||0)+1;};
   const iO=(a,b)=>{const k=pairKey(a,b);OC[k]=(OC[k]||0)+1;};
   const sq=x=>x*x;
-  const gScore=(t1a,t1b,t2a,t2b)=>(sq(gP(t1a,t1b))+sq(gP(t2a,t2b)))*100+(sq(gO(t1a,t2a))+sq(gO(t1a,t2b))+sq(gO(t1b,t2a))+sq(gO(t1b,t2b)))*10;
+  const gScore=(t1a,t1b,t2a,t2b)=>(sq(gP(t1a,t1b))+sq(gP(t2a,t2b)))*100+(sq(gO(t1a,t2a))+sq(gO(t1a,t2b))+sq(gO(t1b,t2a))+sq(gO(t1b,t2b)))*10
+    + Math.abs(dprOrSeed(t1a)+dprOrSeed(t1b)-dprOrSeed(t2a)-dprOrSeed(t2b))*8;   // ⚖️ fair fights: prefer the team split with the closest combined DPR
   const n=players.length;
   if(n<4) return [];
   const byes=opts.byes||{}, played=opts.played||{};
@@ -6665,16 +6697,31 @@ window.openHistory = function() {
       return;
     }
     window._historyData = data;
-    const entries = Object.entries(data).sort((a,b)=>(b[1].finishedAt||0)-(a[1].finishedAt||0));
-    listEl.innerHTML = entries.map(([tid, t]) => {
-      const date = t.finishedAt ? new Date(t.finishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
-      const nGames = t.cfg?.schedule ? (Array.isArray(t.cfg.schedule)?t.cfg.schedule:Object.values(t.cfg.schedule)).filter(g=>!g.deleted).length : 0;
-      const players = t.cfg?.players ? (Array.isArray(t.cfg.players)?t.cfg.players:Object.values(t.cfg.players)) : [];
-      return '<div onclick="viewHistoryDetail(\''+tid+'\')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;">'
-        +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;margin-bottom:4px;">'+(t.cfg?.name||'Tournament')+'</div>'
-        +'<div style="font-size:13px;color:var(--muted);font-weight:600;">'+date+' · '+players.length+' players · '+nGames+' games</div>'
-        +'</div>';
-    }).join('');
+    const paint = () => {
+      const entries = Object.entries(data).sort((a,b)=>(b[1].finishedAt||0)-(a[1].finishedAt||0));
+      const lv = {};
+      entries.forEach(([tid, t]) => {
+        const ps = t.cfg?.players ? (Array.isArray(t.cfg.players)?t.cfg.players:Object.values(t.cfg.players)) : [];
+        const a = window.avgDpr ? window.avgDpr(ps) : null;
+        lv[tid] = a ? a.avg : null;
+      });
+      const ranked = entries.filter(([tid]) => lv[tid] != null).sort((a,b) => lv[b[0]] - lv[a[0]]).map(([tid]) => tid);
+      listEl.innerHTML = entries.map(([tid, t]) => {
+        const date = t.finishedAt ? new Date(t.finishedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+        const nGames = t.cfg?.schedule ? (Array.isArray(t.cfg.schedule)?t.cfg.schedule:Object.values(t.cfg.schedule)).filter(g=>!g.deleted).length : 0;
+        const players = t.cfg?.players ? (Array.isArray(t.cfg.players)?t.cfg.players:Object.values(t.cfg.players)) : [];
+        const ri = ranked.indexOf(tid);
+        const badge = lv[tid] != null
+          ? '<span style="color:var(--cyan);font-weight:800;"> · 💎 '+lv[tid].toFixed(2)+(ri === 0 ? ' · 🏔 highest level' : ' · level #'+(ri+1))+'</span>' : '';
+        return '<div onclick="viewHistoryDetail(\''+tid+'\')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;">'
+          +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;letter-spacing:1px;color:var(--white);text-transform:uppercase;margin-bottom:4px;">'+(t.cfg?.name||'Tournament')+'</div>'
+          +'<div style="font-size:13px;color:var(--muted);font-weight:600;">'+date+' · '+players.length+' players · '+nGames+' games'+badge+'</div>'
+          +'</div>';
+      }).join('');
+    };
+    paint();
+    if (!lbData) { try { loadLeaderboardData().then(() => { try { window.pbtRatingsFor('doubles'); } catch(e){} paint(); }); } catch(e) {} }
+    else { try { window.pbtRatingsFor('doubles'); } catch(e){} paint(); }
   }, {onlyOnce:true});
 };
 
@@ -6759,6 +6806,20 @@ window.viewHistoryDetail = function(tid) {
   html += '</tbody></table>';
 
   // Game list
+  const _tAvg = window.avgDpr ? window.avgDpr([...allP]) : null;
+  if (_tAvg) {
+    let lvlRank = '';
+    try {
+      const hd = window._historyData || {};
+      const scored = Object.entries(hd).map(([k, v]) => {
+        const ps = v?.cfg?.players ? (Array.isArray(v.cfg.players)?v.cfg.players:Object.values(v.cfg.players)) : [];
+        const a = window.avgDpr(ps); return [k, a ? a.avg : null];
+      }).filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
+      const i = scored.findIndex(x => x[0] === tid);
+      if (i >= 0) lvlRank = ' · #' + (i+1) + ' highest-level of ' + scored.length;
+    } catch(e) {}
+    html += '<div style="margin:16px 0 0;padding:10px 14px;background:linear-gradient(135deg,rgba(0,240,255,0.08),rgba(0,144,255,0.06));border:1px solid rgba(0,240,255,0.3);border-radius:12px;font-size:12.5px;font-weight:800;color:var(--cyan);">💎 Tournament level: avg DPR '+_tAvg.avg.toFixed(2)+lvlRank+'</div>';
+  }
   html += '<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:20px 0 10px;">All Games</div>';
   tCfg.schedule.forEach(g=>{
     if(g.deleted)return;
@@ -6785,7 +6846,8 @@ window.viewHistoryDetail = function(tid) {
         : inner;
     }
     html+='<div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:6px;">'
-      +'<div style="font-family:\'Exo 2\',sans-serif;font-size:13px;font-weight:900;text-transform:uppercase;flex:1;">'+g.t1.join(' & ')+' vs '+g.t2.join(' & ')+'</div>'
+      +'<div style="font-family:\'Exo 2\',sans-serif;font-size:13px;font-weight:900;text-transform:uppercase;flex:1;">'+g.t1.join(' & ')+' vs '+g.t2.join(' & ')
+      +(function(){ if (!window.avgDpr) return ''; const a = window.avgDpr([...g.t1, ...g.t2]); return (a && a.rated === a.total) ? '<div style="font-size:9.5px;color:var(--cyan);font-weight:700;letter-spacing:0.5px;">💎 '+a.avg.toFixed(2)+' game</div>' : ''; })()+'</div>'
       +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;white-space:nowrap;margin-left:10px;">'+scoreHtml+'</div>'
       +'</div>';
   });
@@ -7272,7 +7334,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-09.4';
+window.BUILD_TAG = 'v2026-10-11.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
