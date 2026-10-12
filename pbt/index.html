@@ -1069,6 +1069,8 @@
 
     <div class="guide-card"><div class="guide-icon">💎</div><div><div class="guide-t">DPR — Our In-House DUPR</div><div class="guide-s">Every player gets a <b>DPR</b> (Diamond Performance Rating) on the familiar DUPR scale, computed from every game ever logged here. It works like the pros' rating: <b>every point counts against expectation</b> — who you played WITH, who you played AGAINST, and the score. Hang close as the underdog and your rating climbs even in a loss. Under 10 games shows <b>PROV</b> (provisional) until your number settles. Updates the moment scores go in.</div></div></div>
 
+    <div class="guide-card"><div class="guide-icon">🏅</div><div><div class="guide-t">How Winners Are Decided</div><div class="guide-s">The round robin seeds everyone, ranked by <b>Avg Diff</b> (points scored minus allowed, per game) so it stays fair when people play a different number of games. The <b>top 8 play finals</b>: 1&amp;4 vs 2&amp;3 for the championship and 5&amp;8 vs 6&amp;7 for 5th–8th. <b>The finals decide the podium</b>: championship winners are champions, their opponents finish 3rd, and the 5th–8th game decides 5th through 8th. Everyone else follows by round-robin rank. Finals are kept out of the round-robin table so they can never leapfrog a higher finalist. Tap <b>ℹ️ How rankings work</b> on the Stats page any time.</div></div></div>
+
     <div class="guide-card"><div class="guide-icon">📊</div><div><div class="guide-t">Your Stats Tell Your Story</div><div class="guide-s">Tap any player — including yourself — for the full story: 💎 rating with your <b>rating journey graph</b>, club ranking, 🔥 best win streak, 🤝 best partner (who you actually win with), 😈 top rival with the head-to-head record, 🧊 clutch record in 2-point games, and your games-per-month. Receipts are forever — settle the argument with data.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">🔁</div><div><div class="guide-t">Run It Back</div><div class="guide-s">When a tournament ends, organizers hit <b>Run It Back</b> and next week's session posts in seconds — same place, same time, same rules, date moved a week, with last week's lineup ready to ride along. That's why the next game is already up before you've left the court. Grab your spot early!</div></div></div>
@@ -2271,7 +2273,7 @@ window.uploadTournamentPhotos = async function(inp) {
   let ok = 0;
   for (const f of files.slice(0, 10)) {
     try {
-      const data = await resizeImageFile(f, 900, 0.72);
+      const data = await resizeImageFile(f, 1600, 0.85);   // sharp enough to save + post (was 900px / 0.72)
       const pid = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
       await set(ref(db, 'photos/' + activeTid + '/' + pid), { data, by: userProfile?.name || 'Player', byUid: currentUser.uid, at: Date.now() });
       ok++;
@@ -2297,7 +2299,9 @@ window.viewPhoto = async function(tid, pid) {
     const snap = await get(ref(db, 'photos/' + tid + '/' + pid)); const p = snap.val(); if (!p) return;
     let ov = document.getElementById('photoView');
     if (!ov) { ov = document.createElement('div'); ov.id = 'photoView'; ov.style.cssText = 'position:fixed;inset:0;z-index:990;background:rgba(4,6,15,0.94);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px;'; ov.onclick = () => ov.remove(); document.body.appendChild(ov); }
-    ov.innerHTML = '<img src="'+p.data+'" style="max-width:100%;max-height:82vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);"><div style="margin-top:10px;color:var(--muted);font-size:12px;font-weight:600;">📸 ' + escInfo(p.by||'') + ' · ' + new Date(p.at||0).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · tap to close</div>';
+    ov.innerHTML = '<img src="'+p.data+'" style="max-width:100%;max-height:82vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);"><div style="margin-top:10px;color:var(--muted);font-size:12px;font-weight:600;">📸 ' + escInfo(p.by||'') + ' · ' + new Date(p.at||0).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · tap to close</div>'
+      + '<a href="'+p.data+'" download="pb-tourney-'+pid+'.jpg" onclick="event.stopPropagation()" style="margin-top:12px;padding:11px 22px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;">⬇ Save Photo</a>'
+      + '<div style="margin-top:8px;color:var(--muted);font-size:11px;font-weight:600;">or press and hold the photo to save it to your camera roll</div>';
   } catch(e) {}
 };
 // player sheet: recent tournament photos where this player appears
@@ -2969,15 +2973,25 @@ window.renderLeaderboard = function() {
   if (_slKeep) { const sc = document.querySelector('#lbContent .lbscroll'); if (sc) sc.scrollLeft = _slKeep; }
 };
 
-window.openPlayerDetail = async function(name) {
+window.openPlayerDetail = async function(name, type) {
   window._pushNav('playerDetail');
   window._pdName = name;
   if (!lbData) { try { await loadLeaderboardData(); } catch(e) {} }
   if (!lbData) return;
   const nm = name.toLowerCase();
-  const games = lbData.games.filter(g =>
-    ((g.gtype || 'doubles') === lbType) &&
-    (g.t1.some(p=>p.trim().toLowerCase()===nm) || g.t2.some(p=>p.trim().toLowerCase()===nm))).slice().reverse();
+  const inGame = g => g.t1.some(p=>p.trim().toLowerCase()===nm) || g.t2.some(p=>p.trim().toLowerCase()===nm);
+  const nDoubles = lbData.games.filter(g => (g.gtype || 'doubles') === 'doubles' && inGame(g)).length;
+  const nSingles = lbData.games.filter(g => (g.gtype || 'doubles') === 'singles' && inGame(g)).length;
+  // Which game type to show: an explicit tap on the toggle wins; from the Leaderboard follow its Singles/Doubles
+  // switch; anywhere else show whichever the player actually has games in (doubles when tied). The old behavior
+  // silently inherited the leaderboard's last switch, so a profile could open on "singles" and show 0 games.
+  const _lbOpen = !document.getElementById('leaderboardPage').classList.contains('hidden');
+  const pdType = (type === 'singles' || type === 'doubles') ? type : _lbOpen ? lbType : (nSingles > nDoubles ? 'singles' : 'doubles');
+  window._pdType = pdType;
+  const games = lbData.games.filter(g => ((g.gtype || 'doubles') === pdType) && inGame(g)).slice().reverse();
+  const typeToggle = '<div style="grid-column:1/-1;display:flex;gap:6px;">'
+    + [['doubles','👥 Doubles',nDoubles],['singles','🙋 Singles',nSingles]].map(([v,l,n]) => '<button class="rtbtn'+(pdType===v?' active':'')+'" style="flex:1;" onclick="openPlayerDetail(window._pdName,\''+v+'\')">'+l+' · '+n+'</button>').join('')
+    + '</div>';
   let w=0,l=0,pf=0,pa=0;
   const rows = games.map(g => {
     const onT1 = g.t1.some(p=>p.trim().toLowerCase()===nm);
@@ -2996,7 +3010,7 @@ window.openPlayerDetail = async function(name) {
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;color:'+(color||'var(--white)')+';">'+val+'</div>'
     +'<div style="font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;">'+lbl+'</div></div>';
   const diff = games.length ? ((pf-pa)/games.length).toFixed(1) : '0';
-  const prt = window.pbtRatingsFor(lbType)[nm] || null;
+  const prt = window.pbtRatingsFor(pdType)[nm] || null;
   let spark = '', pctl = '';
   if (prt && prt.hist && prt.hist.length >= 5) {
     const h = prt.hist, lo = Math.min(...h.map(p=>p.r)), hi = Math.max(...h.map(p=>p.r)), span = Math.max(0.08, hi-lo);
@@ -3008,7 +3022,7 @@ window.openPlayerDetail = async function(name) {
       +'<div style="font-size:8.5px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;">rating journey · first game → today</div>';
   }
   if (prt && prt.games >= 10) {
-    const pool = Object.values(window.pbtRatingsFor(lbType)).filter(x => x.games >= 10);
+    const pool = Object.values(window.pbtRatingsFor(pdType)).filter(x => x.games >= 10);
     if (pool.length >= 3) {
       const rank = pool.filter(x => x.rating > prt.rating).length + 1;
       pctl = '<div style="font-size:10.5px;color:var(--aqua);font-weight:800;margin-top:3px;">#'+rank+' of '+pool.length+' rated players · top '+Math.max(1, Math.ceil(rank/pool.length*100))+'%</div>';
@@ -3018,7 +3032,7 @@ window.openPlayerDetail = async function(name) {
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:28px;color:var(--cyan);">💎 '+prt.rating.toFixed(3)+'</div>'
     +'<div style="font-size:9.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">DPR · our in-house DUPR · '+prt.games+' games'+(prt.games<10?' · provisional':'')+'</div>'
     + pctl + spark + '</div>' : '';
-  document.getElementById('pdStats').innerHTML = rbanner +
+  document.getElementById('pdStats').innerHTML = typeToggle + rbanner +
     box('Record', w+'-'+l) + box('Win %', (games.length?Math.round(100*w/games.length):0)+'%', 'var(--aqua)') + box('Pts For', pf, 'var(--cyan)') + box('Avg Diff', (diff>=0?'+':'')+diff, diff>=0?'var(--aqua)':'var(--danger)');
   document.getElementById('pdGames').innerHTML = rows || '<div style="color:var(--muted);text-align:center;padding:20px;font-weight:600;">No games found</div>';
   // ── Fun stats: streaks, chemistry, rivalry, clutch — computed from this player's games ──
@@ -4441,7 +4455,7 @@ window.toggleInfoSec = function(k) {
 const SI_SECTIONS = [
   { key:'intro',   title:'',                    label:'👋 Welcome note (always visible at top)', ph:'e.g. Welcome! Tap a section below for details 🏓', chips:['Welcome! Everything you need is below — tap a section to open it. 🏓','We start SHARP — please be on time!'] },
   { key:'format',  title:'Format',              label:'🎾 Format', ph:'Round robin? Rally scoring? How are winners decided?', chips:['Round robin — randomized partners, no repeats','Rally scoring to 21 (no win by 2)','🏆 Ranked by WINS; ties broken by Avg Point Differential','🏆 Ranked by AVG POINT DIFFERENTIAL; wins are the tiebreaker','Every rally still counts — records bunch up, so margins decide a lot of the table','Log your score in the app after each game','Best 2 out of 3 per matchup'] },
-  { key:'finals',  title:'Finals',              label:'🏆 Finals', ph:'Optional — how do finals work?', chips:['Top 4 by points: 1&4 vs 2&3 — championship game!','Next 4: 5&8 vs 6&7','Finals are optional if people need to head home'] },
+  { key:'finals',  title:'Finals',              label:'🏆 Finals', ph:'Optional — how do finals work?', chips:['Top 4 by points: 1&4 vs 2&3 — championship game!','Next 4: 5&8 vs 6&7','Round robin is ranked by Avg Diff (wins break ties). Top 8 play finals and the finals decide the podium','Finals are optional if people need to head home'] },
   { key:'address', title:'Address & Parking',   label:'📍 Address & Parking', ph:'Address · unit / buzz · who to text · where to park', chips:['📍 Address: ','🏢 Unit / Buzz: ','📞 Contact: ','🚗 Parking: Free valet (tip) — or guest parking down the ramp','🚗 Parking: Free street parking','⏰ Arrive 15 minutes early — we start SHARP'] },
   { key:'bring',   title:'What to Bring',       label:'🎒 What to Bring', ph:'Balls, water, etc.', chips:['2 balls','Water — no fountain at the courts','Paddle + a backup if you have one','Sunscreen / hat'] },
   { key:'rules',   title:'House Rules',         label:'📜 House Rules', ph:'Expectations for the group', chips:['Please stay until the end — leaving early disrupts the rotation','Can\'t make it? Tap "I\'m out" so your spot opens up. ALSO notify the group chat and help find a replacement if there\'s no waitlist — we need at least 8 to play!','Send this page\'s link to same-level friends to fill your spot','Switch sides at 11 points'] },
@@ -6150,7 +6164,70 @@ window.setRankRule = function(r, silent) {
 let rankMode = rankRule; // 'avg' | 'wins' | 'pts' — the current standings sort; defaults to the tournament's rule
 let _rankModeTouched = false;
 
-function calcStandings() {
+// 🏆 FINAL PODIUM — when finals exist, they decide the places. Block i of finals = the players seeded
+// (i*per+1 … i*per+per) from the round robin: winners take the better two places of the block, losers the other two.
+// Everyone who didn't play a final sits below the finalists, in round-robin order.
+function computeFinalStandings(rrList) {
+  if (!cfg || !cfg.schedule) return null;
+  const per = cfg.playType === 'singles' ? 1 : 2;           // players per team
+  const fin = cfg.schedule.filter(g => g.finals && !g.deleted);
+  if (!fin.length) return null;
+  const rows = []; let scored = 0; const inFinal = new Set();
+  const rrIdx = {}; rrList.forEach((p, i) => { rrIdx[p.name] = i; });
+  fin.forEach((g, bi) => {
+    const s = scores[g.key]; const base = bi * per * 2;
+    [...g.t1, ...g.t2].forEach(n => inFinal.add(n));
+    if (!s || s.s1 === null || s.s1 === undefined || s.s2 === null || s.s2 === undefined || s.s1 === s.s2) return;
+    scored++;
+    const w = s.s1 > s.s2 ? g.t1 : g.t2, l = s.s1 > s.s2 ? g.t2 : g.t1, ws = Math.max(s.s1, s.s2), ls = Math.min(s.s1, s.s2);
+    w.forEach(n => rows.push({ name: n, place: base + 1, won: true, block: bi, score: ws + '–' + ls }));
+    l.forEach(n => rows.push({ name: n, place: base + per + 1, won: false, block: bi, score: ls + '–' + ws }));
+  });
+  rows.sort((a, b) => a.place - b.place || (rrIdx[a.name] ?? 99) - (rrIdx[b.name] ?? 99));
+  const rest = rrList.filter(p => p.games > 0 && !inFinal.has(p.name)).map((p, i) => ({ name: p.name, place: inFinal.size + 1 + i, won: null, block: -1 }));
+  return { rows, rest, total: fin.length, scored, complete: scored === fin.length, per };
+}
+function placeLabel(n) { const s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+function finalPodiumHtml(fin) {
+  const medal = pl => pl === 1 ? '🥇' : pl === 3 ? '🥉' : pl === 2 ? '🥈' : '';
+  const groups = {};
+  fin.rows.forEach(r => { (groups[r.place] = groups[r.place] || []).push(r); });
+  const champs = groups[1] || [];
+  let h = '';
+  if (champs.length) {
+    h += '<div class="champbox" id="statsChampBox"><div style="font-size:48px;margin-bottom:8px;">🏆</div>'
+      + '<div class="clbl">' + (champs.length > 1 ? 'Co-Champions' : 'Champion') + '</div><div class="cname">' + escInfo(champs.map(r => r.name).join(' & ')) + '</div>'
+      + '<div class="cpts">Won the championship game ' + champs[0].score + '</div></div>';
+  }
+  h += '<div style="background:var(--surface);border:1px solid rgba(255,224,0,0.3);border-radius:14px;padding:14px;margin-bottom:14px;">'
+    + '<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:4px;">🏅 Final Standings</div>'
+    + '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px;">Decided by the finals · everyone else follows by round-robin rank</div>';
+  const all = fin.rows.concat(fin.rest);
+  // shared places show "T-1st" style when more than one player holds it
+  const count = {}; all.forEach(r => { count[r.place] = (count[r.place] || 0) + 1; });
+  all.forEach(r => {
+    h += '<div onclick="openPlayerDetail(\'' + r.name.replace(/'/g, "\\'") + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 10px;margin-bottom:5px;background:var(--surface2);border-radius:10px;border:1px solid ' + (r.place === 1 ? 'rgba(255,224,0,0.5)' : 'var(--border)') + ';">'
+      + '<div style="font-weight:700;font-size:14px;color:var(--white);"><span style="display:inline-block;min-width:54px;font-family:\'Russo One\',sans-serif;font-size:12px;color:' + (r.place === 1 ? 'var(--yellow)' : 'var(--cyan)') + ';">' + medal(r.place) + ' ' + (count[r.place] > 1 ? 'T-' : '') + placeLabel(r.place) + '</span>' + escInfo(r.name) + '</div>'
+      + '<div style="font-size:11px;font-weight:800;color:' + (r.won === true ? 'var(--aqua)' : r.won === false ? 'var(--danger)' : 'var(--muted)') + ';">' + (r.won === true ? 'W ' + r.score : r.won === false ? 'L ' + r.score : 'RR') + '</div></div>';
+  });
+  return h + '</div>';
+}
+function rankExplainerHtml(effectiveMode, hasFinals) {
+  const avg = effectiveMode !== 'wins';
+  return '<details style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;">'
+    + '<summary style="cursor:pointer;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;">ℹ️ How rankings work</summary>'
+    + '<div style="font-size:13px;color:var(--white);font-weight:600;line-height:1.65;margin-top:10px;">'
+    + '<b>1. Round robin sets the seeds.</b> Everyone plays partners and opponents on a fair rotation. ' + (avg
+        ? 'We rank by <b>Avg Diff</b>: your average points scored minus points allowed per game. It is used instead of raw wins because with 9+ players some people get an extra game or a different mix of partners, and Avg Diff stays fair no matter how many games you played. Wins break ties.'
+        : 'We rank by <b>wins</b> (Win % when game counts differ). Avg Diff breaks ties.')
+    + '<br><br><b>2. Top 8 play the finals</b> (when finals are added): 1&amp;4 vs 2&amp;3 for the championship, 5&amp;8 vs 6&amp;7 for 5th–8th.'
+    + '<br><br><b>3. The finals decide the podium.</b> The championship winners are the champions, the other team finishes 3rd. The winners of the 5th–8th game finish 5th, the losers 7th. Everyone else follows by round-robin rank. Finals games are not counted in the round-robin table, so a great finals game can never jump someone over a finalist from a higher game.'
+    + '<br><br><b>4. 💎 DPR</b> (rating) uses every game, finals included, and is separate from this table.'
+    + '</div></details>';
+}
+
+function calcStandings(opts) {
+  const exFin = !!(opts && opts.excludeFinals);
   const stats = {};
   // Include all players — from cfg.players + any extra from ad-hoc games
   const allPlayers = new Set(cfg.players || []);
@@ -6159,6 +6236,7 @@ function calcStandings() {
 
   cfg.schedule.forEach(g => {
     if (g.deleted) return;
+    if (exFin && g.finals) return;
     const s = scores[g.key]; if (!s||s.s1===null||s.s2===null) return;
     g.t1.forEach(p => { stats[p].ptsFor+=s.s1; stats[p].ptsAgainst+=s.s2; stats[p].games++; if(s.s1>s.s2) stats[p].wins++; });
     g.t2.forEach(p => { stats[p].ptsFor+=s.s2; stats[p].ptsAgainst+=s.s1; stats[p].games++; if(s.s2>s.s1) stats[p].wins++; });
@@ -6194,7 +6272,9 @@ function renderStandings() {
   if (!cfg?.players) { el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-t">No Tournament Yet</div></div>'; return; }
   if (!_rankModeTouched) rankMode = (cfg.rankRule === 'avg' || cfg.rankRule === 'wins') ? cfg.rankRule : 'avg'; // tournaments created before the rule existed were played under Avg Diff
 
-  const { list, uneven, effectiveMode } = calcStandings();
+  const _hasFinals = cfg.schedule.some(g => g.finals && !g.deleted);
+  const { list, uneven, effectiveMode } = calcStandings({ excludeFinals: _hasFinals });
+  const _fin = _hasFinals ? computeFinalStandings(list) : null;
   const champ = list[0];
   const total = cfg.schedule?.filter(g=>!g.deleted).length || 0;
   const done = cfg.schedule?.filter(g=>!g.deleted).reduce((n,g)=>{ const s=scores[g.key]; return n+(s&&s.s1!==null?1:0); },0) || 0;
@@ -6203,7 +6283,13 @@ function renderStandings() {
 
   // Champion box
   const allDone = done === total && total > 0;
-  if (allDone && champ) {
+  if (_fin && _fin.scored > 0) {
+    html += finalPodiumHtml(_fin);
+    if (!_fin.complete) html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">🏁 Finals in progress — ' + _fin.scored + ' of ' + _fin.total + ' played</div>';
+  } else if (_fin) {
+    html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">🏁 Finals are set — the final standings appear here as scores come in</div>';
+  }
+  if (allDone && champ && !(_fin && _fin.scored > 0)) {
     html += '<div class="champbox" id="statsChampBox"><div style="font-size:48px;margin-bottom:8px;">🏆</div>'
       +'<div class="clbl">Champion</div><div class="cname">'+champ.name+'</div>'
       +'<div class="cpts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.avgDiff>=0?'+':'')+champ.avgDiff.toFixed(1)+' avg diff</div></div>';
@@ -6234,6 +6320,7 @@ function renderStandings() {
   const hW = effectiveMode==='wins', hP = effectiveMode==='pts', hA = effectiveMode==='avg';
   const hl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
   const th = (key, label, on) => '<th onclick="setRankMode(\''+key+'\')" style="cursor:pointer;white-space:nowrap;'+(on?'color:var(--cyan);border-bottom:2px solid var(--cyan);':'')+'">'+label+(on?' ▾':'')+'</th>';
+  if (_hasFinals) html += '<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:6px 0 8px;">📋 Round Robin Standings <span style="color:var(--muted);font-size:10px;letter-spacing:0;text-transform:none;font-family:\'DM Sans\',sans-serif;font-weight:700;">(finals not included)</span></div>';
   html += '<table class="stbl"><thead><tr>'
     +'<th>Player</th>'
     +th('wins', uneven ? 'W%' : 'W', hW)
@@ -6256,6 +6343,7 @@ function renderStandings() {
   html += '</tbody></table>';
   const modeLabel = effectiveMode==='avg'?'Avg Point Differential (wins break ties)':effectiveMode==='wins'?(uneven?'Win % (Avg Diff breaks ties)':'Wins (Avg Diff breaks ties)'):'Most Points';
   html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong> · tap a column to re-rank</div>';
+  html += rankExplainerHtml(effectiveMode, _hasFinals);
   // 📸 Photos for this tournament (stored at photos/{tid}, small JPEGs)
   html += '<div style="margin-top:22px;display:flex;align-items:center;justify-content:space-between;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;">📸 Photos</div>'
@@ -7428,7 +7516,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-11.4';
+window.BUILD_TAG = 'v2026-10-12.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
