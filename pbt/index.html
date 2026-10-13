@@ -231,7 +231,8 @@
   /* ── ROSTER PLAYER SHEET ── */
   #pwaInstallSheet.hidden { display:none !important; }
   #rrRoundsSheet.hidden { display:none !important; }
-  #chatPage.hidden, #chatThread.hidden, #ctLocked.hidden, #notifPage.hidden, #groupMembersSheet.hidden { display:none !important; }
+  #chatPage.hidden, #chatThread.hidden, #ctLocked.hidden, #notifPage.hidden, #groupMembersSheet.hidden, #ctAttach.hidden { display:none !important; }
+  #ctInput:focus { border-color:rgba(0,240,255,0.6); }
   .cbub { max-width:82%; padding:8px 12px; border-radius:14px; margin-bottom:6px; font-size:14px; line-height:1.45; word-break:break-word; white-space:pre-wrap; }
   .cbub.me { margin-left:auto; background:linear-gradient(135deg,rgba(0,240,255,0.22),rgba(0,144,255,0.22)); border:1px solid rgba(0,240,255,0.35); border-bottom-right-radius:4px; }
   .cbub.them { margin-right:auto; background:var(--surface2); border:1px solid var(--border); border-bottom-left-radius:4px; }
@@ -1089,7 +1090,7 @@
 
     <div class="guide-card"><div class="guide-icon">💎</div><div><div class="guide-t">DPR — Our In-House DUPR</div><div class="guide-s">Every player gets a <b>DPR</b> (Diamond Performance Rating) on the familiar DUPR scale, computed from every game ever logged here. It works like the pros' rating: <b>every point counts against expectation</b> — who you played WITH, who you played AGAINST, and the score. Hang close as the underdog and your rating climbs even in a loss. Under 10 games shows <b>PROV</b> (provisional) until your number settles. Updates the moment scores go in.</div></div></div>
 
-    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Chat, Messages &amp; Friends</div><div class="guide-s">Open <b class="glink" onclick="openChat()">Chat</b> from the menu. Three level groups: <b>4.5+ Club</b>, <b>4.0+ Crew</b> and <b>3.5+ Open</b> — each is open to that level and up, so a 4.6 can be in all three. Your level is your 💎 DPR once you have 5 games, otherwise the DUPR on your profile. <b>Messages</b> are private one-to-one chats: search a name or tap 💬 Message on any profile. <b>Follow</b> players from their profile and they land in your Friends tab with one-tap messaging. Each group shows <b>who's in it</b> (everyone at that DPR and up) — tap 👥 members. The <b>❤️ Notifications</b> button next to the trophy collects everything: new messages, group activity, new followers and game invites. From any session page you can <b>🎟 Invite Friends In-App</b> and they get a notification.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Chat, Messages &amp; Friends</div><div class="guide-s">Open <b class="glink" onclick="openChat()">Chat</b> from the menu. Three level groups: <b>4.5+ Club</b>, <b>4.0+ Crew</b> and <b>3.5+ Open</b> — each is open to that level and up, so a 4.6 can be in all three. Your level is your 💎 DPR once you have 5 games, otherwise the DUPR on your profile. <b>Messages</b> are private one-to-one chats: search a name or tap 💬 Message on any profile. <b>Follow</b> players from their profile and they land in your Friends tab with one-tap messaging. Each group shows <b>who's in it</b> (everyone at that DPR and up) — tap 👥 members. The <b>❤️ Notifications</b> button next to the trophy collects everything: new messages, group activity, new followers and game invites. From any session page you can <b>🎟 Invite Friends</b> (they get a notification) or <b>💬 Post to Chat</b>. In any chat, the <b>🎟 button</b> attaches an upcoming game to your message as a card with a <b>View &amp; Join</b> button — no links to paste. Everyone follows Mike by default and Mike follows you back; unfollow any time.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">🏅</div><div><div class="guide-t">How Winners Are Decided</div><div class="guide-s">The round robin seeds everyone, ranked by <b>Avg Diff</b> (points scored minus allowed, per game) so it stays fair when people play a different number of games. The <b>top 8 play finals</b>: 1&amp;4 vs 2&amp;3 for the championship and 5&amp;8 vs 6&amp;7 for 5th–8th. <b>The finals decide the podium</b>: championship winners are champions, their opponents finish 3rd, and the 5th–8th game decides 5th through 8th. Everyone else follows by round-robin rank. Finals are kept out of the round-robin table so they can never leapfrog a higher finalist. Tap <b>ℹ️ How rankings work</b> on the Stats page any time.</div></div></div>
 
@@ -1302,9 +1303,13 @@
   </div>
   <div id="ctMsgs" style="flex:1;overflow-y:auto;padding:12px 14px;overscroll-behavior:contain;"></div>
   <div id="ctLocked" class="hidden" style="padding:12px 14px;border-top:1px solid var(--border);background:var(--surface);color:var(--yellow);font-size:12.5px;font-weight:700;text-align:center;"></div>
-  <div id="ctComposer" style="display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);">
-    <input id="ctInput" class="finput" placeholder="Message…" maxlength="1000" autocomplete="off" style="flex:1;margin:0;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}">
-    <button onclick="sendChatMsg()" style="padding:0 18px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Send</button>
+  <div id="ctComposer" style="display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);">
+    <div id="ctAttach" class="hidden" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.35);border-radius:12px;font-size:12.5px;font-weight:700;color:var(--white);"><span style="font-size:18px;">🎟</span><span id="ctAttachLbl" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span><span onclick="clearChatAttach()" style="cursor:pointer;color:var(--muted);padding:2px 6px;">✕</span></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <button onclick="openAttachGame()" title="Attach a game" style="width:44px;height:44px;flex-shrink:0;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-size:18px;cursor:pointer;">🎟</button>
+      <textarea id="ctInput" placeholder="Message…" maxlength="2000" rows="1" autocomplete="off" oninput="growChatInput(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}" style="flex:1;margin:0;min-height:44px;max-height:160px;resize:none;padding:11px 14px;font-size:16px;line-height:1.4;font-family:'DM Sans',sans-serif;font-weight:600;color:var(--white);background:var(--surface2);border:1px solid var(--border);border-radius:14px;outline:none;overflow-y:auto;"></textarea>
+      <button onclick="sendChatMsg()" style="height:44px;padding:0 18px;flex-shrink:0;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Send</button>
+    </div>
   </div>
 </div>
 
@@ -4044,13 +4049,14 @@ function showThread(title, sub) {
   document.getElementById('ctTitle').textContent = title; document.getElementById('ctSub').textContent = sub || '';
   document.getElementById('ctMsgs').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading…</div>';
   document.getElementById('ctLocked').classList.add('hidden'); document.getElementById('ctComposer').style.display = 'flex';
+  try { window.clearChatAttach(); const _i = document.getElementById('ctInput'); _i.value = ''; _i.style.height = '44px'; } catch (e) {}
   document.getElementById('ctProfileBtn').style.display = 'none';
   document.getElementById('chatThread').classList.remove('hidden');
 }
 function renderThread(msgsObj) {
   const el = document.getElementById('ctMsgs'); const me = currentUser.uid;
   const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-  const msgs = Object.entries(msgsObj || {}).map(([id, m]) => Object.assign({ id }, m)).filter(m => m && m.text).sort((a, b) => (a.at || 0) - (b.at || 0)).slice(-200);
+  const msgs = Object.entries(msgsObj || {}).map(([id, m]) => Object.assign({ id }, m)).filter(m => m && (m.text || m.sess)).sort((a, b) => (a.at || 0) - (b.at || 0)).slice(-200);
   chatMsgsCache = msgs;
   if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">No messages yet. Be the first 👋</div>'; return; }
   let h = '', lastDay = '', lastUid = null;
@@ -4059,7 +4065,7 @@ function renderThread(msgsObj) {
     if (day !== lastDay) { h += '<div class="cday">' + new Date(m.at || 0).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) + '</div>'; lastDay = day; lastUid = null; }
     const mine = m.uid === me;
     if (!mine && m.uid !== lastUid) h += '<div class="cmeta" onclick="openPlayerDetail(\'' + escInfo(m.name || 'Player').replace(/'/g, "\\'") + '\')" style="cursor:pointer;">' + escInfo(m.name || 'Player') + '</div>';
-    h += '<div class="cbub ' + (mine ? 'me' : 'them') + '" ' + (mine || isAdmin() ? 'onclick="deleteChatMsg(\'' + m.id + '\')" title="tap to delete"' : '') + '>' + escInfo(m.text)
+    h += '<div class="cbub ' + (mine ? 'me' : 'them') + '" ' + (mine || isAdmin() ? 'onclick="deleteChatMsg(\'' + m.id + '\')" title="tap to delete"' : '') + '>' + escInfo(m.text || '') + sessCardHtml(m.sess)
       + '<div style="font-size:9.5px;color:var(--muted);font-weight:700;margin-top:3px;text-align:right;">' + fmtWhen(m.at) + '</div></div>';
     lastUid = m.uid;
   });
@@ -4086,12 +4092,13 @@ window.openGroupChat = async function(gid) {
     renderThread(s.val());
     try { set(ref(db, 'chatRead/' + currentUser.uid + '/' + gid), Date.now()); } catch (e) {}
   });
-  window._ctSend = async (text) => {
+  window._ctSend = async (text, att) => {
     if (!ok) return false;
     const mid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const msg = { uid: currentUser.uid, name: chatName(), text, at: Date.now() };
+    const msg = { uid: currentUser.uid, name: chatName(), text: text || '', at: Date.now() }; if (att) msg.sess = att;
     await set(ref(db, 'chats/' + gid + '/msgs/' + mid), msg);
-    await update(ref(db, 'chats/' + gid + '/meta'), { lastAt: msg.at, lastText: text.slice(0, 80), lastName: msg.name, lastUid: msg.uid });
+    const preview = (att ? '🎟 ' + att.title + (text ? ' · ' : '') : '') + (text || '');
+    await update(ref(db, 'chats/' + gid + '/meta'), { lastAt: msg.at, lastText: preview.slice(0, 80), lastName: msg.name, lastUid: msg.uid });
     return true;
   };
   window._ctDelete = async (mid) => { await set(ref(db, 'chats/' + gid + '/msgs/' + mid), null); };
@@ -4112,11 +4119,11 @@ window.openDm = async function(uid, name) {
     renderThread(s.val());
     try { update(ref(db, 'dmIndex/' + me + '/' + uid), { unread: 0, name }); } catch (e) {}
   });
-  window._ctSend = async (text) => {
+  window._ctSend = async (text, att) => {
     const mid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const msg = { uid: me, name: chatName(), text, at: Date.now() };
+    const msg = { uid: me, name: chatName(), text: text || '', at: Date.now() }; if (att) msg.sess = att;
     await set(ref(db, 'dms/' + pair + '/msgs/' + mid), msg);
-    const short = text.slice(0, 80);
+    const short = ((att ? '🎟 ' + att.title + (text ? ' · ' : '') : '') + (text || '')).slice(0, 80);
     await update(ref(db, 'dmIndex/' + me + '/' + uid), { name, lastAt: msg.at, lastText: short, lastFrom: me, unread: 0 });
     let theirs = 0; try { theirs = ((await get(ref(db, 'dmIndex/' + uid + '/' + me))).val() || {}).unread || 0; } catch (e) {}
     await update(ref(db, 'dmIndex/' + uid + '/' + me), { name: msg.name, lastAt: msg.at, lastText: short, lastFrom: me, unread: theirs + 1 });
@@ -4125,11 +4132,62 @@ window.openDm = async function(uid, name) {
   window._ctDelete = async (mid) => { await set(ref(db, 'dms/' + pair + '/msgs/' + mid), null); };
 };
 window.ctOpenProfile = function() { if (window._ctProfileName) openPlayerDetail(window._ctProfileName); };
+window.growChatInput = function(ta) { try { ta.style.height = 'auto'; ta.style.height = Math.min(160, Math.max(44, ta.scrollHeight)) + 'px'; } catch (e) {} };
+// 🎟 Attach a game: pick an upcoming session → it rides along with the message as a tappable card (no links to paste)
+window._ctAttachSess = null;
+window.openAttachGame = async function() {
+  const sh = document.getElementById('groupMembersSheet'); sh.classList.remove('hidden');
+  document.getElementById('gmTitle').textContent = '🎟 Attach a game';
+  document.getElementById('gmSub').textContent = 'Upcoming sessions · tap one to attach it to your message';
+  document.getElementById('gmList').innerHTML = '<div style="color:var(--muted);font-weight:600;font-size:12px;">Loading…</div>';
+  let all = {}; try { all = (await get(ref(db, 'sessions'))).val() || {}; } catch (e) {}
+  const today = new Date(); today.setHours(0, 0, 0, 0); const me = currentUser && currentUser.uid;
+  const up = Object.entries(all).map(([sid, s]) => Object.assign({ sid }, s)).filter(s => s.date && new Date(s.date + 'T23:59') >= today && (s.visibility === 'public' || s.ownerUid === me)).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  if (!up.length) { document.getElementById('gmList').innerHTML = '<div style="color:var(--muted);font-weight:600;font-size:12.5px;">No upcoming sessions. Create one in 📅 Games to Join first.</div>'; return; }
+  document.getElementById('gmList').innerHTML = up.map(s => { const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; const left = Math.max(0, (s.spots || 4) - roster.length);
+    return '<div onclick="pickAttachGame(\'' + s.sid + '\')" style="cursor:pointer;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;">'
+      + '<div style="font-weight:800;font-size:13.5px;color:var(--white);">' + escInfo(s.title || 'Session') + '</div>'
+      + '<div style="font-size:11.5px;color:var(--muted);font-weight:600;">' + escInfo(sessWhen(s)) + (s.location ? ' · 📍 ' + escInfo(s.location) : '') + ' · ' + (left ? left + ' open' : 'full · waitlist') + '</div></div>'; }).join('');
+  window._attachPool = up;
+};
+function sessWhen(s) { try { const d = new Date(s.date + 'T12:00'); return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + (s.startTime ? ' · ' + fmtSessTime(s.startTime) : ''); } catch (e) { return s.date || ''; } }
+// From a session page: jump into a group chat with this game already attached
+window.postSessionToChat = async function(sid) {
+  const lv = await window.myChatLevel();
+  const open = CHAT_GROUPS.filter(g => lv.level >= g.min - 1e-9);
+  if (!open.length) { alert('No group is open at your level yet.'); return; }
+  const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s) return;
+  window._attachPool = [Object.assign({ sid }, s)];
+  const g = open[open.length - 1];   // the widest group you're in reaches the most people
+  await window.openGroupChat(g.id);
+  window.pickAttachGame(sid);
+  copiedToast('🎟 Game attached — add a note and hit Send');
+};
+window.pickAttachGame = function(sid) {
+  const s = (window._attachPool || []).find(x => x.sid === sid); if (!s) return;
+  const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : [];
+  window._ctAttachSess = { sid, title: s.title || 'Session', date: s.date || '', when: sessWhen(s), location: s.location || '', spots: s.spots || 4, taken: roster.length, level: s.level || '' };
+  document.getElementById('ctAttachLbl').textContent = window._ctAttachSess.title + ' · ' + window._ctAttachSess.when;
+  document.getElementById('ctAttach').classList.remove('hidden');
+  document.getElementById('groupMembersSheet').classList.add('hidden');
+  try { document.getElementById('ctInput').focus({ preventScroll: true }); } catch (e) {}
+};
+window.clearChatAttach = function() { window._ctAttachSess = null; document.getElementById('ctAttach').classList.add('hidden'); };
+function sessCardHtml(a) {
+  if (!a || !a.sid) return '';
+  const left = Math.max(0, (a.spots || 0) - (a.taken || 0));
+  return '<div onclick="event.stopPropagation();openSessionDetail(\'' + a.sid + '\')" style="cursor:pointer;margin-top:6px;padding:10px 12px;background:rgba(4,6,15,0.45);border:1px solid rgba(0,240,255,0.4);border-radius:12px;">'
+    + '<div style="font-size:10px;letter-spacing:1.5px;color:var(--cyan);font-family:\'Russo One\',sans-serif;text-transform:uppercase;">🎟 Game</div>'
+    + '<div style="font-weight:800;font-size:14px;color:var(--white);margin-top:2px;">' + escInfo(a.title) + '</div>'
+    + '<div style="font-size:11.5px;color:var(--muted);font-weight:600;">' + escInfo(a.when || a.date || '') + (a.location ? ' · 📍 ' + escInfo(a.location) : '') + (a.level ? ' · 🎚 ' + escInfo(a.level) : '') + '</div>'
+    + '<div style="margin-top:8px;display:inline-block;padding:7px 14px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;">' + (left ? 'View & Join · ' + left + ' open' : 'View · waitlist') + '</div></div>';
+}
 window.sendChatMsg = async function() {
   const inp = document.getElementById('ctInput'); const text = (inp.value || '').trim();
-  if (!text || !window._ctSend) return;
-  inp.value = '';
-  try { const ok = await window._ctSend(text); if (!ok) { inp.value = text; } }
+  const att = window._ctAttachSess;
+  if ((!text && !att) || !window._ctSend) return;
+  inp.value = ''; window.growChatInput(inp);
+  try { const ok = await window._ctSend(text, att); if (!ok) { inp.value = text; } else window.clearChatAttach(); }
   catch (e) { inp.value = text; alert('Could not send — check the Firebase rules for "chats", "dms" and "dmIndex".'); }
   try { inp.focus({ preventScroll: true }); } catch (e) {}
 };
@@ -4193,16 +4251,22 @@ window.sendInvite = async function(sid, uid, title) {
 // ── follows ──
 // Tom-from-MySpace rule: every new account follows the founder once. Done exactly once per account (flag on the
 // profile), so unfollowing sticks. No notification is sent for it.
+// Runs once per account (every existing account on its next login, every new one at sign-up):
+//   • you follow Mike   • Mike follows you back   • you get a "Mike started following you" notification.
+// Unfollowing later is fine and normal; it just doesn't run again.
 window.autoFollowFounder = async function() {
   try {
     if (!currentUser) return; const me = currentUser.uid, founder = ADMIN_UIDS[0];
     if (me === founder || !userProfile || userProfile.autoFollowed) return;
     if (!userProfile.name) return;                       // wait until they've set up a profile
-    if (!myFollows[founder]) {
-      await set(ref(db, 'follows/' + me + '/' + founder), { name: 'Mike', at: Date.now(), auto: true });
-      await set(ref(db, 'followers/' + founder + '/' + me), { name: chatName(), at: Date.now(), auto: true });
-      myFollows[founder] = { name: 'Mike' };
-    }
+    const now = Date.now(), myName = chatName();
+    await set(ref(db, 'follows/' + me + '/' + founder), { name: 'Mike', at: now, auto: true });
+    await set(ref(db, 'followers/' + founder + '/' + me), { name: myName, at: now, auto: true });
+    await set(ref(db, 'follows/' + founder + '/' + me), { name: myName, at: now, auto: true });
+    await set(ref(db, 'followers/' + me + '/' + founder), { name: 'Mike', at: now, auto: true });
+    myFollows[founder] = { name: 'Mike' };
+    const nid = 'n' + now.toString(36) + 'mike';
+    await set(ref(db, 'notifs/' + me + '/' + nid), { type: 'follow', from: founder, fromName: 'Mike', text: 'started following you', at: now, read: false });
     await update(ref(db, 'users/' + me + '/profile'), { autoFollowed: true });
   } catch (e) {}
 };
@@ -4863,7 +4927,10 @@ function renderSessionDetail(sid, s) {
 
   h += '<div style="margin-top:18px;">'
     +'<button onclick="shareSession(\'' + sid + '\')" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📤 Share Invite Link</button>'
-    +'<button onclick="inviteFriends(\'' + sid + '\')" style="display:block;width:100%;padding:12px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">🎟 Invite Friends In-App</button>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px;">'
+    +'<button onclick="inviteFriends(\'' + sid + '\')" style="flex:1;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🎟 Invite Friends</button>'
+    +'<button onclick="postSessionToChat(\'' + sid + '\')" style="flex:1;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">💬 Post to Chat</button>'
+    +'</div>'
     +'<button onclick="copySessionRoster(\'' + sid + '\')" style="display:block;width:100%;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📋 Copy Roster for Group Chat</button>'
     +'<div style="display:flex;gap:8px;margin-bottom:8px;">'
       +'<a href="cal.html#'+encodeURIComponent(calGoogleUrl(sid, s))+'" target="_blank" rel="noopener" style="flex:1;display:block;text-align:center;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">📅 Google Calendar</a>'
@@ -7993,6 +8060,11 @@ function openNotifs()        { if(window.openNotifs) window.openNotifs(); }
 function showGroupMembers(g) { if(window.showGroupMembers) window.showGroupMembers(g); }
 function inviteFriends(s)    { if(window.inviteFriends) window.inviteFriends(s); }
 function sendInvite(s,u,t)   { if(window.sendInvite) window.sendInvite(s,u,t); }
+function openAttachGame()    { if(window.openAttachGame) window.openAttachGame(); }
+function pickAttachGame(s)   { if(window.pickAttachGame) window.pickAttachGame(s); }
+function clearChatAttach()   { if(window.clearChatAttach) window.clearChatAttach(); }
+function growChatInput(t)    { if(window.growChatInput) window.growChatInput(t); }
+function postSessionToChat(s){ if(window.postSessionToChat) window.postSessionToChat(s); }
 function cancelRounds()      { if(window.cancelRounds) window.cancelRounds(); }
 function dismissInstallBar() { if(window.dismissInstallBar) window.dismissInstallBar(); }
 function shareAppLink()      { if(window.shareAppLink) window.shareAppLink(); }
@@ -8034,7 +8106,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-13.5';
+window.BUILD_TAG = 'v2026-10-13.6';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
