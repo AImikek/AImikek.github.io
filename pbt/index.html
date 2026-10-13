@@ -1061,7 +1061,17 @@
       <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">✨ App Guide</div>
     </div>
-    <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:22px;">Everything PB Tourney can do — free, no downloads, works on any phone. Updated with 💎 DPR ratings, player stats, calendar buttons, and one-tap weekly reruns.</div>
+    <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:22px;">Everything PB Tourney can do — free, works on any phone, installs to your home screen. Updated with chat, notifications, friends, fair-fight matchups, final standings, reliability scores and more.</div>
+
+    <div class="guide-card"><div class="guide-icon">📲</div><div><div class="guide-t">Install It Like an App</div><div class="guide-s">Open mikek.ai/pbt in Safari, tap <b>Share → Add to Home Screen</b> (Android: menu → Install app). You get our icon and the app opens full screen with no browser bars. The <b>📲 Install the App</b> item in the menu walks you through it. When a new build ships, a blue <b>New version available</b> pill appears — tap it once.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">❤️</div><div><div class="guide-t">Notifications</div><div class="guide-s">The ❤️ next to the trophy collects everything addressed to you: new direct messages, activity in your level groups, new followers and game invites. The pink number is your unread count. Tap an item to jump straight there. (In-app for now — no lock-screen pushes yet.)</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">⚖️</div><div><div class="guide-t">Fair Fights &amp; Smart Schedules</div><div class="guide-s">When a round robin starts, the app loads everyone's 💎 DPR and picks the seating that keeps <b>both teams' combined DPR as close as possible</b> in every game. Rotations are pre-solved designs: nobody partners twice, byes are even and never back-to-back, opponents spread evenly. With 9+ players the organizer picks <b>how many games each</b> (7, 8, everyone-partners-once…). Rosters show the lineup's average DPR and every round lists who's sitting.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">🎯</div><div><div class="guide-t">DPR Reliability</div><div class="guide-s">Next to every rating is a <b>reliability %</b>, like DUPR's. It climbs with games played (about 95% by 25 games) and fades after months without playing, so a 4.9 from two games last spring is flagged as low reliability. The rating itself never decays — only how much we trust it. <b>Singles and doubles are rated separately</b>; your profile has a toggle for each.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">🏆</div><div><div class="guide-t">Leaderboard Minimums</div><div class="guide-s">To rank in doubles you need <b>10 games all-time, 5 in the last 30 days, or 3 in the last 7 days</b>. Players under the bar still appear in "Almost There" below the table with how many games they need. Singles shows everyone until the pool grows. Every past tournament also carries a 💎 level (average DPR of the field) so you can see which nights were the strongest.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">🚀</div><div><div class="guide-t">Tournaments in 30 Seconds</div><div class="guide-s">Pick a format, type player names, hit Start. The full schedule generates instantly — courts, sides, and matchups included. <b>Round Robin</b> rotates partners so everyone plays with everyone. <b>4-Player Rotation</b> runs best-of-3 matchups with rotating partners — and it flexes to any player count. Best part: <b>zero DUPR pressure</b> — play loose, try new partners, and compete hard without anything touching your official rating.</div></div></div>
 
@@ -2811,6 +2821,9 @@ window.deleteFeedback = async function(id) {
 // ── LEADERBOARD ──
 let lbTime = '30', lbSort = 'avg', lbData = null, lbType = 'doubles';
 const LB_MIN_GAMES = 3;
+// Games needed to rank (doubles): all-time 10, 30 days 5, 7 days 3. Singles ranks everyone until the pool is bigger.
+function lbMinGames(type, time) { if (type === 'singles') return 1; return time === 'all' ? 10 : time === '30' ? 5 : 3; }
+window.lbMinGames = lbMinGames;
 
 window.openLeaderboard = async function() {
   if (window._resetBars) window._resetBars();
@@ -2879,14 +2892,23 @@ function computePbtRatings(games) {
     });
   });
   const out = {};
+  const NOW = Date.now();
   Object.keys(R).forEach(k => {
     const fin = show(R[k]);
     const h = HIST[k]; if (h.length) h[h.length - 1] = { w: h[h.length - 1].w, r: fin };  // journey settles at the official number
-    out[k] = { rating: fin, games: G[k], name: DISP[k], hist: h };
+    // Reliability (like DUPR's): how much to trust the number. Climbs with games (≈95% by 25), fades with
+    // inactivity (half the confidence after ~6 months without a game). The rating itself does not decay.
+    const lastAt = h.length ? h[h.length - 1].w : 0;
+    const daysIdle = lastAt ? Math.max(0, (NOW - lastAt) / 86400000) : 9999;
+    const volume = 1 - Math.exp(-G[k] / 8);
+    const recency = Math.pow(0.5, daysIdle / 180);
+    const rel = Math.round(100 * volume * recency);
+    out[k] = { rating: fin, games: G[k], name: DISP[k], hist: h, rel, lastAt, daysIdle: Math.round(daysIdle) };
   });
   return out;
 }
 window.computePbtRatings = computePbtRatings;
+window.relLabel = function(r) { if (!r) return ''; return r.rel >= 80 ? 'reliable' : r.rel >= 50 ? 'fairly reliable' : r.rel >= 25 ? 'low reliability' : 'very low reliability'; };
 // DPR lookups for balancing + level badges. dprOf: a player's computed rating or null;
 // dprOrSeed: falls back to the 4.45 center so unrated players weigh neutrally in balancing.
 function dprOf(name) {
@@ -3007,8 +3029,9 @@ window.renderLeaderboard = function() {
   }));
   if (cityFilter) list = list.filter(p => p.city === cityFilter);
 
-  const qualified = list.filter(p => p.games >= LB_MIN_GAMES);
-  const unqualified = list.filter(p => p.games < LB_MIN_GAMES);
+  const _min = lbMinGames(lbType, lbTime);
+  const qualified = list.filter(p => p.games >= _min);
+  const unqualified = list.filter(p => p.games < _min);
   const wp = p => p.games ? p.wins/p.games : 0;
   const _rmap = window.pbtRatingsFor(lbType);
   const _rt = p => { const r = _rmap[p.name.trim().toLowerCase()]; return r ? r.rating : 0; };
@@ -3040,7 +3063,7 @@ window.renderLeaderboard = function() {
         +'<td class="'+(isMe?'meCell':'')+'"><div style="display:flex;align-items:center;gap:5px;overflow:hidden;"><span style="font-size:'+(i<3?'16':'12')+'px;flex:0 0 auto;">'+medal+'</span><span class="pname" style="flex:0 1 auto;min-width:0;">'+p.name+'</span></div>'
         +(p.city?'<div style="font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.city+'</div>':'')+gap+'</td>'
         +'<td style="white-space:nowrap;'+hl('rating')+'">'+(pr
-            ? '<span style="color:var(--cyan);font-weight:800;">'+pr.rating.toFixed(3)+'</span>'+(pr.games<10?'<div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1px;">PROV</div>':'')
+            ? '<span style="color:var(--cyan);font-weight:800;">'+pr.rating.toFixed(3)+'</span>'+(pr.games<10?'<div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1px;">PROV</div>':'<div style="font-size:9px;color:'+(pr.rel>=80?'var(--aqua)':pr.rel>=50?'var(--muted)':'var(--yellow)')+';font-weight:700;letter-spacing:0.5px;" title="reliability">'+pr.rel+'% rel</div>')
             : '<span style="color:var(--muted);">—</span>')+'</td>'
         +'<td style="'+hl('wins')+'">'+p.wins+'-'+p.losses+'</td>'
         +'<td style="font-weight:800;color:'+(p.games&&p.wins/p.games>=0.5?'var(--aqua)':'var(--muted)')+';'+hl('pct')+'">'+(p.games?Math.round(100*p.wins/p.games):0)+'%</td>'
@@ -3050,16 +3073,16 @@ window.renderLeaderboard = function() {
     });
     h += '</tbody></table></div>';
     if (unqualified.length) {
-      h += '<div style="margin-top:16px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Almost There</div>';
+      h += '<div style="margin-top:16px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Almost There · need '+_min+' game'+(_min===1?'':'s')+(lbTime==='all'?'':' in the last '+lbTime+' days')+'</div>';
       unqualified.forEach(p => {
-        const need = LB_MIN_GAMES - p.games;
+        const need = _min - p.games;
         h += '<div onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="display:flex;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;opacity:0.7;cursor:pointer;">'
           +'<span style="font-weight:700;color:var(--white);font-size:14px;border-bottom:1px dotted rgba(0,240,255,0.5);">'+p.name+'</span>'
           +'<span style="font-size:12px;color:var(--yellow);font-weight:600;">'+need+' more game'+(need>1?'s':'')+' to qualify 🎯</span></div>';
       });
     }
     if (qualified.length) {
-      h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(lbType==='singles'?'Singles':'Doubles')+' champ · '+(lbTime==='all'?'all time':'last '+lbTime+' days')+' · min '+LB_MIN_GAMES+' games to rank</div>';
+      h += '<div class="tieinfo" style="margin-top:14px;">👑 '+qualified[0].name+' is the current '+(lbType==='singles'?'Singles':'Doubles')+' champ · '+(lbTime==='all'?'all time':'last '+lbTime+' days')+' · min '+_min+' game'+(_min===1?'':'s')+' to rank</div>';
     }
   }
   const _slKeep = (function(){ const sc = document.querySelector('#lbContent .lbscroll'); return sc ? sc.scrollLeft : 0; })();
@@ -3126,7 +3149,9 @@ window.openPlayerDetail = async function(name, type) {
   }
   const rbanner = prt ? '<div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;padding:12px;text-align:center;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:28px;color:var(--cyan);">💎 '+prt.rating.toFixed(3)+'</div>'
-    +'<div style="font-size:9.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">DPR · our in-house DUPR · '+prt.games+' games'+(prt.games<10?' · provisional':'')+'</div>'
+    +'<div style="font-size:9.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">'+(pdType==='singles'?'Singles':'Doubles')+' DPR · our in-house DUPR · '+prt.games+' games'+(prt.games<10?' · provisional':'')+'</div>'
+    +'<div style="font-size:11px;color:'+(prt.rel>=80?'var(--aqua)':prt.rel>=50?'var(--white)':'var(--yellow)')+';font-weight:700;margin-top:6px;">🎯 Reliability '+prt.rel+'% · '+window.relLabel(prt)+(prt.daysIdle>30?' · last game '+prt.daysIdle+' days ago':'')+'</div>'
+    +'<div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;">Reliability grows with games and fades after months without playing. The rating itself does not decay.</div>'
     + pctl + spark + '</div>' : '';
   document.getElementById('pdStats').innerHTML = typeToggle + rbanner +
     box('Record', w+'-'+l) + box('Win %', (games.length?Math.round(100*w/games.length):0)+'%', 'var(--aqua)') + box('Pts For', pf, 'var(--cyan)') + box('Avg Diff', (diff>=0?'+':'')+diff, diff>=0?'var(--aqua)':'var(--danger)');
@@ -3914,6 +3939,7 @@ window.startChatBadges = function() {
   CHAT_GROUPS.forEach(g => onValue(ref(db, 'chats/' + g.id + '/meta'), s => { chatMeta[g.id] = s.val() || {}; window.refreshChatBadge(); if (window._chatTab === 'groups' && !document.getElementById('chatPage').classList.contains('hidden')) renderChatBody(); }));
   onValue(ref(db, 'follows/' + me), s => { myFollows = s.val() || {}; });
   onValue(ref(db, 'notifs/' + me), s => { myNotifs = s.val() || {}; window.refreshChatBadge(); if (!document.getElementById('notifPage').classList.contains('hidden')) renderNotifs(); });
+  setTimeout(window.autoFollowFounder, 1500);
   onValue(ref(db, 'followers/' + me), s => { myFollowers = s.val() || {}; });
 };
 window.chatUnread = function() {
@@ -4165,6 +4191,21 @@ window.sendInvite = async function(sid, uid, title) {
 };
 
 // ── follows ──
+// Tom-from-MySpace rule: every new account follows the founder once. Done exactly once per account (flag on the
+// profile), so unfollowing sticks. No notification is sent for it.
+window.autoFollowFounder = async function() {
+  try {
+    if (!currentUser) return; const me = currentUser.uid, founder = ADMIN_UIDS[0];
+    if (me === founder || !userProfile || userProfile.autoFollowed) return;
+    if (!userProfile.name) return;                       // wait until they've set up a profile
+    if (!myFollows[founder]) {
+      await set(ref(db, 'follows/' + me + '/' + founder), { name: 'Mike', at: Date.now(), auto: true });
+      await set(ref(db, 'followers/' + founder + '/' + me), { name: chatName(), at: Date.now(), auto: true });
+      myFollows[founder] = { name: 'Mike' };
+    }
+    await update(ref(db, 'users/' + me + '/profile'), { autoFollowed: true });
+  } catch (e) {}
+};
 window.isFollowing = uid => !!myFollows[uid];
 window.toggleFollow = async function(uid, name) {
   if (!currentUser || !uid || uid === currentUser.uid) return;
@@ -7993,7 +8034,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-13.4';
+window.BUILD_TAG = 'v2026-10-13.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
