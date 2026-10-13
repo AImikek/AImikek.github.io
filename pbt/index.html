@@ -231,6 +231,15 @@
   /* ── ROSTER PLAYER SHEET ── */
   #pwaInstallSheet.hidden { display:none !important; }
   #rrRoundsSheet.hidden { display:none !important; }
+  #chatPage.hidden, #chatThread.hidden, #ctLocked.hidden { display:none !important; }
+  .cbub { max-width:82%; padding:8px 12px; border-radius:14px; margin-bottom:6px; font-size:14px; line-height:1.45; word-break:break-word; white-space:pre-wrap; }
+  .cbub.me { margin-left:auto; background:linear-gradient(135deg,rgba(0,240,255,0.22),rgba(0,144,255,0.22)); border:1px solid rgba(0,240,255,0.35); border-bottom-right-radius:4px; }
+  .cbub.them { margin-right:auto; background:var(--surface2); border:1px solid var(--border); border-bottom-left-radius:4px; }
+  .cmeta { font-size:10px; color:var(--muted); font-weight:700; margin:0 4px 2px; }
+  .cday { text-align:center; font-size:10px; letter-spacing:1px; color:var(--muted); font-weight:800; text-transform:uppercase; margin:12px 0 8px; }
+  .chat-row { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:8px; cursor:pointer; }
+  .chat-row.locked { opacity:0.6; }
+  .cdot { min-width:20px; height:20px; padding:0 6px; border-radius:99px; background:var(--pink); color:white; font-size:10px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
   #installBar.hidden { display:none !important; }
   #rosterPlayerSheet.hidden { display:none !important; }
   #venueSheet.hidden { display:none !important; }
@@ -1037,6 +1046,7 @@
       <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div id="pdName" style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;"></div>
     </div>
+    <div id="pdSocial"></div>
     <div id="pdStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
     <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Match History</div>
     <div id="pdGames"></div>
@@ -1068,6 +1078,8 @@
     <div class="guide-card"><div class="guide-icon">🗓</div><div><div class="guide-t">One-Tap Calendar</div><div class="guide-s">Every scheduled game has <b>Google Calendar</b> and <b>Apple Calendar</b> buttons — tap once and the event lands with the right time, place, and details. No more "wait, what time Sunday?"</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">💎</div><div><div class="guide-t">DPR — Our In-House DUPR</div><div class="guide-s">Every player gets a <b>DPR</b> (Diamond Performance Rating) on the familiar DUPR scale, computed from every game ever logged here. It works like the pros' rating: <b>every point counts against expectation</b> — who you played WITH, who you played AGAINST, and the score. Hang close as the underdog and your rating climbs even in a loss. Under 10 games shows <b>PROV</b> (provisional) until your number settles. Updates the moment scores go in.</div></div></div>
+
+    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Chat, Messages &amp; Friends</div><div class="guide-s">Open <b class="glink" onclick="openChat()">Chat</b> from the menu. Three level groups: <b>4.5+ Club</b>, <b>4.0+ Crew</b> and <b>3.5+ Open</b> — each is open to that level and up, so a 4.6 can be in all three. Your level is your 💎 DPR once you have 5 games, otherwise the DUPR on your profile. <b>Messages</b> are private one-to-one chats: search a name or tap 💬 Message on any profile. <b>Follow</b> players from their profile and they land in your Friends tab with one-tap messaging. Unread counts show on the ☰ menu button.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">🏅</div><div><div class="guide-t">How Winners Are Decided</div><div class="guide-s">The round robin seeds everyone, ranked by <b>Avg Diff</b> (points scored minus allowed, per game) so it stays fair when people play a different number of games. The <b>top 8 play finals</b>: 1&amp;4 vs 2&amp;3 for the championship and 5&amp;8 vs 6&amp;7 for 5th–8th. <b>The finals decide the podium</b>: championship winners are champions, their opponents finish 3rd, and the 5th–8th game decides 5th through 8th. Everyone else follows by round-robin rank. Finals are kept out of the round-robin table so they can never leapfrog a higher finalist. Tap <b>ℹ️ How rankings work</b> on the Stats page any time.</div></div></div>
 
@@ -1236,6 +1248,38 @@
   </div>
 </div>
 
+<!-- CHAT: level groups · messages · friends -->
+<div id="chatPage" class="hidden" style="position:fixed;inset:0;z-index:348;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">💬 Chat</div>
+    </div>
+    <div id="chatTabs" style="display:flex;gap:6px;margin-bottom:14px;">
+      <button class="rtbtn active" id="chatTabGroups" onclick="chatSetTab('groups')" style="flex:1;">Groups</button>
+      <button class="rtbtn" id="chatTabDms" onclick="chatSetTab('dms')" style="flex:1;">Messages <span id="chatDmBadge"></span></button>
+      <button class="rtbtn" id="chatTabFriends" onclick="chatSetTab('friends')" style="flex:1;">Friends</button>
+    </div>
+    <div id="chatBody"></div>
+  </div>
+</div>
+<div id="chatThread" class="hidden" style="position:fixed;inset:0;z-index:352;background:var(--bg);display:flex;flex-direction:column;padding-top:calc(52px + env(safe-area-inset-top));padding-bottom:calc(64px + env(safe-area-inset-bottom));">
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);">
+    <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">← Back</button>
+    <div style="min-width:0;flex:1;">
+      <div id="ctTitle" style="font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:1px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+      <div id="ctSub" style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+    </div>
+    <button id="ctProfileBtn" onclick="ctOpenProfile()" style="display:none;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:800;cursor:pointer;">👤</button>
+  </div>
+  <div id="ctMsgs" style="flex:1;overflow-y:auto;padding:12px 14px;overscroll-behavior:contain;"></div>
+  <div id="ctLocked" class="hidden" style="padding:12px 14px;border-top:1px solid var(--border);background:var(--surface);color:var(--yellow);font-size:12.5px;font-weight:700;text-align:center;"></div>
+  <div id="ctComposer" style="display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);">
+    <input id="ctInput" class="finput" placeholder="Message…" maxlength="1000" autocomplete="off" style="flex:1;margin:0;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}">
+    <button onclick="sendChatMsg()" style="padding:0 18px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Send</button>
+  </div>
+</div>
+
 <!-- SESSION DETAIL -->
 <div id="sessionDetail" class="hidden" style="position:fixed;inset:0;z-index:349;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;overscroll-behavior:contain;overflow-x:hidden;touch-action:pan-y;">
   <div style="max-width:560px;margin:0 auto;">
@@ -1355,7 +1399,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
 </script>
 
 <nav id="topBar">
-  <button class="tab tab-settings" id="navSettings" onclick="openSettings()" style="font-size:22px;">☰</button>
+  <button class="tab tab-settings" id="navSettings" onclick="openSettings()" style="font-size:22px;position:relative;">☰<span id="navChatDot" style="display:none;position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
   <span class="topbar-title">🏓 PB TOURNEY</span>
   <button class="tab" id="tabLeaderboard" onclick="openLeaderboard()" style="font-size:20px;">🏆</button>
 </nav>
@@ -1395,6 +1439,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
   <div class="settings-panel">
     <div class="settings-title">⚙ Options</div>
     <button class="settings-item" onclick="closeSettings();openProfile();">👤 My Profile</button>
+    <button class="settings-item" onclick="closeSettings();openChat();">💬 Chat <span id="menuChatBadge"></span></button>
     <button class="settings-item" onclick="closeSettings();openGuide();">✨ App Guide</button>
     <button class="settings-item" onclick="closeSettings();openSessions();">📅 Schedule/Join Games!</button>
     <button class="settings-item" onclick="closeSettings();openCourts();">🏟 Find Courts</button>
@@ -1515,8 +1560,13 @@ if (location.protocol === 'http:' && location.hostname !== 'localhost' && locati
   location.replace('https://' + location.host + location.pathname + location.search + location.hash);
 }
 window.addEventListener('error' , function(ev) {
+  // "Script error." with no file/line is the browser hiding an error from code that isn't ours: the iOS Share sheet,
+  // Safari extensions, an in-app browser. Our own code never throws it, so don't pop an alert over the app for it.
+  var msg = String(ev && ev.message || '');
+  var foreign = /^script error\.?$/i.test(msg) || (!ev.filename && !ev.lineno) || (ev.filename && ev.filename.indexOf(location.origin) !== 0 && ev.filename.indexOf('blob:') !== 0);
+  if (foreign) { try { console.warn('Ignored external script error:', msg, ev.filename || ''); } catch (e) {} return; }
   if (window.__errShown) return; window.__errShown = true;
-  alert('App error: ' + (ev.message || 'unknown') + '\nLine: ' + (ev.lineno || '?'));
+  alert('App error: ' + (msg || 'unknown') + '\nLine: ' + (ev.lineno || '?'));
 });
 window.addEventListener('unhandledrejection', function(ev) {
   var r = ev.reason || {};
@@ -1654,6 +1704,7 @@ onAuthStateChanged(auth, user => {
     document.getElementById('loginScreen').style.display = 'none';
     presenceBeat(user.uid);
     bootApp();
+    try { window.startChatBadges(); } catch (e) {}
     window.refreshInstallBar();
     setTimeout(maybeAutoInstallPrompt, 3000);
   } else {
@@ -2300,9 +2351,32 @@ window.viewPhoto = async function(tid, pid) {
     let ov = document.getElementById('photoView');
     if (!ov) { ov = document.createElement('div'); ov.id = 'photoView'; ov.style.cssText = 'position:fixed;inset:0;z-index:990;background:rgba(4,6,15,0.94);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px;'; ov.onclick = () => ov.remove(); document.body.appendChild(ov); }
     ov.innerHTML = '<img src="'+p.data+'" style="max-width:100%;max-height:82vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);"><div style="margin-top:10px;color:var(--muted);font-size:12px;font-weight:600;">📸 ' + escInfo(p.by||'') + ' · ' + new Date(p.at||0).toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' · tap to close</div>'
-      + '<a href="'+p.data+'" download="pb-tourney-'+pid+'.jpg" onclick="event.stopPropagation()" style="margin-top:12px;padding:11px 22px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;">⬇ Save Photo</a>'
-      + '<div style="margin-top:8px;color:var(--muted);font-size:11px;font-weight:600;">or press and hold the photo to save it to your camera roll</div>';
+      + '<button onclick="event.stopPropagation();sharePhoto(\''+tid+'\',\''+pid+'\')" style="margin-top:12px;padding:12px 24px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">📤 Share / Save Photo</button>'
+      + '<div style="margin-top:8px;color:var(--muted);font-size:11px;font-weight:600;text-align:center;">Opens your share sheet: Save Image, AirDrop, text it, post it.<br>Or press and hold the photo.</div>';
   } catch(e) {}
+};
+// Share / save: the iPhone share sheet is the only reliable "save to camera roll" from a web app (a download link
+// is ignored by Safari). Turn the stored JPEG into a File and hand it to navigator.share; fall back to a download.
+window.photoToFile = function(dataUrl, name) {
+  const m = /^data:([^;]+);base64,(.*)$/.exec(dataUrl || ''); if (!m) return null;
+  const bin = atob(m[2]); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new File([u8], name, { type: m[1] });
+};
+window.sharePhoto = async function(tid, pid) {
+  try {
+    const p = (await get(ref(db, 'photos/' + tid + '/' + pid))).val(); if (!p || !p.data) return;
+    const file = window.photoToFile(p.data, 'pb-tourney-' + pid + '.jpg');
+    const title = (cfg && cfg.name) || 'PB Tourney';
+    if (file && navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try { await navigator.share({ files: [file], title }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    // desktop / older browsers: real download via a blob URL
+    const url = file ? URL.createObjectURL(file) : p.data;
+    const a = document.createElement('a'); a.href = url; a.download = 'pb-tourney-' + pid + '.jpg'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
+    copiedToast('⬇ Photo downloaded');
+  } catch (e) { alert('Could not share the photo — press and hold it to save instead.'); }
 };
 // player sheet: recent tournament photos where this player appears
 async function playerPhotosHtml(name) {
@@ -3006,6 +3080,7 @@ window.openPlayerDetail = async function(name, type) {
       +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:'+(won?'var(--aqua)':'var(--danger)')+';">'+(won?'W':'L')+' '+my+'–'+opp+'</div></div>';
   }).join('');
   document.getElementById('pdName').textContent = '👤 ' + name;
+  try { const _ps = document.getElementById('pdSocial'); if (_ps) _ps.innerHTML = ''; window.startChatBadges(); window.renderPdSocial(name); } catch (e) {}
   const box = (lbl,val,color) => '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;color:'+(color||'var(--white)')+';">'+val+'</div>'
     +'<div style="font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;">'+lbl+'</div></div>';
@@ -3409,6 +3484,8 @@ window._navStack = [];
 window._navBack = false;
 window._currentScreen = function() {
   const vis = id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden') && el.style.display !== 'none'; };
+  if (vis('chatThread')) return { id:'chatThread', arg: window._ctRef || null };
+  if (vis('chatPage')) return { id:'chat', arg: window._chatTab || null };
   if (vis('courtSubmit')) return { id:'courtSubmit' };
   if (vis('courtsPage')) return { id:'courts' };
   if (vis('quickStartPage')) return { id:'quickstart' };
@@ -3453,6 +3530,7 @@ window._restoreScreen = function() {
     sessions: () => openSessions(), sessionCreate: () => openSessions(),
     leaderboard: () => openLeaderboard(), history: () => openHistory(), profile: () => openProfile(),
     guide: () => openGuide(), quickstart: () => openQuickStart(), courts: () => openCourts(), admin: () => openAdminDash(),
+    chat: () => openChat(saved.arg || 'groups'), chatThread: () => (saved.arg && saved.arg.k === 'g') ? openGroupChat(saved.arg.id) : (saved.arg && saved.arg.k === 'd') ? openDm(saved.arg.id, saved.arg.name) : openChat(),
     playerDetail: () => saved.arg ? openPlayerDetail(saved.arg) : openLeaderboard(),
     standings: () => { if (typeof cfg !== 'undefined' && cfg) closeAllOverlaysAndShow('standings'); },
   }[saved.id];
@@ -3473,6 +3551,8 @@ window.goBack = function() {
     case 'history': openHistory(); if (prev.arg && window._historyData && window._historyData[prev.arg]) window.viewHistoryDetail(prev.arg); break;
     case 'guide': openGuide(); break;
     case 'sessions': openSessions(); break;
+    case 'chat': openChat(prev.arg || 'groups'); break;
+    case 'chatThread': if (prev.arg && prev.arg.k === 'g') openGroupChat(prev.arg.id); else if (prev.arg && prev.arg.k === 'd') openDm(prev.arg.id, prev.arg.name); else openChat(); break;
     case 'sessionCreate': openSessions(); break;
     case 'sessionDetail': prev.arg ? openSessionDetail(prev.arg) : openSessions(); break;
     case 'admin': openAdminDash(); break;
@@ -3720,7 +3800,7 @@ window.hideAllPages = function() {
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
    'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
    'adPlayerModal','adCourtModal','qrOverlay','quickStartPage','courtsPage','courtSubmit',
-   'sessionInfoEdit','rosterPlayerSheet','venueSheet'].forEach(id => {
+   'sessionInfoEdit','rosterPlayerSheet','venueSheet','chatPage','chatThread'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -3728,6 +3808,277 @@ window.hideAllPages = function() {
   const pd = document.getElementById('playerDetail'); if (pd) pd.classList.add('hidden');
   const pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   if (typeof sdUnsub !== 'undefined' && sdUnsub) { try { sdUnsub(); } catch(e) {} sdUnsub = null; }
+  if (window._ctUnsub) { try { window._ctUnsub(); } catch(e) {} window._ctUnsub = null; }
+};
+
+// ═══════════ CHAT: LEVEL GROUPS · DIRECT MESSAGES · FRIENDS ═══════════
+// Data: chats/{gid}/msgs/{mid} {uid,name,text,at} + chats/{gid}/meta {lastAt,lastText,lastName}
+//       dms/{pair}/msgs/{mid} (pair = both uids sorted, joined by "__") + dmIndex/{uid}/{other} {name,lastAt,lastText,lastFrom,unread}
+//       chatRead/{uid}/{gid} = last-read timestamp · follows/{uid}/{target} {name,at} · followers/{target}/{uid} {name,at}
+const CHAT_GROUPS = [
+  { id:'g45', min:4.5, name:'4.5+ Club', icon:'🔥', blurb:'Advanced · 4.5 and up' },
+  { id:'g40', min:4.0, name:'4.0+ Crew', icon:'⚡', blurb:'4.0 and up · 4.5+ players welcome too' },
+  { id:'g35', min:3.5, name:'3.5+ Open', icon:'🏓', blurb:'3.5 and up · the whole club' },
+];
+window.CHAT_GROUPS = CHAT_GROUPS;
+let chatDirCache = null, chatDirAt = 0, chatMeta = {}, chatReadMap = {}, dmIdx = {}, myFollows = {}, myFollowers = {};
+let chatMsgsCache = null;
+window._chatTab = 'groups';
+const dmPair = (a, b) => [a, b].sort().join('__');
+const chatName = () => (userProfile && userProfile.name) || (currentUser && (currentUser.displayName || currentUser.phoneNumber)) || 'Player';
+async function loadChatDir(force) {
+  if (!force && chatDirCache && Date.now() - chatDirAt < 60000) return chatDirCache;
+  try { chatDirCache = (await get(ref(db, 'directory'))).val() || {}; chatDirAt = Date.now(); } catch (e) { chatDirCache = chatDirCache || {}; }
+  return chatDirCache;
+}
+// Resolve a display name to a real (claimed) account uid, so profiles can offer Follow / Message
+window.chatUidForName = async function(name) {
+  const dir = await loadChatDir(); const nm = String(name || '').trim().toLowerCase(); if (!nm) return null;
+  const hits = Object.entries(dir).filter(([uid, d]) => d && !d.unclaimed && String(d.name || '').trim().toLowerCase() === nm);
+  if (!hits.length) return null;
+  hits.sort((a, b) => (b[1].lastActive || 0) - (a[1].lastActive || 0));
+  return hits[0][0];
+};
+// Your level for group access: 💎 DPR once you have 5+ games, else the DUPR on your profile, else 3.5
+window.myChatLevel = async function() {
+  try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+  const nm = chatName().trim().toLowerCase();
+  let r = null; try { r = lbData && window.pbtRatingsFor('doubles')[nm]; } catch (e) {}
+  if (r && r.games >= 5) return { level: r.rating, basis: '💎 DPR ' + r.rating.toFixed(2) };
+  const d = parseFloat(userProfile && userProfile.dupr); if (d && d > 0) return { level: d, basis: 'DUPR ' + d.toFixed(2) + ' from your profile' };
+  return { level: 3.5, basis: 'no rating yet · counts as 3.5 until you have 5 games' };
+};
+const fmtWhen = ts => { const d = new Date(ts || 0), now = new Date(); const same = d.toDateString() === now.toDateString();
+  return same ? d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) : d.toLocaleDateString('en-US', { month:'short', day:'numeric' }); };
+
+// ── badges: unread DMs + unread group activity ──
+window.startChatBadges = function() {
+  if (!currentUser || window._chatBadgesOn) return; window._chatBadgesOn = true;
+  const me = currentUser.uid;
+  onValue(ref(db, 'dmIndex/' + me), s => { dmIdx = s.val() || {}; window.refreshChatBadge(); if (window._chatTab === 'dms' && !document.getElementById('chatPage').classList.contains('hidden')) renderChatBody(); });
+  onValue(ref(db, 'chatRead/' + me), s => { chatReadMap = s.val() || {}; window.refreshChatBadge(); });
+  CHAT_GROUPS.forEach(g => onValue(ref(db, 'chats/' + g.id + '/meta'), s => { chatMeta[g.id] = s.val() || {}; window.refreshChatBadge(); if (window._chatTab === 'groups' && !document.getElementById('chatPage').classList.contains('hidden')) renderChatBody(); }));
+  onValue(ref(db, 'follows/' + me), s => { myFollows = s.val() || {}; });
+  onValue(ref(db, 'followers/' + me), s => { myFollowers = s.val() || {}; });
+};
+window.chatUnread = function() {
+  let dm = 0; Object.values(dmIdx).forEach(t => { dm += (t && t.unread) || 0; });
+  let grp = 0; CHAT_GROUPS.forEach(g => { const m = chatMeta[g.id]; if (m && m.lastAt && m.lastAt > (chatReadMap[g.id] || 0) && m.lastUid !== (currentUser && currentUser.uid)) grp++; });
+  return { dm, grp, total: dm + grp };
+};
+window.refreshChatBadge = function() {
+  const u = window.chatUnread();
+  const dot = document.getElementById('navChatDot'); if (dot) { dot.style.display = u.total ? 'block' : 'none'; dot.textContent = u.total > 99 ? '99+' : String(u.total); }
+  const mb = document.getElementById('menuChatBadge'); if (mb) mb.innerHTML = u.total ? '<span class="cdot">' + u.total + '</span>' : '';
+  const db2 = document.getElementById('chatDmBadge'); if (db2) db2.innerHTML = u.dm ? '<span class="cdot">' + u.dm + '</span>' : '';
+};
+
+// ── chat home ──
+window.openChat = async function(tab) {
+  if (!currentUser) { alert('Sign in to use chat.'); return; }
+  window._pushNav('chat');
+  window.hideAllPages();
+  if (window.resetBars) resetBars();
+  var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
+  document.getElementById('chatPage').classList.remove('hidden');
+  window.startChatBadges();
+  window._chatTab = tab || window._chatTab || 'groups';
+  ['groups','dms','friends'].forEach(t => document.getElementById('chatTab' + (t === 'groups' ? 'Groups' : t === 'dms' ? 'Dms' : 'Friends')).classList.toggle('active', t === window._chatTab));
+  document.getElementById('chatBody').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading…</div>';
+  await renderChatBody();
+  try { window.scrollTo(0, 0); } catch (e) {}
+};
+window.chatSetTab = function(t) { window.openChat(t); };
+async function renderChatBody() {
+  const el = document.getElementById('chatBody'); if (!el || !currentUser) return;
+  const me = currentUser.uid;
+  if (window._chatTab === 'groups') {
+    const lv = await window.myChatLevel();
+    let h = '<div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:12px;">Your level: <b style="color:var(--cyan);">' + lv.level.toFixed(2) + '</b> · ' + escInfo(lv.basis) + '. Each group is open to that level and up.</div>';
+    CHAT_GROUPS.forEach(g => {
+      const ok = lv.level >= g.min - 1e-9; const m = chatMeta[g.id] || {};
+      const unread = ok && m.lastAt && m.lastAt > (chatReadMap[g.id] || 0) && m.lastUid !== me;
+      h += '<div class="chat-row' + (ok ? '' : ' locked') + '" onclick="openGroupChat(\'' + g.id + '\')">'
+        + '<div style="font-size:26px;">' + g.icon + '</div>'
+        + '<div style="flex:1;min-width:0;"><div style="font-family:\'Russo One\',sans-serif;font-size:14px;color:var(--white);">' + g.name + (ok ? '' : ' 🔒') + '</div>'
+        + '<div style="font-size:11.5px;color:var(--muted);font-weight:600;">' + g.blurb + '</div>'
+        + (m.lastText ? '<div style="font-size:12px;color:var(--white);font-weight:600;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><b>' + escInfo(m.lastName || '') + ':</b> ' + escInfo(m.lastText) + '</div>' : '<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:4px;">No messages yet — say hi 👋</div>')
+        + '</div>'
+        + '<div style="text-align:right;font-size:10px;color:var(--muted);font-weight:700;">' + (m.lastAt ? fmtWhen(m.lastAt) : '') + (unread ? '<div style="margin-top:4px;"><span class="cdot">new</span></div>' : '') + '</div>'
+        + '</div>';
+    });
+    h += '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.5;">Groups are for organizing games, finding partners and trash talk. Keep it friendly — Mike can remove messages. Levels come from your 💎 DPR (5+ games) or the DUPR on your profile.</div>';
+    el.innerHTML = h; return;
+  }
+  if (window._chatTab === 'dms') {
+    const threads = Object.entries(dmIdx).filter(([u, t]) => t && t.lastAt).sort((a, b) => (b[1].lastAt || 0) - (a[1].lastAt || 0));
+    let h = '<div style="margin-bottom:12px;"><input class="finput" id="dmSearch" placeholder="🔍 New message — type a name" oninput="chatDmSearch(this.value)" autocomplete="off" style="margin:0;"><div id="dmSearchRes"></div></div>';
+    if (!threads.length) h += '<div style="text-align:center;padding:26px;color:var(--muted);font-weight:600;">No messages yet.<br>Search a name above or tap 💬 Message on any player\'s profile.</div>';
+    threads.forEach(([uid, t]) => {
+      h += '<div class="chat-row" onclick="openDm(\'' + uid + '\',\'' + escInfo(t.name || 'Player').replace(/'/g, "\\'") + '\')">'
+        + '<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:15px;color:white;flex-shrink:0;">' + escInfo((t.name || 'P').trim().charAt(0).toUpperCase()) + '</div>'
+        + '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14px;color:var(--white);">' + escInfo(t.name || 'Player') + '</div>'
+        + '<div style="font-size:12px;color:' + (t.unread ? 'var(--white)' : 'var(--muted)') + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.lastFrom === me ? 'You: ' : '') + escInfo(t.lastText || '') + '</div></div>'
+        + '<div style="text-align:right;font-size:10px;color:var(--muted);font-weight:700;">' + fmtWhen(t.lastAt) + (t.unread ? '<div style="margin-top:4px;"><span class="cdot">' + t.unread + '</span></div>' : '') + '</div>'
+        + '</div>';
+    });
+    el.innerHTML = h; return;
+  }
+  // friends
+  const dir = await loadChatDir();
+  const fl = Object.entries(myFollows).sort((a, b) => (a[1].name || '').localeCompare(b[1].name || ''));
+  const fr = Object.entries(myFollowers).sort((a, b) => (a[1].name || '').localeCompare(b[1].name || ''));
+  const row = (uid, name, isFollowing) => {
+    const d = dir[uid] || {}; const act = d.lastActive && Date.now() - d.lastActive < 7 * 864e5;
+    return '<div class="chat-row" style="cursor:default;">'
+      + '<div onclick="openPlayerDetail(\'' + escInfo(name).replace(/'/g, "\\'") + '\')" style="flex:1;min-width:0;cursor:pointer;"><div style="font-weight:800;font-size:14px;color:var(--white);">' + escInfo(name) + (act ? ' <span style="color:var(--aqua);font-size:10px;">● active</span>' : '') + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);font-weight:600;">' + (d.city ? escInfo(d.city) + ' · ' : '') + (d.dupr ? 'DUPR ' + escInfo(String(d.dupr)) : 'tap for profile') + '</div></div>'
+      + '<button onclick="openDm(\'' + uid + '\',\'' + escInfo(name).replace(/'/g, "\\'") + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">💬</button>'
+      + '<button onclick="toggleFollow(\'' + uid + '\',\'' + escInfo(name).replace(/'/g, "\\'") + '\')" style="padding:7px 10px;background:' + (isFollowing ? 'rgba(0,245,196,0.1)' : 'transparent') + ';border:1px solid ' + (isFollowing ? 'rgba(0,245,196,0.4)' : 'var(--border)') + ';color:' + (isFollowing ? 'var(--aqua)' : 'var(--white)') + ';border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">' + (isFollowing ? '✓ Following' : '+ Follow') + '</button>'
+      + '</div>';
+  };
+  let h = '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:4px 0 8px;">Following · ' + fl.length + '</div>';
+  h += fl.length ? fl.map(([uid, f]) => row(uid, f.name || (dir[uid] && dir[uid].name) || 'Player', true)).join('') : '<div style="color:var(--muted);font-size:12.5px;font-weight:600;margin-bottom:12px;">Follow people from their profile (tap any name) to keep them here with one-tap messaging.</div>';
+  h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:16px 0 8px;">Followers · ' + fr.length + '</div>';
+  h += fr.length ? fr.map(([uid, f]) => row(uid, f.name || (dir[uid] && dir[uid].name) || 'Player', !!myFollows[uid])).join('') : '<div style="color:var(--muted);font-size:12.5px;font-weight:600;">Nobody yet — share the app link and play some games 🏓</div>';
+  el.innerHTML = h;
+}
+window.chatDmSearch = async function(q) {
+  const res = document.getElementById('dmSearchRes'); if (!res) return;
+  q = String(q || '').trim().toLowerCase(); if (q.length < 2) { res.innerHTML = ''; return; }
+  const dir = await loadChatDir(); const me = currentUser.uid;
+  const hits = Object.entries(dir).filter(([uid, d]) => uid !== me && d && !d.unclaimed && String(d.name || '').toLowerCase().includes(q)).slice(0, 8);
+  res.innerHTML = hits.length ? hits.map(([uid, d]) => '<div onclick="openDm(\'' + uid + '\',\'' + escInfo(d.name).replace(/'/g, "\\'") + '\')" style="cursor:pointer;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-top:6px;background:var(--surface);font-weight:700;font-size:13.5px;color:var(--white);">' + escInfo(d.name) + (d.city ? ' <span style="color:var(--muted);font-size:11px;font-weight:600;">· ' + escInfo(d.city) + '</span>' : '') + '</div>').join('')
+    : '<div style="padding:10px 12px;color:var(--muted);font-size:12px;font-weight:600;">No one by that name has joined the app yet.</div>';
+};
+
+// ── thread (group or DM) ──
+function showThread(title, sub) {
+  window.hideAllPages();
+  if (window.resetBars) resetBars();
+  var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
+  document.getElementById('ctTitle').textContent = title; document.getElementById('ctSub').textContent = sub || '';
+  document.getElementById('ctMsgs').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading…</div>';
+  document.getElementById('ctLocked').classList.add('hidden'); document.getElementById('ctComposer').style.display = 'flex';
+  document.getElementById('ctProfileBtn').style.display = 'none';
+  document.getElementById('chatThread').classList.remove('hidden');
+}
+function renderThread(msgsObj) {
+  const el = document.getElementById('ctMsgs'); const me = currentUser.uid;
+  const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  const msgs = Object.entries(msgsObj || {}).map(([id, m]) => Object.assign({ id }, m)).filter(m => m && m.text).sort((a, b) => (a.at || 0) - (b.at || 0)).slice(-200);
+  chatMsgsCache = msgs;
+  if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">No messages yet. Be the first 👋</div>'; return; }
+  let h = '', lastDay = '', lastUid = null;
+  msgs.forEach(m => {
+    const day = new Date(m.at || 0).toDateString();
+    if (day !== lastDay) { h += '<div class="cday">' + new Date(m.at || 0).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) + '</div>'; lastDay = day; lastUid = null; }
+    const mine = m.uid === me;
+    if (!mine && m.uid !== lastUid) h += '<div class="cmeta" onclick="openPlayerDetail(\'' + escInfo(m.name || 'Player').replace(/'/g, "\\'") + '\')" style="cursor:pointer;">' + escInfo(m.name || 'Player') + '</div>';
+    h += '<div class="cbub ' + (mine ? 'me' : 'them') + '" ' + (mine || isAdmin() ? 'onclick="deleteChatMsg(\'' + m.id + '\')" title="tap to delete"' : '') + '>' + escInfo(m.text)
+      + '<div style="font-size:9.5px;color:var(--muted);font-weight:700;margin-top:3px;text-align:right;">' + fmtWhen(m.at) + '</div></div>';
+    lastUid = m.uid;
+  });
+  el.innerHTML = h;
+  if (nearBottom || !window._ctScrolledOnce) { el.scrollTop = el.scrollHeight; window._ctScrolledOnce = true; }
+}
+window.openGroupChat = async function(gid) {
+  if (!currentUser) { alert('Sign in to use chat.'); return; }
+  const g = CHAT_GROUPS.find(x => x.id === gid); if (!g) return;
+  window._pushNav('chatThread'); window._ctRef = { k:'g', id: gid };
+  showThread(g.icon + ' ' + g.name, g.blurb);
+  window.startChatBadges();
+  const lv = await window.myChatLevel();
+  const ok = lv.level >= g.min - 1e-9;
+  window._ctScrolledOnce = false;
+  if (!ok) {
+    document.getElementById('ctComposer').style.display = 'none';
+    const lk = document.getElementById('ctLocked'); lk.classList.remove('hidden');
+    lk.textContent = '🔒 This group is for ' + g.min.toFixed(1) + '+ players. You are at ' + lv.level.toFixed(2) + ' (' + lv.basis + '). Play more games to move up, or set your DUPR on your profile.';
+  }
+  if (window._ctUnsub) { try { window._ctUnsub(); } catch (e) {} }
+  window._ctUnsub = onValue(ref(db, 'chats/' + gid + '/msgs'), s => {
+    renderThread(s.val());
+    try { set(ref(db, 'chatRead/' + currentUser.uid + '/' + gid), Date.now()); } catch (e) {}
+  });
+  window._ctSend = async (text) => {
+    if (!ok) return false;
+    const mid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const msg = { uid: currentUser.uid, name: chatName(), text, at: Date.now() };
+    await set(ref(db, 'chats/' + gid + '/msgs/' + mid), msg);
+    await update(ref(db, 'chats/' + gid + '/meta'), { lastAt: msg.at, lastText: text.slice(0, 80), lastName: msg.name, lastUid: msg.uid });
+    return true;
+  };
+  window._ctDelete = async (mid) => { await set(ref(db, 'chats/' + gid + '/msgs/' + mid), null); };
+};
+window.openDm = async function(uid, name) {
+  if (!currentUser) { alert('Sign in to send messages.'); return; }
+  if (!uid || uid === currentUser.uid) return;
+  const dir = await loadChatDir(); name = name || (dir[uid] && dir[uid].name) || 'Player';
+  window._pushNav('chatThread'); window._ctRef = { k:'d', id: uid, name };
+  showThread('💬 ' + name, 'Direct message');
+  window.startChatBadges();
+  const pb = document.getElementById('ctProfileBtn'); pb.style.display = 'block'; window._ctProfileName = name;
+  const pair = dmPair(currentUser.uid, uid), me = currentUser.uid;
+  window._ctScrolledOnce = false;
+  if (window._ctUnsub) { try { window._ctUnsub(); } catch (e) {} }
+  window._ctUnsub = onValue(ref(db, 'dms/' + pair + '/msgs'), s => {
+    renderThread(s.val());
+    try { update(ref(db, 'dmIndex/' + me + '/' + uid), { unread: 0, name }); } catch (e) {}
+  });
+  window._ctSend = async (text) => {
+    const mid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const msg = { uid: me, name: chatName(), text, at: Date.now() };
+    await set(ref(db, 'dms/' + pair + '/msgs/' + mid), msg);
+    const short = text.slice(0, 80);
+    await update(ref(db, 'dmIndex/' + me + '/' + uid), { name, lastAt: msg.at, lastText: short, lastFrom: me, unread: 0 });
+    let theirs = 0; try { theirs = ((await get(ref(db, 'dmIndex/' + uid + '/' + me))).val() || {}).unread || 0; } catch (e) {}
+    await update(ref(db, 'dmIndex/' + uid + '/' + me), { name: msg.name, lastAt: msg.at, lastText: short, lastFrom: me, unread: theirs + 1 });
+    return true;
+  };
+  window._ctDelete = async (mid) => { await set(ref(db, 'dms/' + pair + '/msgs/' + mid), null); };
+};
+window.ctOpenProfile = function() { if (window._ctProfileName) openPlayerDetail(window._ctProfileName); };
+window.sendChatMsg = async function() {
+  const inp = document.getElementById('ctInput'); const text = (inp.value || '').trim();
+  if (!text || !window._ctSend) return;
+  inp.value = '';
+  try { const ok = await window._ctSend(text); if (!ok) { inp.value = text; } }
+  catch (e) { inp.value = text; alert('Could not send — check the Firebase rules for "chats", "dms" and "dmIndex".'); }
+  try { inp.focus({ preventScroll: true }); } catch (e) {}
+};
+window.deleteChatMsg = async function(mid) {
+  const m = (chatMsgsCache || []).find(x => x.id === mid); if (!m) return;
+  if (m.uid !== currentUser.uid && !isAdmin()) return;
+  if (!confirm('Delete this message?')) return;
+  try { await window._ctDelete(mid); } catch (e) {}
+};
+
+// ── follows ──
+window.isFollowing = uid => !!myFollows[uid];
+window.toggleFollow = async function(uid, name) {
+  if (!currentUser || !uid || uid === currentUser.uid) return;
+  const me = currentUser.uid, on = !myFollows[uid];
+  try {
+    await set(ref(db, 'follows/' + me + '/' + uid), on ? { name: name || 'Player', at: Date.now() } : null);
+    await set(ref(db, 'followers/' + uid + '/' + me), on ? { name: chatName(), at: Date.now() } : null);
+    if (on) myFollows[uid] = { name }; else delete myFollows[uid];
+    copiedToast(on ? '✓ Following ' + name : 'Unfollowed ' + name);
+  } catch (e) { alert('Could not save — check the Firebase rules for "follows" and "followers".'); }
+  if (!document.getElementById('chatPage').classList.contains('hidden')) renderChatBody();
+  if (!document.getElementById('playerDetail').classList.contains('hidden') && window._pdName) window.renderPdSocial(window._pdName);
+};
+// Follow / Message row on a player profile (only when that name belongs to a claimed account)
+window.renderPdSocial = async function(name) {
+  const host = document.getElementById('pdSocial'); if (!host || !currentUser) return;
+  const uid = await window.chatUidForName(name);
+  if (!uid) { host.innerHTML = '<div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:12px;">Hasn\'t joined the app yet — invite them and you can follow + message here.</div>'; return; }
+  if (uid === currentUser.uid) { host.innerHTML = ''; return; }
+  const on = !!myFollows[uid]; const safe = escInfo(name).replace(/'/g, "\\'");
+  host.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:14px;">'
+    + '<button onclick="toggleFollow(\'' + uid + '\',\'' + safe + '\')" style="flex:1;padding:11px;background:' + (on ? 'rgba(0,245,196,0.1)' : 'transparent') + ';border:1px solid ' + (on ? 'rgba(0,245,196,0.45)' : 'rgba(0,240,255,0.35)') + ';color:' + (on ? 'var(--aqua)' : 'var(--cyan)') + ';border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">' + (on ? '✓ Following' : '+ Follow') + '</button>'
+    + '<button onclick="openDm(\'' + uid + '\',\'' + safe + '\')" style="flex:1;padding:11px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">💬 Message</button>'
+    + '</div>';
 };
 
 // ═══════════ SESSIONS: GAMES TO JOIN ═══════════
@@ -7475,6 +7826,16 @@ function openAdminDash()     { if(window.openAdminDash) window.openAdminDash(); 
 function openGuide()         { if(window.openGuide) window.openGuide(); }
 function installApp()        { if(window.installApp) window.installApp(); }
 function pickRounds(r)       { if(window.pickRounds) window.pickRounds(r); }
+function openChat(t)         { if(window.openChat) window.openChat(t); }
+function chatSetTab(t)       { if(window.chatSetTab) window.chatSetTab(t); }
+function openGroupChat(g)    { if(window.openGroupChat) window.openGroupChat(g); }
+function openDm(u,n)         { if(window.openDm) window.openDm(u,n); }
+function sendChatMsg()       { if(window.sendChatMsg) window.sendChatMsg(); }
+function deleteChatMsg(m)    { if(window.deleteChatMsg) window.deleteChatMsg(m); }
+function toggleFollow(u,n)   { if(window.toggleFollow) window.toggleFollow(u,n); }
+function chatDmSearch(q)     { if(window.chatDmSearch) window.chatDmSearch(q); }
+function ctOpenProfile()     { if(window.ctOpenProfile) window.ctOpenProfile(); }
+function sharePhoto(t,p)     { if(window.sharePhoto) window.sharePhoto(t,p); }
 function cancelRounds()      { if(window.cancelRounds) window.cancelRounds(); }
 function dismissInstallBar() { if(window.dismissInstallBar) window.dismissInstallBar(); }
 function shareAppLink()      { if(window.shareAppLink) window.shareAppLink(); }
@@ -7516,7 +7877,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-12.1';
+window.BUILD_TAG = 'v2026-10-13.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
