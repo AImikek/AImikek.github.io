@@ -1064,6 +1064,8 @@
     </div>
     <div style="color:var(--muted);font-size:14px;font-weight:600;margin-bottom:22px;">Everything PB Tourney can do — free, works on any phone, installs to your home screen. Updated with chat, notifications, friends, fair-fight matchups, final standings, reliability scores and more.</div>
 
+    <div class="guide-card"><div class="guide-icon">✨</div><div><div class="guide-t">The Assistant</div><div class="guide-s">Chat → <b>✨ Assistant</b>. Tell it what you want in plain English: "set up a game at Brickell Place Thursday at 7", "invite everyone 4.5+ to my next game", "post tomorrow's game to the 4.0+ Crew", "who are the top 5 doubles players?". It asks only when something's missing, then does it and shows you the result. It can create sessions, invite people, post to groups, message players, pull stats and open screens. It can't delete or merge anything.</div></div></div>
+
     <div class="guide-card"><div class="guide-icon">📲</div><div><div class="guide-t">Install It Like an App</div><div class="guide-s">Open mikek.ai/pbt in Safari, tap <b>Share → Add to Home Screen</b> (Android: menu → Install app). You get our icon and the app opens full screen with no browser bars. The <b>📲 Install the App</b> item in the menu walks you through it. When a new build ships, a blue <b>New version available</b> pill appears — tap it once.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">❤️</div><div><div class="guide-t">Notifications</div><div class="guide-s">The ❤️ next to the trophy collects everything addressed to you: new direct messages, activity in your level groups, new followers and game invites. The pink number is your unread count. Tap an item to jump straight there. (In-app for now — no lock-screen pushes yet.)</div></div></div>
@@ -1092,7 +1094,7 @@
 
     <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Chat, Messages &amp; Friends</div><div class="guide-s">Open <b class="glink" onclick="openChat()">Chat</b> from the menu. Three level groups: <b>4.5+ Club</b>, <b>4.0+ Crew</b> and <b>3.5+ Open</b> — each is open to that level and up, so a 4.6 can be in all three. Your level is your 💎 DPR once you have 5 games, otherwise the DUPR on your profile. <b>Messages</b> are private one-to-one chats: search a name or tap 💬 Message on any profile. <b>Follow</b> players from their profile and they land in your Friends tab with one-tap messaging. Each group shows <b>who's in it</b> (everyone at that DPR and up) — tap 👥 members. The <b>❤️ Notifications</b> button next to the trophy collects everything: new messages, group activity, new followers and game invites. From any session page you can <b>🎟 Invite Friends</b> (they get a notification) or <b>💬 Post to Chat</b>. In any chat, the <b>🎟 button</b> attaches an upcoming game to your message as a card with a <b>View &amp; Join</b> button — no links to paste. Everyone follows Mike by default and Mike follows you back; unfollow any time.</div></div></div>
 
-    <div class="guide-card"><div class="guide-icon">🏅</div><div><div class="guide-t">How Winners Are Decided</div><div class="guide-s">The round robin seeds everyone, ranked by <b>Avg Diff</b> (points scored minus allowed, per game) so it stays fair when people play a different number of games. The <b>top 8 play finals</b>: 1&amp;4 vs 2&amp;3 for the championship and 5&amp;8 vs 6&amp;7 for 5th–8th. <b>The finals decide the podium</b>: championship winners are champions, their opponents finish 3rd, and the 5th–8th game decides 5th through 8th. Everyone else follows by round-robin rank. Finals are kept out of the round-robin table so they can never leapfrog a higher finalist. Tap <b>ℹ️ How rankings work</b> on the Stats page any time.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">🏅</div><div><div class="guide-t">How Winners Are Decided</div><div class="guide-s">The round robin seeds everyone. <b>Smart rule:</b> if everyone played the same number of games, rank by <b>wins</b> (Avg Diff breaks ties); if counts differ (byes, late arrivals), rank by <b>Avg Diff</b> (points scored minus allowed, per game) with Win % breaking ties, because raw wins can't be compared across unequal games. The app re-checks the counts after every score, so adding a late arrival, an injury, a cancelled game or an extra game can flip the table between wins and Avg Diff. Anyone who played fewer than half the games is flagged ⚠ and not seeded into finals; anyone with no games sits at the bottom. The Stats page says which rule is in effect and why. The <b>top 8 play finals</b>: 1&amp;4 vs 2&amp;3 for the championship and 5&amp;8 vs 6&amp;7 for 5th–8th. <b>The finals decide the podium</b>: championship winners are champions, their opponents finish 3rd, and the 5th–8th game decides 5th through 8th. Everyone else follows by round-robin rank. Finals are kept out of the round-robin table so they can never leapfrog a higher finalist. Tap <b>ℹ️ How rankings work</b> on the Stats page any time.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">📊</div><div><div class="guide-t">Your Stats Tell Your Story</div><div class="guide-s">Tap any player — including yourself — for the full story: 💎 rating with your <b>rating journey graph</b>, club ranking, 🔥 best win streak, 🤝 best partner (who you actually win with), 😈 top rival with the head-to-head record, 🧊 clutch record in 2-point games, and your games-per-month. Receipts are forever — settle the argument with data.</div></div></div>
 
@@ -1288,6 +1290,7 @@
       <button class="rtbtn active" id="chatTabGroups" onclick="chatSetTab('groups')" style="flex:1;">Groups</button>
       <button class="rtbtn" id="chatTabDms" onclick="chatSetTab('dms')" style="flex:1;">Messages <span id="chatDmBadge"></span></button>
       <button class="rtbtn" id="chatTabFriends" onclick="chatSetTab('friends')" style="flex:1;">Friends</button>
+      <button class="rtbtn" id="chatTabAi" onclick="chatSetTab('ai')" style="flex:1;">✨ Assistant</button>
     </div>
     <div id="chatBody"></div>
   </div>
@@ -1565,6 +1568,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
       <div id="rankRuleWrap" style="margin:14px 0 6px;">
         <label class="flabel">🏆 Ranking rule</label>
         <div style="display:flex;gap:8px;">
+          <button type="button" id="rr_auto" class="rtbtn" onclick="setRankRule('auto')" style="flex:1;">⭐ Smart<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Wins if even games, else Avg Diff</span></button>
           <button type="button" id="rr_wins" class="rtbtn" onclick="setRankRule('wins')" style="flex:1;">Wins first<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Avg Diff breaks ties</span></button>
           <button type="button" id="rr_avg" class="rtbtn" onclick="setRankRule('avg')" style="flex:1;">Avg Diff first<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Wins break ties</span></button>
         </div>
@@ -1928,7 +1932,7 @@ async function bootApp() {
         co.classList.remove('hidden');
       }
     }
-    if (userProfile.rankRule === 'wins' || userProfile.rankRule === 'avg') { rankRule = userProfile.rankRule; try { localStorage.setItem('pbt_rankRule', rankRule); } catch(e) {} }
+    if (['wins','avg','auto'].includes(userProfile.rankRule)) { rankRule = userProfile.rankRule; try { localStorage.setItem('pbt_rankRule', rankRule); } catch(e) {} }
     updateProfileDisplay();
     if (wasNew && !userProfile.name) {
       document.getElementById('profileOverlay').classList.remove('hidden');
@@ -2502,7 +2506,7 @@ window.duplicateTournament = async function(src) {
     players: src.players.slice(),
     mode: src.mode || 'rr',
     playType: src.playType || 'doubles',
-    rankRule: (src.rankRule === 'avg' || src.rankRule === 'wins') ? src.rankRule : null
+    rankRule: ['avg','wins','auto'].includes(src.rankRule) ? src.rankRule : null
   };
   let sess = null;
   if (src.fromSession) { try { sess = (await get(ref(db, 'sessions/' + src.fromSession))).val(); } catch (e) {} }
@@ -2537,7 +2541,7 @@ window.duplicateTournament = async function(src) {
     if (wrap) wrap.insertBefore(bn, wrap.children[1] || null);
   }
   bn.innerHTML = '🔁 <b>Duplicating "' + escInfo(src.name || 'tournament') + '"</b> — details below, date already moved a week. Rename or tweak anything, then Create.'
-    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Your ' + carry.players.length + ' players and the ' + (carry.rankRule === 'avg' ? 'Avg Diff first' : 'Wins first') + ' ranking rule carry over when you hit Start Tournament on the new session.' + (carry.sessInfo ? ' Event Info (format, parking, rules) is copied too.' : '') + '</div>';
+    + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Your ' + carry.players.length + ' players and the ' + (carry.rankRule === 'avg' ? 'Avg Diff first' : carry.rankRule === 'wins' ? 'Wins first' : 'Smart') + ' ranking rule carry over when you hit Start Tournament on the new session.' + (carry.sessInfo ? ' Event Info (format, parking, rules) is copied too.' : '') + '</div>';
   bn.style.display = 'block';
 };
 // Proceed = keep every carried-over setting, jump straight to the lineup
@@ -3971,7 +3975,7 @@ window.openChat = async function(tab) {
   document.getElementById('chatPage').classList.remove('hidden');
   window.startChatBadges();
   window._chatTab = tab || window._chatTab || 'groups';
-  ['groups','dms','friends'].forEach(t => document.getElementById('chatTab' + (t === 'groups' ? 'Groups' : t === 'dms' ? 'Dms' : 'Friends')).classList.toggle('active', t === window._chatTab));
+  ['groups','dms','friends','ai'].forEach(t => document.getElementById('chatTab' + (t === 'groups' ? 'Groups' : t === 'dms' ? 'Dms' : t === 'friends' ? 'Friends' : 'Ai')).classList.toggle('active', t === window._chatTab));
   document.getElementById('chatBody').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading…</div>';
   await renderChatBody();
   try { window.scrollTo(0, 0); } catch (e) {}
@@ -4013,6 +4017,7 @@ async function renderChatBody() {
     });
     el.innerHTML = h; return;
   }
+  if (window._chatTab === 'ai') { renderAssistant(); return; }
   // friends
   const dir = await loadChatDir();
   const fl = Object.entries(myFollows).sort((a, b) => (a[1].name || '').localeCompare(b[1].name || ''));
@@ -4248,9 +4253,182 @@ window.sendInvite = async function(sid, uid, title) {
   const row = document.getElementById('inv_' + uid); if (row) { row.style.opacity = '0.55'; row.lastChild.textContent = '✓ Sent'; row.onclick = null; }
 };
 
+// ═══════════ ✨ ASSISTANT ═══════════
+// Plain-English control of the app. The conversation goes to a tiny worker (pbt-assistant-worker.js) that asks
+// Claude what to do; the tools Claude picks are executed HERE, in the user's own session, so Firebase rules apply.
+let aiMsgs = [], aiLog = [], aiBusy = false, aiUrl = null;
+const AI_CHIPS = ['Set up a game at Brickell Place Thursday 7pm', 'Invite everyone 4.5+ to my next game', 'Who are the top 5 doubles players?', 'Post tomorrow\'s game to the 4.0+ Crew', 'How is my DPR trending?'];
+async function aiEndpoint() {
+  let u = null; try { u = localStorage.getItem('pbt_ai_url'); } catch (e) {}
+  if (u) return u;
+  if (aiUrl === null) { try { aiUrl = (await get(ref(db, 'config/assistantUrl'))).val() || ''; } catch (e) { aiUrl = ''; } }
+  return aiUrl;
+}
+window.saveAssistantUrl = async function() {
+  const v = (document.getElementById('aiUrlInput').value || '').trim();
+  try { await set(ref(db, 'config/assistantUrl'), v || null); aiUrl = v; copiedToast(v ? '✓ Assistant connected' : 'Assistant endpoint cleared'); } catch (e) { alert('Could not save — publish the latest Firebase rules (config).'); }
+  renderAssistant();
+};
+function aiPush(role, text, html) { aiLog.push({ role, text, html, at: Date.now() }); }
+async function renderAssistant() {
+  const el = document.getElementById('chatBody'); if (!el) return;
+  const url = await aiEndpoint();
+  let h = '';
+  if (!url) {
+    h += '<div style="padding:16px;background:var(--surface);border:1px solid rgba(255,224,0,0.35);border-radius:14px;margin-bottom:12px;font-size:13px;color:var(--white);font-weight:600;line-height:1.6;">✨ The assistant isn\'t connected yet.' + (isAdmin() ? ' Deploy <b>pbt-assistant-worker.js</b> (instructions inside the file) and paste the worker URL below.' : ' Mike is setting it up.') + '</div>';
+  }
+  if (isAdmin()) h += '<details style="margin-bottom:12px;"><summary style="cursor:pointer;font-size:11px;color:var(--muted);font-weight:700;">⚙ Assistant endpoint (admin)</summary><div style="display:flex;gap:6px;margin-top:8px;"><input class="finput" id="aiUrlInput" placeholder="https://….workers.dev" value="' + escInfo(url || '') + '" style="flex:1;margin:0;"><button onclick="saveAssistantUrl()" style="padding:0 14px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;font-weight:800;font-size:11px;cursor:pointer;">Save</button></div></details>';
+  h += '<div id="aiLog" style="min-height:120px;max-height:52vh;overflow-y:auto;padding:4px 2px;">';
+  if (!aiLog.length) h += '<div style="text-align:center;padding:22px 10px;color:var(--muted);font-weight:600;line-height:1.6;">Tell me what you want done, in plain English.<br>I\'ll ask if I need something, then do it.</div>';
+  aiLog.forEach(m => {
+    if (m.role === 'user') h += '<div class="cbub me">' + escInfo(m.text) + '</div>';
+    else if (m.role === 'tool') h += '<div style="font-size:11.5px;color:var(--muted);font-weight:700;margin:2px 4px 8px;">' + escInfo(m.text) + (m.html || '') + '</div>';
+    else h += '<div class="cbub them" style="white-space:pre-wrap;">' + escInfo(m.text) + (m.html || '') + '</div>';
+  });
+  if (aiBusy) h += '<div style="font-size:12px;color:var(--cyan);font-weight:700;margin:4px;">✨ working…</div>';
+  h += '</div>';
+  h += '<div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0;">' + AI_CHIPS.map(c => '<span onclick="aiAsk(\'' + c.replace(/'/g, "\\'") + '\')" style="flex-shrink:0;cursor:pointer;padding:7px 11px;border-radius:99px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);color:var(--cyan);font-size:11.5px;font-weight:700;white-space:nowrap;">' + escInfo(c) + '</span>').join('') + '</div>';
+  h += '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:4px;"><textarea id="aiInput" rows="1" placeholder="Ask me to set up a game, invite people, post to a group…" oninput="growChatInput(this)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();aiAsk();}" style="flex:1;min-height:44px;max-height:160px;resize:none;padding:11px 14px;font-size:16px;line-height:1.4;font-family:\'DM Sans\',sans-serif;font-weight:600;color:var(--white);background:var(--surface2);border:1px solid var(--border);border-radius:14px;outline:none;"></textarea>'
+    + '<button onclick="aiAsk()" ' + (aiBusy ? 'disabled' : '') + ' style="height:44px;padding:0 16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">✨ Go</button></div>'
+    + (aiLog.length ? '<div onclick="aiReset()" style="text-align:center;font-size:11px;color:var(--muted);font-weight:700;margin-top:8px;cursor:pointer;">↺ start over</div>' : '');
+  el.innerHTML = h;
+  const lg = document.getElementById('aiLog'); if (lg) lg.scrollTop = lg.scrollHeight;
+}
+window.aiReset = function() { aiMsgs = []; aiLog = []; renderAssistant(); };
+async function aiContext() {
+  try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+  const now = new Date();
+  const courts = [...new Set(COURTS.map(c => c.n))].slice(0, 20);
+  let recent = ''; try { const all = (await get(ref(db, 'sessions'))).val() || {}; const mine = Object.values(all).filter(s => s && s.ownerUid === currentUser.uid).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 3);
+    recent = mine.map(s => (s.title || 'Session') + ' @ ' + (s.location || '?') + ' ' + (s.startTime || '') + '–' + (s.endTime || '') + ', ' + (s.spots || '?') + ' spots' + (s.level ? ', ' + s.level : '')).join(' | '); } catch (e) {}
+  const me = chatName(); let dpr = null; try { const r = window.pbtRatingsFor('doubles')[me.trim().toLowerCase()]; if (r) dpr = r.rating.toFixed(2) + ' (' + r.games + ' games)'; } catch (e) {}
+  return { today: now.toISOString().slice(0, 10), weekday: now.toLocaleDateString('en-US', { weekday: 'long' }), userName: me, isAdmin: isAdmin(), myDpr: dpr, courts, recentSessions: recent };
+}
+async function aiToken() { try { if (currentUser && currentUser.getIdToken) return await currentUser.getIdToken(); } catch (e) {} return 'no-token'; }
+window.aiAsk = async function(text) {
+  if (aiBusy) return;
+  const inp = document.getElementById('aiInput');
+  text = (text || (inp && inp.value) || '').trim(); if (!text) return;
+  if (inp) { inp.value = ''; window.growChatInput(inp); }
+  const url = await aiEndpoint(); if (!url) { alert('The assistant isn\'t connected yet.'); return; }
+  aiPush('user', text); aiMsgs.push({ role: 'user', content: text });
+  aiBusy = true; renderAssistant();
+  try {
+    const ctx = await aiContext(); const token = await aiToken();
+    for (let hop = 0; hop < 8; hop++) {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ messages: aiMsgs, context: ctx }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.error) { aiPush('ai', '⚠️ ' + (j.error || ('Assistant error ' + r.status))); break; }
+      const content = j.content || [];
+      aiMsgs.push({ role: 'assistant', content });
+      const results = [];
+      for (const b of content) {
+        if (b.type === 'text' && b.text) aiPush('ai', b.text);
+        if (b.type === 'tool_use') {
+          let out, html = '';
+          try { const res = await window.aiRunTool(b.name, b.input || {}); out = res.result; html = res.html || ''; aiPush('tool', res.label || ('✓ ' + b.name), html); }
+          catch (e) { out = { error: String(e && e.message || e) }; aiPush('tool', '✗ ' + b.name + ': ' + out.error); }
+          results.push({ type: 'tool_result', tool_use_id: b.id, content: JSON.stringify(out).slice(0, 6000) });
+          renderAssistant();
+        }
+      }
+      if (!results.length || j.stop_reason !== 'tool_use') break;
+      aiMsgs.push({ role: 'user', content: results });
+    }
+  } catch (e) { aiPush('ai', '⚠️ Could not reach the assistant (' + (e && e.message || e) + ').'); }
+  aiBusy = false; renderAssistant();
+};
+// ── the actions Claude can take (all run as the signed-in user) ──
+const _sessSummary = (sid, s) => { const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; return { sid, title: s.title, date: s.date, startTime: s.startTime, endTime: s.endTime, location: s.location, level: s.level || null, spots: s.spots, open: Math.max(0, (s.spots || 0) - roster.length), players: roster.map(r => r.name), ownerName: s.ownerName || null, mine: s.ownerUid === currentUser.uid }; };
+async function _upcoming() { const all = (await get(ref(db, 'sessions'))).val() || {}; const today = new Date(); today.setHours(0, 0, 0, 0);
+  return Object.entries(all).filter(([sid, s]) => s && s.date && new Date(s.date + 'T23:59') >= today && (s.visibility === 'public' || s.ownerUid === currentUser.uid)).map(([sid, s]) => _sessSummary(sid, s)).sort((a, b) => (a.date || '').localeCompare(b.date || '')); }
+async function _attachFor(sid) { const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s) return null; const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; return { sid, title: s.title || 'Session', date: s.date || '', when: sessWhen(s), location: s.location || '', spots: s.spots || 4, taken: roster.length, level: s.level || '' }; }
+window.aiRunTool = async function(name, a) {
+  const me = currentUser.uid;
+  if (name === 'list_upcoming_sessions') { const up = await _upcoming(); return { result: up, label: '📅 Found ' + up.length + ' upcoming session' + (up.length === 1 ? '' : 's') }; }
+  if (name === 'create_session') {
+    if (!a.date || !a.startTime || !a.location) throw new Error('date, startTime and location are required');
+    const sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const end = a.endTime || (() => { const [hh, mm] = a.startTime.split(':').map(Number); const t = hh * 60 + mm + 150; return String(Math.floor(t / 60) % 24).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); })();
+    let title = (a.title || '').trim(); if (!title) { const wd = new Date(a.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'long' }); const hh = parseInt(a.startTime); title = wd + ' ' + (hh < 12 ? 'Morning' : hh < 17 ? 'Afternoon' : 'Evening') + ' Pickleball'; }
+    const s = { title, location: a.location, date: a.date, startTime: a.startTime, endTime: end, spots: Math.max(2, Math.min(24, parseInt(a.spots) || 8)), level: a.level || null, note: a.note || null, visibility: a.visibility === 'private' ? 'private' : 'public', recurring: null, info: null, ownerUid: me, ownerName: chatName(), createdAt: Date.now(), roster: [{ name: chatName(), uid: me, comment: '', at: Date.now() }] };
+    await set(ref(db, 'sessions/' + sid), s);
+    return { result: _sessSummary(sid, s), label: '✓ Created session', html: sessCardHtml(await _attachFor(sid)) };
+  }
+  if (name === 'invite_to_session') {
+    const s = (await get(ref(db, 'sessions/' + a.sid))).val(); if (!s) throw new Error('session not found');
+    let targets = [];
+    if (a.names && a.names.length) { for (const n of a.names) { const uid = await window.chatUidForName(n); targets.push({ name: n, uid }); } }
+    else if (a.following) targets = Object.entries(myFollows).map(([uid, f]) => ({ name: f.name, uid }));
+    else if (a.group) targets = (await window.groupMembers(a.group)).map(m => ({ name: m.name, uid: m.uid }));
+    else if (a.minDpr != null) { try { if (!lbData) await loadLeaderboardData(); } catch (e) {} const rm = window.pbtRatingsFor('doubles'); for (const r of Object.values(rm)) if (r.rating >= a.minDpr - 1e-9) targets.push({ name: r.name, uid: await window.chatUidForName(r.name) }); }
+    else throw new Error('say who to invite: names, group, minDpr or following');
+    const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; const onRoster = new Set(roster.map(r => r.uid));
+    const title = (s.title || 'a session') + (s.date ? ' · ' + s.date : '') + (a.message ? ' — ' + a.message : '');
+    const invited = [], noAccount = [], already = [];
+    for (const t of targets) { if (!t.uid) { noAccount.push(t.name); continue; } if (t.uid === me) continue; if (onRoster.has(t.uid)) { already.push(t.name); continue; } await window.pushNotif(t.uid, { type: 'invite', text: title, sid: a.sid }); invited.push(t.name); }
+    return { result: { invited, alreadyIn: already, noAccount }, label: '🎟 Invited ' + invited.length + (noAccount.length ? ' · ' + noAccount.length + ' not on the app' : '') };
+  }
+  if (name === 'post_to_group') {
+    const g = CHAT_GROUPS.find(x => x.id === a.group); if (!g) throw new Error('unknown group');
+    const lv = await window.myChatLevel(); if (lv.level < g.min - 1e-9) throw new Error('you are not in ' + g.name + ' (level ' + lv.level.toFixed(2) + ')');
+    const att = a.sid ? await _attachFor(a.sid) : null; const text = a.text || '';
+    if (!text && !att) throw new Error('nothing to post');
+    const mid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const msg = { uid: me, name: chatName(), text, at: Date.now() }; if (att) msg.sess = att;
+    await set(ref(db, 'chats/' + g.id + '/msgs/' + mid), msg);
+    await update(ref(db, 'chats/' + g.id + '/meta'), { lastAt: msg.at, lastText: ((att ? '🎟 ' + att.title + (text ? ' · ' : '') : '') + text).slice(0, 80), lastName: msg.name, lastUid: me });
+    return { result: { posted: true, group: g.name }, label: '💬 Posted to ' + g.name, html: att ? sessCardHtml(att) : '' };
+  }
+  if (name === 'send_direct_message') {
+    const uid = await window.chatUidForName(a.name); if (!uid) return { result: { sent: false, reason: a.name + ' has no app account yet' }, label: '✗ ' + a.name + ' is not on the app' };
+    const pair = dmPair(me, uid); const att = a.sid ? await _attachFor(a.sid) : null;
+    const mid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const msg = { uid: me, name: chatName(), text: a.text || '', at: Date.now() }; if (att) msg.sess = att;
+    await set(ref(db, 'dms/' + pair + '/msgs/' + mid), msg);
+    const short = ((att ? '🎟 ' + att.title + ' · ' : '') + (a.text || '')).slice(0, 80);
+    await update(ref(db, 'dmIndex/' + me + '/' + uid), { name: a.name, lastAt: msg.at, lastText: short, lastFrom: me, unread: 0 });
+    let theirs = 0; try { theirs = ((await get(ref(db, 'dmIndex/' + uid + '/' + me))).val() || {}).unread || 0; } catch (e) {}
+    await update(ref(db, 'dmIndex/' + uid + '/' + me), { name: msg.name, lastAt: msg.at, lastText: short, lastFrom: me, unread: theirs + 1 });
+    return { result: { sent: true, to: a.name }, label: '💬 Messaged ' + a.name };
+  }
+  if (name === 'find_players') {
+    try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+    if (a.group) { const ms = await window.groupMembers(a.group); return { result: ms.map(m => ({ name: m.name, dpr: +m.level.toFixed(2), games: m.games, onApp: m.claimed })), label: '👥 ' + ms.length + ' in group' }; }
+    const rm = window.pbtRatingsFor('doubles'); const dir = await loadChatDir(); const q = (a.query || '').toLowerCase();
+    const seen = {}; const out = [];
+    Object.values(rm).forEach(r => { if ((q && !r.name.toLowerCase().includes(q)) || (a.minDpr != null && r.rating < a.minDpr - 1e-9)) return; seen[r.name.toLowerCase()] = 1; out.push({ name: r.name, dpr: +r.rating.toFixed(2), games: r.games, reliability: r.rel, onApp: !!Object.values(dir).find(d => d && !d.unclaimed && String(d.name).toLowerCase() === r.name.toLowerCase()) }); });
+    if (q && a.minDpr == null) Object.values(dir).forEach(d => { if (d && !d.unclaimed && d.name && d.name.toLowerCase().includes(q) && !seen[d.name.toLowerCase()]) out.push({ name: d.name, dpr: d.dupr ? +d.dupr : null, games: 0, onApp: true }); });
+    out.sort((x, y) => (y.dpr || 0) - (x.dpr || 0));
+    return { result: out.slice(0, 40), label: '🔎 ' + out.length + ' player' + (out.length === 1 ? '' : 's') };
+  }
+  if (name === 'player_stats') {
+    try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+    const nm = (a.name || chatName()).trim().toLowerCase(); const out = {};
+    for (const t of ['doubles', 'singles']) { const r = window.pbtRatingsFor(t)[nm]; if (!r) continue;
+      const gs = lbData.games.filter(g => (g.gtype || 'doubles') === t && (g.t1.some(p => p.trim().toLowerCase() === nm) || g.t2.some(p => p.trim().toLowerCase() === nm)));
+      let w = 0, pf = 0, pa = 0; gs.forEach(g => { const on1 = g.t1.some(p => p.trim().toLowerCase() === nm); const my = on1 ? g.s1 : g.s2, op = on1 ? g.s2 : g.s1; if (my > op) w++; pf += my; pa += op; });
+      out[t] = { dpr: +r.rating.toFixed(3), reliability: r.rel, games: r.games, record: w + '-' + (gs.length - w), winPct: gs.length ? Math.round(100 * w / gs.length) : 0, avgDiff: gs.length ? +((pf - pa) / gs.length).toFixed(1) : 0, trend: r.hist.slice(-6).map(x => +x.r.toFixed(2)), lastGameDaysAgo: r.daysIdle }; }
+    if (!Object.keys(out).length) return { result: { name: a.name || chatName(), unrated: true }, label: '📊 No games found' };
+    return { result: Object.assign({ name: a.name || chatName() }, out), label: '📊 Stats for ' + (a.name || 'you') };
+  }
+  if (name === 'join_session') { await window.claimSpot(a.sid); const s = (await get(ref(db, 'sessions/' + a.sid))).val(); return { result: s ? _sessSummary(a.sid, s) : { ok: true }, label: '✓ Claimed a spot' }; }
+  if (name === 'leaderboard') {
+    try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+    const type = a.type || 'doubles', win = a.window || 'all', cutoff = win === 'all' ? 0 : Date.now() - parseInt(win, 10) * 864e5, minG = lbMinGames(type, win);
+    const cnt = {}; lbData.games.filter(g => (g.gtype || 'doubles') === type && g.when >= cutoff).forEach(g => g.t1.concat(g.t2).forEach(p => { const k = p.trim().toLowerCase(); cnt[k] = (cnt[k] || 0) + 1; }));
+    const rows = Object.values(window.pbtRatingsFor(type)).filter(r => (cnt[r.name.toLowerCase()] || 0) >= minG).sort((x, y) => y.rating - x.rating).slice(0, a.limit || 10).map((r, i) => ({ rank: i + 1, name: r.name, dpr: +r.rating.toFixed(3), reliability: r.rel, gamesInWindow: cnt[r.name.toLowerCase()] || 0 }));
+    return { result: rows, label: '🏆 Top ' + rows.length + ' ' + type };
+  }
+  if (name === 'open_screen') {
+    const s = a.screen; setTimeout(() => { try {
+      if (s === 'sessions') openSessions(); else if (s === 'session' && a.sid) openSessionDetail(a.sid); else if (s === 'leaderboard') openLeaderboard(); else if (s === 'chat') openChat('groups'); else if (s === 'group' && a.group) openGroupChat(a.group); else if (s === 'profile' && a.name) openPlayerDetail(a.name); else if (s === 'notifications') openNotifs(); else if (s === 'history') openHistory(); } catch (e) {} }, 600);
+    return { result: { opened: s }, label: '↗ Opening ' + s };
+  }
+  throw new Error('unknown tool ' + name);
+};
+
 // ── follows ──
-// Tom-from-MySpace rule: every new account follows the founder once. Done exactly once per account (flag on the
-// profile), so unfollowing sticks. No notification is sent for it.
 // Runs once per account (every existing account on its next login, every new one at sign-up):
 //   • you follow Mike   • Mike follows you back   • you get a "Mike started following you" notification.
 // Unfollowing later is fine and normal; it just doesn't run again.
@@ -5026,7 +5204,7 @@ window.toggleInfoSec = function(k) {
 const SI_SECTIONS = [
   { key:'intro',   title:'',                    label:'👋 Welcome note (always visible at top)', ph:'e.g. Welcome! Tap a section below for details 🏓', chips:['Welcome! Everything you need is below — tap a section to open it. 🏓','We start SHARP — please be on time!'] },
   { key:'format',  title:'Format',              label:'🎾 Format', ph:'Round robin? Rally scoring? How are winners decided?', chips:['Round robin — randomized partners, no repeats','Rally scoring to 21 (no win by 2)','🏆 Ranked by WINS; ties broken by Avg Point Differential','🏆 Ranked by AVG POINT DIFFERENTIAL; wins are the tiebreaker','Every rally still counts — records bunch up, so margins decide a lot of the table','Log your score in the app after each game','Best 2 out of 3 per matchup'] },
-  { key:'finals',  title:'Finals',              label:'🏆 Finals', ph:'Optional — how do finals work?', chips:['Top 4 by points: 1&4 vs 2&3 — championship game!','Next 4: 5&8 vs 6&7','Round robin is ranked by Avg Diff (wins break ties). Top 8 play finals and the finals decide the podium','Finals are optional if people need to head home'] },
+  { key:'finals',  title:'Finals',              label:'🏆 Finals', ph:'Optional — how do finals work?', chips:['Top 4 by points: 1&4 vs 2&3 — championship game!','Next 4: 5&8 vs 6&7','Ranking: wins when everyone has the same number of games, Avg Diff when counts differ. Top 8 play finals and the finals decide the podium','Finals are optional if people need to head home'] },
   { key:'address', title:'Address & Parking',   label:'📍 Address & Parking', ph:'Address · unit / buzz · who to text · where to park', chips:['📍 Address: ','🏢 Unit / Buzz: ','📞 Contact: ','🚗 Parking: Free valet (tip) — or guest parking down the ramp','🚗 Parking: Free street parking','⏰ Arrive 15 minutes early — we start SHARP'] },
   { key:'bring',   title:'What to Bring',       label:'🎒 What to Bring', ph:'Balls, water, etc.', chips:['2 balls','Water — no fountain at the courts','Paddle + a backup if you have one','Sunscreen / hat'] },
   { key:'rules',   title:'House Rules',         label:'📜 House Rules', ph:'Expectations for the group', chips:['Please stay until the end — leaving early disrupts the rotation','Can\'t make it? Tap "I\'m out" so your spot opens up. ALSO notify the group chat and help find a replacement if there\'s no waitlist — we need at least 8 to play!','Send this page\'s link to same-level friends to fill your spot','Switch sides at 11 points'] },
@@ -5563,7 +5741,7 @@ window.startFromSession = async function(sid) {
     window.setPlayType(window._dupPrefill.playType || 'doubles');
     const fmtLabel = ({ rr:'Round Robin', '4p':'Best 2 out of 3', log:'Log Games' })[window._dupPrefill.mode] || 'Round Robin';
     sb.innerHTML = '🔁 <b>' + escInfo(s.title || window._dupPrefill.name || 'Next week') + '</b> — last week\'s setup rides along'
-      + '<div style="margin-top:6px;font-size:12px;color:var(--white);font-weight:700;">' + (window._dupPrefill.playType === 'singles' ? 'Singles' : 'Doubles') + ' · ' + fmtLabel + ' · ' + (window._dupPrefill.rankRule === 'avg' ? 'Avg Diff first' : 'Wins first') + ' · ' + window._dupPrefill.players.length + ' players carried over</div>'
+      + '<div style="margin-top:6px;font-size:12px;color:var(--white);font-weight:700;">' + (window._dupPrefill.playType === 'singles' ? 'Singles' : 'Doubles') + ' · ' + fmtLabel + ' · ' + (window._dupPrefill.rankRule === 'avg' ? 'Avg Diff first' : window._dupPrefill.rankRule === 'wins' ? 'Wins first' : 'Smart') + ' · ' + window._dupPrefill.players.length + ' players carried over</div>'
       + '<div style="margin-top:4px;font-size:10.5px;color:var(--muted);font-weight:600;">Proceed to review the lineup (keep it, tweak it, or Clear — Just Me), or tap the cards below to change the settings.</div>'
       + '<div onclick="dupProceed()" style="cursor:pointer;text-align:center;margin-top:10px;padding:12px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;">🚀 Proceed — Review Players &amp; Start</div>';
   }
@@ -6621,7 +6799,8 @@ window.addFinals = function() {
   if (unscored.length && !confirm(unscored.length + ' game(s) still unscored — seed finals from CURRENT standings anyway?')) return;
   if (!_rankModeTouched && cfg.rankRule) rankMode = cfg.rankRule;
   const { list } = calcStandings();
-  const ranked = list.filter(p => p.games > 0).map(p => p.name);
+  const skipped = list.filter(p => p.lowSample).map(p => p.name);
+  const ranked = list.filter(p => p.games > 0 && !p.lowSample).map(p => p.name);
   const per = (cfg.playType === 'singles') ? 2 : 4;
   if (ranked.length < per) { alert('Need at least ' + per + ' ranked players for finals.'); return; }
   const games = []; let fi = 0;
@@ -6634,7 +6813,7 @@ window.addFinals = function() {
     fi++;
   }
   const preview = games.map(g => g.flabel + '\n   ' + g.t1.join(' & ') + '  vs  ' + g.t2.join(' & ')).join('\n');
-  if (!confirm('Add finals?\n\n' + preview + '\n\n(Optional — skip if everyone wants to head home!)')) return;
+  if (!confirm('Add finals?\n\n' + preview + (skipped.length ? '\n\nNot seeded (played fewer than half the games): ' + skipped.join(', ') : '') + '\n\n(Optional — skip if everyone wants to head home!)')) return;
   cfg.schedule.push(...games);
   push(); renderGames(); updateNav();
   copiedToast('🏆 Finals are set!');
@@ -6723,15 +6902,18 @@ window.lgStartGame = function() {
 
 // Ranking rule for a tournament: 'wins' (wins first, avg diff tiebreak) or 'avg' (avg diff first, wins tiebreak).
 // Organizer preference is remembered (localStorage + profile); each tournament stores its own rule in cfg.rankRule.
-let rankRule = (function(){ try { return localStorage.getItem('pbt_rankRule') || 'wins'; } catch(e) { return 'wins'; } })();
+// 'auto' (Smart, the default): if everyone has played the same number of games → Wins, Avg Diff breaks ties, then
+// points scored. If game counts differ (byes, late arrivals, Log Games) → Avg Diff, Win % breaks ties, then points
+// scored per game. Raw wins are never compared across unequal game counts.
+const RANK_RULES = ['auto', 'wins', 'avg'];
+let rankRule = (function(){ try { const v = localStorage.getItem('pbt_rankRule'); return RANK_RULES.includes(v) ? v : 'auto'; } catch(e) { return 'auto'; } })();
 window.setRankRule = function(r, silent) {
-  rankRule = (r === 'avg') ? 'avg' : 'wins';
+  rankRule = RANK_RULES.includes(r) ? r : 'auto';
   try { localStorage.setItem('pbt_rankRule', rankRule); } catch(e) {}
   if (!silent && currentUser) { try { update(ref(db, 'users/' + currentUser.uid + '/profile'), { rankRule }); } catch(e) {} }
-  const w = document.getElementById('rr_wins'), a = document.getElementById('rr_avg');
-  if (w) w.classList.toggle('active', rankRule === 'wins');
-  if (a) a.classList.toggle('active', rankRule === 'avg');
+  RANK_RULES.forEach(k => { const b = document.getElementById('rr_' + k); if (b) b.classList.toggle('active', rankRule === k); });
 };
+window.RANK_RULES = RANK_RULES;
 let rankMode = rankRule; // 'avg' | 'wins' | 'pts' — the current standings sort; defaults to the tournament's rule
 let _rankModeTouched = false;
 
@@ -6783,18 +6965,48 @@ function finalPodiumHtml(fin) {
   });
   return h + '</div>';
 }
-function rankExplainerHtml(effectiveMode, hasFinals) {
-  const avg = effectiveMode !== 'wins';
+function rankExplainerHtml(o) {
+  o = o || {};
+  const B = (t) => '<b>' + t + '</b>';
+  const smart = B('The rule') + ' (⭐ Smart): the app counts how many games each person has actually played. '
+    + B('Same number of games for everyone') + ' → rank by ' + B('wins') + '; Avg Diff breaks ties, then points scored. '
+    + B('Different counts') + ' → rank by ' + B('Avg Diff') + ' (average points scored minus allowed, per game), because raw wins can\'t be compared when one person played 8 games and another 7; ties go to ' + B('Win %') + ', then points scored per game.';
+  const manual = o.effectiveMode === 'wins'
+    ? B('The rule') + ' (organizer\'s choice): ' + B('Wins first') + (o.uneven ? ' — shown as Win % because game counts differ' : '') + '. Avg Diff breaks ties, then points scored.'
+    : B('The rule') + ' (organizer\'s choice): ' + B('Avg Diff first') + ' — average points scored minus allowed per game. Ties: ' + (o.uneven ? 'Win %' : 'wins') + ', then points scored' + (o.uneven ? ' per game' : '') + '.';
+  const rule = o.autoRule ? smart : manual;
+  const now = (o.uneven ? 'Right now game counts differ, so the table is on ' + B(o.effectiveMode === 'wins' ? 'Win %' : 'Avg Diff') + '.' : 'Right now everyone has the same number of games, so the table is on ' + B(o.effectiveMode === 'wins' ? 'wins' : 'Avg Diff') + '.');
+  const whyUneven = 'Counts change when someone ' + B('arrives late and is added') + ', ' + B('leaves injured') + ', a game is ' + B('cancelled') + ', or an ' + B('extra game is added') + ' — the rule re-checks after every score, so the table can switch from wins to Avg Diff mid-night and switch back.';
+  const flags = B('Small samples.') + ' Anyone who played ' + B('fewer than half') + ' the games of the busiest player is still ranked but flagged ⚠ and is ' + B('not seeded into finals') + '. Anyone with ' + B('no games yet') + ' sits at the bottom.'
+    + (o.lowSample && o.lowSample.length ? ' Flagged now: ' + o.lowSample.map(escInfo).join(', ') + '.' : '') + (o.unplayed && o.unplayed.length ? ' No games yet: ' + o.unplayed.map(escInfo).join(', ') + '.' : '');
+  let body = '';
+  if (o.mode === '4p') {
+    body = B('1. Best 2 out of 3.') + ' Four players, three matchups, partners rotate so everyone partners everyone once, each matchup best of 3. When nothing changes, all four play every game and counts stay equal — so it\'s wins first. ' + whyUneven
+      + '<br><br>' + B('2. Ranking.') + ' ' + rule + ' ' + now + ' Matchup wins (2–0 / 2–1) show on the Games page; the table counts every game.'
+      + '<br><br>' + B('3.') + ' ' + flags
+      + '<br><br>' + B('4. No finals') + ' in this format — the table is the result. ' + B('💎 DPR') + ' uses every game and is separate.';
+  } else if (o.mode === 'log') {
+    body = B('1. Log Games.') + ' Games are added one at a time as people come and go, so counts almost always differ and the table is usually on Avg Diff.'
+      + '<br><br>' + B('2. Ranking.') + ' ' + rule + ' ' + now
+      + '<br><br>' + B('3.') + ' ' + flags
+      + '<br><br>' + B('4. 💎 DPR') + ' uses every game and is separate from this table.';
+  } else if (o.playType === 'singles') {
+    body = B('1. Singles round robin.') + ' Everyone plays everyone once; with an odd number someone sits each round, so counts can differ by one. ' + whyUneven
+      + '<br><br>' + B('2. Ranking.') + ' ' + rule + ' ' + now
+      + '<br><br>' + B('3.') + ' ' + flags
+      + (o.hasFinals ? '<br><br>' + B('4. The finals decide the podium.') + ' #1 vs #2 for the title, #3 vs #4 for third. Finals are kept out of the round-robin table.' : '<br><br>' + B('4. Finals') + ' (optional): #1 vs #2 for the title, #3 vs #4 for third, seeded from this table.')
+      + '<br><br>' + B('5. 💎 DPR') + ' uses every game, finals included, and is separate from this table.';
+  } else {
+    body = B('1. Round robin sets the seeds.') + ' Nobody partners the same person twice, byes are even and never back-to-back, opponents are spread evenly, teams are balanced by DPR. With 8 players everyone gets 7 games; with 9+ the organizer picks how many each, so counts can differ by one. ' + whyUneven
+      + '<br><br>' + B('2. Ranking.') + ' ' + rule + ' ' + now
+      + '<br><br>' + B('3.') + ' ' + flags
+      + '<br><br>' + B('4. Top 8 play the finals') + ' (when finals are added): 1&amp;4 vs 2&amp;3 for the championship, 5&amp;8 vs 6&amp;7 for 5th–8th.'
+      + '<br><br>' + B('5. The finals decide the podium.') + ' The championship winners are the champions, the other team finishes 3rd. The winners of the 5th–8th game finish 5th, the losers 7th. Everyone else follows by round-robin rank. Finals games are not counted in the round-robin table, so a great finals game can never jump someone over a finalist from a higher game.'
+      + '<br><br>' + B('6. 💎 DPR') + ' (rating) uses every game, finals included, and is separate from this table.';
+  }
   return '<details style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;">'
     + '<summary style="cursor:pointer;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;">ℹ️ How rankings work</summary>'
-    + '<div style="font-size:13px;color:var(--white);font-weight:600;line-height:1.65;margin-top:10px;">'
-    + '<b>1. Round robin sets the seeds.</b> Everyone plays partners and opponents on a fair rotation. ' + (avg
-        ? 'We rank by <b>Avg Diff</b>: your average points scored minus points allowed per game. It is used instead of raw wins because with 9+ players some people get an extra game or a different mix of partners, and Avg Diff stays fair no matter how many games you played. Wins break ties.'
-        : 'We rank by <b>wins</b> (Win % when game counts differ). Avg Diff breaks ties.')
-    + '<br><br><b>2. Top 8 play the finals</b> (when finals are added): 1&amp;4 vs 2&amp;3 for the championship, 5&amp;8 vs 6&amp;7 for 5th–8th.'
-    + '<br><br><b>3. The finals decide the podium.</b> The championship winners are the champions, the other team finishes 3rd. The winners of the 5th–8th game finish 5th, the losers 7th. Everyone else follows by round-robin rank. Finals games are not counted in the round-robin table, so a great finals game can never jump someone over a finalist from a higher game.'
-    + '<br><br><b>4. 💎 DPR</b> (rating) uses every game, finals included, and is separate from this table.'
-    + '</div></details>';
+    + '<div style="font-size:13px;color:var(--white);font-weight:600;line-height:1.65;margin-top:10px;">' + body + '</div></details>';
 }
 
 function calcStandings(opts) {
@@ -6816,24 +7028,33 @@ function calcStandings(opts) {
   // Detect uneven game counts (informational only — user's sort choice is always respected)
   const gameCounts = Object.values(stats).map(s=>s.games).filter(n=>n>0);
   const uneven = gameCounts.length > 1 && (Math.max(...gameCounts) - Math.min(...gameCounts)) >= 1;
-  const effectiveMode = rankMode;
+  const autoRule = rankMode === 'auto';
+  const effectiveMode = autoRule ? (uneven ? 'avg' : 'wins') : rankMode;
+  const maxGames = gameCounts.length ? Math.max(...gameCounts) : 0;
 
   return {
     uneven,
     effectiveMode,
+    autoRule,
+    maxGames,
     list: [...allPlayers].map(p => {
       const st = stats[p];
       const diff = st.ptsFor - st.ptsAgainst;
       const avgDiff = st.games > 0 ? diff / st.games : 0;
-      return { name:p, ...st, diff, avgDiff };
+      // lowSample: played less than half as many games as the busiest player (added late, left injured) —
+      // still ranked by the rule, but flagged, and not seeded into finals
+      return { name:p, ...st, diff, avgDiff, lowSample: st.games > 0 && maxGames >= 4 && st.games * 2 < maxGames };
     }).sort((a,b) => {
+      // anyone with no games yet always sits at the bottom, whatever the rule (a 0.0 avg must never beat a real -3.0)
+      if ((a.games > 0) !== (b.games > 0)) return a.games > 0 ? -1 : 1;
       if (effectiveMode === 'wins') {
         if (uneven) { const wp = p => p.games ? p.wins/p.games : 0; return wp(b)-wp(a) || b.avgDiff-a.avgDiff || b.wins-a.wins || b.ptsFor-a.ptsFor; }
         return b.wins-a.wins || b.avgDiff-a.avgDiff || b.ptsFor-a.ptsFor;
       }
       if (effectiveMode === 'pts')  return b.ptsFor-a.ptsFor || b.wins-a.wins || b.avgDiff-a.avgDiff;
-      // avg (default)
-      return b.avgDiff-a.avgDiff || b.wins-a.wins || b.ptsFor-a.ptsFor;
+      // avg: Avg Diff first. Ties: Win % (raw wins are meaningless across unequal game counts), then points scored per game.
+      const wp = p => p.games ? p.wins/p.games : 0, pfg = p => p.games ? p.ptsFor/p.games : 0;
+      return b.avgDiff-a.avgDiff || wp(b)-wp(a) || pfg(b)-pfg(a) || b.wins-a.wins;
     })
   };
 }
@@ -6841,10 +7062,10 @@ function calcStandings(opts) {
 function renderStandings() {
   const el = document.getElementById('pageStandings');
   if (!cfg?.players) { el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-t">No Tournament Yet</div></div>'; return; }
-  if (!_rankModeTouched) rankMode = (cfg.rankRule === 'avg' || cfg.rankRule === 'wins') ? cfg.rankRule : 'avg'; // tournaments created before the rule existed were played under Avg Diff
+  if (!_rankModeTouched) rankMode = ['avg','wins','auto'].includes(cfg.rankRule) ? cfg.rankRule : 'avg'; // tournaments created before the rule existed were played under Avg Diff
 
   const _hasFinals = cfg.schedule.some(g => g.finals && !g.deleted);
-  const { list, uneven, effectiveMode } = calcStandings({ excludeFinals: _hasFinals });
+  const { list, uneven, effectiveMode, autoRule, maxGames } = calcStandings({ excludeFinals: _hasFinals });
   const _fin = _hasFinals ? computeFinalStandings(list) : null;
   const champ = list[0];
   const total = cfg.schedule?.filter(g=>!g.deleted).length || 0;
@@ -6903,7 +7124,7 @@ function renderStandings() {
   list.forEach((p,i) => {
     const dc = p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
     html += '<tr onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;">'
-      +'<td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
+      +'<td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span>'+(p.games===0?'<span style="display:block;font-size:9.5px;color:var(--muted);font-weight:700;">no games yet</span>':p.lowSample?'<span style="display:block;font-size:9.5px;color:var(--yellow);font-weight:700;">⚠ '+p.games+' of '+maxGames+' games</span>':'')+'</td>'
       +'<td '+(hW?hl:'')+'>'+(uneven ? (p.games?Math.round(100*p.wins/p.games):0)+'% <span style="color:var(--muted);font-size:10px;">('+p.wins+'-'+(p.games-p.wins)+')</span>' : p.wins)+'</td>'
       +'<td '+(hP?hl:'')+' class="ptsf">'+p.ptsFor+'</td>'
       +'<td>'+p.ptsAgainst+'</td>'
@@ -6912,9 +7133,9 @@ function renderStandings() {
   });
 
   html += '</tbody></table>';
-  const modeLabel = effectiveMode==='avg'?'Avg Point Differential (wins break ties)':effectiveMode==='wins'?(uneven?'Win % (Avg Diff breaks ties)':'Wins (Avg Diff breaks ties)'):'Most Points';
-  html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong> · tap a column to re-rank</div>';
-  html += rankExplainerHtml(effectiveMode, _hasFinals);
+  const modeLabel = effectiveMode==='avg'?(uneven?'Avg Point Differential (Win % breaks ties)':'Avg Point Differential (wins break ties)'):effectiveMode==='wins'?(uneven?'Win % (Avg Diff breaks ties)':'Wins (Avg Diff breaks ties)'):'Most Points';
+  html += '<div class="tieinfo">🏆 Ranked by: <strong style="color:var(--cyan)">'+modeLabel+'</strong>'+(autoRule?' · <span style="color:var(--aqua)">⭐ Smart rule'+(uneven?': game counts differ':': everyone has the same number of games')+'</span>':'')+' · tap a column to re-rank</div>';
+  html += rankExplainerHtml({ mode: cfg.mode, playType: cfg.playType, effectiveMode, autoRule, uneven, hasFinals: _hasFinals, players: (cfg.players||[]).length, lowSample: list.filter(p => p.lowSample).map(p => p.name), unplayed: list.filter(p => p.games === 0).map(p => p.name), maxGames });
   // 📸 Photos for this tournament (stored at photos/{tid}, small JPEGs)
   html += '<div style="margin-top:22px;display:flex;align-items:center;justify-content:space-between;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;">📸 Photos</div>'
@@ -8065,6 +8286,9 @@ function pickAttachGame(s)   { if(window.pickAttachGame) window.pickAttachGame(s
 function clearChatAttach()   { if(window.clearChatAttach) window.clearChatAttach(); }
 function growChatInput(t)    { if(window.growChatInput) window.growChatInput(t); }
 function postSessionToChat(s){ if(window.postSessionToChat) window.postSessionToChat(s); }
+function aiAsk(t)            { if(window.aiAsk) window.aiAsk(t); }
+function aiReset()           { if(window.aiReset) window.aiReset(); }
+function saveAssistantUrl()  { if(window.saveAssistantUrl) window.saveAssistantUrl(); }
 function cancelRounds()      { if(window.cancelRounds) window.cancelRounds(); }
 function dismissInstallBar() { if(window.dismissInstallBar) window.dismissInstallBar(); }
 function shareAppLink()      { if(window.shareAppLink) window.shareAppLink(); }
@@ -8106,7 +8330,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-13.6';
+window.BUILD_TAG = 'v2026-10-14.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
