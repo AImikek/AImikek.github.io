@@ -4167,14 +4167,28 @@ window.groupTextSession = async function(sid) {
   const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s) return;
   const dir = await loadChatDir(); const me = currentUser && currentUser.uid;
   const people = [].concat(s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : [], s.waitlist ? (Array.isArray(s.waitlist) ? s.waitlist : Object.values(s.waitlist)) : []);
-  const nums = [], missing = [];
-  people.forEach(r => { if (!r || r.uid === me) return; const d = r.uid && dir[r.uid]; const ph = d && d.phone ? String(d.phone).replace(/[^\d+]/g, '') : ''; if (ph) nums.push(ph); else missing.push(r.name || '?'); });
-  if (!nums.length) { alert('No phone numbers on file yet for the players signed up' + (missing.length ? ' (' + missing.join(', ') + ')' : '') + '.'); return; }
+  const got = [], missing = [], seen = new Set();
+  for (const r of people) {
+    if (!r || r.uid === me) continue;
+    let uid = r.uid; if (!uid || !dir[uid]) uid = await window.chatUidForName(r.name);   // added by name only → match the account
+    if (uid === me) continue;
+    const d = uid && dir[uid]; let ph = d && d.phone ? String(d.phone).replace(/[^\d+]/g, '') : '';
+    if (ph && !ph.startsWith('+')) ph = (ph.length === 10 ? '+1' : '+') + ph;
+    if (ph && !seen.has(ph)) { seen.add(ph); got.push({ name: r.name || (d && d.name) || '?', ph }); } else if (!ph) missing.push(r.name || '?');
+  }
   const body = (s.title || 'Pickleball') + ' · ' + sessWhen(s) + (s.location ? ' @ ' + s.location : '') + ' — see you there! ' + location.origin + location.pathname + '?s=' + sid;
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const href = 'sms:' + (ios ? '/open?addresses=' + nums.join(',') + '&body=' : nums.join(',') + '?body=') + encodeURIComponent(body);
-  if (missing.length) copiedToast('No number for: ' + missing.join(', '));
-  try { (window._go || (u => { window.location.href = u; }))(href); } catch (e) {}
+  // iOS wants "sms:a,b&body=…" (a "?" before body drops the extra recipients); Android wants "sms:a,b?body=…"
+  const href = 'sms:' + got.map(g => g.ph).join(',') + (ios ? '&body=' : '?body=') + encodeURIComponent(body);
+  window._gtHref = href;
+  const sh = document.getElementById('groupMembersSheet'); sh.classList.remove('hidden');
+  document.getElementById('gmTitle').textContent = '📱 Group text';
+  document.getElementById('gmSub').textContent = got.length + ' recipient' + (got.length === 1 ? '' : 's') + ' · opens Messages as one group thread';
+  document.getElementById('gmList').innerHTML = got.map(g => '<div style="display:flex;justify-content:space-between;padding:8px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;"><span style="font-weight:700;color:var(--white);font-size:13.5px;">' + escInfo(g.name) + '</span><span style="font-size:12px;color:var(--muted);font-weight:600;">' + escInfo(g.ph) + '</span></div>').join('')
+    + (missing.length ? '<div style="margin:8px 0;font-size:12px;color:var(--yellow);font-weight:700;">No number on file: ' + missing.map(escInfo).join(', ') + ' — ask them to add their phone on their profile.</div>' : '')
+    + '<div style="margin:10px 0 4px;padding:10px 12px;background:rgba(4,6,15,0.4);border:1px dashed var(--border);border-radius:10px;font-size:12.5px;color:var(--white);font-weight:600;white-space:pre-wrap;">' + escInfo(body) + '</div>'
+    + (got.length ? '<button onclick="document.getElementById(\'groupMembersSheet\').classList.add(\'hidden\');(window._go||(u=>{window.location.href=u;}))(window._gtHref)" style="display:block;width:100%;margin-top:8px;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Open Messages · ' + got.length + ' people</button>' : '')
+    + '<button onclick="copyTextRobust(' + "'" + got.map(g => g.ph).join(', ').replace(/'/g, '') + "'" + ').then(ok=>copiedToast(ok?\'✓ Numbers copied\':\'Copy failed\'))" style="display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Copy numbers instead</button>';
 };
 // From a session page: jump into a group chat with this game already attached
 window.postSessionToChat = async function(sid) {
@@ -6289,6 +6303,7 @@ window.showTournamentQR = function() {
   document.getElementById('qrOverlay').classList.remove('hidden');
 };
 
+window.copyTextRobust = function(t) { return copyTextRobust(t); };
 function copyTextRobust(text) {
   // 1. Modern API (needs HTTPS + gesture)
   return new Promise((resolve) => {
@@ -8417,7 +8432,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-14.5';
+window.BUILD_TAG = 'v2026-10-14.6';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
