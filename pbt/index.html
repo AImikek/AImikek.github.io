@@ -3884,6 +3884,8 @@ window.pushNotif = async function(toUid, n) {
   if (!toUid || !currentUser || toUid === currentUser.uid) return;
   const nid = 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   try { await set(ref(db, 'notifs/' + toUid + '/' + nid), Object.assign({ from: currentUser.uid, fromName: chatName(), at: Date.now(), read: false }, n)); } catch (e) {}
+  // remember invites I sent so I can take them back later (recall) without needing to read other people's inboxes
+  if (n && n.type === 'invite' && n.sid) { try { await set(ref(db, 'sentInvites/' + currentUser.uid + '/' + n.sid + '/' + nid), toUid); } catch (e) {} }
 };
 window._chatTab = 'groups';
 const dmPair = (a, b) => [a, b].sort().join('__');
@@ -4338,6 +4340,29 @@ window.aiAsk = async function(text) {
   } catch (e) { aiPush('ai', '⚠️ Could not reach the assistant (' + (e && e.message || e) + ').'); }
   aiBusy = false; renderAssistant();
 };
+// Undo an invite blast: remove the 🎟 notifications I sent for this session, delete my chat posts that carried
+// it (groups + DMs), and optionally tell everyone it's off.
+window.recallSessionInvites = async function(sid, o) {
+  o = o || {}; const me = currentUser.uid; let invites = 0, messages = 0, notified = 0; const touched = new Set();
+  // invites I sent (my own index; the rule lets the sender delete what they created)
+  try { const mine = (await get(ref(db, 'sentInvites/' + me + '/' + sid))).val() || {};
+    for (const [nid, uid] of Object.entries(mine)) { try { await set(ref(db, 'notifs/' + uid + '/' + nid), null); invites++; touched.add(uid); } catch (e) {} }
+    await set(ref(db, 'sentInvites/' + me + '/' + sid), null); } catch (e) {}
+  // admins can also sweep inboxes for invites sent before the index existed
+  if (isAdmin()) { try { const all = (await get(ref(db, 'notifs'))).val() || {};
+    for (const [uid, box] of Object.entries(all)) for (const [nid, n] of Object.entries(box || {})) {
+      if (n && n.type === 'invite' && n.sid === sid && n.from === me) { try { await set(ref(db, 'notifs/' + uid + '/' + nid), null); invites++; touched.add(uid); } catch (e) {} } } } catch (e) {} }
+  // my group posts carrying the game
+  for (const g of CHAT_GROUPS) { try { const msgs = (await get(ref(db, 'chats/' + g.id + '/msgs'))).val() || {};
+    for (const [mid, m] of Object.entries(msgs)) if (m && m.uid === me && m.sess && m.sess.sid === sid) { await set(ref(db, 'chats/' + g.id + '/msgs/' + mid), null); messages++; } } catch (e) {} }
+  // my DMs carrying the game (walk my own inbox index; each thread is readable by its two members)
+  try { const idx = (await get(ref(db, 'dmIndex/' + me))).val() || {};
+    for (const other of Object.keys(idx)) { const pair = dmPair(me, other); let msgs = {}; try { msgs = (await get(ref(db, 'dms/' + pair + '/msgs'))).val() || {}; } catch (e) {}
+      for (const [mid, m] of Object.entries(msgs)) if (m && m.uid === me && m.sess && m.sess.sid === sid) { await set(ref(db, 'dms/' + pair + '/msgs/' + mid), null); messages++; touched.add(other); } } } catch (e) {}
+  if (o.notify) { const extra = (o.includeRoster || []).map(r => r.uid).filter(Boolean); extra.forEach(u => touched.add(u));
+    for (const uid of touched) { if (uid === me) continue; await window.pushNotif(uid, { type: 'info', text: '❌ ' + (o.title || 'The session') + ' is cancelled' }); notified++; } }
+  return { invites, messages, notified };
+};
 // ── the actions Claude can take (all run as the signed-in user) ──
 const _sessSummary = (sid, s) => { const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; return { sid, title: s.title, date: s.date, startTime: s.startTime, endTime: s.endTime, location: s.location, level: s.level || null, spots: s.spots, open: Math.max(0, (s.spots || 0) - roster.length), players: roster.map(r => r.name), ownerName: s.ownerName || null, mine: s.ownerUid === currentUser.uid }; };
 async function _upcoming() { const all = (await get(ref(db, 'sessions'))).val() || {}; const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -4419,6 +4444,43 @@ window.aiRunTool = async function(name, a) {
     const cnt = {}; lbData.games.filter(g => (g.gtype || 'doubles') === type && g.when >= cutoff).forEach(g => g.t1.concat(g.t2).forEach(p => { const k = p.trim().toLowerCase(); cnt[k] = (cnt[k] || 0) + 1; }));
     const rows = Object.values(window.pbtRatingsFor(type)).filter(r => (cnt[r.name.toLowerCase()] || 0) >= minG).sort((x, y) => y.rating - x.rating).slice(0, a.limit || 10).map((r, i) => ({ rank: i + 1, name: r.name, dpr: +r.rating.toFixed(3), reliability: r.rel, gamesInWindow: cnt[r.name.toLowerCase()] || 0 }));
     return { result: rows, label: '🏆 Top ' + rows.length + ' ' + type };
+  }
+  // ── destructive actions: the model may only call these with confirm:true, i.e. after the user clearly asked ──
+  if (name === 'delete_session') {
+    if (!a.confirm) throw new Error('needs the user\'s go-ahead (confirm:true)');
+    const s = (await get(ref(db, 'sessions/' + a.sid))).val(); if (!s) throw new Error('session not found');
+    if (s.ownerUid !== me && !isAdmin()) throw new Error('only the organizer or an admin can delete this session');
+    const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : [];
+    const rec = await window.recallSessionInvites(a.sid, { notify: !!a.notifyPlayers, title: s.title || 'the session', includeRoster: roster });
+    await set(ref(db, 'sessions/' + a.sid), null);
+    try { if (sdCurrent === a.sid) { closeSessionDetail(); } } catch (e) {}
+    return { result: { deleted: true, title: s.title, invitesRecalled: rec.invites, messagesRemoved: rec.messages, playersNotified: rec.notified }, label: '🗑 Deleted "' + (s.title || 'session') + '" · ' + rec.invites + ' invites recalled · ' + rec.messages + ' chat posts removed' + (rec.notified ? ' · ' + rec.notified + ' players notified' : '') };
+  }
+  if (name === 'recall_invites') {
+    const s = (await get(ref(db, 'sessions/' + a.sid))).val();
+    const rec = await window.recallSessionInvites(a.sid, { notify: !!a.notifyPlayers, title: (s && s.title) || 'the session', includeRoster: [] });
+    return { result: rec, label: '↩ Recalled ' + rec.invites + ' invites · removed ' + rec.messages + ' chat posts' + (rec.notified ? ' · notified ' + rec.notified : '') };
+  }
+  if (name === 'delete_tournament') {
+    if (!a.confirm) throw new Error('needs the user\'s go-ahead (confirm:true)');
+    const tid = a.tid || activeTid; if (!tid) throw new Error('no tournament to delete');
+    const t = (await get(ref(db, 'tournaments/' + tid))).val();
+    if (t && t.ownerUid !== me && !isAdmin()) throw new Error('only the organizer or an admin can delete this tournament');
+    const nm = (t && t.cfg && t.cfg.name) || 'tournament';
+    const scored = t ? Object.values(t.scores || {}).filter(s => s && s.s1 !== null && s.s1 !== undefined).length : 0;
+    if (scored > 0 && !a.confirmScored) return { result: { needsConfirmScored: true, name: nm, scoredGames: scored }, label: '⚠ "' + nm + '" has ' + scored + ' scored games — ask before deleting' };
+    const sid = t && t.cfg && t.cfg.fromSession;
+    await set(ref(db, 'tournaments/' + tid), null);
+    try { await set(ref(db, 'users/' + me + '/history/' + tid), null); } catch (e) {}
+    try { if (sid) await set(ref(db, 'sessions/' + sid + '/tournamentId'), null); } catch (e) {}
+    if (tid === activeTid) {
+      if (_tournamentUnsub) { try { _tournamentUnsub(); } catch (e) {} _tournamentUnsub = null; }
+      cfg = null; scores = {}; activeTid = null;
+      try { await set(ref(db, 'users/' + me + '/activeTournamentId'), null); } catch (e) {}
+      try { updateNav(); } catch (e) {}
+    }
+    lbData = null;
+    return { result: { deleted: true, name: nm, scoredGames: scored }, label: '🗑 Deleted tournament "' + nm + '"' };
   }
   if (name === 'open_screen') {
     const s = a.screen; setTimeout(() => { try {
@@ -8330,7 +8392,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-14.3';
+window.BUILD_TAG = 'v2026-10-14.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
