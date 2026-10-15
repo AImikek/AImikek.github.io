@@ -231,6 +231,7 @@
   /* ── ROSTER PLAYER SHEET ── */
   #pwaInstallSheet.hidden { display:none !important; }
   #rrRoundsSheet.hidden { display:none !important; }
+  .gender-row.compact .gender-card { padding:8px 6px; } .gender-row.compact .gender-icon { font-size:18px; } .gender-row.compact .gender-label { font-size:11px; }
   #chatPage.hidden, #chatThread.hidden, #ctLocked.hidden, #notifPage.hidden, #groupMembersSheet.hidden, #ctAttach.hidden { display:none !important; }
   #ctInput:focus { border-color:rgba(0,240,255,0.6); }
   .cbub { max-width:82%; padding:8px 12px; border-radius:14px; margin-bottom:6px; font-size:14px; line-height:1.45; word-break:break-word; white-space:pre-wrap; }
@@ -813,34 +814,14 @@
   <div class="profile-phone" id="profilePhoneDisplay"></div>
   <label class="flabel">Name</label>
   <input class="finput" id="editName" placeholder="Your name" maxlength="30">
-  <label class="flabel">I am</label>
-  <div class="gender-row">
-    <div class="gender-card" id="editGMale" onclick="editSelectGender('M')">
-      <div class="gender-icon">👨</div><div class="gender-label">Male</div>
-    </div>
-    <div class="gender-card" id="editGFemale" onclick="editSelectGender('F')">
-      <div class="gender-icon">👩</div><div class="gender-label">Female</div>
-    </div>
-  </div>
-  <label class="flabel">Email</label>
-  <input class="finput" id="editEmail" type="email" placeholder="you@email.com" inputmode="email" autocomplete="email">
-  <label class="flabel">City</label>
-  <input class="finput" id="editCity" placeholder="e.g. Fort Lauderdale" maxlength="40">
-  <label class="flabel">Instagram</label>
-  <input class="finput" id="editInsta" placeholder="@yourhandle" maxlength="40">
+
+  <!-- what changes and what people look at: rating, DUPR, travel status, texts -->
   <div id="myDprCard" style="display:none;margin:4px 0 14px;padding:11px 14px;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;">
     <span style="font-family:'Russo One',sans-serif;font-size:20px;color:var(--cyan);">💎 <span id="myDprVal">—</span></span>
     <span id="myDprSub" style="font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-left:8px;"></span>
   </div>
   <label class="flabel">DUPR Rating</label>
   <input class="finput" id="editDupr" type="number" inputmode="decimal" step="0.01" min="1" max="8" placeholder="e.g. 3.75 (leave blank if none)">
-  <label class="flabel">Home Court</label>
-  <input class="finput" id="editCourt" placeholder="e.g. Margaret Pace Park" maxlength="60">
-  <label class="flabel">Date of Birth</label>
-  <input class="finput" id="editDob" type="date" style="color-scheme:dark;">
-  <div style="font-size:12px;color:var(--muted);margin-top:-10px;margin-bottom:16px;font-weight:600;">
-    Used to calculate your age for leaderboards
-  </div>
 
   <label class="flabel">✈️ Away / Traveling</label>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;">
@@ -874,6 +855,35 @@
     color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;
     font-size:17px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
     box-shadow:0 4px 20px rgba(255,45,120,0.35);">💾 Save Profile</button>
+  
+  <details style="margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;">
+    <summary style="cursor:pointer;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;">More details · email, city, Instagram, home court, birthday, gender</summary>
+    <div style="margin-top:12px;">
+  <label class="flabel">Email</label>
+  <input class="finput" id="editEmail" type="email" placeholder="you@email.com" inputmode="email" autocomplete="email">
+  <label class="flabel">City</label>
+  <input class="finput" id="editCity" placeholder="e.g. Fort Lauderdale" maxlength="40">
+  <label class="flabel">Instagram</label>
+  <input class="finput" id="editInsta" placeholder="@yourhandle" maxlength="40">
+  <label class="flabel">Home Court</label>
+  <input class="finput" id="editCourt" placeholder="e.g. Margaret Pace Park" maxlength="60">
+  <label class="flabel">Date of Birth</label>
+  <input class="finput" id="editDob" type="date" style="color-scheme:dark;">
+  <div style="font-size:12px;color:var(--muted);margin-top:-10px;margin-bottom:16px;font-weight:600;">
+    Used to calculate your age for leaderboards
+  </div>
+  <label class="flabel">I am</label>
+  <div class="gender-row compact">
+    <div class="gender-card" id="editGMale" onclick="editSelectGender('M')">
+      <div class="gender-icon">👨</div><div class="gender-label">Male</div>
+    </div>
+    <div class="gender-card" id="editGFemale" onclick="editSelectGender('F')">
+      <div class="gender-icon">👩</div><div class="gender-label">Female</div>
+    </div>
+  </div>
+  <button onclick="saveProfileEdits()" style="width:100%;padding:13px;background:transparent;border:1px solid rgba(255,45,120,0.5);color:var(--pink);border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:4px;">💾 Save Details</button>
+    </div>
+  </details>
   <div id="profileSavedMsg" style="display:none;text-align:center;margin-top:14px;
     font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;
     color:var(--aqua);text-transform:uppercase;">✓ Profile Saved!</div>
@@ -1092,7 +1102,7 @@
 
     <div class="guide-card"><div class="guide-icon">💎</div><div><div class="guide-t">DPR — Our In-House DUPR</div><div class="guide-s">Every player gets a <b>DPR</b> (Diamond Performance Rating) on the familiar DUPR scale, computed from every game ever logged here. It works like the pros' rating: <b>every point counts against expectation</b> — who you played WITH, who you played AGAINST, and the score. Hang close as the underdog and your rating climbs even in a loss. Under 10 games shows <b>PROV</b> (provisional) until your number settles. Updates the moment scores go in.</div></div></div>
 
-    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Chat, Messages &amp; Friends</div><div class="guide-s">Open <b class="glink" onclick="openChat()">Chat</b> from the menu. Three level groups: <b>4.5+ Club</b>, <b>4.0+ Crew</b> and <b>3.5+ Open</b> — each is open to that level and up, so a 4.6 can be in all three. Your level is your 💎 DPR once you have 5 games, otherwise the DUPR on your profile. <b>Messages</b> are private chats: search a name or tap 💬 Message on any profile, or tap <b>👥 Group</b> to start a group thread like iMessage (name it, tick people, add more later). <b>Follow</b> players from their profile and they land in your Friends tab with one-tap messaging. Each group shows <b>who's in it</b> (everyone at that DPR and up) — tap 👥 members. The <b>❤️ Notifications</b> button next to the trophy collects everything: new messages, group activity, new followers and game invites. From any session page you can <b>🎟 Invite Friends</b> (they get a notification) or <b>💬 Post to Chat</b>. In any chat, the <b>🎟 button</b> attaches an upcoming game to your message as a card with a <b>View &amp; Join</b> button — no links to paste. Everyone follows Mike by default and Mike follows you back; unfollow any time.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Chat, Messages &amp; Friends</div><div class="guide-s">Open <b class="glink" onclick="openChat()">Chat</b> from the menu. A <b>🌎 Community</b> group for everyone on the app, plus level groups <b>5.0+ Elite</b>, <b>4.5+ Club</b>, <b>4.0+ Crew</b> and <b>3.5+ Open</b> — each open to that level and up. Groups you haven't unlocked yet show small and grey with how far away you are. Your level is your 💎 DPR once you have 5 games, otherwise the DUPR on your profile. <b>Messages</b> are private chats: search a name or tap 💬 Message on any profile, or tap <b>👥 Group</b> to start a group thread like iMessage (name it, tick people, add more later). <b>Follow</b> players from their profile and they land in your Friends tab with one-tap messaging. Each group shows <b>who's in it</b> (everyone at that DPR and up) — tap 👥 members. The <b>❤️ Notifications</b> button next to the trophy collects everything: new messages, group activity, new followers and game invites. From any session page you can <b>🎟 Invite Friends</b> (they get a notification) or <b>💬 Post to Chat</b>. In any chat, the <b>🎟 button</b> attaches an upcoming game to your message as a card with a <b>View &amp; Join</b> button — no links to paste. Everyone follows Mike by default and Mike follows you back; unfollow any time.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">🏅</div><div><div class="guide-t">How Winners Are Decided</div><div class="guide-s">The round robin seeds everyone. <b>Smart rule:</b> if everyone played the same number of games, rank by <b>wins</b> (Avg Diff breaks ties); if counts differ (byes, late arrivals), rank by <b>Avg Diff</b> (points scored minus allowed, per game) with Win % breaking ties, because raw wins can't be compared across unequal games. The app re-checks the counts after every score, so adding a late arrival, an injury, a cancelled game or an extra game can flip the table between wins and Avg Diff. Anyone who played fewer than half the games is flagged ⚠ and not seeded into finals; anyone with no games sits at the bottom. The Stats page says which rule is in effect and why. The <b>top 8 play finals</b>: 1&amp;4 vs 2&amp;3 for the championship and 5&amp;8 vs 6&amp;7 for 5th–8th. <b>The finals decide the podium</b>: championship winners are champions, their opponents finish 3rd, and the 5th–8th game decides 5th through 8th. Everyone else follows by round-robin rank. Finals are kept out of the round-robin table so they can never leapfrog a higher finalist. Tap <b>ℹ️ How rankings work</b> on the Stats page any time.</div></div></div>
 
@@ -3880,9 +3890,11 @@ window.hideAllPages = function() {
 //       dms/{pair}/msgs/{mid} (pair = both uids sorted, joined by "__") + dmIndex/{uid}/{other} {name,lastAt,lastText,lastFrom,unread}
 //       chatRead/{uid}/{gid} = last-read timestamp · follows/{uid}/{target} {name,at} · followers/{target}/{uid} {name,at}
 const CHAT_GROUPS = [
+  { id:'g00', min:0,   name:'Community', icon:'🌎', blurb:'Everyone on the app · the big group chat', all: true },
+  { id:'g50', min:5.0, name:'5.0+ Elite', icon:'🏆', blurb:'5.0 and up · the goal' },
   { id:'g45', min:4.5, name:'4.5+ Club', icon:'🔥', blurb:'Advanced · 4.5 and up' },
   { id:'g40', min:4.0, name:'4.0+ Crew', icon:'⚡', blurb:'4.0 and up · 4.5+ players welcome too' },
-  { id:'g35', min:3.5, name:'3.5+ Open', icon:'🏓', blurb:'3.5 and up · the whole club' },
+  { id:'g35', min:3.5, name:'3.5+ Open', icon:'🏓', blurb:'3.5 and up' },
 ];
 window.CHAT_GROUPS = CHAT_GROUPS;
 let chatDirCache = null, chatDirAt = 0, chatMeta = {}, chatReadMap = {}, dmIdx = {}, myFollows = {}, myFollowers = {};
@@ -3918,9 +3930,10 @@ window.groupMembers = async function(gid) {
   const dir = await loadChatDir();
   const byName = {}; Object.entries(dir).forEach(([uid, d]) => { if (d && d.name) { const k = String(d.name).trim().toLowerCase(); if (!byName[k] || (!d.unclaimed && (byName[k].d.unclaimed))) byName[k] = { uid, d }; } });
   const out = {}; let rm = {}; try { rm = lbData ? window.pbtRatingsFor('doubles') : {}; } catch (e) {}
-  Object.values(rm).forEach(r => { if (r && r.rating >= g.min - 1e-9) out[r.name.toLowerCase()] = { name: r.name, level: r.rating, games: r.games, basis: 'dpr', uid: byName[r.name.toLowerCase()] ? byName[r.name.toLowerCase()].uid : null, claimed: !!(byName[r.name.toLowerCase()] && !byName[r.name.toLowerCase()].d.unclaimed) }; });
+  if (g.all) { Object.entries(dir).forEach(([uid, d]) => { if (!d || !d.name || d.unclaimed) return; const k = String(d.name).trim().toLowerCase(); const r = rm[k]; out[k] = { name: d.name, level: r ? r.rating : (parseFloat(d.dupr) || 0), games: r ? r.games : 0, basis: r ? 'dpr' : 'dupr', uid, claimed: true }; }); }
+  if (!g.all) Object.values(rm).forEach(r => { if (r && r.rating >= g.min - 1e-9) out[r.name.toLowerCase()] = { name: r.name, level: r.rating, games: r.games, basis: 'dpr', uid: byName[r.name.toLowerCase()] ? byName[r.name.toLowerCase()].uid : null, claimed: !!(byName[r.name.toLowerCase()] && !byName[r.name.toLowerCase()].d.unclaimed) }; });
   Object.entries(dir).forEach(([uid, d]) => { if (!d || !d.name || d.unclaimed) return; const k = String(d.name).trim().toLowerCase(); if (out[k]) return; const dv = parseFloat(d.dupr); if (dv && dv >= g.min - 1e-9) out[k] = { name: d.name, level: dv, games: 0, basis: 'dupr', uid, claimed: true }; });
-  return Object.values(out).sort((a, b) => b.level - a.level);
+  return Object.values(out).sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
 };
 window.showGroupMembers = async function(gid) {
   const g = CHAT_GROUPS.find(x => x.id === gid); if (!g) return;
@@ -3928,7 +3941,7 @@ window.showGroupMembers = async function(gid) {
   document.getElementById('gmTitle').textContent = g.icon + ' ' + g.name + ' · members';
   document.getElementById('gmList').innerHTML = '<div style="color:var(--muted);font-weight:600;font-size:12px;">Loading…</div>';
   const ms = await window.groupMembers(gid);
-  document.getElementById('gmSub').textContent = ms.length + ' player' + (ms.length === 1 ? '' : 's') + ' at ' + g.min.toFixed(1) + '+ · ranked by 💎 DPR · ' + ms.filter(m => m.claimed).length + ' on the app';
+  document.getElementById('gmSub').textContent = g.all ? ms.length + ' members · everyone with an account · ranked by 💎 DPR' : ms.length + ' player' + (ms.length === 1 ? '' : 's') + ' at ' + g.min.toFixed(1) + '+ · ranked by 💎 DPR · ' + ms.filter(m => m.claimed).length + ' on the app';
   document.getElementById('gmList').innerHTML = ms.length ? ms.map((m, i) => '<div onclick="openPlayerDetail(\'' + escInfo(m.name).replace(/'/g, "\\'") + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;">'
       + '<div style="font-weight:700;font-size:13.5px;color:var(--white);"><span style="color:var(--muted);font-size:11px;margin-right:6px;">' + (i + 1) + '</span>' + escInfo(m.name) + (m.claimed ? '' : ' <span style="font-size:10px;color:var(--muted);font-weight:600;">not on app yet</span>') + '</div>'
       + '<div style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--cyan);">💎 ' + m.level.toFixed(2) + (m.basis === 'dupr' ? ' <span style="font-size:9px;color:var(--muted);">DUPR</span>' : m.games < 10 ? ' <span style="font-size:9px;color:var(--muted);">PROV</span>' : '') + '</div></div>').join('')
@@ -3999,18 +4012,32 @@ async function renderChatBody() {
     const lv = await window.myChatLevel();
     let h = '<div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:12px;">Your level: <b style="color:var(--cyan);">' + lv.level.toFixed(2) + '</b> · ' + escInfo(lv.basis) + '. Each group is open to that level and up.</div>';
     const counts = {}; for (const g of CHAT_GROUPS) { try { counts[g.id] = (await window.groupMembers(g.id)).length; } catch (e) { counts[g.id] = 0; } }
-    CHAT_GROUPS.forEach(g => {
-      const ok = lv.level >= g.min - 1e-9; const m = chatMeta[g.id] || {};
+    const card = (g, ok) => {
+      const m = chatMeta[g.id] || {};
       const unread = ok && m.lastAt && m.lastAt > (chatReadMap[g.id] || 0) && m.lastUid !== me;
-      h += '<div class="chat-row' + (ok ? '' : ' locked') + '" onclick="openGroupChat(\'' + g.id + '\')">'
+      if (!ok) {
+        const need = (g.min - lv.level).toFixed(2);
+        return '<div class="chat-row locked" onclick="openGroupChat(\'' + g.id + '\')" style="padding:9px 12px;opacity:0.55;">'
+          + '<div style="font-size:18px;">' + g.icon + '</div>'
+          + '<div style="flex:1;min-width:0;"><div style="font-family:\'Russo One\',sans-serif;font-size:12px;color:var(--white);">' + g.name + ' 🔒</div>'
+          + '<div style="font-size:11px;color:var(--muted);font-weight:600;">Unlocks at ' + g.min.toFixed(1) + ' DPR · you\'re ' + need + ' away · <span onclick="event.stopPropagation();showGroupMembers(\'' + g.id + '\')" style="color:var(--cyan);font-weight:800;">👥 ' + counts[g.id] + '</span></div></div>'
+          + '</div>';
+      }
+      return '<div class="chat-row" onclick="openGroupChat(\'' + g.id + '\')">'
         + '<div style="font-size:26px;">' + g.icon + '</div>'
-        + '<div style="flex:1;min-width:0;"><div style="font-family:\'Russo One\',sans-serif;font-size:14px;color:var(--white);">' + g.name + (ok ? '' : ' 🔒') + '</div>'
+        + '<div style="flex:1;min-width:0;"><div style="font-family:\'Russo One\',sans-serif;font-size:14px;color:var(--white);">' + g.name + '</div>'
         + '<div style="font-size:11.5px;color:var(--muted);font-weight:600;">' + g.blurb + ' · <span onclick="event.stopPropagation();showGroupMembers(\'' + g.id + '\')" style="color:var(--cyan);font-weight:800;">👥 ' + counts[g.id] + ' members</span></div>'
         + (m.lastText ? '<div style="font-size:12px;color:var(--white);font-weight:600;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><b>' + escInfo(m.lastName || '') + ':</b> ' + escInfo(m.lastText) + '</div>' : '<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:4px;">No messages yet — say hi 👋</div>')
         + '</div>'
         + '<div style="text-align:right;font-size:10px;color:var(--muted);font-weight:700;">' + (m.lastAt ? fmtWhen(m.lastAt) : '') + (unread ? '<div style="margin-top:4px;"><span class="cdot">new</span></div>' : '') + '</div>'
         + '</div>';
-    });
+    };
+    const openG = CHAT_GROUPS.filter(g => lv.level >= g.min - 1e-9), lockedG = CHAT_GROUPS.filter(g => lv.level < g.min - 1e-9);
+    openG.forEach(g => { h += card(g, true); });
+    if (lockedG.length) {
+      h += '<div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:14px 0 6px;">Level up to unlock</div>';
+      lockedG.slice().reverse().forEach(g => { h += card(g, false); });   // nearest goal first
+    }
     h += '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.5;">Groups are for organizing games, finding partners and trash talk. Keep it friendly — Mike can remove messages. Levels come from your 💎 DPR (5+ games) or the DUPR on your profile.</div>';
     el.innerHTML = h; return;
   }
@@ -8548,7 +8575,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-14.8';
+window.BUILD_TAG = 'v2026-10-14.9';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
