@@ -1092,7 +1092,7 @@
 
     <div class="guide-card"><div class="guide-icon">💎</div><div><div class="guide-t">DPR — Our In-House DUPR</div><div class="guide-s">Every player gets a <b>DPR</b> (Diamond Performance Rating) on the familiar DUPR scale, computed from every game ever logged here. It works like the pros' rating: <b>every point counts against expectation</b> — who you played WITH, who you played AGAINST, and the score. Hang close as the underdog and your rating climbs even in a loss. Under 10 games shows <b>PROV</b> (provisional) until your number settles. Updates the moment scores go in.</div></div></div>
 
-    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Chat, Messages &amp; Friends</div><div class="guide-s">Open <b class="glink" onclick="openChat()">Chat</b> from the menu. Three level groups: <b>4.5+ Club</b>, <b>4.0+ Crew</b> and <b>3.5+ Open</b> — each is open to that level and up, so a 4.6 can be in all three. Your level is your 💎 DPR once you have 5 games, otherwise the DUPR on your profile. <b>Messages</b> are private one-to-one chats: search a name or tap 💬 Message on any profile. <b>Follow</b> players from their profile and they land in your Friends tab with one-tap messaging. Each group shows <b>who's in it</b> (everyone at that DPR and up) — tap 👥 members. The <b>❤️ Notifications</b> button next to the trophy collects everything: new messages, group activity, new followers and game invites. From any session page you can <b>🎟 Invite Friends</b> (they get a notification) or <b>💬 Post to Chat</b>. In any chat, the <b>🎟 button</b> attaches an upcoming game to your message as a card with a <b>View &amp; Join</b> button — no links to paste. Everyone follows Mike by default and Mike follows you back; unfollow any time.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">💬</div><div><div class="guide-t">Chat, Messages &amp; Friends</div><div class="guide-s">Open <b class="glink" onclick="openChat()">Chat</b> from the menu. Three level groups: <b>4.5+ Club</b>, <b>4.0+ Crew</b> and <b>3.5+ Open</b> — each is open to that level and up, so a 4.6 can be in all three. Your level is your 💎 DPR once you have 5 games, otherwise the DUPR on your profile. <b>Messages</b> are private chats: search a name or tap 💬 Message on any profile, or tap <b>👥 Group</b> to start a group thread like iMessage (name it, tick people, add more later). <b>Follow</b> players from their profile and they land in your Friends tab with one-tap messaging. Each group shows <b>who's in it</b> (everyone at that DPR and up) — tap 👥 members. The <b>❤️ Notifications</b> button next to the trophy collects everything: new messages, group activity, new followers and game invites. From any session page you can <b>🎟 Invite Friends</b> (they get a notification) or <b>💬 Post to Chat</b>. In any chat, the <b>🎟 button</b> attaches an upcoming game to your message as a card with a <b>View &amp; Join</b> button — no links to paste. Everyone follows Mike by default and Mike follows you back; unfollow any time.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">🏅</div><div><div class="guide-t">How Winners Are Decided</div><div class="guide-s">The round robin seeds everyone. <b>Smart rule:</b> if everyone played the same number of games, rank by <b>wins</b> (Avg Diff breaks ties); if counts differ (byes, late arrivals), rank by <b>Avg Diff</b> (points scored minus allowed, per game) with Win % breaking ties, because raw wins can't be compared across unequal games. The app re-checks the counts after every score, so adding a late arrival, an injury, a cancelled game or an extra game can flip the table between wins and Avg Diff. Anyone who played fewer than half the games is flagged ⚠ and not seeded into finals; anyone with no games sits at the bottom. The Stats page says which rule is in effect and why. The <b>top 8 play finals</b>: 1&amp;4 vs 2&amp;3 for the championship and 5&amp;8 vs 6&amp;7 for 5th–8th. <b>The finals decide the podium</b>: championship winners are champions, their opponents finish 3rd, and the 5th–8th game decides 5th through 8th. Everyone else follows by round-robin rank. Finals are kept out of the round-robin table so they can never leapfrog a higher finalist. Tap <b>ℹ️ How rankings work</b> on the Stats page any time.</div></div></div>
 
@@ -2452,6 +2452,7 @@ async function archiveCurrentTournament() {
 // "Done" — archive to Past Tournaments now, keep the tournament active for viewing/editing.
 window.markDone = async function() {
   await archiveCurrentTournament();
+  try { if (activeTid) await update(ref(db, 'tournaments/' + activeTid), { done: true }); } catch (e) {}
   window._celebrate = true;
   showPage('standings');
   try { window.scrollTo(0, 0); } catch(e) {}
@@ -2562,14 +2563,18 @@ window.dupFromHistory = function(tid) {
 };
 window.newTournament = window._newTournament = function() {
   if (!confirm('Start completely fresh? The current tournament will be saved to Past Tournaments.')) return;
-  archiveCurrentTournament().then(() => {
+  const _oldTid = activeTid;
+  archiveCurrentTournament().then(async () => {
     if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
+    try { if (_oldTid) await update(ref(db, 'tournaments/' + _oldTid), { done: true }); } catch (e) {}   // nobody gets re-adopted into it at next open
     cfg=null; scores={};
     if (currentUser) {
       set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), null);
     }
     activeTid = null;
-    updateNav(); openSetup(true);
+    updateNav();
+    // land on what's next: the upcoming games list (the setup screen is one tap away from there)
+    try { openSessions(); } catch (e) { openSetup(true); }
   });
 };
 
@@ -4011,11 +4016,11 @@ async function renderChatBody() {
   }
   if (window._chatTab === 'dms') {
     const threads = Object.entries(dmIdx).filter(([u, t]) => t && t.lastAt).sort((a, b) => (b[1].lastAt || 0) - (a[1].lastAt || 0));
-    let h = '<div style="margin-bottom:12px;"><input class="finput" id="dmSearch" placeholder="🔍 New message — type a name" oninput="chatDmSearch(this.value)" autocomplete="off" style="margin:0;"><div id="dmSearchRes"></div></div>';
+    let h = '<div style="margin-bottom:12px;display:flex;gap:6px;"><input class="finput" id="dmSearch" placeholder="🔍 New message — type a name" oninput="chatDmSearch(this.value)" autocomplete="off" style="margin:0;flex:1;"><button onclick="newGroupChat()" title="New group" style="padding:0 12px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;">👥 Group</button></div><div id="dmSearchRes"></div>';
     if (!threads.length) h += '<div style="text-align:center;padding:26px;color:var(--muted);font-weight:600;">No messages yet.<br>Search a name above or tap 💬 Message on any player\'s profile.</div>';
     threads.forEach(([uid, t]) => {
       h += '<div class="chat-row" onclick="openDm(\'' + uid + '\',\'' + escInfo(t.name || 'Player').replace(/'/g, "\\'") + '\')">'
-        + '<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:15px;color:white;flex-shrink:0;">' + escInfo((t.name || 'P').trim().charAt(0).toUpperCase()) + '</div>'
+        + '<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,' + (t.group ? 'var(--cyan),var(--blue)' : 'var(--pink),var(--purple)') + ');display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:15px;color:white;flex-shrink:0;">' + (t.group ? '👥' : escInfo((t.name || 'P').trim().charAt(0).toUpperCase())) + '</div>'
         + '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14px;color:var(--white);">' + escInfo(t.name || 'Player') + '</div>'
         + '<div style="font-size:12px;color:' + (t.unread ? 'var(--white)' : 'var(--muted)') + ';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.lastFrom === me ? 'You: ' : '') + escInfo(t.lastText || '') + '</div></div>'
         + '<div style="text-align:right;font-size:10px;color:var(--muted);font-weight:700;">' + fmtWhen(t.lastAt) + (t.unread ? '<div style="margin-top:4px;"><span class="cdot">' + t.unread + '</span></div>' : '') + '</div>'
@@ -4116,6 +4121,7 @@ window.openGroupChat = async function(gid) {
 };
 window.openDm = async function(uid, name) {
   if (!currentUser) { alert('Sign in to send messages.'); return; }
+  if (uid && String(uid).startsWith('grp_')) return window.openGroupDm(uid, name);
   if (!uid || uid === currentUser.uid) return;
   const dir = await loadChatDir(); name = name || (dir[uid] && dir[uid].name) || 'Player';
   window._pushNav('chatThread'); window._ctRef = { k:'d', id: uid, name };
@@ -4141,6 +4147,94 @@ window.openDm = async function(uid, name) {
     return true;
   };
   window._ctDelete = async (mid) => { await set(ref(db, 'dms/' + pair + '/msgs/' + mid), null); };
+};
+// ── group messages: groupChats/{grp_xxx} {name, members:{uid:name}, createdBy, at, msgs:{}} · indexed in everyone's dmIndex under the gid ──
+window.newGroupChat = async function() {
+  if (!currentUser) return;
+  const dir = await loadChatDir(); const me = currentUser.uid;
+  const picked = new Set(); window._ngPicked = picked;
+  const sh = document.getElementById('groupMembersSheet'); sh.classList.remove('hidden');
+  document.getElementById('gmTitle').textContent = '👥 New group message';
+  document.getElementById('gmSub').textContent = 'Name it, tick the people, Create';
+  const cands = Object.entries(dir).filter(([uid, d]) => uid !== me && d && !d.unclaimed && d.name).map(([uid, d]) => ({ uid, name: d.name, friend: !!myFollows[uid] })).sort((a, b) => (b.friend - a.friend) || a.name.localeCompare(b.name));
+  window._ngCands = cands;
+  const paint = (q) => { q = (q || '').toLowerCase(); document.getElementById('ngList').innerHTML = cands.filter(c => !q || c.name.toLowerCase().includes(q)).slice(0, 60).map(c =>
+    '<div onclick="ngToggle(\'' + c.uid + '\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--surface2);border:1px solid ' + (picked.has(c.uid) ? 'rgba(0,240,255,0.6)' : 'var(--border)') + ';margin-bottom:5px;"><span style="width:20px;height:20px;border-radius:6px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--cyan);">' + (picked.has(c.uid) ? '✓' : '') + '</span><span style="font-weight:700;color:var(--white);font-size:13.5px;flex:1;">' + escInfo(c.name) + '</span>' + (c.friend ? '<span style="font-size:10px;color:var(--aqua);font-weight:800;">friend</span>' : '') + '</div>').join('') || '<div style="color:var(--muted);font-size:12px;font-weight:600;">No one by that name.</div>';
+    const n = picked.size; const b = document.getElementById('ngCreate'); if (b) { b.textContent = 'Create group · ' + (n + 1) + ' people'; b.disabled = n < 1; b.style.opacity = n < 1 ? '0.4' : '1'; } };
+  window._ngPaint = paint;
+  document.getElementById('gmList').innerHTML = '<input class="finput" id="ngName" placeholder="Group name (e.g. Sunday crew)" style="margin:0 0 8px;" autocomplete="off">'
+    + '<input class="finput" id="ngSearch" placeholder="🔍 Search players" oninput="window._ngPaint(this.value)" style="margin:0 0 8px;" autocomplete="off">'
+    + '<div id="ngList" style="max-height:40vh;overflow-y:auto;"></div>'
+    + '<button id="ngCreate" onclick="createGroupChat()" style="display:block;width:100%;margin-top:10px;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Create group</button>';
+  paint('');
+};
+window.ngToggle = function(uid) { const p = window._ngPicked; if (!p) return; if (p.has(uid)) p.delete(uid); else p.add(uid); window._ngPaint(document.getElementById('ngSearch').value); };
+window.createGroupChat = async function() {
+  const me = currentUser.uid; const picked = [...(window._ngPicked || [])]; if (!picked.length) return;
+  const dir = await loadChatDir();
+  const members = { [me]: chatName() }; picked.forEach(u => { members[u] = (dir[u] && dir[u].name) || 'Player'; });
+  let name = (document.getElementById('ngName').value || '').trim();
+  if (!name) name = Object.values(members).filter(n => n !== chatName()).map(n => n.split(' ')[0]).slice(0, 3).join(', ') + (picked.length > 3 ? ' +' + (picked.length - 3) : '');
+  const gid = 'grp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  await set(ref(db, 'groupChats/' + gid), { name, members, createdBy: me, at: Date.now() });
+  for (const u of Object.keys(members)) { try { await update(ref(db, 'dmIndex/' + u + '/' + gid), { name, group: true, lastAt: Date.now(), lastText: (u === me ? 'You created the group' : chatName() + ' added you'), lastFrom: me, unread: u === me ? 0 : 1 }); } catch (e) {} }
+  document.getElementById('groupMembersSheet').classList.add('hidden');
+  window.openDm(gid, name);
+};
+window.openGroupDm = async function(gid, name) {
+  const me = currentUser.uid;
+  const g = (await get(ref(db, 'groupChats/' + gid))).val(); if (!g) { alert('That group no longer exists.'); return; }
+  if (!g.members || !g.members[me]) { alert('You are not in this group.'); return; }
+  name = g.name || name || 'Group';
+  window._pushNav('chatThread'); window._ctRef = { k:'d', id: gid, name };
+  const names = Object.values(g.members || {});
+  showThread('👥 ' + name, names.join(', ') + ' · tap for members');
+  document.getElementById('ctSub').onclick = () => { const sh = document.getElementById('groupMembersSheet'); sh.classList.remove('hidden'); document.getElementById('gmTitle').textContent = '👥 ' + name; document.getElementById('gmSub').textContent = names.length + ' members'; document.getElementById('gmList').innerHTML = Object.entries(g.members).map(([u, n]) => '<div onclick="openPlayerDetail(\'' + escInfo(n).replace(/'/g, "\\\\'") + '\')" style="cursor:pointer;padding:9px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;font-weight:700;color:var(--white);font-size:13.5px;">' + escInfo(n) + (u === g.createdBy ? ' <span style="font-size:10px;color:var(--muted);">created</span>' : '') + '</div>').join('') + (g.createdBy === me || isAdmin() ? '<button onclick="document.getElementById(\'groupMembersSheet\').classList.add(\'hidden\');addToGroupChat(\'' + gid + '\')" style="display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">+ Add people</button>' : '') + '<button onclick="document.getElementById(\'groupMembersSheet\').classList.add(\'hidden\');leaveGroupChat(\'' + gid + '\')" style="display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Leave group</button>'; };
+  window.startChatBadges();
+  document.getElementById('ctProfileBtn').style.display = 'none';
+  window._ctScrolledOnce = false;
+  if (window._ctUnsub) { try { window._ctUnsub(); } catch (e) {} }
+  window._ctUnsub = onValue(ref(db, 'groupChats/' + gid + '/msgs'), s => {
+    renderThread(s.val());
+    try { update(ref(db, 'dmIndex/' + me + '/' + gid), { unread: 0, name, group: true }); } catch (e) {}
+  });
+  window._ctSend = async (text, att) => {
+    const mid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const msg = { uid: me, name: chatName(), text: text || '', at: Date.now() }; if (att) msg.sess = att;
+    await set(ref(db, 'groupChats/' + gid + '/msgs/' + mid), msg);
+    const short = (msg.name + ': ' + (att ? '🎟 ' + att.title + (text ? ' · ' : '') : '') + (text || '')).slice(0, 80);
+    const cur = (await get(ref(db, 'groupChats/' + gid + '/members'))).val() || g.members;
+    for (const u of Object.keys(cur)) { let unread = 0; if (u !== me) { try { unread = (((await get(ref(db, 'dmIndex/' + u + '/' + gid))).val() || {}).unread || 0) + 1; } catch (e) { unread = 1; } }
+      try { await update(ref(db, 'dmIndex/' + u + '/' + gid), { name, group: true, lastAt: msg.at, lastText: short, lastFrom: me, unread }); } catch (e) {} }
+    return true;
+  };
+  window._ctDelete = async (mid) => { await set(ref(db, 'groupChats/' + gid + '/msgs/' + mid), null); };
+};
+window.addToGroupChat = async function(gid) {
+  const g = (await get(ref(db, 'groupChats/' + gid))).val(); if (!g) return;
+  const dir = await loadChatDir(); const me = currentUser.uid;
+  const picked = new Set(); window._ngPicked = picked;
+  const sh = document.getElementById('groupMembersSheet'); sh.classList.remove('hidden');
+  document.getElementById('gmTitle').textContent = '👥 Add to ' + (g.name || 'group'); document.getElementById('gmSub').textContent = 'Tick people, then Add';
+  const cands = Object.entries(dir).filter(([uid, d]) => uid !== me && d && !d.unclaimed && d.name && !(g.members || {})[uid]).map(([uid, d]) => ({ uid, name: d.name, friend: !!myFollows[uid] })).sort((a, b) => (b.friend - a.friend) || a.name.localeCompare(b.name));
+  const paint = (q) => { q = (q || '').toLowerCase(); document.getElementById('ngList').innerHTML = cands.filter(c => !q || c.name.toLowerCase().includes(q)).slice(0, 60).map(c => '<div onclick="ngToggle(\'' + c.uid + '\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--surface2);border:1px solid ' + (picked.has(c.uid) ? 'rgba(0,240,255,0.6)' : 'var(--border)') + ';margin-bottom:5px;"><span style="width:20px;height:20px;border-radius:6px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--cyan);">' + (picked.has(c.uid) ? '✓' : '') + '</span><span style="font-weight:700;color:var(--white);font-size:13.5px;flex:1;">' + escInfo(c.name) + '</span></div>').join(''); };
+  window._ngPaint = paint;
+  document.getElementById('gmList').innerHTML = '<input class="finput" id="ngSearch" placeholder="🔍 Search players" oninput="window._ngPaint(this.value)" style="margin:0 0 8px;" autocomplete="off"><div id="ngList" style="max-height:40vh;overflow-y:auto;"></div>'
+    + '<button onclick="confirmAddToGroup(\'' + gid + '\')" style="display:block;width:100%;margin-top:10px;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Add</button>';
+  paint('');
+};
+window.confirmAddToGroup = async function(gid) {
+  const picked = [...(window._ngPicked || [])]; if (!picked.length) return; const dir = await loadChatDir();
+  const g = (await get(ref(db, 'groupChats/' + gid))).val(); if (!g) return;
+  for (const u of picked) { const n = (dir[u] && dir[u].name) || 'Player'; await set(ref(db, 'groupChats/' + gid + '/members/' + u), n); try { await update(ref(db, 'dmIndex/' + u + '/' + gid), { name: g.name, group: true, lastAt: Date.now(), lastText: chatName() + ' added you', lastFrom: currentUser.uid, unread: 1 }); } catch (e) {} }
+  document.getElementById('groupMembersSheet').classList.add('hidden');
+  copiedToast('✓ Added ' + picked.length); window.openDm(gid, g.name);
+};
+window.leaveGroupChat = async function(gid) {
+  if (!confirm('Leave this group?')) return; const me = currentUser.uid;
+  try { await set(ref(db, 'groupChats/' + gid + '/members/' + me), null); } catch (e) {}
+  try { await set(ref(db, 'dmIndex/' + me + '/' + gid), null); } catch (e) {}
+  window.openChat('dms');
 };
 window.ctOpenProfile = function() { if (window._ctProfileName) openPlayerDetail(window._ctProfileName); };
 window.growChatInput = function(ta) { try { ta.style.height = 'auto'; ta.style.height = Math.min(160, Math.max(44, ta.scrollHeight)) + 'px'; } catch (e) {} };
@@ -4172,7 +4266,9 @@ window.groupTextSession = async function(sid) {
     if (!r || r.uid === me) continue;
     let uid = r.uid; if (!uid || !dir[uid]) uid = await window.chatUidForName(r.name);   // added by name only → match the account
     if (uid === me) continue;
-    const d = uid && dir[uid]; let ph = d && d.phone ? String(d.phone).replace(/[^\d+]/g, '') : '';
+    const d = uid && dir[uid]; let raw = (d && d.phone) || '';
+    if (!raw && uid) { try { const pv = (await get(ref(db, 'users/' + uid + '/profile'))).val() || {}; raw = pv.phone || ''; } catch (e) {} }
+    let ph = raw ? String(raw).replace(/[^\d+]/g, '') : '';
     if (ph && !ph.startsWith('+')) ph = (ph.length === 10 ? '+1' : '+') + ph;
     if (ph && !seen.has(ph)) { seen.add(ph); got.push({ name: r.name || (d && d.name) || '?', ph }); } else if (!ph) missing.push(r.name || '?');
   }
@@ -4256,7 +4352,7 @@ function renderNotifs() {
   const el = document.getElementById('notifBody'); if (!el || !currentUser) return;
   const me = currentUser.uid, items = [];
   // history stays: a thread you've read (or replied to) remains listed, just without the "new" pill
-  Object.entries(dmIdx).forEach(([uid, t]) => { if (t && t.lastAt) items.push({ at: t.lastAt, unread: !!t.unread, icon: '💬', title: escInfo(t.name || 'Player'), text: (t.lastFrom === me ? 'You: ' : '') + escInfo(t.lastText || ''), go: "openDm('" + uid + "','" + escInfo(t.name || 'Player').replace(/'/g, "\\'") + "')" }); });
+  Object.entries(dmIdx).forEach(([uid, t]) => { if (t && t.lastAt) items.push({ at: t.lastAt, unread: !!t.unread, icon: t.group ? '👥' : '💬', title: escInfo(t.name || 'Player'), text: (t.lastFrom === me ? 'You: ' : '') + escInfo(t.lastText || ''), go: "openDm('" + uid + "','" + escInfo(t.name || 'Player').replace(/'/g, "\\'") + "')" }); });
   CHAT_GROUPS.forEach(g => { const m = chatMeta[g.id]; if (!m || !m.lastAt) return; if (window._myLevelCache != null && window._myLevelCache < g.min - 1e-9) return;
     items.push({ at: m.lastAt, unread: m.lastUid !== me && m.lastAt > (chatReadMap[g.id] || 0), icon: g.icon, title: g.name, text: '<b>' + escInfo(m.lastName || '') + ':</b> ' + escInfo(m.lastText || ''), go: "openGroupChat('" + g.id + "')" }); });
   Object.entries(myNotifs).forEach(([nid, n]) => { if (!n) return;
@@ -5076,6 +5172,11 @@ async function checkSessionLive(sid, s) {
     window._liveNoScores = window._liveNoScores || {};
     window._liveNoScores[sid] = ok && !Object.values(t.scores || {}).some(sc => sc && sc.s1 !== null && sc.s1 !== undefined);
     if (t.cancelled) { delete window._liveOk[sid]; return false; }
+    // finished = organizer hit Done / started fresh, or every scheduled game is scored → not live anymore
+    const _sched = (t.cfg && t.cfg.schedule) ? (Array.isArray(t.cfg.schedule) ? t.cfg.schedule : Object.values(t.cfg.schedule)) : [];
+    const _open = _sched.filter(g => g && !g.deleted);
+    const _allScored = _open.length > 0 && _open.every(g => { const sc = (t.scores || {})[g.key]; return sc && sc.s1 !== null && sc.s1 !== undefined; });
+    if (t.done || _allScored) { delete window._liveOk[sid]; window._liveDone = window._liveDone || {}; window._liveDone[sid] = tid; return false; }
     if (ok) window._liveOk[sid] = tid; else {
       delete window._liveOk[sid];
       if (currentUser && (s.ownerUid === currentUser.uid || isAdmin())) { try { set(ref(db, 'sessions/' + sid + '/tournamentId'), null); } catch(e) {} }
@@ -8388,6 +8489,12 @@ function clearChatAttach()   { if(window.clearChatAttach) window.clearChatAttach
 function growChatInput(t)    { if(window.growChatInput) window.growChatInput(t); }
 function postSessionToChat(s){ if(window.postSessionToChat) window.postSessionToChat(s); }
 function groupTextSession(s) { if(window.groupTextSession) window.groupTextSession(s); }
+function newGroupChat()      { if(window.newGroupChat) window.newGroupChat(); }
+function ngToggle(u)         { if(window.ngToggle) window.ngToggle(u); }
+function createGroupChat()   { if(window.createGroupChat) window.createGroupChat(); }
+function addToGroupChat(g)   { if(window.addToGroupChat) window.addToGroupChat(g); }
+function confirmAddToGroup(g){ if(window.confirmAddToGroup) window.confirmAddToGroup(g); }
+function leaveGroupChat(g)   { if(window.leaveGroupChat) window.leaveGroupChat(g); }
 function aiAsk(t)            { if(window.aiAsk) window.aiAsk(t); }
 function aiReset()           { if(window.aiReset) window.aiReset(); }
 function saveAssistantUrl()  { if(window.saveAssistantUrl) window.saveAssistantUrl(); }
@@ -8432,7 +8539,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-14.6';
+window.BUILD_TAG = 'v2026-10-14.7';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
