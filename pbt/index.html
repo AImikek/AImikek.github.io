@@ -812,6 +812,7 @@
   <div class="profile-avatar" id="profileAvatarDisplay" onclick="document.getElementById('avatarFile').click()" style="cursor:pointer;overflow:hidden;background-size:cover;background-position:center;position:relative;">👤</div>
   <div style="text-align:center;margin:-8px 0 8px;"><label style="font-size:11px;color:var(--cyan);font-weight:800;cursor:pointer;">📷 <span id="avatarLbl">Add a photo of your face</span><input id="avatarFile" type="file" accept="image/*" style="display:none;" onchange="uploadAvatar(this)"></label> <span id="avatarRemove" onclick="removeAvatar()" style="display:none;font-size:11px;color:var(--muted);font-weight:700;cursor:pointer;margin-left:8px;text-decoration:underline;">remove</span></div>
   <div class="profile-phone" id="profilePhoneDisplay"></div>
+  <div id="adminIssues" style="display:none;"></div>
   <div id="profileNudge" style="display:none;"></div>
   <label class="flabel">Name</label>
   <input class="finput" id="editName" placeholder="Your name" maxlength="30">
@@ -820,6 +821,8 @@
   <div id="myDprCard" style="display:none;margin:4px 0 14px;padding:11px 14px;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;">
     <span style="font-family:'Russo One',sans-serif;font-size:20px;color:var(--cyan);">💎 <span id="myDprVal">—</span></span>
     <span id="myDprSub" style="font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-left:8px;"></span>
+    <button onclick="shareRanking(window.userProfileName(),'doubles')" style="float:right;padding:6px 10px;background:rgba(4,6,15,0.5);border:1px solid rgba(0,240,255,0.4);color:var(--cyan);border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">📤 Share</button>
+    <div id="myDprLink" onclick="openPlayerDetail(window.userProfileName())" style="clear:both;font-size:11px;color:var(--cyan);font-weight:700;cursor:pointer;margin-top:6px;">View my full profile & match history →</div>
   </div>
   <label class="flabel">DUPR Rating</label>
   <input class="finput" id="editDupr" type="number" inputmode="decimal" step="0.01" min="1" max="8" placeholder="e.g. 3.75 (leave blank if none)">
@@ -1062,9 +1065,10 @@
       <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
       <div id="pdName" style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;"></div>
     </div>
+    <div id="pdHeader"></div>
     <div id="pdSocial"></div>
     <div id="pdStats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
-    <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Match History</div>
+    <div id="pdHistLabel" style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Match History</div>
     <div id="pdGames"></div>
   </div>
 </div>
@@ -1758,6 +1762,39 @@ async function presenceBeat(uid) {
   } catch (e) {}
 }
 window.presenceBeat = presenceBeat;
+// Every login leaves a complete directory card. The old presence stamp could land before the profile loaded and
+// create a nameless card that never got a name — which is how an active player looked like "no account".
+// Also: an imported/unclaimed card carrying MY phone or MY name is me → its DUPR/city/etc. fill my blanks and it retires.
+window.healMyDirectory = async function() {
+  if (!currentUser || !userProfile || !userProfile.name) return null;
+  const me = currentUser.uid;
+  const dir = (await get(ref(db, 'directory'))).val() || {};
+  const mine = dir[me] || {};
+  const myPhone = window.normPhone(userProfile.phone || currentUser.phoneNumber || mine.phone || '');
+  const upd = {}, profUpd = {};
+  if ((mine.name || '') !== userProfile.name) upd.name = userProfile.name;
+  if (myPhone && mine.phone !== myPhone) upd.phone = myPhone;
+  if (myPhone && userProfile.phone !== myPhone) profUpd.phone = myPhone;
+  const em = userProfile.email || currentUser.email || null; if (em && !mine.email) upd.email = em;
+  ['city', 'dupr', 'avatar', 'awayCity', 'awayUntil'].forEach(k => { if (userProfile[k] && mine[k] !== userProfile[k]) upd[k] = userProfile[k]; });
+  if (!mine.joinedAt) upd.joinedAt = Date.now();
+  if (mine.unclaimed) upd.unclaimed = null;
+  // ghosts: unclaimed cards with my phone or my exact name
+  const nm = userProfile.name.trim().toLowerCase(); let claimed = 0;
+  for (const [u, d] of Object.entries(dir)) {
+    if (u === me || !d || !d.unclaimed) continue;
+    const samePhone = myPhone && window.normPhone(d.phone) === myPhone;
+    const sameName = String(d.name || '').trim().toLowerCase() === nm;
+    if (!samePhone && !sameName) continue;
+    ['dupr', 'city', 'email', 'avatar', 'homeCourt', 'instagram'].forEach(k => { if (d[k] && !userProfile[k] && !profUpd[k]) { profUpd[k] = d[k]; if (!upd[k] && !mine[k]) upd[k] = d[k]; } });
+    if (d.joinedAt && (!(upd.joinedAt || mine.joinedAt) || d.joinedAt < (upd.joinedAt || mine.joinedAt))) upd.joinedAt = d.joinedAt;
+    try { await set(ref(db, 'directory/' + u), null); claimed++; } catch (e) { /* rules may not allow yet — admin audit retires it */ }
+  }
+  if (Object.keys(upd).length) { try { await update(ref(db, 'directory/' + me), upd); } catch (e) {} }
+  if (Object.keys(profUpd).length) { try { await update(ref(db, 'users/' + me + '/profile'), profUpd); } catch (e) {} }
+  if (Object.keys(upd).length || claimed) chatDirCache = null;
+  return { updated: Object.keys(upd), claimed };
+};
 onAuthStateChanged(auth, user => {
   if (user) {
     currentUser = user;
@@ -1938,6 +1975,7 @@ async function bootApp() {
     } catch(e) {}
   };
   setTimeout(() => window._healNames(), 1500);
+  if (isAdmin()) setTimeout(() => window.adminAudit({ fix: false }).catch(() => {}), 4000);
 
   // Load profile — show onboarding if first time
   onValue(ref(db, 'users/' + uid + '/profile'), snap => {
@@ -1953,6 +1991,7 @@ async function bootApp() {
       }
     }
     if (['wins','avg','auto'].includes(userProfile.rankRule)) { rankRule = userProfile.rankRule; try { localStorage.setItem('pbt_rankRule', rankRule); } catch(e) {} }
+    if (userProfile.name && !window._dirHealed) { window._dirHealed = true; setTimeout(() => window.healMyDirectory().catch(() => {}), 800); }
     updateProfileDisplay();
     if (wasNew && !userProfile.name) {
       document.getElementById('profileOverlay').classList.remove('hidden');
@@ -3163,8 +3202,9 @@ window.openPlayerDetail = async function(name, type) {
       +'<div style="font-size:10px;color:var(--muted);font-weight:600;">'+d+'</div></div>'
       +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:'+(won?'var(--aqua)':'var(--danger)')+';">'+(won?'W':'L')+' '+my+'–'+opp+'</div></div>';
   }).join('');
-  document.getElementById('pdName').textContent = '👤 ' + name;
+  document.getElementById('pdName').textContent = name;
   try { const _ps = document.getElementById('pdSocial'); if (_ps) _ps.innerHTML = ''; window.startChatBadges(); window.renderPdSocial(name); } catch (e) {}
+  try { document.getElementById('pdHeader').innerHTML = ''; window.renderPdHeader(name); } catch (e) {}
   const box = (lbl,val,color) => '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:17px;color:'+(color||'var(--white)')+';">'+val+'</div>'
     +'<div style="font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;font-weight:700;">'+lbl+'</div></div>';
@@ -3196,7 +3236,17 @@ window.openPlayerDetail = async function(name, type) {
   if (rbanner) rbanner = rbanner.replace('</div>', '<button onclick="shareRanking(\'' + name.replace(/'/g, "\\'") + '\',\'' + pdType + '\')" style="position:absolute;top:10px;right:10px;padding:6px 10px;background:rgba(4,6,15,0.5);border:1px solid rgba(0,240,255,0.4);color:var(--cyan);border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">📤 Share</button></div>');
   document.getElementById('pdStats').innerHTML = typeToggle + rbanner +
     box('Record', w+'-'+l) + box('Win %', (games.length?Math.round(100*w/games.length):0)+'%', 'var(--aqua)') + box('Pts For', pf, 'var(--cyan)') + box('Avg Diff', (diff>=0?'+':'')+diff, diff>=0?'var(--aqua)':'var(--danger)');
-  document.getElementById('pdGames').innerHTML = rows || '<div style="color:var(--muted);text-align:center;padding:20px;font-weight:600;">No games found</div>';
+  // Long histories fold: the latest 6 show, the rest open on a tap
+  const SHOW = 6; let rowsHtml = rows;
+  if (games.length > SHOW) {
+    const idx = rows.split('<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;');
+    const head = idx.slice(0, SHOW + 1).join('<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;');
+    const rest = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;' + idx.slice(SHOW + 1).join('<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;');
+    rowsHtml = head + '<div id="pdMoreRows" style="display:none;">' + rest + '</div>'
+      + '<div id="pdMoreBtn" onclick="var m=document.getElementById(\'pdMoreRows\');var o=m.style.display!==\'none\';m.style.display=o?\'none\':\'block\';this.textContent=o?\'Show all ' + games.length + ' games ↓\':\'Show less ↑\';" style="text-align:center;padding:10px;color:var(--cyan);font-weight:800;font-size:12px;cursor:pointer;border:1px dashed rgba(0,240,255,0.3);border-radius:10px;margin-bottom:6px;">Show all ' + games.length + ' games ↓</div>';
+  }
+  document.getElementById('pdHistLabel').textContent = 'Match History' + (games.length ? ' · ' + games.length : '');
+  document.getElementById('pdGames').innerHTML = rowsHtml || '<div style="color:var(--muted);text-align:center;padding:20px;font-weight:600;">No games found</div>';
   // ── Fun stats: streaks, chemistry, rivalry, clutch — computed from this player's games ──
   if (games.length >= 3) {
     const chron = games.slice().reverse();
@@ -3247,8 +3297,8 @@ window.openPlayerDetail = async function(name, type) {
         + '<svg viewBox="0 0 305 52" style="width:100%;height:auto;display:block;">'+bars+'</svg></div>';
     }
   }
-  // Player profile (if registered)
-  const prof = lbData.dirByName && lbData.dirByName[nm];
+  // Player profile details now live in the header (renderPdHeader) — one screen for everyone
+  const prof = null;
   if (prof && (prof.city || prof.dupr || prof.instagram || prof.homeCourt)) {
     let pc = '<div id="pdProfile" style="margin-top:16px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;">'
       +'<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">👤 Player Profile</div>';
@@ -3294,6 +3344,14 @@ window.openPlayerDetail = async function(name, type) {
       });
       admin += '<div style="margin-bottom:12px;"></div>';
     } else {
+      // Nothing carries this exact name. Same first name on a real login? Probably them under a longer/shorter name.
+      let sugg = [];
+      try { const first = nm.split(/\s+/)[0]; const _ds = (await get(ref(db, 'directory'))).val() || {};
+        sugg = Object.entries(_ds).filter(([u, d]) => d && !d.unclaimed && d.name && String(d.name).trim().toLowerCase() !== nm && (String(d.name).trim().toLowerCase().split(/\s+/)[0] === first || nm.split(/\s+/).includes(String(d.name).trim().toLowerCase().split(/\s+/)[0]))).slice(0, 4); } catch (e) {}
+      if (sugg.length) admin += '<div style="font-size:11px;color:var(--yellow);font-weight:700;margin-bottom:6px;">No account is named exactly "' + escInfo(name) + '". Same person as one of these?</div>'
+        + sugg.map(([u, d]) => '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;"><div style="font-size:13px;font-weight:700;color:var(--white);">' + escInfo(d.name) + (d.phone ? ' <span style="color:var(--muted);font-size:11px;">' + escInfo(d.phone) + '</span>' : '') + '</div>'
+          + '<button onclick="mergeLbPlayer(\'' + name.replace(/'/g, "\\'") + '\',\'' + escInfo(d.name).replace(/'/g, "\\'") + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(255,224,0,0.5);color:var(--yellow);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">Yes → merge</button></div>').join('')
+        + '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:8px;">Merging moves every "' + escInfo(name) + '" game onto that account\'s name, so their profile, DPR and history become one.</div>';
       admin += '<button onclick="adCreateProfile(\'' + name.replace(/'/g, "\\'") + '\')" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(0,245,196,0.4);color:var(--aqua);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:12px;">➕ Create Profile for ' + escInfo(name) + '</button>';
     }
     const srcIds = Object.keys(sources);
@@ -3388,7 +3446,26 @@ window.consolidateAccounts = async function(name) {
   const nm = String(name || '').trim().toLowerCase(); if (!nm) return null;
   const dir = (await get(ref(db, 'directory'))).val() || {};
   const hits = Object.entries(dir).filter(([u, d]) => d && String(d.name || '').trim().toLowerCase() === nm);
+  return window.consolidateUids(hits);
+};
+// Same person reachable at the same phone under two directory entries (e.g. "3059865301" import + the real "+1305…" login):
+// the real login keeps the name it chose; a ghost with a different name gets its games renamed onto it first.
+window.consolidateByPhone = async function(phone) {
+  const np = window.normPhone(phone); if (!np) return null;
+  const dir = (await get(ref(db, 'directory'))).val() || {};
+  const hits = Object.entries(dir).filter(([u, d]) => d && window.normPhone(d.phone) === np);
   if (hits.length < 2) return null;
+  const claimed = hits.filter(([u, d]) => !d.unclaimed);
+  if (claimed.length > 1) return { kept: null, absorbed: [], blocked: 'two real logins share ' + np + ' — rename or delete the wrong one by hand' };
+  const keep = claimed.length ? claimed[0] : hits[0];
+  const keepName = String(keep[1].name || '').trim();
+  for (const [u, d] of hits) { const gn = String(d.name || '').trim(); if (u !== keep[0] && gn && keepName && gn.toLowerCase() !== keepName.toLowerCase()) { try { await window.renamePlayerEverywhere(gn, keepName); } catch (e) {} } }
+  const dir2 = (await get(ref(db, 'directory'))).val() || {};
+  const hits2 = Object.entries(dir2).filter(([u, d]) => d && window.normPhone(d.phone) === np);
+  return hits2.length < 2 ? { kept: keep[0], absorbed: hits.filter(h => h[0] !== keep[0]).map(h => h[0]) } : window.consolidateUids(hits2);
+};
+window.consolidateUids = async function(hits) {
+  if (!hits || hits.length < 2) return null;
   const claimed = hits.filter(([u, d]) => !d.unclaimed);
   if (claimed.length > 1) return { kept: null, absorbed: [], blocked: 'two real logins share this name — they can\'t be fused automatically; delete or rename the wrong one' };
   const score = ([u, d]) => Object.values(d || {}).filter(v => v !== null && v !== undefined && v !== '').length;
@@ -3492,9 +3569,9 @@ window.pdPickMerge = function(n) {
   const box = document.getElementById('pdMergeSugs');
   if (box) box.innerHTML = '<span style="font-size:12px;color:var(--aqua);font-weight:800;">✓ ' + escInfo(n) + ' — now hit Merge</span>';
 };
-window.mergeLbPlayer = async function(oldName) {
+window.mergeLbPlayer = async function(oldName, presetTarget) {
   if (!isAdmin()) return;
-  let target = (document.getElementById('pdMergeInput')?.value || '').trim();
+  let target = (presetTarget || document.getElementById('pdMergeInput')?.value || '').trim();
   if (!target) { alert('Type the player name to merge into (the name that should remain).'); return; }
   if (target.toLowerCase() === oldName.toLowerCase()) { alert('That is the same player — nothing to merge.'); return; }
   const _known = window._pdKnownNames ? window._pdKnownNames(oldName) : [];
@@ -3525,6 +3602,85 @@ window.mergeLbPlayer = async function(oldName) {
   } catch(e) { alert('Merge failed: ' + (e.message||e)); }
 };
 
+// ADMIN AUDIT — one pass over the directory: nameless cards (backfilled from the profile), unformatted phones
+// (normalized), duplicate people by name or by phone (fused when there is only one real login), and name clashes
+// between two real logins (listed for a human). Runs at boot for the admin; results sit at the top of the admin's
+// profile and ping the ❤️ Notifications once per change.
+window.adminAudit = async function(opts) {
+  opts = opts || {};
+  if (!isAdmin()) return null;
+  const dir = (await get(ref(db, 'directory'))).val() || {};
+  const issues = [], fixed = [];
+  // 1. nameless / unnormalized cards → silent repair
+  for (const [u, d] of Object.entries(dir)) {
+    if (!d) continue;
+    const upd = {};
+    if (!d.name && !d.unclaimed && u.length > 20) { try { const pr = (await get(ref(db, 'users/' + u + '/profile'))).val() || {}; if (pr.name) { upd.name = pr.name; d.name = pr.name; } if (pr.phone && !d.phone) { upd.phone = window.normPhone(pr.phone); d.phone = upd.phone; } if (pr.dupr && !d.dupr) upd.dupr = pr.dupr; if (pr.city && !d.city) upd.city = pr.city; } catch (e) {} }
+    if (d.phone && window.normPhone(d.phone) !== d.phone) { upd.phone = window.normPhone(d.phone); d.phone = upd.phone; }
+    if (Object.keys(upd).length) { try { await update(ref(db, 'directory/' + u), upd); fixed.push((upd.name ? 'named ' + upd.name : 'phone fixed for ' + (d.name || u))); } catch (e) {} }
+  }
+  // 2. duplicates by name
+  const byName = {};
+  Object.entries(dir).forEach(([u, d]) => { if (d && d.name) { const k = String(d.name).trim().toLowerCase(); (byName[k] = byName[k] || []).push([u, d]); } });
+  const seenUid = new Set();
+  Object.entries(byName).forEach(([k, hits]) => { if (hits.length < 2) return; hits.forEach(h => seenUid.add(h[0]));
+    const real = hits.filter(h => !h[1].unclaimed).length;
+    issues.push({ kind: 'name', key: hits[0][1].name, uids: hits.map(h => h[0]), auto: real <= 1, text: hits.length + ' accounts named "' + hits[0][1].name + '"' + (real <= 1 ? ' (1 real login + ' + (hits.length - real) + ' ghost' + (hits.length - real === 1 ? '' : 's') + ')' : ' — ' + real + ' real logins, needs a human') }); });
+  // 3. duplicates by phone
+  const byPhone = {};
+  Object.entries(dir).forEach(([u, d]) => { const np = d && window.normPhone(d.phone); if (np && np.length >= 11) (byPhone[np] = byPhone[np] || []).push([u, d]); });
+  Object.entries(byPhone).forEach(([np, hits]) => { if (hits.length < 2 || hits.every(h => seenUid.has(h[0]))) return;
+    const real = hits.filter(h => !h[1].unclaimed).length;
+    issues.push({ kind: 'phone', key: np, uids: hits.map(h => h[0]), names: hits.map(h => h[1].name || ''), auto: real <= 1, text: hits.length + ' accounts share ' + np + ' (' + hits.map(h => h[1].name || '(no name)').join(' / ') + ')' + (real <= 1 ? '' : ' — both real logins, needs a human') }); });
+  // 4. optional: auto-fix the safe ones
+  if (opts.fix) {
+    for (const it of issues.filter(i => i.auto)) {
+      try { const r = it.kind === 'name' ? await window.consolidateAccounts(it.key) : await window.consolidateByPhone(it.key); if (r && r.absorbed && r.absorbed.length) { it.done = true; fixed.push('fused ' + it.text); } else if (r && r.blocked) it.text += ' — ' + r.blocked; } catch (e) { it.text += ' — ' + (e.message || e); }
+    }
+  }
+  const open = issues.filter(i => !i.done);
+  window._adminAudit = { at: Date.now(), issues: open, fixed };
+  // 5. ping the admin's notifications when the picture changes
+  const sig = open.map(i => i.kind + ':' + i.key).sort().join('|');
+  try { const cur = (await get(ref(db, 'notifs/' + currentUser.uid + '/admin_audit'))).val();
+    if (open.length && (!cur || cur.sig !== sig)) await set(ref(db, 'notifs/' + currentUser.uid + '/admin_audit'), { type: 'info', go: 'profile', fromName: '🛠 Admin', text: open.length + ' account issue' + (open.length === 1 ? '' : 's') + ' need' + (open.length === 1 ? 's' : '') + ' attention — ' + open.filter(i => i.auto).length + ' can be fixed with one tap', at: Date.now(), read: false, sig });
+    else if (!open.length && cur) await set(ref(db, 'notifs/' + currentUser.uid + '/admin_audit'), null);
+  } catch (e) {}
+  window.renderAdminIssues();
+  return window._adminAudit;
+};
+window.renderAdminIssues = function() {
+  const el = document.getElementById('adminIssues'); if (!el) return;
+  if (!isAdmin() || !window._adminAudit) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const a = window._adminAudit; const auto = a.issues.filter(i => i.auto), manual = a.issues.filter(i => !i.auto);
+  if (!a.issues.length && !a.fixed.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const esc = s => escInfo(String(s)).replace(/'/g, "\\'");
+  let x = '<div style="margin:4px 0 14px;padding:12px 14px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.4);border-radius:12px;">'
+    + '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:8px;">🛠 Admin · ' + (a.issues.length ? a.issues.length + ' account issue' + (a.issues.length === 1 ? '' : 's') : 'accounts look clean') + '</div>';
+  if (auto.length) x += '<button onclick="adminFixAll()" style="width:100%;padding:11px;margin-bottom:10px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">✨ Fix ' + auto.length + ' automatically</button>';
+  a.issues.forEach(i => { x += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;"><div style="font-size:12px;font-weight:700;color:var(--white);line-height:1.4;">' + (i.auto ? '🔗 ' : '⚠️ ') + escInfo(i.text) + '</div>'
+    + (i.auto ? '<button onclick="adminFixOne(\'' + i.kind + '\',\'' + esc(i.key) + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(0,240,255,0.45);color:var(--cyan);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">Combine</button>' : '<button onclick="openPlayerDetail(\'' + esc(i.kind === 'name' ? i.key : ((i.names || []).find(Boolean) || i.key)) + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(255,224,0,0.45);color:var(--yellow);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">Review</button>') + '</div>'; });
+  if (a.fixed.length) x += '<div style="font-size:11px;color:var(--aqua);font-weight:700;margin-top:6px;">✓ Just fixed: ' + a.fixed.slice(0, 6).map(escInfo).join(' · ') + (a.fixed.length > 6 ? ' +' + (a.fixed.length - 6) + ' more' : '') + '</div>';
+  x += '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:6px;">Combine keeps the real login, carries phone / email / DUPR / photo over, moves followers, renames the ghost\'s games onto the real name, deletes the ghost. Checked at ' + new Date(a.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' · <span onclick="adminAudit({fix:false})" style="color:var(--cyan);cursor:pointer;">re-check</span></div></div>';
+  el.innerHTML = x; el.style.display = 'block';
+};
+window.adminFixAll = async function() {
+  if (!isAdmin()) return;
+  const n = (window._adminAudit && window._adminAudit.issues.filter(i => i.auto).length) || 0;
+  if (!confirm('Fix ' + n + ' account issue' + (n === 1 ? '' : 's') + ' now?\n\nEach ghost folds into its real login (details carried over, games renamed, ghost deleted).')) return;
+  const r = await window.adminAudit({ fix: true });
+  lbData = null; chatDirCache = null; window._nameCache = {};
+  alert('✓ Done — ' + (r.fixed.length) + ' fixed' + (r.issues.length ? ', ' + r.issues.length + ' still need a look' : '') + '.');
+};
+window.adminFixOne = async function(kind, key) {
+  if (!isAdmin()) return;
+  if (!confirm('Combine the accounts for ' + key + ' into one?')) return;
+  try { const r = kind === 'name' ? await window.consolidateAccounts(key) : await window.consolidateByPhone(key);
+    if (r && r.blocked) alert('⚠ ' + r.blocked); else alert('✓ Combined.');
+  } catch (e) { alert('Combine failed: ' + (e.message || e)); }
+  lbData = null; chatDirCache = null; window._nameCache = {};
+  await window.adminAudit({ fix: false });
+};
 window.combineAccounts = async function(name) {
   if (!isAdmin()) return;
   if (!confirm('Combine every account named "' + name + '" into one?\n\nThe real login is kept; its blanks are filled from the others (phone, email, DUPR, photo…); the extra profiles are deleted.')) return;
@@ -4475,7 +4631,7 @@ function renderNotifs() {
   Object.entries(myNotifs).forEach(([nid, n]) => { if (!n) return;
     if (n.type === 'follow') items.push({ at: n.at, unread: !n.read, icon: '➕', title: escInfo(n.fromName || 'Someone'), text: 'started following you', go: "openPlayerDetail('" + escInfo(n.fromName || '').replace(/'/g, "\\'") + "')" });
     else if (n.type === 'invite') items.push({ at: n.at, unread: !n.read, icon: '🎟', title: escInfo(n.fromName || 'Someone') + ' invited you', text: escInfo(n.text || 'to play'), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
-    else items.push({ at: n.at, unread: !n.read, icon: '🔔', title: escInfo(n.fromName || ''), text: escInfo(n.text || ''), go: "openChat()" }); });
+    else items.push({ at: n.at, unread: !n.read, icon: n.go === 'profile' ? '🛠' : '🔔', title: escInfo(n.fromName || ''), text: escInfo(n.text || ''), go: n.go === 'profile' ? "openProfile()" : "openChat()" }); });
   items.sort((a, b) => (b.at || 0) - (a.at || 0));
   if (!items.length) { el.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--muted);font-weight:600;line-height:1.6;">Nothing yet.<br>Messages, group chat, new followers and game invites show up here.</div>'; return; }
   el.innerHTML = items.slice(0, 60).map(it => '<div onclick="' + it.go + '" class="chat-row" style="' + (it.unread ? 'border-color:rgba(255,45,120,0.45);' : '') + '">'
@@ -4838,6 +4994,40 @@ window.toggleFollow = async function(uid, name) {
   if (!document.getElementById('playerDetail').classList.contains('hidden') && window._pdName) window.renderPdSocial(window._pdName);
 };
 // Follow / Message row on a player profile (only when that name belongs to a claimed account)
+window.userProfileName = function() { return (userProfile && userProfile.name) || ''; };
+// The one profile screen: who they are (photo, city, DUPR, court, IG, away, member since) on top of the stats.
+// Admin additionally sees phone / email right here. Tapping a name anywhere in the app lands on this.
+window.renderPdHeader = async function(name) {
+  const host = document.getElementById('pdHeader'); if (!host) return;
+  const dir = await loadChatDir(); const nm = String(name || '').trim().toLowerCase();
+  const hits = Object.entries(dir).filter(([u, d]) => d && String(d.name || '').trim().toLowerCase() === nm).sort((a, b) => ((a[1].unclaimed ? 1 : 0) - (b[1].unclaimed ? 1 : 0)) || ((b[1].lastActive || 0) - (a[1].lastActive || 0)));
+  const uid = hits.length ? hits[0][0] : null; const d = hits.length ? hits[0][1] : {};
+  let prof = {}; if (uid && !d.unclaimed) { try { prof = (await get(ref(db, 'users/' + uid + '/profile'))).val() || {}; } catch (e) {} }
+  const v = k => (prof[k] != null && prof[k] !== '') ? prof[k] : d[k];
+  const today0 = new Date().toISOString().slice(0, 10);
+  const away = v('awayUntil') && v('awayUntil') >= today0;
+  const chip = (t, c) => '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;font-size:11.5px;font-weight:700;color:' + (c || 'var(--white)') + ';">' + t + '</span>';
+  let chips = '';
+  if (away) chips += chip(prof.awayKind === 'injured' ? '🤕 Out injured / sick' : '✈️ Traveling' + (prof.awayShare !== false && v('awayCity') ? ' · ' + escInfo(v('awayCity')) : '') + ' · back ' + new Date(v('awayUntil') + 'T12:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), 'var(--yellow)');
+  if (v('city')) chips += chip('📍 ' + escInfo(v('city')));
+  if (v('dupr')) chips += chip('🏆 DUPR ' + escInfo(String(v('dupr'))), 'var(--yellow)');
+  if (v('homeCourt')) chips += chip('🏟 ' + escInfo(v('homeCourt')));
+  if (v('instagram')) chips += '<a href="https://instagram.com/' + escInfo(String(v('instagram')).replace(/^@/, '')) + '" target="_blank" rel="noopener" style="text-decoration:none;">' + chip('📸 @' + escInfo(String(v('instagram')).replace(/^@/, '')), 'var(--pink)') + '</a>';
+  if (d.joinedAt) chips += chip('📅 member since ' + new Date(d.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), 'var(--muted)');
+  const av = v('avatar');
+  let hd = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">'
+    + (av ? '<div style="width:64px;height:64px;border-radius:50%;background:url(' + av + ') center/cover;flex-shrink:0;border:2px solid rgba(0,240,255,0.35);"></div>'
+          : '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:26px;color:#04060F;flex-shrink:0;">' + escInfo(String(name).trim()[0] || '?').toUpperCase() + '</div>')
+    + '<div style="min-width:0;"><div style="font-family:\'Russo One\',sans-serif;font-size:20px;color:var(--white);line-height:1.1;">' + escInfo(name) + '</div>'
+    + '<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:3px;">' + (uid && !d.unclaimed ? '✅ On the app' : 'Not on the app yet') + (uid === (currentUser && currentUser.uid) ? ' · this is you' : '') + '</div></div></div>';
+  if (chips) hd += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">' + chips + '</div>';
+  if (isAdmin() && (v('phone') || v('email'))) hd += '<div style="padding:8px 12px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.3);border-radius:10px;margin-bottom:12px;font-size:13px;font-weight:700;display:flex;flex-wrap:wrap;gap:12px;align-items:center;"><span style="font-size:9px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;">🔒 admin</span>'
+    + (v('phone') ? '<a href="tel:' + escInfo(v('phone')) + '" style="color:var(--cyan);text-decoration:none;">📞 ' + escInfo(v('phone')) + '</a>' : '') + (v('email') ? '<a href="mailto:' + escInfo(v('email')) + '" style="color:var(--cyan);text-decoration:none;">✉️ ' + escInfo(v('email')) + '</a>' : '')
+    + (uid ? '<span onclick="addToContacts(\'' + uid + '\')" style="margin-left:auto;color:var(--aqua);cursor:pointer;font-size:11px;">📇 Contacts</span>' : '') + '</div>';
+  if (uid === (currentUser && currentUser.uid)) hd += '<div onclick="openProfile()" style="text-align:center;padding:9px;margin-bottom:12px;border:1px solid rgba(0,240,255,0.3);border-radius:10px;color:var(--cyan);font-weight:800;font-size:11.5px;cursor:pointer;">✏️ Edit my profile</div>';
+  try { hd += await playerPhotosHtml(name); } catch (e) {}
+  host.innerHTML = hd;
+};
 window.renderPdSocial = async function(name) {
   const host = document.getElementById('pdSocial'); if (!host || !currentUser) return;
   const uid = await window.chatUidForName(name);
@@ -5711,6 +5901,8 @@ window.insertInfoTemplate = function() {
 };
 
 window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
+  // One profile screen everywhere: the roster tap goes to the same page the leaderboard opens.
+  if (!window._legacyRosterSheet) { try { document.getElementById('rosterPlayerSheet').classList.add('hidden'); } catch (e) {} return window.openPlayerDetail(String(name || '').trim()); }
   const uid = decodeURIComponent(uidEnc || '');
   const el = document.getElementById('rpsContent');
   if (!el) return;
@@ -7886,6 +8078,8 @@ window.openProfile = function() {
   document.getElementById('awayFields').style.display = awayActive ? 'block' : 'none';
   window.setAwayKind(userProfile.awayKind || 'travel', true);
   renderProfileNudge();
+  window.renderAdminIssues();
+  if (isAdmin() && !window._adminAudit) window.adminAudit({ fix: false }).catch(() => {});
   // sms
   const st = document.getElementById('smsToggle'); if (st) st.checked = !!userProfile.smsConsent;
   if (window._wireProfileAutosave) window._wireProfileAutosave();
@@ -8712,6 +8906,9 @@ function openCreateChooser() { if(window.openCreateChooser) window.openCreateCho
 function addToContacts(u)    { if(window.addToContacts) window.addToContacts(u); }
 function shareRanking(n,t)   { if(window.shareRanking) window.shareRanking(n,t); }
 function combineAccounts(n)  { if(window.combineAccounts) window.combineAccounts(n); }
+function adminFixAll()       { if(window.adminFixAll) window.adminFixAll(); }
+function adminFixOne(k,v)    { if(window.adminFixOne) window.adminFixOne(k,v); }
+function adminAudit(o)       { if(window.adminAudit) window.adminAudit(o); }
 function setAwayKind(k)      { if(window.setAwayKind) window.setAwayKind(k); }
 function ngToggle(u)         { if(window.ngToggle) window.ngToggle(u); }
 function createGroupChat()   { if(window.createGroupChat) window.createGroupChat(); }
@@ -8762,7 +8959,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-15.4';
+window.BUILD_TAG = 'v2026-10-15.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
