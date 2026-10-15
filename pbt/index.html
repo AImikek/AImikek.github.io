@@ -812,6 +812,7 @@
   <div class="profile-avatar" id="profileAvatarDisplay" onclick="document.getElementById('avatarFile').click()" style="cursor:pointer;overflow:hidden;background-size:cover;background-position:center;position:relative;">👤</div>
   <div style="text-align:center;margin:-8px 0 8px;"><label style="font-size:11px;color:var(--cyan);font-weight:800;cursor:pointer;">📷 <span id="avatarLbl">Add a photo of your face</span><input id="avatarFile" type="file" accept="image/*" style="display:none;" onchange="uploadAvatar(this)"></label> <span id="avatarRemove" onclick="removeAvatar()" style="display:none;font-size:11px;color:var(--muted);font-weight:700;cursor:pointer;margin-left:8px;text-decoration:underline;">remove</span></div>
   <div class="profile-phone" id="profilePhoneDisplay"></div>
+  <div id="profileNudge" style="display:none;"></div>
   <label class="flabel">Name</label>
   <input class="finput" id="editName" placeholder="Your name" maxlength="30">
 
@@ -823,13 +824,17 @@
   <label class="flabel">DUPR Rating</label>
   <input class="finput" id="editDupr" type="number" inputmode="decimal" step="0.01" min="1" max="8" placeholder="e.g. 3.75 (leave blank if none)">
 
-  <label class="flabel">✈️ Away / Traveling</label>
+  <label class="flabel">✈️🤕 Away · Traveling or Injured</label>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;">
     <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-      <span style="font-size:13.5px;font-weight:700;color:var(--white);">I'm away right now</span>
+      <span style="font-size:13.5px;font-weight:700;color:var(--white);">I'm out for a bit (no invites until I'm back)</span>
       <input type="checkbox" id="awayOn" style="width:22px;height:22px;accent-color:var(--cyan);" onchange="toggleAwayFields()">
     </label>
     <div id="awayFields" style="display:none;margin-top:10px;">
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button type="button" class="rtbtn active" id="awayKindTravel" onclick="setAwayKind('travel')" style="flex:1;">✈️ Traveling</button>
+        <button type="button" class="rtbtn" id="awayKindInjured" onclick="setAwayKind('injured')" style="flex:1;">🤕 Injured / sick</button>
+      </div>
       <div style="display:flex;gap:8px;">
         <div style="flex:1;"><div style="font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:3px;">Where</div><input class="finput" id="awayCity" placeholder="e.g. NYC" maxlength="40" style="margin-bottom:0;"></div>
         <div style="flex:1;"><div style="font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:3px;">Back on</div><input class="finput" id="awayUntil" type="date" style="color-scheme:dark;margin-bottom:0;"></div>
@@ -1084,7 +1089,7 @@
 
     <div class="guide-card"><div class="guide-icon">⚖️</div><div><div class="guide-t">Fair Fights &amp; Smart Schedules</div><div class="guide-s">When a round robin starts, the app loads everyone's 💎 DPR and picks the seating that keeps <b>both teams' combined DPR as close as possible</b> in every game. Rotations are pre-solved designs: nobody partners twice, byes are even and never back-to-back, opponents spread evenly. With 9+ players the organizer picks <b>how many games each</b> (7, 8, everyone-partners-once…). Rosters show the lineup's average DPR and every round lists who's sitting.</div></div></div>
 
-    <div class="guide-card"><div class="guide-icon">🎯</div><div><div class="guide-t">DPR Reliability</div><div class="guide-s">Next to every rating is a <b>reliability %</b>, like DUPR's. It climbs with games played (about 95% by 25 games) and fades after months without playing, so a 4.9 from two games last spring is flagged as low reliability. The rating itself never decays — only how much we trust it. <b>Singles and doubles are rated separately</b>; your profile has a toggle for each.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">🎯</div><div><div class="guide-t">DPR Reliability</div><div class="guide-s">Next to every rating is a <b>reliability %</b>, like DUPR's. It climbs with games played (about 95% by 25 games) and fades after months without playing, so a 4.9 from two games last spring is flagged as low reliability. <b>Put your DUPR on your profile</b>: it becomes your starting point, so your first games move you from your real level instead of from 4.25. Tap <b>📤 Share</b> on your rating to send your ranking and a link to your profile. The rating itself never decays — only how much we trust it. <b>Singles and doubles are rated separately</b>; your profile has a toggle for each.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">🏆</div><div><div class="guide-t">Leaderboard Minimums</div><div class="guide-s">To rank in doubles you need <b>10 games all-time, 5 in the last 30 days, or 3 in the last 7 days</b>. Players under the bar still appear in "Almost There" below the table with how many games they need. Singles shows everyone until the pool grows. Every past tournament also carries a 💎 level (average DPR of the field) so you can see which nights were the strongest.</div></div></div>
 
@@ -1690,6 +1695,7 @@ let startHash = window.location.hash.replace('#','');
 if (startHash) window.location.hash = '';
 const _sessParam = new URLSearchParams(window.location.search).get('s');
 const _pageParam = new URLSearchParams(window.location.search).get('p');
+const _playerParam = new URLSearchParams(window.location.search).get('player');
 const urlTid = new URLSearchParams(window.location.search).get('t');
 
 document.getElementById('pageGames').style.display = 'block';
@@ -1978,6 +1984,9 @@ async function bootApp() {
     else { firstLoad = false; updateNav(); }
     setTimeout(() => { try { openSessionDetail(_sessParam); history.replaceState({}, '', window.location.pathname); } catch(e) {} }, 500);
     return;
+  }
+  if (_playerParam) {
+    setTimeout(() => { try { openPlayerDetail(_playerParam); history.replaceState({}, '', window.location.pathname); } catch(e) {} }, 700);
   }
   if (_pageParam) {
     setTimeout(() => { try {
@@ -2896,7 +2905,8 @@ window.setLbType = function(t) { lbType = t; renderLeaderboard(); };
 // capped so running up the score barely matters. Moves shrink as your game count grows
 // (new players settle fast, veterans are stable). Everyone starts at 4.25; six converging
 // passes over the full history make the result deterministic for every viewer.
-function computePbtRatings(games) {
+function computePbtRatings(games, seeds) {
+  seeds = seeds || {};
   const SEED = 4.25, SCALE = 2.0, CAP = 0.35, LO = 2.0, HI = 8.0, SQUEEZE = 0.68, BOOST = 0.2;  // squeeze: raw spread read a touch wide vs known DUPRs, compressed toward 4.25; boost: whole scale lifted so the group centers ~4.45
   const PASSES = [1.0, 0.6, 0.36, 0.22, 0.13, 0.08];
   const kfor = n => n < 10 ? 0.40 : (n < 25 ? 0.24 : 0.14);
@@ -2909,7 +2919,7 @@ function computePbtRatings(games) {
   PASSES.forEach((mult, pi) => {
     gs.forEach(g => {
       const k1 = g.t1.map(key), k2 = g.t2.map(key);
-      g.t1.concat(g.t2).forEach(p => { const k = key(p); if (!(k in R)) { R[k] = SEED; G[k] = 0; DISP[k] = p; HIST[k] = []; } });
+      g.t1.concat(g.t2).forEach(p => { const k = key(p); if (!(k in R)) { const sd = seeds[k]; R[k] = (sd && sd >= 2 && sd <= 7) ? SEED + (sd - BOOST - SEED) / SQUEEZE : SEED; G[k] = 0; DISP[k] = p; HIST[k] = []; } });
       const ra = k1.reduce((s, k) => s + R[k], 0) / k1.length;
       const rb = k2.reduce((s, k) => s + R[k], 0) / k2.length;
       const E = 1 / (1 + Math.pow(10, -(ra - rb) / SCALE));
@@ -2954,7 +2964,7 @@ window.avgDpr = function(names) {
 window.pbtRatingsFor = function(type) {
   if (!lbData) return {};
   lbData._pbt = lbData._pbt || {};
-  if (!lbData._pbt[type]) lbData._pbt[type] = computePbtRatings(lbData.games.filter(g => (g.gtype || 'doubles') === type));
+  if (!lbData._pbt[type]) lbData._pbt[type] = computePbtRatings(lbData.games.filter(g => (g.gtype || 'doubles') === type), lbData.duprByName || {});
   return lbData._pbt[type];
 };
 async function loadLeaderboardData() {
@@ -2975,11 +2985,12 @@ async function loadLeaderboardData() {
       if (!tournaments[tid]) tournaments[tid] = { ...t, updatedAt: t.finishedAt || t.updatedAt || Date.now() };
     });
     const dir = dSnap.val() || {};
-    const cityByName = {}, dirByName = {};
+    const cityByName = {}, dirByName = {}, duprByName = {};
     Object.values(dir).forEach(p => {
       if (!p.name) return;
       const k = p.name.toLowerCase();
       if (p.city && !cityByName[k]) cityByName[k] = p.city;
+      const dv = parseFloat(p.dupr); if (dv && !duprByName[k]) duprByName[k] = dv;   // DUPR on file = the rating's starting point
       if (!dirByName[k]) dirByName[k] = p;
     });
     // Flatten all completed games with timestamps
@@ -2999,7 +3010,7 @@ async function loadLeaderboardData() {
       });
     });
     games.sort((a,b) => a.when - b.when);
-    lbData = { games, cityByName, dirByName };
+    lbData = { games, cityByName, dirByName, duprByName };
     // Populate city dropdown
     const cities = [...new Set(Object.values(cityByName))].sort();
     document.getElementById('lbCity').innerHTML = '<option value="">🌎 All Cities</option>'
@@ -3176,12 +3187,13 @@ window.openPlayerDetail = async function(name, type) {
       pctl = '<div style="font-size:10.5px;color:var(--aqua);font-weight:800;margin-top:3px;">#'+rank+' of '+pool.length+' rated players · top '+Math.max(1, Math.ceil(rank/pool.length*100))+'%</div>';
     }
   }
-  const rbanner = prt ? '<div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;padding:12px;text-align:center;">'
+  let rbanner = prt ? '<div style="position:relative;grid-column:1/-1;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;padding:12px;text-align:center;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:28px;color:var(--cyan);">💎 '+prt.rating.toFixed(3)+'</div>'
     +'<div style="font-size:9.5px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:2px;">'+(pdType==='singles'?'Singles':'Doubles')+' DPR · our in-house DUPR · '+prt.games+' games'+(prt.games<10?' · provisional':'')+'</div>'
     +'<div style="font-size:11px;color:'+(prt.rel>=80?'var(--aqua)':prt.rel>=50?'var(--white)':'var(--yellow)')+';font-weight:700;margin-top:6px;">🎯 Reliability '+prt.rel+'% · '+window.relLabel(prt)+(prt.daysIdle>30?' · last game '+prt.daysIdle+' days ago':'')+'</div>'
     +'<div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;">Reliability grows with games and fades after months without playing. The rating itself does not decay.</div>'
     + pctl + spark + '</div>' : '';
+  if (rbanner) rbanner = rbanner.replace('</div>', '<button onclick="shareRanking(\'' + name.replace(/'/g, "\\'") + '\',\'' + pdType + '\')" style="position:absolute;top:10px;right:10px;padding:6px 10px;background:rgba(4,6,15,0.5);border:1px solid rgba(0,240,255,0.4);color:var(--cyan);border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">📤 Share</button></div>');
   document.getElementById('pdStats').innerHTML = typeToggle + rbanner +
     box('Record', w+'-'+l) + box('Win %', (games.length?Math.round(100*w/games.length):0)+'%', 'var(--aqua)') + box('Pts For', pf, 'var(--cyan)') + box('Avg Diff', (diff>=0?'+':'')+diff, diff>=0?'var(--aqua)':'var(--danger)');
   document.getElementById('pdGames').innerHTML = rows || '<div style="color:var(--muted);text-align:center;padding:20px;font-weight:600;">No games found</div>';
@@ -3948,7 +3960,7 @@ window.showGroupMembers = async function(gid) {
   const _on = ms.filter(m => m.claimed).length, _off = ms.length - _on;
   document.getElementById('gmSub').textContent = (g.all ? _on + ' members · everyone with an account' : _on + ' member' + (_on === 1 ? '' : 's') + ' at ' + g.min.toFixed(1) + '+' + (_off ? ' · ' + _off + ' more at this level not on the app yet' : '')) + ' · ranked by 💎 DPR';
   document.getElementById('gmList').innerHTML = ms.length ? ms.map((m, i) => '<div onclick="openPlayerDetail(\'' + escInfo(m.name).replace(/'/g, "\\'") + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;">'
-      + '<div style="font-weight:700;font-size:13.5px;color:var(--white);"><span style="color:var(--muted);font-size:11px;margin-right:6px;">' + (i + 1) + '</span>' + escInfo(m.name) + (m.claimed ? '' : ' <span style="font-size:10px;color:var(--muted);font-weight:600;">not on app yet</span>') + '</div>'
+      + '<div style="font-weight:700;font-size:13.5px;color:var(--white);"><span style="color:var(--muted);font-size:11px;margin-right:6px;">' + (i + 1) + '</span>' + escInfo(m.name) + (m.claimed ? '' : ' <span style="font-size:10px;color:var(--yellow);font-weight:600;">no account under this name</span>') + '</div>'
       + '<div style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--cyan);">💎 ' + m.level.toFixed(2) + (m.basis === 'dupr' ? ' <span style="font-size:9px;color:var(--muted);">DUPR</span>' : m.games < 10 ? ' <span style="font-size:9px;color:var(--muted);">PROV</span>' : '') + '</div></div>').join('')
     : '<div style="color:var(--muted);font-weight:600;font-size:12.5px;">Nobody at this level yet.</div>';
 };
@@ -3957,9 +3969,9 @@ window.myChatLevel = async function() {
   try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
   const nm = chatName().trim().toLowerCase();
   let r = null; try { r = lbData && window.pbtRatingsFor('doubles')[nm]; } catch (e) {}
-  const out = (r && r.games >= 5) ? { level: r.rating, basis: '💎 DPR ' + r.rating.toFixed(2) }
+  const out = (r && r.games >= 3) ? { level: r.rating, basis: '💎 DPR ' + r.rating.toFixed(2) }
     : (parseFloat(userProfile && userProfile.dupr) > 0) ? { level: parseFloat(userProfile.dupr), basis: 'DUPR ' + parseFloat(userProfile.dupr).toFixed(2) + ' from your profile' }
-    : { level: 3.5, basis: 'no rating yet · counts as 3.5 until you have 5 games' };
+    : { level: 3.5, basis: 'no rating yet · counts as 3.5 until you have 3 games' };
   window._myLevelCache = out.level; window.refreshChatBadge();
   return out;
 };
@@ -4043,7 +4055,7 @@ async function renderChatBody() {
       h += '<div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:14px 0 6px;">Level up to unlock</div>';
       lockedG.slice().reverse().forEach(g => { h += card(g, false); });   // nearest goal first
     }
-    h += '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.5;">Groups are for organizing games, finding partners and trash talk. Keep it friendly — Mike can remove messages. Levels come from your 💎 DPR (5+ games) or the DUPR on your profile.</div>';
+    h += '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.5;">Groups are for organizing games, finding partners and trash talk. Keep it friendly — Mike can remove messages. Levels come from your 💎 DPR (3+ games) or the DUPR on your profile. If your games are under a different spelling of your name, ask Mike to merge them.</div>';
     el.innerHTML = h; return;
   }
   if (window._chatTab === 'dms') {
@@ -4570,9 +4582,12 @@ window.aiRunTool = async function(name, a) {
     else throw new Error('say who to invite: names, group, minDpr or following');
     const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; const onRoster = new Set(roster.map(r => r.uid));
     const title = (s.title || 'a session') + (s.date ? ' · ' + s.date : '') + (a.message ? ' — ' + a.message : '');
-    const invited = [], noAccount = [], already = [];
-    for (const t of targets) { if (!t.uid) { noAccount.push(t.name); continue; } if (t.uid === me) continue; if (onRoster.has(t.uid)) { already.push(t.name); continue; } await window.pushNotif(t.uid, { type: 'invite', text: title, sid: a.sid }); invited.push(t.name); }
-    return { result: { invited, invitedCount: invited.length, alreadyIn: already, noAccount, noAccountCount: noAccount.length, note: noAccount.length ? noAccount.length + ' players at this level have played in tournaments but never created an account, so they cannot receive in-app invites. Share the invite link with them instead.' : undefined }, label: '🎟 Invited ' + invited.length + (noAccount.length ? ' · ' + noAccount.length + ' not on the app' : '') };
+    const invited = [], noAccount = [], already = [], away = [];
+    const today = new Date().toISOString().slice(0, 10);
+    for (const t of targets) { if (!t.uid) { noAccount.push(t.name); continue; } if (t.uid === me) continue; if (onRoster.has(t.uid)) { already.push(t.name); continue; }
+      try { const pv = (await get(ref(db, 'users/' + t.uid + '/profile'))).val() || {}; if (pv.awayUntil && pv.awayUntil >= today) { away.push(t.name + (pv.awayKind === 'injured' ? ' (injured/sick)' : ' (traveling)')); continue; } } catch (e) {}
+      await window.pushNotif(t.uid, { type: 'invite', text: title, sid: a.sid }); invited.push(t.name); }
+    return { result: { invited, invitedCount: invited.length, alreadyIn: already, skippedAway: away, noAccount, noAccountCount: noAccount.length, note: noAccount.length ? noAccount.length + ' players at this level have played in tournaments but never created an account, so they cannot receive in-app invites. Share the invite link with them instead.' : undefined }, label: '🎟 Invited ' + invited.length + (noAccount.length ? ' · ' + noAccount.length + ' not on the app' : '') };
   }
   if (name === 'post_to_group') {
     const g = CHAT_GROUPS.find(x => x.id === a.group); if (!g) throw new Error('unknown group');
@@ -4670,6 +4685,19 @@ window.aiRunTool = async function(name, a) {
   throw new Error('unknown tool ' + name);
 };
 
+// ── 📤 Share my ranking: text + link that opens straight to the profile ──
+window.shareRanking = async function(name, type) {
+  type = type || 'doubles';
+  try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+  const rm = window.pbtRatingsFor(type); const r = rm[String(name).trim().toLowerCase()];
+  const ranked = Object.values(rm).filter(x => x.games >= 3).sort((a, b) => b.rating - a.rating);
+  const pos = r ? ranked.findIndex(x => x.name.toLowerCase() === String(name).toLowerCase()) + 1 : 0;
+  const url = location.origin + location.pathname + '?player=' + encodeURIComponent(name);
+  const me = currentUser && chatName().toLowerCase() === String(name).toLowerCase();
+  const text = (me ? "I'm" : name + ' is') + (r ? ' 💎 ' + r.rating.toFixed(2) + ' DPR (' + type + ')' + (pos ? ' · #' + pos + ' of ' + ranked.length + ' in the club' : '') + ' · ' + r.games + ' games' : ' on PB Tourney') + '. Come play: ' + url;
+  if (navigator.share) { try { await navigator.share({ title: name + ' · PB Tourney', text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  const ok = await copyTextRobust(text); copiedToast(ok ? '✓ Copied — paste it anywhere' : 'Could not copy');
+};
 // ── 📇 Add to Contacts (admin): everything we know about a player as a vCard ──
 window.buildVCard = async function(uid) {
   const [ps, ds] = await Promise.all([get(ref(db, 'users/' + uid + '/profile')), get(ref(db, 'directory/' + uid))]);
@@ -4686,9 +4714,9 @@ window.buildVCard = async function(uid) {
   if (rs) notes.push('DPR (singles) ' + rs.rating.toFixed(2) + ' · ' + rs.games + ' games');
   if (pv.dupr || dv.dupr) notes.push('DUPR ' + (pv.dupr || dv.dupr));
   if (pv.gender) notes.push(pv.gender === 'F' ? 'Female' : 'Male');
-  if (pv.court) notes.push('Home court: ' + pv.court);
+  if (pv.homeCourt) notes.push('Home court: ' + pv.homeCourt);
   if (pv.city || dv.city) notes.push('City: ' + (pv.city || dv.city));
-  if (pv.insta) notes.push('Instagram: ' + pv.insta);
+  if (pv.instagram) notes.push('Instagram: ' + pv.instagram);
   if (dv.joinedAt) notes.push('On PB Tourney since ' + new Date(dv.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
   if (dv.lastActive) notes.push('Last active ' + new Date(dv.lastActive).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
   notes.push('Source: PB Tourney (' + location.origin + location.pathname + ')');
@@ -4697,7 +4725,7 @@ window.buildVCard = async function(uid) {
   if (email) lines.push('EMAIL;TYPE=INTERNET:' + email);
   if (pv.city || dv.city) lines.push('ADR;TYPE=HOME:;;;' + esc(pv.city || dv.city) + ';;;');
   if (pv.dob && /^\d{4}-\d{2}-\d{2}$/.test(pv.dob)) lines.push('BDAY:' + pv.dob);
-  if (pv.insta) lines.push('X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/' + String(pv.insta).replace(/^@/, ''));
+  if (pv.instagram) lines.push('X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/' + String(pv.instagram).replace(/^@/, ''));
   lines.push('URL:' + location.origin + location.pathname + '?player=' + encodeURIComponent(name));
   lines.push('CATEGORIES:Pickleball' + (r ? ',DPR ' + (Math.floor(r.rating * 2) / 2).toFixed(1) + '+' : ''));
   lines.push('NOTE:' + esc(notes.join('\n')));
@@ -5121,7 +5149,7 @@ async function resolveRosterNames(sid, s) {
       try { const ps = await get(ref(db, 'users/' + u + '/profile')); const pv = ps.val() || {};
         window._nameCache[u] = (pv.name || '').trim() || null;
         window._avatarCache[u] = pv.avatar || null;
-        window._awayCache[u] = !!(pv.awayUntil && pv.awayUntil >= today1); }
+        window._awayCache[u] = (pv.awayUntil && pv.awayUntil >= today1) ? (pv.awayKind === 'injured' ? 'injured' : 'travel') : false; }
       catch(e) { window._nameCache[u] = null; }
     }));
     let changed = false;
@@ -5376,7 +5404,7 @@ function renderSessionDetail(sid, s) {
           +(window._avatarCache && window._avatarCache[r.uid] ? '<span style="width:24px;height:24px;border-radius:50%;background:url('+window._avatarCache[r.uid]+') center/cover;flex-shrink:0;display:inline-block;"></span>' : '')
           +r.name
           +(function(){ const d = window.dprOf && window.dprOf(r.name); return d ? '<span style="font-size:10px;color:var(--cyan);font-weight:800;">💎'+d.toFixed(2)+'</span>' : ''; })()
-          +(window._awayCache && window._awayCache[r.uid] ? '<span title="Away" style="font-size:12px;">✈️</span>' : '')+'</span>'
+          +(window._awayCache && window._awayCache[r.uid] ? '<span title="' + (window._awayCache[r.uid] === 'injured' ? 'Injured / sick' : 'Traveling') + '" style="font-size:12px;">' + (window._awayCache[r.uid] === 'injured' ? '🤕' : '✈️') + '</span>' : '')+'</span>'
         +(!isNameEcho(r.comment, r.name) ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
         +(r.uid === currentUser?.uid
           ? '<button onclick="releaseSpot(\'' + sid + '\')" style="flex-shrink:0;padding:6px 12px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">I\'m out</button>'
@@ -5675,7 +5703,7 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
     const row = (icon, val, style) => val ? '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">'
       +'<span style="font-size:16px;">'+icon+'</span>'
       +'<span style="font-size:14px;font-weight:700;color:'+(style||'var(--white)')+';">'+val+'</span></div>' : '';
-    if (isAway) h += row('✈️', 'Away' + (prof.awayShare !== false && prof.awayCity ? ' in ' + escInfo(prof.awayCity) : '') + ' · back ' + new Date(prof.awayUntil + 'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}), 'var(--yellow)');
+    if (isAway) h += row(prof.awayKind === 'injured' ? '🤕' : '✈️', (prof.awayKind === 'injured' ? 'Out injured / sick' : 'Traveling' + (prof.awayShare !== false && prof.awayCity ? ' in ' + escInfo(prof.awayCity) : '')) + ' · back ' + new Date(prof.awayUntil + 'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}), 'var(--yellow)');
     if (prof.city)       h += row('📍', escInfo(prof.city));
     if (prof.dupr)       h += row('🏆', 'DUPR ' + escInfo(String(prof.dupr)), 'var(--yellow)');
     if (prof.homeCourt)  h += row('🏟', escInfo(prof.homeCourt));
@@ -7802,6 +7830,8 @@ window.openProfile = function() {
   document.getElementById('awayUntil').value = userProfile.awayUntil || '';
   document.getElementById('awayShare').checked = userProfile.awayShare !== false;
   document.getElementById('awayFields').style.display = awayActive ? 'block' : 'none';
+  window.setAwayKind(userProfile.awayKind || 'travel', true);
+  renderProfileNudge();
   // sms
   const st = document.getElementById('smsToggle'); if (st) st.checked = !!userProfile.smsConsent;
   if (window._wireProfileAutosave) window._wireProfileAutosave();
@@ -7875,6 +7905,34 @@ window.removeAvatar = async function() {
   const al = document.getElementById('avatarLbl'); if (al) al.textContent = 'Add a photo of your face';
   const ar = document.getElementById('avatarRemove'); if (ar) ar.style.display = 'none';
 };
+// "Finish your profile": what's missing, with one tap to the field
+function renderProfileNudge() {
+  const el = document.getElementById('profileNudge'); if (!el) return;
+  const p = userProfile || {};
+  const items = [['avatar', '📷 photo', () => { try { document.getElementById('avatarFile').click(); } catch (e) {} }],
+    ['dupr', '🏆 DUPR', 'editDupr'], ['email', '✉️ email', 'editEmail'], ['city', '📍 city', 'editCity'], ['homeCourt', '🏟 home court', 'editCourt'], ['instagram', '📸 Instagram', 'editInsta'], ['dob', '🎂 birthday', 'editDob'], ['gender', '👤 male / female', 'editGMale']];
+  const missing = items.filter(([k]) => !p[k]);
+  if (!missing.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const done = items.length - missing.length;
+  window._nudgeJump = (i) => { const it = missing[i]; if (!it) return; if (typeof it[2] === 'function') { it[2](); return; } const d = document.querySelector('#pageProfile details'); if (d) d.open = true; const f = document.getElementById(it[2]); if (f) { try { f.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} try { f.focus(); } catch (e) {} } };
+  el.style.display = 'block';
+  el.innerHTML = '<div style="margin:4px 0 16px;padding:12px 14px;background:linear-gradient(135deg,rgba(255,224,0,0.08),rgba(255,45,120,0.06));border:1px solid rgba(255,224,0,0.35);border-radius:14px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1.5px;color:var(--yellow);text-transform:uppercase;">Finish your profile</div><div style="font-size:11px;color:var(--muted);font-weight:700;">' + done + ' of ' + items.length + '</div></div>'
+    + '<div style="height:6px;background:rgba(255,255,255,0.08);border-radius:99px;margin:8px 0 10px;overflow:hidden;"><div style="height:100%;width:' + Math.round(100 * done / items.length) + '%;background:linear-gradient(90deg,var(--yellow),var(--pink));"></div></div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + missing.map(([k, lbl], i) => '<span onclick="window._nudgeJump(' + i + ')" style="cursor:pointer;padding:6px 10px;border-radius:99px;background:rgba(4,6,15,0.5);border:1px solid var(--border);font-size:11.5px;font-weight:700;color:var(--white);">+ ' + lbl + '</span>').join('') + '</div>'
+    + '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">A photo and your DUPR help organizers build fair games and recognize you courtside.</div></div>';
+}
+window.renderProfileNudge = renderProfileNudge;
+window.setAwayKind = function(k, silent) {
+  window._awayKind = k === 'injured' ? 'injured' : 'travel';
+  const t = document.getElementById('awayKindTravel'), i = document.getElementById('awayKindInjured');
+  if (t) t.classList.toggle('active', window._awayKind === 'travel'); if (i) i.classList.toggle('active', window._awayKind === 'injured');
+  // traveling → where + share so players there can meet up; injured → just "back on"
+  const where = document.getElementById('awayCity'); const share = document.getElementById('awayShare');
+  if (where) { where.parentElement.style.display = window._awayKind === 'injured' ? 'none' : ''; }
+  if (share) { share.parentElement.style.display = window._awayKind === 'injured' ? 'none' : ''; }
+  if (!silent && window.saveProfileEdits) window.saveProfileEdits(true);
+};
 window.toggleAwayFields = function() {
   const on = document.getElementById('awayOn')?.checked;
   document.getElementById('awayFields').style.display = on ? 'block' : 'none';
@@ -7897,7 +7955,8 @@ window.saveProfileEdits = async function(silent) {
     instagram: insta || null, dupr: dupr ? parseFloat(dupr) : null, homeCourt: court || null,
     awayCity: awayOn ? (document.getElementById('awayCity').value.trim() || null) : null,
     awayUntil: awayOn ? (document.getElementById('awayUntil').value || null) : null,
-    awayShare: awayOn ? !!document.getElementById('awayShare')?.checked : null };
+    awayShare: awayOn ? !!document.getElementById('awayShare')?.checked : null,
+    awayKind: awayOn ? (window._awayKind || 'travel') : null };
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
   updateProfileDisplay();
@@ -8597,6 +8656,8 @@ function openGroupTextApp()  { if(window.openGroupTextApp) window.openGroupTextA
 function newGroupChat()      { if(window.newGroupChat) window.newGroupChat(); }
 function openCreateChooser() { if(window.openCreateChooser) window.openCreateChooser(); }
 function addToContacts(u)    { if(window.addToContacts) window.addToContacts(u); }
+function shareRanking(n,t)   { if(window.shareRanking) window.shareRanking(n,t); }
+function setAwayKind(k)      { if(window.setAwayKind) window.setAwayKind(k); }
 function ngToggle(u)         { if(window.ngToggle) window.ngToggle(u); }
 function createGroupChat()   { if(window.createGroupChat) window.createGroupChat(); }
 function addToGroupChat(g)   { if(window.addToGroupChat) window.addToGroupChat(g); }
@@ -8646,7 +8707,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-15.2';
+window.BUILD_TAG = 'v2026-10-15.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
