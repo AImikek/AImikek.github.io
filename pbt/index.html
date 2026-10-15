@@ -1444,6 +1444,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
 </nav>
 
 <div id="bottomBar">
+  <button class="bbtn" id="navChat" onclick="openChat()"><span class="bicon-wrap"><span class="bicon">💬</span><span id="chatTabDot" style="display:none;position:absolute;top:-4px;right:-12px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Chat</span></button>
   <button class="bbtn" id="navHome" onclick="openSetup()"><span class="bicon">🏓</span><span class="blbl">Home</span></button>
   <button class="bbtn" id="tabGames" onclick="closeAllOverlaysAndShow('games')"><span class="bicon-wrap"><span class="bicon">🎮</span><span id="gamesBadge" style="display:none;position:absolute;top:-4px;right:-14px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Games</span></button>
   <button class="bbtn" id="tabStats" onclick="closeAllOverlaysAndShow('standings')"><span class="bicon">📊</span><span class="blbl">Stats</span></button>
@@ -2050,6 +2051,7 @@ function updateNav() {
 }
 
 function setActiveTab(t) {
+  var nc = document.getElementById('navChat'); if (nc) nc.classList.toggle('active', t==='chat');
   document.getElementById('navHome').classList.toggle('active', t==='home');
   document.getElementById('tabGames').classList.toggle('active', t==='games');
   document.getElementById('tabStats').classList.toggle('active', t==='standings');
@@ -3963,6 +3965,7 @@ window.refreshChatBadge = function() {
   const u = window.chatUnread();
   const dot = document.getElementById('navChatDot'); if (dot) dot.style.display = 'none';   // ❤️ carries the count now
   const nd = document.getElementById('notifDot'); if (nd) { nd.style.display = u.total ? 'block' : 'none'; nd.textContent = u.total > 99 ? '99+' : String(u.total); }
+  const cd = document.getElementById('chatTabDot'); if (cd) { const n = u.dm + u.grp; cd.style.display = n ? 'inline-block' : 'none'; cd.textContent = n > 99 ? '99+' : String(n); }
   const mb = document.getElementById('menuChatBadge'); if (mb) mb.innerHTML = u.total ? '<span class="cdot">' + u.total + '</span>' : '';
   const db2 = document.getElementById('chatDmBadge'); if (db2) db2.innerHTML = u.dm ? '<span class="cdot">' + u.dm + '</span>' : '';
 };
@@ -3975,6 +3978,7 @@ window.openChat = async function(tab) {
   if (window.resetBars) resetBars();
   var pp = document.getElementById('pageProfile'); if (pp) pp.style.display = 'none';
   document.getElementById('chatPage').classList.remove('hidden');
+  try { setActiveTab('chat'); } catch (e) {}
   window.startChatBadges();
   window._chatTab = tab || window._chatTab || 'groups';
   ['groups','dms','friends','ai'].forEach(t => document.getElementById('chatTab' + (t === 'groups' ? 'Groups' : t === 'dms' ? 'Dms' : t === 'friends' ? 'Friends' : 'Ai')).classList.toggle('active', t === window._chatTab));
@@ -4158,6 +4162,20 @@ window.openAttachGame = async function() {
   window._attachPool = up;
 };
 function sessWhen(s) { try { const d = new Date(s.date + 'T12:00'); return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + (s.startTime ? ' · ' + fmtSessTime(s.startTime) : ''); } catch (e) { return s.date || ''; } }
+// Organizer: open Messages with everyone on the roster (and waitlist) already addressed, message pre-filled
+window.groupTextSession = async function(sid) {
+  const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s) return;
+  const dir = await loadChatDir(); const me = currentUser && currentUser.uid;
+  const people = [].concat(s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : [], s.waitlist ? (Array.isArray(s.waitlist) ? s.waitlist : Object.values(s.waitlist)) : []);
+  const nums = [], missing = [];
+  people.forEach(r => { if (!r || r.uid === me) return; const d = r.uid && dir[r.uid]; const ph = d && d.phone ? String(d.phone).replace(/[^\d+]/g, '') : ''; if (ph) nums.push(ph); else missing.push(r.name || '?'); });
+  if (!nums.length) { alert('No phone numbers on file yet for the players signed up' + (missing.length ? ' (' + missing.join(', ') + ')' : '') + '.'); return; }
+  const body = (s.title || 'Pickleball') + ' · ' + sessWhen(s) + (s.location ? ' @ ' + s.location : '') + ' — see you there! ' + location.origin + location.pathname + '?s=' + sid;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const href = 'sms:' + (ios ? '/open?addresses=' + nums.join(',') + '&body=' : nums.join(',') + '?body=') + encodeURIComponent(body);
+  if (missing.length) copiedToast('No number for: ' + missing.join(', '));
+  try { (window._go || (u => { window.location.href = u; }))(href); } catch (e) {}
+};
 // From a session page: jump into a group chat with this game already attached
 window.postSessionToChat = async function(sid) {
   const lv = await window.myChatLevel();
@@ -4223,9 +4241,10 @@ window.openNotifs = async function() {
 function renderNotifs() {
   const el = document.getElementById('notifBody'); if (!el || !currentUser) return;
   const me = currentUser.uid, items = [];
-  Object.entries(dmIdx).forEach(([uid, t]) => { if (t && t.lastAt && t.lastFrom !== me) items.push({ at: t.lastAt, unread: !!t.unread, icon: '💬', title: escInfo(t.name || 'Player'), text: escInfo(t.lastText || ''), go: "openDm('" + uid + "','" + escInfo(t.name || 'Player').replace(/'/g, "\\'") + "')" }); });
-  CHAT_GROUPS.forEach(g => { const m = chatMeta[g.id]; if (!m || !m.lastAt || m.lastUid === me) return; if (window._myLevelCache != null && window._myLevelCache < g.min - 1e-9) return;
-    items.push({ at: m.lastAt, unread: m.lastAt > (chatReadMap[g.id] || 0), icon: g.icon, title: g.name, text: '<b>' + escInfo(m.lastName || '') + ':</b> ' + escInfo(m.lastText || ''), go: "openGroupChat('" + g.id + "')" }); });
+  // history stays: a thread you've read (or replied to) remains listed, just without the "new" pill
+  Object.entries(dmIdx).forEach(([uid, t]) => { if (t && t.lastAt) items.push({ at: t.lastAt, unread: !!t.unread, icon: '💬', title: escInfo(t.name || 'Player'), text: (t.lastFrom === me ? 'You: ' : '') + escInfo(t.lastText || ''), go: "openDm('" + uid + "','" + escInfo(t.name || 'Player').replace(/'/g, "\\'") + "')" }); });
+  CHAT_GROUPS.forEach(g => { const m = chatMeta[g.id]; if (!m || !m.lastAt) return; if (window._myLevelCache != null && window._myLevelCache < g.min - 1e-9) return;
+    items.push({ at: m.lastAt, unread: m.lastUid !== me && m.lastAt > (chatReadMap[g.id] || 0), icon: g.icon, title: g.name, text: '<b>' + escInfo(m.lastName || '') + ':</b> ' + escInfo(m.lastText || ''), go: "openGroupChat('" + g.id + "')" }); });
   Object.entries(myNotifs).forEach(([nid, n]) => { if (!n) return;
     if (n.type === 'follow') items.push({ at: n.at, unread: !n.read, icon: '➕', title: escInfo(n.fromName || 'Someone'), text: 'started following you', go: "openPlayerDetail('" + escInfo(n.fromName || '').replace(/'/g, "\\'") + "')" });
     else if (n.type === 'invite') items.push({ at: n.at, unread: !n.read, icon: '🎟', title: escInfo(n.fromName || 'Someone') + ' invited you', text: escInfo(n.text || 'to play'), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
@@ -4856,6 +4875,10 @@ window.createSession = async function() {
 
 window.openSessionDetail = function(sid) {
   window._pushNav('sessionDetail');
+  // chat thread / chat home / notifications sit ABOVE the session page in z-order — close them first,
+  // otherwise "View & Join" from a chat card opens the session behind the thread and looks like nothing happened
+  ['chatThread', 'chatPage', 'notifPage', 'groupMembersSheet'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+  if (window._ctUnsub) { try { window._ctUnsub(); } catch (e) {} window._ctUnsub = null; }
   sdCurrent = sid;
   document.getElementById('sessionDetail').classList.remove('hidden');
   document.getElementById('sdContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading...</div>';
@@ -5171,6 +5194,7 @@ function renderSessionDetail(sid, s) {
     +'<button onclick="inviteFriends(\'' + sid + '\')" style="flex:1;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">🎟 Invite Friends</button>'
     +'<button onclick="postSessionToChat(\'' + sid + '\')" style="flex:1;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">💬 Post to Chat</button>'
     +'</div>'
+    +(isOwner ? '<button onclick="groupTextSession(\'' + sid + '\')" style="display:block;width:100%;padding:12px;background:transparent;border:1px solid rgba(0,245,196,0.35);color:var(--aqua);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📱 Group Text Everyone Signed Up</button>' : '')
     +'<button onclick="copySessionRoster(\'' + sid + '\')" style="display:block;width:100%;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;">📋 Copy Roster for Group Chat</button>'
     +'<div style="display:flex;gap:8px;margin-bottom:8px;">'
       +'<a href="cal.html#'+encodeURIComponent(calGoogleUrl(sid, s))+'" target="_blank" rel="noopener" style="flex:1;display:block;text-align:center;padding:12px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;">📅 Google Calendar</a>'
@@ -8348,6 +8372,7 @@ function pickAttachGame(s)   { if(window.pickAttachGame) window.pickAttachGame(s
 function clearChatAttach()   { if(window.clearChatAttach) window.clearChatAttach(); }
 function growChatInput(t)    { if(window.growChatInput) window.growChatInput(t); }
 function postSessionToChat(s){ if(window.postSessionToChat) window.postSessionToChat(s); }
+function groupTextSession(s) { if(window.groupTextSession) window.groupTextSession(s); }
 function aiAsk(t)            { if(window.aiAsk) window.aiAsk(t); }
 function aiReset()           { if(window.aiReset) window.aiReset(); }
 function saveAssistantUrl()  { if(window.saveAssistantUrl) window.saveAssistantUrl(); }
@@ -8392,7 +8417,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-14.4';
+window.BUILD_TAG = 'v2026-10-14.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
