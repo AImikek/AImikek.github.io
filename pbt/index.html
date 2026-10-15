@@ -3277,7 +3277,8 @@ window.openPlayerDetail = async function(name, type) {
           + (acct.email ? '✉️ ' + escInfo(acct.email) + '<br>' : '')
           + (acct.dupr ? '<span style="color:var(--yellow);">DUPR ' + escInfo(String(acct.dupr)) + '</span><br>' : '')
           + (acct.unclaimed ? '<span style="color:var(--muted);font-size:11px;">Unclaimed profile — no login yet</span>' : (!acct.phone && !acct.email ? '<span style="color:var(--muted);font-size:11px;">No contact info on file</span>' : ''))
-          + '<button onclick="adEditPlayer(\'' + aUid + '\')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">✏️ Edit Account Info</button></div>';
+          + '<div style="display:flex;gap:8px;margin-top:8px;"><button onclick="adEditPlayer(\'' + aUid + '\')" style="flex:1;padding:11px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">✏️ Edit Info</button>'
+          + '<button onclick="addToContacts(\'' + aUid + '\')" style="flex:1;padding:11px 6px;background:transparent;border:1px solid rgba(0,245,196,0.4);color:var(--aqua);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📇 Add to Contacts</button></div></div>';
       });
       admin += '<div style="margin-bottom:12px;"></div>';
     } else {
@@ -4669,6 +4670,57 @@ window.aiRunTool = async function(name, a) {
   throw new Error('unknown tool ' + name);
 };
 
+// ── 📇 Add to Contacts (admin): everything we know about a player as a vCard ──
+window.buildVCard = async function(uid) {
+  const [ps, ds] = await Promise.all([get(ref(db, 'users/' + uid + '/profile')), get(ref(db, 'directory/' + uid))]);
+  const pv = ps.val() || {}, dv = ds.val() || {};
+  const name = (pv.name || dv.name || 'Player').trim();
+  const parts = name.split(/\s+/); const first = parts.shift() || name, last = parts.join(' ');
+  const phone = pv.phone || dv.phone || '', email = pv.email || dv.email || '';
+  try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+  let r = null; try { r = window.pbtRatingsFor('doubles')[name.toLowerCase()] || null; } catch (e) {}
+  let rs = null; try { rs = window.pbtRatingsFor('singles')[name.toLowerCase()] || null; } catch (e) {}
+  const esc = s => String(s || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\;');
+  const notes = [];
+  if (r) notes.push('DPR (doubles) ' + r.rating.toFixed(2) + ' · ' + r.games + ' games · ' + r.rel + '% reliable');
+  if (rs) notes.push('DPR (singles) ' + rs.rating.toFixed(2) + ' · ' + rs.games + ' games');
+  if (pv.dupr || dv.dupr) notes.push('DUPR ' + (pv.dupr || dv.dupr));
+  if (pv.gender) notes.push(pv.gender === 'F' ? 'Female' : 'Male');
+  if (pv.court) notes.push('Home court: ' + pv.court);
+  if (pv.city || dv.city) notes.push('City: ' + (pv.city || dv.city));
+  if (pv.insta) notes.push('Instagram: ' + pv.insta);
+  if (dv.joinedAt) notes.push('On PB Tourney since ' + new Date(dv.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+  if (dv.lastActive) notes.push('Last active ' + new Date(dv.lastActive).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+  notes.push('Source: PB Tourney (' + location.origin + location.pathname + ')');
+  const lines = ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + esc(last) + ';' + esc(first) + ';;;', 'FN:' + esc(name), 'ORG:PB Tourney Pickleball'];
+  if (phone) lines.push('TEL;TYPE=CELL:' + String(phone).replace(/[^\d+]/g, ''));
+  if (email) lines.push('EMAIL;TYPE=INTERNET:' + email);
+  if (pv.city || dv.city) lines.push('ADR;TYPE=HOME:;;;' + esc(pv.city || dv.city) + ';;;');
+  if (pv.dob && /^\d{4}-\d{2}-\d{2}$/.test(pv.dob)) lines.push('BDAY:' + pv.dob);
+  if (pv.insta) lines.push('X-SOCIALPROFILE;TYPE=instagram:https://instagram.com/' + String(pv.insta).replace(/^@/, ''));
+  lines.push('URL:' + location.origin + location.pathname + '?player=' + encodeURIComponent(name));
+  lines.push('CATEGORIES:Pickleball' + (r ? ',DPR ' + (Math.floor(r.rating * 2) / 2).toFixed(1) + '+' : ''));
+  lines.push('NOTE:' + esc(notes.join('\n')));
+  const av = pv.avatar || dv.avatar; const m = /^data:image\/(jpeg|jpg|png);base64,(.+)$/i.exec(av || '');
+  if (m) lines.push('PHOTO;ENCODING=b;TYPE=' + (m[1].toLowerCase() === 'png' ? 'PNG' : 'JPEG') + ':' + m[2]);
+  lines.push('END:VCARD');
+  return { name, text: lines.join('\r\n'), phone, email };
+};
+window.addToContacts = async function(uid) {
+  if (!isAdmin()) return;
+  try {
+    const v = await window.buildVCard(uid);
+    const file = new File([v.text], v.name.replace(/[^\w ]+/g, '').trim().replace(/\s+/g, '-') + '.vcf', { type: 'text/vcard' });
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      try { await navigator.share({ files: [file], title: v.name }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
+    copiedToast('⬇ Contact card downloaded');
+  } catch (e) { alert('Could not build the contact card: ' + (e && e.message || e)); }
+};
+
 // ── follows ──
 // Runs once per account (every existing account on its next login, every new one at sign-up):
 //   • you follow Mike   • Mike follows you back   • you get a "Mike started following you" notification.
@@ -5644,6 +5696,7 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
       +'<div style="font-size:9px;font-weight:800;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:6px;">🔒 Admin Only</div>';
     if (adminContact.phone) h += '<div style="margin-bottom:4px;"><a href="tel:'+escInfo(adminContact.phone)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">📞 '+escInfo(adminContact.phone)+'</a></div>';
     if (adminContact.email) h += '<div><a href="mailto:'+escInfo(adminContact.email)+'" style="font-size:14px;font-weight:700;color:var(--cyan);text-decoration:none;">✉️ '+escInfo(adminContact.email)+'</a></div>';
+    h += '<button onclick="addToContacts(\''+uid+'\')" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid rgba(0,245,196,0.4);color:var(--aqua);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📇 Add to Contacts</button>';
     h += '</div>';
   }
   h += await playerPhotosHtml(name);
@@ -8543,6 +8596,7 @@ function groupTextSession(s) { if(window.groupTextSession) window.groupTextSessi
 function openGroupTextApp()  { if(window.openGroupTextApp) window.openGroupTextApp(); }
 function newGroupChat()      { if(window.newGroupChat) window.newGroupChat(); }
 function openCreateChooser() { if(window.openCreateChooser) window.openCreateChooser(); }
+function addToContacts(u)    { if(window.addToContacts) window.addToContacts(u); }
 function ngToggle(u)         { if(window.ngToggle) window.ngToggle(u); }
 function createGroupChat()   { if(window.createGroupChat) window.createGroupChat(); }
 function addToGroupChat(g)   { if(window.addToGroupChat) window.addToGroupChat(g); }
@@ -8592,7 +8646,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-15.1';
+window.BUILD_TAG = 'v2026-10-15.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
