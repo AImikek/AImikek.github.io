@@ -1,0 +1,58 @@
+/* Approved Ocean Blue glass homepage. */
+.card-title{font-size:15px}
+.card-description{font-size:12px}
+.roles{font-size:13px}
+.site-header{height:72px}
+.header-note{display:none}
+.card-icon{width:50px;height:50px}
+.logo-icon img{width:45px;height:45px}
+.pups-logo img,.pickleball-logo img{width:100%;height:100%}
+.mlp-logo img{width:88%;height:88%}
+.composite-logo>img{width:100%;height:100%}
+.design-glass{background:#eff2f4}
+.design-glass main{max-width:600px;padding:32px 22px 0;border:1px solid #fff;border-radius:36px;background:linear-gradient(135deg,#ffffff9c,#ffffff40);box-shadow:0 30px 90px #4450640b;margin-top:18px}
+.design-glass .ambient{opacity:.85}
+.design-glass .profile{margin-bottom:27px}
+.design-glass .portrait{width:100px;height:100px}
+.design-glass h1{font-size:38px;letter-spacing:-1.7px}
+.design-glass .link-card{min-height:93px;box-shadow:0 7px 22px #26354708,inset 0 1px 0 white;border-color:white;background:linear-gradient(120deg,#ffffffee,#ffffff65);border-radius:22px}
+.design-glass .featured{background:linear-gradient(120deg,#fff,#eaffd2);border-color:#dce8ce}
+.design-glass .socials a{border:1px solid #fff;box-shadow:0 4px 9px #40464e10}
+.design-glass .payment-actions{max-width:none}
+.design-glass .pay-direct{background:linear-gradient(120deg,#d8ff9b,#b8fb58)}
+.design-glass footer{padding-bottom:8px}
+@media(max-width:650px){.site-header{height:62px}
+.card-title{font-size:14px}
+.card-description{font-size:12px}
+.roles{font-size:12px}
+.card-icon{width:46px;height:46px}
+.logo-icon img{width:42px;height:42px}
+.pups-logo img,.pickleball-logo img{width:100%;height:100%}
+.mlp-logo img{width:88%;height:88%}
+.design-glass main{width:calc(100% - 24px);padding:25px 13px 0;margin-top:8px;border-radius:28px}
+.design-glass h1{font-size:30px}
+.design-glass .portrait{width:84px;height:84px}
+.design-glass .link-card{padding:15px 12px;gap:12px}
+.design-glass .card-title{font-size:13px}
+.design-glass .card-description{font-size:11px}}
+.color-ocean{--ink:#183247;--muted:#586f7e;--accent:#1766a8;--neon:#b1e4ff;--accent-soft:#e2f3fc;--accent-edge:#b5d9ed;--pay-start:#a5dafa;--pay-end:#7ecbdc;--glow-one:#b3e7ff;--glow-two:#b7eee7;--page:#edf5f9}
+.color-variation{background:var(--page)}
+.color-variation .ambient-lime{background:radial-gradient(ellipse,var(--glow-one),transparent 70%);opacity:.95}
+.color-variation .ambient-violet{background:radial-gradient(ellipse,var(--glow-two),transparent 70%);opacity:.95}
+.color-variation .portrait-viewport{width:100px;height:100px}
+.color-variation .profile-spark{color:var(--accent);background:var(--neon)}
+.color-variation .name-dot,.color-variation .wordmark-dot,.color-variation .card-kicker{color:var(--accent)}
+.color-variation .featured{background:linear-gradient(120deg,#fff,var(--accent-soft));border-color:var(--accent-edge)}
+.color-variation .featured .card-arrow{color:var(--ink)}
+.color-variation .pay-direct,.color-variation .pay-continue{background:linear-gradient(120deg,var(--pay-start),var(--pay-end));color:var(--ink);border-color:var(--accent-edge);box-shadow:0 6px 20px #39435310}
+.color-variation .pay-direct:hover,.color-variation .pay-continue:hover{background:var(--neon)}
+.color-variation .qr-trigger{border-color:var(--accent-edge)}
+.color-variation .badge{background:var(--accent-soft);border-color:var(--accent-edge);color:var(--accent)}
+.color-variation .calendar-overlay{background:var(--neon);color:var(--ink)}
+.color-variation .link-card:hover{border-color:var(--accent-edge);box-shadow:0 10px 28px #41495712}
+.color-variation .pay-dialog{background:linear-gradient(145deg,#fff 35%,var(--accent-soft) 100%)}
+.color-variation .pay-address,.color-variation .pay-recipient,.color-variation .pay-hint{color:var(--muted)}
+.color-variation .pay-close:hover{background:var(--accent-soft)}
+.color-variation a:focus-visible,.color-variation button:focus-visible{outline-color:var(--accent)}
+@media(max-width:650px){.color-variation .portrait-viewport{width:84px;height:84px}}
+.color-ocean .portrait-viewport .headshot-centered,.color-ocean .booking-photo img{position:absolute;width:112%;height:112%;left:-6%;top:-1.5%;max-width:none;object-fit:cover;object-position:center;border:0;border-radius:0}
