@@ -1,0 +1,56 @@
+/* Horizon Pearl homepage, approved for production. */
+.site-header{max-width:1200px;margin:auto}
+.profile-spark{background:var(--neon)}
+.color-ocean .portrait-viewport{width:102px;height:102px}
+.card-arrow{color:#557c94}
+.badge{font-size:7px}
+.card-description{line-height:1.6}
+.color-ocean .pay-direct,.color-ocean .qr-trigger{min-height:52px}
+.link-card{isolation:isolate}
+.booking-photo{border-radius:inherit}
+.blue-horizon{background:#edf5f9}
+.blue-horizon main{max-width:590px;width:calc(100% - 32px);margin-top:10px}
+.blue-horizon .horizon-cover{height:143px;border-radius:30px 30px 0 0;position:relative;overflow:hidden;background:linear-gradient(115deg,#a5dafa,#7ecbdc);border:1px solid #fff;box-shadow:inset 0 1px 0 white}
+.horizon-cover>span:first-child{position:absolute;left:25px;top:22px;font-size:9px;font-weight:800;letter-spacing:2.5px;color:#28556e}
+.cover-orbit{position:absolute;width:270px;height:270px;border:1px solid #ffffff75;border-radius:50%;right:-40px;top:-100px;box-shadow:0 0 0 30px #ffffff18,0 0 0 60px #ffffff12,0 0 0 90px #ffffff0c}
+.blue-horizon .profile{position:relative;margin:0 0 22px;padding:0 24px 24px;background:#ffffffa6;border:1px solid white;border-top:0;border-radius:0 0 28px 28px;box-shadow:0 12px 28px #18324706}
+.blue-horizon .portrait-ring{margin:-58px 0 20px;background:#fff;padding:5px;box-shadow:0 8px 24px #2a668f20}
+.blue-horizon .profile-spark{bottom:2px;right:0}
+.blue-horizon h1{font-size:34px;letter-spacing:-1.6px}
+.blue-horizon .eyebrow{font-size:8px;letter-spacing:1.8px}
+.blue-horizon .payment-actions{max-width:none;margin-top:23px}
+.blue-horizon .socials a{background:#edf7fc;border-color:#e1f0f7;box-shadow:none}
+.blue-horizon .link-list{gap:10px}
+.blue-horizon .link-card{border-radius:18px;background:#ffffffd6;border-color:white;min-height:91px;box-shadow:0 4px 15px #18324705}
+.blue-horizon .featured{border-left:3px solid #7ecbdc;background:linear-gradient(110deg,#fff,#e2f3fc)}
+.blue-horizon .link-card:hover{transform:translateX(3px)}
+.blue-horizon .featured .card-arrow{border-radius:10px}
+.blue-horizon footer{margin-top:28px}
+@media(max-width:750px){.site-header{height:62px}
+.blue-horizon main{width:calc(100% - 28px);margin-top:7px}
+.blue-horizon .horizon-cover{height:126px;border-radius:25px 25px 0 0}
+.blue-horizon .profile{padding:0 17px 22px;border-radius:0 0 24px 24px}
+.blue-horizon .portrait-viewport{width:90px;height:90px}
+.blue-horizon .portrait-ring{margin-top:-53px}
+.blue-horizon h1{font-size:29px}
+.blue-horizon .link-card{padding:16px 14px;gap:12px}
+.blue-horizon .card-title{font-size:14px}
+.blue-horizon .card-description{font-size:11px}
+.blue-horizon .featured .card-title{font-size:16px}}
+@media(max-width:370px){.blue-horizon h1{font-size:26px}}
+.horizon-pearl{background:#f0f6fa}
+.horizon-pearl .horizon-cover{height:155px;background:linear-gradient(120deg,#d8effc 0%,#b9e2f4 45%,#91d1e3 100%);border-radius:35px 35px 0 0}
+.horizon-pearl .cover-orbit{border-color:#ffffffb0;right:-90px;top:-110px;width:320px;height:320px;box-shadow:0 0 0 40px #ffffff16,0 0 0 80px #ffffff14}
+.horizon-pearl .profile{background:linear-gradient(125deg,#ffffffeb,#ffffff7a);border-radius:0 0 34px 34px;padding-bottom:27px}
+.horizon-pearl .portrait-ring{padding:6px;background:linear-gradient(135deg,#fff 20%,#bacbd5 43%,#fff 55%,#c5d4dd 78%,#fff);box-shadow:0 10px 24px #2b607619,inset 0 0 0 1px white}
+.horizon-pearl .profile-spark{background:#e1f5ff;color:#357895}
+.horizon-pearl .payment-actions{gap:10px}
+.horizon-pearl .pay-direct,.horizon-pearl .qr-trigger{border-radius:30px}
+.horizon-pearl .link-card{border-radius:24px;background:linear-gradient(120deg,#fff,#ffffffb8);border-color:white;box-shadow:0 5px 20px #23425a05;min-height:93px}
+.horizon-pearl .featured{border-left:1px solid white;background:linear-gradient(110deg,#fff,#e0f3fc)}
+.horizon-pearl .card-arrow{border-radius:50%;background:#eaf6fc;width:27px;height:27px}
+.horizon-pearl .card-arrow .icon{width:14px}
+.horizon-pearl .featured .card-arrow{border-radius:50%;background:#b1e4ff;width:32px;height:32px}
+@media(max-width:750px){.horizon-pearl .horizon-cover{height:141px;border-radius:29px 29px 0 0}
+.horizon-pearl .profile{padding-bottom:24px;border-radius:0 0 29px 29px}
+.horizon-pearl .link-card{padding:16px 14px;border-radius:23px;gap:12px}}
