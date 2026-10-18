@@ -3690,6 +3690,9 @@ window.adminAudit = async function(opts) {
     if (d.phone && window.normPhone(d.phone) !== d.phone) { upd.phone = window.normPhone(d.phone); d.phone = upd.phone; }
     if (Object.keys(upd).length) { try { await update(ref(db, 'directory/' + u), upd); fixed.push((upd.name ? 'named ' + upd.name : 'phone fixed for ' + (d.name || u))); } catch (e) {} }
   }
+  // 1b. founder ↔ every member: the pairing used to happen only when a member opened the app, so people who hadn't
+  // logged in since that build were missing. The admin pass creates the missing pairs for every real account.
+  try { const fr = await window.adminFriendEveryone(dir); if (fr) fixed.push('friended ' + fr + ' member' + (fr === 1 ? '' : 's')); } catch (e) {}
   // 2. duplicates by name
   const byName = {};
   Object.entries(dir).forEach(([u, d]) => { if (d && d.name) { const k = String(d.name).trim().toLowerCase(); (byName[k] = byName[k] || []).push([u, d]); } });
@@ -3744,6 +3747,25 @@ window.adminAudit = async function(opts) {
   } catch (e) {}
   window.renderAdminIssues();
   return window._adminAudit;
+};
+window.adminFriendEveryone = async function(dir) {
+  if (!isAdmin() || !currentUser) return 0;
+  const me = currentUser.uid; dir = dir || (await get(ref(db, 'directory'))).val() || {};
+  const mine = (await get(ref(db, 'follows/' + me))).val() || {};
+  const theirs = (await get(ref(db, 'followers/' + me))).val() || {};
+  let n = 0; const now = Date.now(), myName = chatName() || 'Mike';
+  for (const [u, d] of Object.entries(dir)) {
+    if (u === me || !d || d.unclaimed || !d.name || u.length < 20) continue;
+    if (mine[u] && theirs[u]) continue;
+    try {
+      if (!mine[u]) { await set(ref(db, 'follows/' + me + '/' + u), { name: d.name, at: now, auto: true }); await set(ref(db, 'followers/' + u + '/' + me), { name: myName, at: now, auto: true }); }
+      if (!theirs[u]) { await set(ref(db, 'follows/' + u + '/' + me), { name: myName, at: now, auto: true }); await set(ref(db, 'followers/' + me + '/' + u), { name: d.name, at: now, auto: true });
+        await set(ref(db, 'notifs/' + u + '/n' + now.toString(36) + 'mike'), { type: 'follow', from: me, fromName: myName, text: 'started following you', at: now, read: false }); }
+      try { await update(ref(db, 'users/' + u + '/profile'), { autoFollowed: true }); } catch (e) {}
+      myFollows[u] = { name: d.name }; n++;
+    } catch (e) {}
+  }
+  return n;
 };
 window.renderAdminIssues = function() {
   const el = document.getElementById('adminIssues'); if (!el) return;
@@ -9185,7 +9207,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-15.7';
+window.BUILD_TAG = 'v2026-10-17.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
