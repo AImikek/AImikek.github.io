@@ -372,7 +372,8 @@ const FAVORITES = [
     name: "Equinox",
     category: "Fitness",
     blurb: "The gym I actually keep going to. Requesting an intro routes you straight to the VP of Sales and myself for a free $100 day pass.",
-    logo: "equinox.com",
+    logo: "/equinox-logo.png",          // upload equinox-logo.png to the repo root
+    logoFallback: "equinox.com",        // shows their site icon until you do
     image: "",
     tags: ["gym","training","wellness","membership"],
     action: "form",
@@ -397,6 +398,10 @@ const FAVORITES = [
     }
   },
 
+  /* ============ SAVED FOR LATER ============
+     Pause, Eight Sleep and Notion are parked here (their category
+     chips disappear too). To bring one back, move its { ... } block
+     above or below this comment.
   {
     name: "Pause Wellness",
     category: "Longevity",
@@ -432,6 +437,8 @@ const FAVORITES = [
     action: "link",
     url: "https://www.notion.so"
   },
+     ============ END SAVED ============ */
+
 
   {
     name: "The Spot",
@@ -459,6 +466,7 @@ const FAVORITES = [
     name: "Pickleball Courts",
     category: "Pickleball",
     blurb: "Find or upload pickleball courts near you — my own app. Opens straight to the court finder.",
+    logo: "/pickleball-logo.png",       // upload pickleball-logo.png to the repo root
     image: "",
     tags: ["pickleball","courts","sports","app","pbt","play"],
     action: "link",
@@ -569,13 +577,14 @@ function matches(f){
 }
 
 // ---- card ----
-const logoURL = f => `https://www.google.com/s2/favicons?domain=${f.logo}&sz=256`;
+const favicon = d => `https://www.google.com/s2/favicons?domain=${d}&sz=256`;
+const logoURL = f => (f.logo.startsWith("http") || f.logo.startsWith("/")) ? f.logo : favicon(f.logo);
 
 function cardHTML(f){
   const thumb = f.image
     ? `<div class="thumb"><img src="${f.image}" alt="${f.name}" loading="lazy"/>`
     : f.logo
-    ? `<div class="thumb logowrap"><img src="${logoURL(f)}" alt="${f.name} logo" loading="lazy" onerror="this.style.display='none'"/>`
+    ? `<div class="thumb logowrap"><img src="${logoURL(f)}" alt="${f.name} logo" loading="lazy"${f.logoFallback?` data-fb="${favicon(f.logoFallback)}"`:""} onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb}else{this.style.display='none'}"/>`
     : `<div class="thumb mono" style="background:${tile(f.name)}"><span>${f.name[0]}</span>`;
   return `
     <article class="card" tabindex="0" data-slug="${slug(f.name)}" role="button" aria-label="${f.name}">
@@ -616,7 +625,7 @@ let lastFocus = null;
 
 function heroBlock(f){
   if(f.image) return `<div class="sheet-hero"><img src="${f.image}" alt="${f.name}"/></div>`;
-  if(f.logo)  return `<div class="sheet-hero" style="background:radial-gradient(circle at 50% 42%, rgba(123,159,255,.16), transparent 70%), #0b0b14"><img class="logomark" src="${logoURL(f)}" alt="${f.name} logo" onerror="this.style.display='none'"/></div>`;
+  if(f.logo)  return `<div class="sheet-hero" style="background:radial-gradient(circle at 50% 42%, rgba(123,159,255,.16), transparent 70%), #0b0b14"><img class="logomark" src="${logoURL(f)}" alt="${f.name} logo"${f.logoFallback?` data-fb="${favicon(f.logoFallback)}"`:""} onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb}else{this.style.display='none'}"/></div>`;
   return `<div class="sheet-hero" style="background:${tile(f.name)}"><span class="mono">${f.name[0]}</span></div>`;
 }
 
