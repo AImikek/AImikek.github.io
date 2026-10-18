@@ -148,6 +148,12 @@
   .card:hover .thumb img{transform:scale(1.05)}
   .thumb.mono{display:flex;align-items:center;justify-content:center}
   .thumb.mono span{font-family:'Space Grotesk';font-weight:800;font-size:2.6rem;color:rgba(255,255,255,.92);letter-spacing:-.02em}
+  /* real brand logos (logo: "domain.com" on an entry) */
+  .thumb.logowrap{display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 42%, rgba(123,159,255,.16), transparent 70%), #0b0b14}
+  .thumb.logowrap img{width:72px;height:72px;object-fit:contain;border-radius:18px;transition:transform .5s var(--ease)}
+  .card:hover .thumb.logowrap img{transform:scale(1.08)}
+  .sheet-hero img.logomark{width:96px;height:96px;object-fit:contain;border-radius:22px}
   /* pathway tag overlay */
   .ptag{
     position:absolute;top:12px;left:12px;
@@ -329,21 +335,36 @@
 const ENDPOINT = (window.MIKEK_ENDPOINT || ""); // set in /config.js
 
 /* =====================================================================
-   2) YOUR FAVORITES  — this is the whole "backend" for the catalog.
-      To add one, copy a block and edit it. Fields:
+   2) YOUR FAVORITES — HOW TO EDIT (no coding needed)
 
-        name      (required) — display name
-        category  (required) — used for the filter chips + search
-        blurb     (required) — one line shown on the card
-        image                — image URL (leave "" for a clean monogram tile)
-        tags                 — extra words to make search find it
-        action    (required) — "link" | "page" | "form"
+   EASIEST WAY: github.com/AImikek/AImikek.github.io → open the
+   "favorites" folder → click index.html → click the pencil icon →
+   edit the text between the quotes below → Commit changes.
+   Live on mikek.ai/favorites about 60 seconds later.
 
-        link  → needs:  url
-        page  → needs:  why (longform "why I like it"); optional url for a Visit button
-        form  → needs:  form { route, cta, success, fields:[...] }
+   TO ADD A FAVORITE: copy one whole block { ... }, (including the
+   comma after it), paste it in the list, change the text.
 
-      Field types for forms: "text","email","tel","textarea","select"(+options)
+   WHAT EACH FIELD DOES:
+     name      — the title on the card
+     category  — makes the filter chips automatically (reuse existing
+                 names to group things, or type a new one)
+     blurb     — the one-liner on the card. Edit freely!
+     logo      — the company's website domain, like "mercury.com".
+                 Pulls in their real logo automatically. Leave "" for
+                 a clean colored letter tile instead.
+     image     — a custom photo URL (overrides logo). Usually leave "".
+     tags      — hidden words so search finds it
+     action    — what clicking the card does:
+                   "link" → opens url in a new tab
+                   "page" → opens your writeup (put it in `why`,
+                            each paragraph wrapped in <p>...</p>)
+                   "form" → opens a signup form
+     form.route — must match a name in ROUTING inside the backend
+                  (functions/index.js) for emails to send. Without a
+                  match it still saves to your admin dashboard.
+
+   Form field types: "text","email","tel","textarea","select"(+options)
    ===================================================================== */
 const FAVORITES = [
 
@@ -351,11 +372,12 @@ const FAVORITES = [
     name: "Equinox",
     category: "Fitness",
     blurb: "The gym I actually keep going to. Requesting an intro routes you straight to the VP of Sales and myself for a free $100 day pass.",
+    logo: "equinox.com",
     image: "",
     tags: ["gym","training","wellness","membership"],
     action: "form",
     form: {
-      route: "Equinox",                 // matches the routing key in the Apps Script
+      route: "Equinox",                 // matches the routing key in functions/index.js
       cta: "Request an intro",
       success: "Sent. Mike and the Equinox team will reach out shortly.",
       fields: [
@@ -379,6 +401,7 @@ const FAVORITES = [
     name: "Pause Wellness",
     category: "Longevity",
     blurb: "Coconut Grove longevity clinic — IVs, recovery, and the kind of preventative care most people skip.",
+    logo: "pausewellness.com",
     image: "",
     tags: ["longevity","recovery","iv","clinic","health"],
     action: "page",
@@ -392,6 +415,7 @@ const FAVORITES = [
     name: "Eight Sleep",
     category: "Recovery",
     blurb: "The temperature-controlled mattress that fixed my sleep. Single biggest recovery upgrade I've made.",
+    logo: "eightsleep.com",
     image: "",
     tags: ["sleep","recovery","mattress","health"],
     action: "link",
@@ -402,10 +426,102 @@ const FAVORITES = [
     name: "Notion",
     category: "Tools",
     blurb: "Where I run the whole company — docs, pipeline, and every half-formed idea in one place.",
+    logo: "notion.so",
     image: "",
     tags: ["software","productivity","docs","saas"],
     action: "link",
     url: "https://www.notion.so"
+  },
+
+  {
+    name: "The Spot",
+    category: "Grooming",
+    blurb: "Zach at The Spot is the only person who touches my hair. Drop your info and he'll reach out to get you in the chair.",
+    logo: "thespotbarbershop.com",
+    image: "",
+    tags: ["hair","haircut","barber","barbershop","grooming","zach"],
+    action: "form",
+    form: {
+      route: "The Spot",                // matches ROUTING in functions/index.js
+      cta: "Get in with Zach",
+      success: "Sent. Zach will reach out to get you booked.",
+      fields: [
+        { name:"name",  label:"Full name", type:"text",  required:true },
+        { name:"email", label:"Email",     type:"email", required:true },
+        { name:"phone", label:"Phone",     type:"tel",   required:true },
+        { name:"note",  label:"Anything Zach should know?", type:"textarea",
+          placeholder:"What you're looking for, preferred days…" }
+      ]
+    }
+  },
+
+  {
+    name: "Pickleball Courts",
+    category: "Pickleball",
+    blurb: "Find or upload pickleball courts near you — my own app. Opens straight to the court finder.",
+    image: "",
+    tags: ["pickleball","courts","sports","app","pbt","play"],
+    action: "link",
+    url: "https://www.mikek.ai/pbt"
+  },
+
+  {
+    name: "Mercury",
+    category: "Banking",
+    blurb: "The bank I run everything on — personal and business. My links get you a real signup bonus.",
+    logo: "mercury.com",
+    image: "",
+    tags: ["bank","banking","finance","startup","business","money"],
+    action: "page",
+    why: `<p>Mercury is where I keep both my personal and business banking. Clean interface, real tools, none of the legacy-bank friction — and both of my links come with a bonus.</p>
+          <p><b>Personal:</b> you and I each get $120 when you deposit $10K within 90 days. You also get their full suite of tools to earn more, save better, and invest simply.</p>
+          <p><b>Business:</b> we each get $250 when you deposit $10K within 90 days — and you skip the line with expedited application review.</p>
+          <div class="btn-row">
+            <a class="btn" href="https://mercury.com/share/mdadk" target="_blank" rel="noopener">Personal — get $120</a>
+            <a class="btn ghost" href="https://mercury.com/r/pups-n-chill-llc" target="_blank" rel="noopener">Business — get $250</a>
+          </div>`
+  },
+
+  {
+    name: "Empower",
+    category: "Rides",
+    blurb: "Cheaper than Uber and Lyft, and 100% of the fare goes to the driver. My code gets you $10 in ride credit.",
+    logo: "driveempower.com",
+    image: "",
+    tags: ["rideshare","rides","uber","lyft","taxi","driver","transport"],
+    action: "page",
+    why: `<p>Empower is the rideshare app I tell everyone about: rides cost less than Uber and Lyft, and the drivers keep 100% of the fare. Better deal on both sides of the ride.</p>
+          <p>Download the app, and when you sign up enter this code to get <b>$10 in ride credit</b>:</p>
+          <p style="font-family:'Space Grotesk';font-size:1.8rem;font-weight:700;letter-spacing:.14em;color:var(--accent);margin:18px 0">8M16WD</p>
+          <div class="btn-row">
+            <a class="btn" href="https://apps.apple.com/app/id1454849875" target="_blank" rel="noopener">Download the app</a>
+            <a class="btn ghost" href="https://www.driveempower.com" target="_blank" rel="noopener">Learn more</a>
+          </div>`
+  },
+
+  {
+    name: "Instagram Unban",
+    category: "Social",
+    blurb: "Banned or disabled on Instagram? Tell me what happened and I'll point you to the fastest legitimate path back.",
+    image: "",
+    tags: ["instagram","unban","banned","disabled","recovery","account","social media"],
+    action: "form",
+    form: {
+      route: "Instagram Unban",         // matches ROUTING in functions/index.js
+      cta: "Start my unban request",
+      success: "Sent. Check your email — a confirmation is on its way, and Mike will follow up with next steps.",
+      fields: [
+        { name:"first_name", label:"First name", type:"text",  required:true },
+        { name:"last_name",  label:"Last name",  type:"text",  required:true },
+        { name:"email",      label:"Email you use now", type:"email", required:true },
+        { name:"ig_email",   label:"Email used for the Instagram account", type:"email", required:true },
+        { name:"phone",      label:"Phone", type:"tel", required:true },
+        { name:"ig_handle",  label:"Instagram handle", type:"text", required:true, placeholder:"@yourhandle" },
+        { name:"ban_date",   label:"When was it banned? (approximate is fine)", type:"text", placeholder:"e.g. around Sept 20, 2026" },
+        { name:"ban_reason", label:"Why do you think it was banned?", type:"textarea", required:true },
+        { name:"additional", label:"Anything else you want to share?", type:"textarea" }
+      ]
+    }
   }
 
 ];
@@ -453,9 +569,13 @@ function matches(f){
 }
 
 // ---- card ----
+const logoURL = f => `https://www.google.com/s2/favicons?domain=${f.logo}&sz=256`;
+
 function cardHTML(f){
   const thumb = f.image
     ? `<div class="thumb"><img src="${f.image}" alt="${f.name}" loading="lazy"/>`
+    : f.logo
+    ? `<div class="thumb logowrap"><img src="${logoURL(f)}" alt="${f.name} logo" loading="lazy" onerror="this.style.display='none'"/>`
     : `<div class="thumb mono" style="background:${tile(f.name)}"><span>${f.name[0]}</span>`;
   return `
     <article class="card" tabindex="0" data-slug="${slug(f.name)}" role="button" aria-label="${f.name}">
@@ -495,9 +615,9 @@ const overlay = $("#overlay"), sheet = $("#sheet");
 let lastFocus = null;
 
 function heroBlock(f){
-  return f.image
-    ? `<div class="sheet-hero"><img src="${f.image}" alt="${f.name}"/></div>`
-    : `<div class="sheet-hero" style="background:${tile(f.name)}"><span class="mono">${f.name[0]}</span></div>`;
+  if(f.image) return `<div class="sheet-hero"><img src="${f.image}" alt="${f.name}"/></div>`;
+  if(f.logo)  return `<div class="sheet-hero" style="background:radial-gradient(circle at 50% 42%, rgba(123,159,255,.16), transparent 70%), #0b0b14"><img class="logomark" src="${logoURL(f)}" alt="${f.name} logo" onerror="this.style.display='none'"/></div>`;
+  return `<div class="sheet-hero" style="background:${tile(f.name)}"><span class="mono">${f.name[0]}</span></div>`;
 }
 
 function open(f){
