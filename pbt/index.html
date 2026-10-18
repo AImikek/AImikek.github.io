@@ -266,7 +266,7 @@
     line-height:1.6; overflow-wrap:break-word; }
   .info-sec-body a { color:var(--cyan); text-decoration:underline; }
 
-  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden, #adPlayerModal.hidden, #splitModal.hidden, #sessionsPage.hidden, #sessionCreate.hidden, #sessionDetail.hidden, #quickStartPage.hidden, #courtsPage.hidden, #courtSubmit.hidden, #adCourtModal.hidden { display:none !important; }
+  #feedbackOverlay.hidden, #feedbackInbox.hidden, #importOverlay.hidden, #leaderboardPage.hidden, #playerDetail.hidden, #qrOverlay.hidden, #adminDash.hidden, #adminDash.hidden, #guidePage.hidden, #adPlayerModal.hidden, #splitModal.hidden, #lastNameSheet.hidden, #sessionsPage.hidden, #sessionCreate.hidden, #sessionDetail.hidden, #quickStartPage.hidden, #courtsPage.hidden, #courtSubmit.hidden, #adCourtModal.hidden { display:none !important; }
 
   /* City/Email overlay — display controlled ONLY by CSS class */
   #cityEmailOverlay { display:flex; }
@@ -725,8 +725,9 @@
       <div class="login-sub" style="margin-bottom:0;">Tell us a little about yourself</div>
     </div>
     <label class="flabel">Your Name</label>
-    <input class="finput" id="profileNameInput" placeholder="Full name" maxlength="30"
+    <input class="finput" id="profileNameInput" placeholder="First and last name" maxlength="30"
       style="font-size:18px;font-weight:700;text-align:center;">
+    <div id="profileNameErr" style="font-size:12px;color:var(--yellow);font-weight:700;text-align:center;margin:-6px 0 6px;"></div>
     <div style="font-size:11.5px;color:var(--muted);font-weight:600;text-align:center;margin:6px 0 2px;">👤 This is your username — the exact name on every roster, game and leaderboard. Tied to your phone number. Change it later in Profile and it updates everywhere.</div>
     <label class="flabel">I am</label>
     <div class="gender-row">
@@ -815,7 +816,8 @@
   <div id="adminIssues" style="display:none;"></div>
   <div id="profileNudge" style="display:none;"></div>
   <label class="flabel">Name</label>
-  <input class="finput" id="editName" placeholder="Your name" maxlength="30">
+  <input class="finput" id="editName" placeholder="First and last name" maxlength="30">
+  <div id="editNameErr" style="display:none;font-size:12px;color:var(--yellow);font-weight:700;margin:-8px 0 10px;"></div>
 
   <!-- what changes and what people look at: rating, DUPR, travel status, texts -->
   <div id="myDprCard" style="display:none;margin:4px 0 14px;padding:11px 14px;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(0,144,255,0.07));border:1px solid rgba(0,240,255,0.35);border-radius:12px;">
@@ -1384,6 +1386,16 @@
 </div>
 
 <!-- ADMIN PLAYER EDIT MODAL -->
+<div id="lastNameSheet" class="hidden" style="position:fixed;inset:0;z-index:655;background:rgba(4,6,15,0.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;width:min(400px,100%);">
+    <div style="font-size:40px;text-align:center;margin-bottom:6px;">👤</div>
+    <div style="font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:1px;color:var(--white);text-align:center;margin-bottom:8px;">What's your last name?</div>
+    <div style="font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;line-height:1.5;margin-bottom:14px;">A few members share a first name, so games were getting mixed up. Your full name becomes your username on every roster and leaderboard — your past games come with you.</div>
+    <input class="finput" id="lnInput" placeholder="First and last name" maxlength="30" style="font-size:18px;font-weight:700;text-align:center;" onkeydown="if(event.key==='Enter')saveLastName()">
+    <div id="lnErr" style="font-size:12px;color:var(--yellow);font-weight:700;text-align:center;margin:-6px 0 10px;min-height:14px;"></div>
+    <button onclick="saveLastName()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Save</button>
+  </div>
+</div>
 <div id="splitModal" class="hidden" style="position:fixed;inset:0;z-index:650;background:rgba(4,6,15,0.9);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;width:min(440px,100%);max-height:88vh;overflow-y:auto;">
     <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:12px;">✂️ Split into two people</div>
@@ -1775,6 +1787,51 @@ window.presenceBeat = presenceBeat;
 // Every login leaves a complete directory card. The old presence stamp could land before the profile loaded and
 // create a nameless card that never got a name — which is how an active player looked like "no account".
 // Also: an imported/unclaimed card carrying MY phone or MY name is me → its DUPR/city/etc. fill my blanks and it retires.
+// NAME RULES — first + last (or initial), and no two logins with the same name. The name is the key every game
+// is stored under, so two "Greg"s literally share one history. Returns null when fine, else a human message.
+window.nameProblem = async function(name, excludeUid) {
+  const nm = String(name || '').trim();
+  if (!nm) return 'Enter your name.';
+  const parts = nm.split(/\s+/).filter(p => /[a-z0-9]/i.test(p));
+  if (parts.length < 2) return 'Please add your last name (or initial) — e.g. "' + nm + ' R." — so you\'re never mixed up with another ' + nm + '.';
+  const dir = await loadChatDir();
+  const taken = Object.entries(dir).find(([u, d]) => u !== excludeUid && d && !d.unclaimed && String(d.name || '').trim().toLowerCase() === nm.toLowerCase());
+  if (taken) return '"' + nm + '" is already another member\'s name. Add a middle initial or spell out your last name.';
+  return null;
+};
+// A member changed their own name: carry it across the games and sign-ups that are provably theirs (session
+// rosters store their uid), and leave a breadcrumb so the admin audit can finish any games that were typed in by hand.
+window.applyMyRename = async function(oldName, newName) {
+  if (!currentUser || !oldName || !newName || oldName.toLowerCase() === newName.toLowerCase()) return;
+  try { await renameMyselfInTournaments(oldName, newName); } catch (e) {}
+  try { await window.renameAccount(currentUser.uid, newName); } catch (e) {}
+  try { await update(ref(db, 'directory/' + currentUser.uid), { prevName: oldName, renamedAt: Date.now() }); } catch (e) {}
+  window._nameCache = {}; chatDirCache = null; lbData = null;
+};
+// Existing members with a one-word name get asked once to complete it (can't be skipped — see nameProblem).
+window.maybeAskLastName = async function() {
+  if (!currentUser || !userProfile || !userProfile.name) return;
+  const parts = String(userProfile.name).trim().split(/\s+/).filter(p => /[a-z0-9]/i.test(p));
+  if (parts.length >= 2) return;
+  const sh = document.getElementById('lastNameSheet'); if (!sh) return;
+  document.getElementById('lnInput').value = userProfile.name.trim() + ' ';
+  document.getElementById('lnErr').textContent = '';
+  sh.classList.remove('hidden');
+  setTimeout(() => { try { const i = document.getElementById('lnInput'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); } catch (e) {} }, 150);
+};
+window.saveLastName = async function() {
+  const nm = (document.getElementById('lnInput').value || '').trim();
+  const err = await window.nameProblem(nm, currentUser.uid);
+  if (err) { document.getElementById('lnErr').textContent = err; return; }
+  const old = (userProfile.name || '').trim();
+  userProfile = { ...userProfile, name: nm };
+  try { await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile); } catch (e) { document.getElementById('lnErr').textContent = 'Could not save — try again.'; return; }
+  await saveDirectoryEntry();
+  document.getElementById('lastNameSheet').classList.add('hidden');
+  await window.applyMyRename(old, nm);
+  updateProfileDisplay();
+  copiedToast('✓ You\'re now ' + nm + ' everywhere');
+};
 window.healMyDirectory = async function() {
   if (!currentUser || !userProfile || !userProfile.name) return null;
   const me = currentUser.uid;
@@ -2001,7 +2058,7 @@ async function bootApp() {
       }
     }
     if (['wins','avg','auto'].includes(userProfile.rankRule)) { rankRule = userProfile.rankRule; try { localStorage.setItem('pbt_rankRule', rankRule); } catch(e) {} }
-    if (userProfile.name && !window._dirHealed) { window._dirHealed = true; setTimeout(() => window.healMyDirectory().catch(() => {}), 800); }
+    if (userProfile.name && !window._dirHealed) { window._dirHealed = true; setTimeout(() => window.healMyDirectory().catch(() => {}), 800); setTimeout(() => window.maybeAskLastName().catch(() => {}), 1400); }
     updateProfileDisplay();
     if (wasNew && !userProfile.name) {
       document.getElementById('profileOverlay').classList.remove('hidden');
@@ -3646,10 +3703,35 @@ window.adminAudit = async function(opts) {
   Object.entries(byPhone).forEach(([np, hits]) => { if (hits.length < 2 || hits.every(h => seenUid.has(h[0]))) return;
     const real = hits.filter(h => !h[1].unclaimed).length;
     issues.push({ kind: 'phone', key: np, uids: hits.map(h => h[0]), names: hits.map(h => h[1].name || ''), auto: real <= 1, text: hits.length + ' accounts share ' + np + ' (' + hits.map(h => h[1].name || '(no name)').join(' / ') + ')' + (real <= 1 ? '' : ' — both real logins, needs a human') }); });
+  // 3b. one name, games from two different logins (sign-up records prove it) → was never one person
+  const links = await window.loadTidLinks();
+  const tnames = {}; try { const tsn = (await get(ref(db, 'tournaments'))).val() || {}; Object.entries(tsn).forEach(([t, v]) => { tnames[t] = (v && v.cfg && v.cfg.name) || t; }); } catch (e) {}
+  const who = u => (dir[u] && (dir[u].phone || dir[u].email)) || ('account ' + String(u).slice(0, 6));
+  Object.entries(links.byName).forEach(([k, m]) => { const uids = Object.keys(m); if (uids.length < 2) return;
+    const nmShown = (byName[k] && byName[k][0][1].name) || k;
+    const detail = uids.map(u => who(u) + ' → ' + m[u].map(t => tnames[t] || t).slice(0, 3).join(', ')).join(' · ');
+    const ex = issues.find(i => i.kind === 'name' && String(i.key).toLowerCase() === k);
+    if (ex) { ex.text += '. Sign-ups show: ' + detail; return; }
+    if (ignored('mixed', nmShown)) return;
+    issues.push({ kind: 'mixed', key: nmShown, uids, auto: false, text: 'Games under "' + nmShown + '" come from ' + uids.length + ' different logins — ' + detail }); });
+  // 3c. members who completed their name: finish the games that were typed in by hand under the old one
+  for (const [u, d] of Object.entries(dir)) {
+    if (!d || !d.prevName || !d.name) continue;
+    const pk = String(d.prevName).trim().toLowerCase();
+    const stillNamed = Object.entries(dir).some(([u2, d2]) => u2 !== u && d2 && String(d2.name || '').trim().toLowerCase() === pk);
+    const otherUids = Object.keys(links.byName[pk] || {}).filter(x => x !== u);
+    if (!lbData) { try { await loadLeaderboardData(); } catch (e) {} }
+    const left = (lbData && lbData.games || []).filter(g => g.t1.concat(g.t2).some(p => p.trim().toLowerCase() === pk)).length;
+    if (!left) { try { await update(ref(db, 'directory/' + u), { prevName: null }); } catch (e) {} continue; }
+    if (stillNamed || otherUids.length) { if (!ignored('rename', d.prevName)) issues.push({ kind: 'mixed', key: d.prevName, uids: [u].concat(otherUids), auto: false, text: '"' + d.name + '" used to be "' + d.prevName + '" — ' + left + ' game' + (left === 1 ? '' : 's') + ' still sit under the old name, but so might someone else\'s. Split to sort them.' }); continue; }
+    issues.push({ kind: 'rename', key: d.prevName + '→' + d.name, from: d.prevName, to: d.name, uid: u, auto: true, text: '"' + d.name + '" used to be "' + d.prevName + '" — ' + left + ' hand-typed game' + (left === 1 ? '' : 's') + ' still under the old name' });
+  }
   // 4. optional: auto-fix the safe ones
   if (opts.fix) {
     for (const it of issues.filter(i => i.auto)) {
-      try { const r = it.kind === 'name' ? await window.consolidateAccounts(it.key) : await window.consolidateByPhone(it.key); if (r && r.absorbed && r.absorbed.length) { it.done = true; fixed.push('fused ' + it.text); } else if (r && r.blocked) it.text += ' — ' + r.blocked; } catch (e) { it.text += ' — ' + (e.message || e); }
+      try {
+        if (it.kind === 'rename') { await window.renamePlayerEverywhere(it.from, it.to); await update(ref(db, 'directory/' + it.uid), { prevName: null }); it.done = true; fixed.push(it.from + ' → ' + it.to); continue; }
+        const r = it.kind === 'name' ? await window.consolidateAccounts(it.key) : await window.consolidateByPhone(it.key); if (r && r.absorbed && r.absorbed.length) { it.done = true; fixed.push('fused ' + it.text); } else if (r && r.blocked) it.text += ' — ' + r.blocked; } catch (e) { it.text += ' — ' + (e.message || e); }
     }
   }
   const open = issues.filter(i => !i.done && !(ignored(i.kind, i.key) && !i.auto));
@@ -3673,8 +3755,8 @@ window.renderAdminIssues = function() {
     + '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:8px;">🛠 Admin · ' + (a.issues.length ? a.issues.length + ' account issue' + (a.issues.length === 1 ? '' : 's') : 'accounts look clean') + '</div>';
   if (auto.length) x += '<button onclick="adminFixAll()" style="width:100%;padding:11px;margin-bottom:10px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">✨ Fix ' + auto.length + ' automatically</button>';
   a.issues.forEach(i => { x += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;"><div style="font-size:12px;font-weight:700;color:var(--white);line-height:1.4;">' + (i.auto ? '🔗 ' : '⚠️ ') + escInfo(i.text) + '</div>'
-    + (i.auto ? '<button onclick="adminFixOne(\'' + i.kind + '\',\'' + esc(i.key) + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(0,240,255,0.45);color:var(--cyan);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">Combine</button>'
-      : '<div style="display:flex;flex-direction:column;gap:5px;"><button onclick="openSplit(\'' + esc(i.kind === 'name' ? i.key : ((i.names || []).find(Boolean) || i.key)) + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(0,240,255,0.45);color:var(--cyan);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">✂️ Split</button><button onclick="adminIgnoreIssue(\'' + i.kind + '\',\'' + esc(i.key) + '\')" style="padding:6px 10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;">Different people, leave it</button></div>') + '</div>'; });
+    + (i.auto ? '<button onclick="adminFixOne(\'' + i.kind + '\',\'' + esc(i.key) + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(0,240,255,0.45);color:var(--cyan);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">' + (i.kind === 'rename' ? 'Finish rename' : 'Combine') + '</button>'
+      : '<div style="display:flex;flex-direction:column;gap:5px;"><button onclick="openSplit(\'' + esc(i.kind === 'phone' ? ((i.names || []).find(Boolean) || i.key) : i.key) + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(0,240,255,0.45);color:var(--cyan);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">✂️ Split</button><button onclick="adminIgnoreIssue(\'' + i.kind + '\',\'' + esc(i.key) + '\')" style="padding:6px 10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;">Different people, leave it</button></div>') + '</div>'; });
   if (a.fixed.length) x += '<div style="font-size:11px;color:var(--aqua);font-weight:700;margin-top:6px;">✓ Just fixed: ' + a.fixed.slice(0, 6).map(escInfo).join(' · ') + (a.fixed.length > 6 ? ' +' + (a.fixed.length - 6) + ' more' : '') + '</div>';
   x += '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:6px;">Combine keeps the real login, carries phone / email / DUPR / photo over, moves followers, renames the ghost\'s games onto the real name, deletes the ghost. Checked at ' + new Date(a.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' · <span onclick="adminAudit({fix:false})" style="color:var(--cyan);cursor:pointer;">re-check</span></div></div>';
   el.innerHTML = x; el.style.display = 'block';
@@ -3689,10 +3771,14 @@ window.adminFixAll = async function() {
 };
 window.adminFixOne = async function(kind, key) {
   if (!isAdmin()) return;
+  if (kind === 'rename') { const it = (window._adminAudit && window._adminAudit.issues.find(i => i.kind === 'rename' && i.key === key)); if (!it) return;
+    if (!confirm('Rename the leftover "' + it.from + '" games to "' + it.to + '"?')) return;
+    try { await window.renamePlayerEverywhere(it.from, it.to); await update(ref(db, 'directory/' + it.uid), { prevName: null }); alert('✓ Done.'); } catch (e) { alert('Failed: ' + (e.message || e)); }
+  } else {
   if (!confirm('Combine the accounts for ' + key + ' into one?')) return;
   try { const r = kind === 'name' ? await window.consolidateAccounts(key) : await window.consolidateByPhone(key);
     if (r && r.blocked) alert('⚠ ' + r.blocked); else alert('✓ Combined.');
-  } catch (e) { alert('Combine failed: ' + (e.message || e)); }
+  } catch (e) { alert('Combine failed: ' + (e.message || e)); } }
   lbData = null; chatDirCache = null; window._nameCache = {};
   await window.adminAudit({ fix: false });
 };
@@ -3725,6 +3811,21 @@ window.renameAccount = async function(uid, newName) {
   chatDirCache = null; window._nameCache = {};
   return n;
 };
+// Who REALLY played: session sign-ups carry the member's uid, and a session knows which tournament it became.
+// So for any tournament that started as a sign-up sheet we can say which login a name belonged to.
+window.loadTidLinks = async function() {
+  const out = { byName: {}, byTid: {} };
+  try { const ss = (await get(ref(db, 'sessions'))).val() || {};
+    Object.values(ss).forEach(s => { if (!s || !s.tournamentId) return; const tid = s.tournamentId;
+      [].concat(Array.isArray(s.roster) ? s.roster : Object.values(s.roster || {}), Array.isArray(s.waitlist) ? s.waitlist : Object.values(s.waitlist || {})).forEach(e => { if (!e || !e.uid || !e.name) return; const k = String(e.name).trim().toLowerCase();
+        (out.byTid[tid] = out.byTid[tid] || {})[k] = e.uid; ((out.byName[k] = out.byName[k] || {})[e.uid] = out.byName[k][e.uid] || []).push(tid); }); }); } catch (e) {}
+  return out;
+};
+window.splitPickAccount = function() {
+  const c = window._splitCtx; if (!c) return;
+  const acct = (document.querySelector('input[name=splitAcct]:checked') || {}).value || '';
+  document.querySelectorAll('.splitTid').forEach(cb => { const lu = c.links.byTid[cb.value] && c.links.byTid[cb.value][c.name.toLowerCase()]; if (acct && lu) cb.checked = (lu === acct); });
+};
 window.openSplit = async function(name) {
   if (!isAdmin()) return;
   const nm = String(name || '').trim(); if (!nm) return;
@@ -3738,19 +3839,28 @@ window.openSplit = async function(name) {
     [...g.t1, ...g.t2].forEach(p => { if (p.trim().toLowerCase() !== low) t.with[p.trim()] = (t.with[p.trim()] || 0) + 1; }); });
   const dir = (await get(ref(db, 'directory'))).val() || {};
   const accts = Object.entries(dir).filter(([u, d]) => d && String(d.name || '').trim().toLowerCase() === low);
-  window._splitCtx = { name: nm, tids: Object.values(byTid).sort((a, b) => (b.when || 0) - (a.when || 0)), accts };
+  const links = await window.loadTidLinks();
+  const tids = Object.values(byTid).sort((a, b) => (b.when || 0) - (a.when || 0));
+  window._splitCtx = { name: nm, tids, accts, links };
+  const who = u => { const d = dir[u]; return d ? (d.phone || d.email || 'account ' + u.slice(0, 6)) : 'account ' + String(u).slice(0, 6); };
   const el = document.getElementById('splitBody'); if (!el) return;
-  let x = '<div style="font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-bottom:12px;">Two different people are showing up as <b style="color:var(--white);">' + escInfo(nm) + '</b>. Name the second person, tick the tournaments that were theirs, and (if they have a login) pick which account is them. Everything else stays with "' + escInfo(nm) + '".</div>';
+  let x = '<div style="font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.5;margin-bottom:12px;">Two different people are showing up as <b style="color:var(--white);">' + escInfo(nm) + '</b>, so their games sit in one history. Give the second person their full name, pick which login is them, and their tournaments move with them. Everything else stays "' + escInfo(nm) + '".</div>';
+  // plain-words summary: which login signed up for which tournaments
+  const byUid = {}; tids.forEach(t => { const lu = links.byTid[t.tid] && links.byTid[t.tid][low]; (byUid[lu || '?'] = byUid[lu || '?'] || []).push(t); });
+  x += '<div style="padding:10px 12px;background:rgba(0,240,255,0.05);border:1px solid rgba(0,240,255,0.25);border-radius:10px;margin-bottom:12px;font-size:12.5px;line-height:1.55;">';
+  Object.entries(byUid).forEach(([u, ts]) => { x += '<div><b style="color:var(--white);">' + (u === '?' ? '✍️ Typed in by hand (no sign-up record)' : '📱 ' + escInfo(who(u))) + '</b> → ' + ts.map(t => escInfo(t.name) + ' (' + t.n + ')').join(', ') + '</div>'; });
+  if (!tids.length) x += '<div style="color:var(--muted);">No logged games under this name yet.</div>';
+  x += '</div>';
   x += '<label class="flabel">The other person\'s name</label><input class="finput" id="splitNewName" placeholder="e.g. ' + escInfo(nm) + ' Dallam" autocomplete="off">';
   x += '<label class="flabel">Which account is them?</label>';
-  x += '<label style="display:flex;gap:10px;align-items:center;padding:9px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;"><input type="radio" name="splitAcct" value="" checked> <span style="font-size:13px;font-weight:700;color:var(--white);">No login / not sure — just split the games</span></label>';
-  accts.forEach(([u, d]) => { x += '<label style="display:flex;gap:10px;align-items:center;padding:9px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;"><input type="radio" name="splitAcct" value="' + u + '">'
+  x += '<label style="display:flex;gap:10px;align-items:center;padding:9px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;"><input type="radio" name="splitAcct" value="" checked onchange="splitPickAccount()"> <span style="font-size:13px;font-weight:700;color:var(--white);">No login / not sure — just split the games</span></label>';
+  accts.forEach(([u, d]) => { x += '<label style="display:flex;gap:10px;align-items:center;padding:9px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;"><input type="radio" name="splitAcct" value="' + u + '" onchange="splitPickAccount()">'
     + (d.avatar ? '<span style="width:30px;height:30px;border-radius:50%;background:url(' + d.avatar + ') center/cover;flex-shrink:0;"></span>' : '<span style="width:30px;height:30px;border-radius:50%;background:var(--surface2);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👤</span>')
     + '<span style="font-size:12.5px;font-weight:700;color:var(--white);line-height:1.4;">' + escInfo(d.phone || (d.unclaimed ? 'unclaimed profile' : 'no phone')) + (d.email ? '<br><span style="color:var(--muted);font-weight:600;">' + escInfo(d.email) + '</span>' : '') + (d.dupr ? ' <span style="color:var(--yellow);">DUPR ' + escInfo(String(d.dupr)) + '</span>' : '') + (d.lastActive ? '<br><span style="color:var(--muted);font-weight:600;font-size:11px;">active ' + new Date(d.lastActive).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>' : '') + '</span></label>'; });
   x += '<label class="flabel" style="margin-top:8px;">Their tournaments</label>';
   if (!window._splitCtx.tids.length) x += '<div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px;">No logged games under this name.</div>';
-  window._splitCtx.tids.forEach(t => { const w = Object.entries(t.with).sort((a, b) => b[1] - a[1]).slice(0, 4).map(e => e[0]).join(', ');
-    x += '<label style="display:flex;gap:10px;align-items:flex-start;padding:9px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;"><input type="checkbox" class="splitTid" value="' + t.tid + '" style="margin-top:3px;"><span style="font-size:12.5px;line-height:1.45;"><b style="color:var(--white);">' + escInfo(t.name) + '</b> <span style="color:var(--muted);font-weight:600;">· ' + new Date(t.when).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' + t.n + ' game' + (t.n === 1 ? '' : 's') + ' · ' + t.w + '-' + (t.n - t.w) + '</span><br><span style="color:var(--muted);font-weight:600;">played with ' + escInfo(w || '—') + '</span></span></label>'; });
+  tids.forEach(t => { const w = Object.entries(t.with).sort((a, b) => b[1] - a[1]).slice(0, 4).map(e => e[0]).join(', '); const lu = links.byTid[t.tid] && links.byTid[t.tid][low];
+    x += '<label style="display:flex;gap:10px;align-items:flex-start;padding:9px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;"><input type="checkbox" class="splitTid" value="' + t.tid + '" style="margin-top:3px;"><span style="font-size:12.5px;line-height:1.45;"><b style="color:var(--white);">' + escInfo(t.name) + '</b> <span style="color:var(--muted);font-weight:600;">· ' + new Date(t.when).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' + t.n + ' game' + (t.n === 1 ? '' : 's') + ' · ' + t.w + '-' + (t.n - t.w) + '</span><br><span style="color:var(--muted);font-weight:600;">played with ' + escInfo(w || '—') + '</span><br><span style="color:' + (lu ? 'var(--aqua)' : 'var(--muted)') + ';font-weight:700;font-size:11px;">' + (lu ? '📱 signed up from ' + escInfo(who(lu)) : '✍️ typed in by hand · pick by partners') + '</span></span></label>'; });
   el.innerHTML = x;
   document.getElementById('splitModal').classList.remove('hidden');
   setTimeout(() => { try { document.getElementById('splitNewName').focus(); } catch (e) {} }, 100);
@@ -8026,6 +8136,9 @@ window.plSignOut = async function() {
 window.saveProfile = async function() {
   const name = document.getElementById('profileNameInput').value.trim();
   if (!name) { document.getElementById('profileNameInput').focus(); return; }
+  const _np = await window.nameProblem(name, currentUser.uid);
+  const _pe = document.getElementById('profileNameErr');
+  if (_np) { if (_pe) _pe.textContent = _np; document.getElementById('profileNameInput').focus(); return; } else if (_pe) _pe.textContent = '';
   const oldName = (userProfile?.name || '').trim();
   const isFirstSave = !oldName;
   const smsBox = document.getElementById('pSms');
@@ -8098,8 +8211,10 @@ async function autoSaveProfile() {
   clearTimeout(_autoSaveTimer);
   _autoSaveTimer = setTimeout(async () => {
     if (!currentUser) return;
-    const name  = document.getElementById('editName').value.trim();
+    let name  = document.getElementById('editName').value.trim();
     if (!name) return; // don't save nameless profiles
+    const _old = (userProfile.name || '').trim(); let _renamed = false;
+    if (name.toLowerCase() !== _old.toLowerCase()) { const _p = await window.nameProblem(name, currentUser.uid); const _e = document.getElementById('editNameErr'); if (_p) { if (_e) { _e.textContent = _p; _e.style.display = 'block'; } name = _old || name; } else { if (_e) _e.style.display = 'none'; _renamed = !!_old; } }
     const email = document.getElementById('editEmail').value.trim();
     const city  = document.getElementById('editCity').value.trim();
     const dob   = document.getElementById('editDob').value;
@@ -8113,6 +8228,7 @@ async function autoSaveProfile() {
     try {
       await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
       saveDirectoryEntry();
+      if (_renamed) window.applyMyRename(_old, name);
       updateProfileDisplay();
       const t = document.createElement('div');
       t.textContent = '✓ Saved';
@@ -8290,7 +8406,9 @@ window.toggleAwayFields = function() {
   if (window.saveProfileEdits) window.saveProfileEdits(true);
 };
 window.saveProfileEdits = async function(silent) {
-  const name  = document.getElementById('editName').value.trim();
+  let name  = document.getElementById('editName').value.trim();
+  const _old = (userProfile.name || '').trim(); let _renamed = false;
+  if (name && name.toLowerCase() !== _old.toLowerCase()) { const _p = await window.nameProblem(name, currentUser.uid); const _e = document.getElementById('editNameErr'); if (_p) { if (_e) { _e.textContent = _p; _e.style.display = 'block'; } name = _old || name; if (!silent) alert(_p); } else { if (_e) _e.style.display = 'none'; _renamed = !!_old; } }
   const email = document.getElementById('editEmail').value.trim();
   const city  = document.getElementById('editCity').value.trim();
   const dob   = document.getElementById('editDob').value;
@@ -8309,6 +8427,7 @@ window.saveProfileEdits = async function(silent) {
     awayKind: awayOn ? (window._awayKind || 'travel') : null };
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
+  if (_renamed) window.applyMyRename(_old, name);
   updateProfileDisplay();
   if (silent) {
     const dot = document.createElement('div');
@@ -9013,6 +9132,8 @@ function adminFixOne(k,v)    { if(window.adminFixOne) window.adminFixOne(k,v); }
 function adminAudit(o)       { if(window.adminAudit) window.adminAudit(o); }
 function openSplit(n)        { if(window.openSplit) window.openSplit(n); }
 function doSplit()           { if(window.doSplit) window.doSplit(); }
+function saveLastName()      { if(window.saveLastName) window.saveLastName(); }
+function splitPickAccount()  { if(window.splitPickAccount) window.splitPickAccount(); }
 function adminIgnoreIssue(k,v){ if(window.adminIgnoreIssue) window.adminIgnoreIssue(k,v); }
 function setAwayKind(k)      { if(window.setAwayKind) window.setAwayKind(k); }
 function ngToggle(u)         { if(window.ngToggle) window.ngToggle(u); }
@@ -9064,7 +9185,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-15.6';
+window.BUILD_TAG = 'v2026-10-15.7';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
