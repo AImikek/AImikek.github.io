@@ -871,7 +871,7 @@ ava.addEventListener('click',()=>{
   menu.hidden=false;
   const r=ava.getBoundingClientRect(); menu.style.top=(r.bottom+6)+'px'; menu.style.right=Math.max(8,window.innerWidth-r.right)+'px'; menu.style.left='auto';
 });
-document.addEventListener('click',e=>{ if(!menu.hidden && !menu.contains(e.target) && e.target!==ava) closeMenu(); });
+document.addEventListener('click',e=>{ if(!menu.hidden && !menu.contains(e.target) && !ava.contains(e.target)) closeMenu(); });
 
 function exportBackup(){
   const data={exportedAt:new Date().toISOString(), tasks:[...tasks.values()], projects:[...projects.values()]};
