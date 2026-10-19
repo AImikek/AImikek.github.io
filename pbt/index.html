@@ -1268,6 +1268,25 @@
     <div id="scLevelSuggest" style="display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 12px;"></div>
     <label class="flabel">Note (optional)</label>
     <input class="finput" id="scNote" placeholder="Bring balls · All levels welcome">
+    <label class="flabel">💳 Charge to reserve? (optional)</label>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+        <span style="font-size:13.5px;font-weight:700;color:var(--white);">Players pay to reserve a spot</span>
+        <input type="checkbox" id="scPaid" onchange="scTogglePaid()" style="width:22px;height:22px;accent-color:var(--cyan);">
+      </label>
+      <div id="scPaidFields" style="display:none;margin-top:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <button type="button" class="rtbtn active" id="scPmPerson" onclick="scSetPriceMode('person')" style="flex:1;">Price per player</button>
+          <button type="button" class="rtbtn" id="scPmTotal" onclick="scSetPriceMode('total')" style="flex:1;">Total to split</button>
+        </div>
+        <label class="flabel" id="scPriceLbl">Price per player ($)</label>
+        <input class="finput" id="scPrice" type="number" inputmode="decimal" step="0.01" min="1" placeholder="e.g. 15" oninput="scPricePreview()">
+        <div id="scPricePreview" style="font-size:12px;color:var(--aqua);font-weight:700;margin:-6px 0 10px;"></div>
+        <label class="flabel">Full refund if they drop out at least</label>
+        <select class="finput" id="scRefundH"><option value="48">48 hours before</option><option value="24" selected>24 hours before</option><option value="12">12 hours before</option><option value="2">2 hours before</option><option value="0">Never (no self-refunds)</option></select>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;line-height:1.5;">Paid with Apple Pay or card through Stripe (about 2.9% + 30¢ per payment). You can refund anyone from the roster any time; cancelling the game refunds everyone.</div>
+      </div>
+    </div>
     <label class="flabel">Who can see it?</label>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
       <div class="mcard active" id="scVisPublic" onclick="scSetVis('public')" style="padding:12px 8px;"><div class="mname" style="font-size:13px;">🌎 Public</div><div class="mdesc" style="font-size:10px;">Listed in Games to Join</div></div>
@@ -1720,6 +1739,7 @@ const push = () => {
 let startHash = window.location.hash.replace('#','');
 if (startHash) window.location.hash = '';
 const _sessParam = new URLSearchParams(window.location.search).get('s');
+const _paidParam = new URLSearchParams(window.location.search).get('paid');
 const _pageParam = new URLSearchParams(window.location.search).get('p');
 const _playerParam = new URLSearchParams(window.location.search).get('player');
 const urlTid = new URLSearchParams(window.location.search).get('t');
@@ -2091,6 +2111,8 @@ async function bootApp() {
     if (_bgPtr.exists() && _bgPtr.val()) { skip = true; subscribeTournament(_bgPtr.val()); }
     else { firstLoad = false; updateNav(); }
     setTimeout(() => { try { openSessionDetail(_sessParam); history.replaceState({}, '', window.location.pathname); } catch(e) {} }, 500);
+    // back from Stripe → confirm the payment and seat them (the profile listener needs a beat to load the name)
+    if (_paidParam === '1') setTimeout(() => { window.finishPayment(_sessParam).catch(e => console.log('finishPayment', e)); }, 1400);
     return;
   }
   if (_playerParam) {
@@ -5369,7 +5391,7 @@ window.openSessions = async function() {
       return '<div onclick="openSessionDetail(\'' + s.sid + '\')" style="cursor:pointer;padding:14px;background:var(--surface);border:1px solid '+(spotsLeft?'rgba(0,240,255,0.3)':'var(--border)')+';border-radius:14px;margin-bottom:10px;">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;">'
         +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' 🔁':'')+(s.visibility==='private'?' 🔒':'')+'</div>'
-        +'<div style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;'+(spotsLeft?'background:rgba(0,245,196,0.12);color:var(--aqua);':'background:rgba(255,224,0,0.1);color:var(--yellow);')+'">'+(spotsLeft ? spotsLeft+' open' : 'Full · waitlist open')+'</div></div>'
+        +'<div style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;'+(spotsLeft?'background:rgba(0,245,196,0.12);color:var(--aqua);':'background:rgba(255,224,0,0.1);color:var(--yellow);')+'">'+(window.sessPrice(s) ? '💳 '+window.fmtMoney(window.sessPrice(s))+' · ' : '')+(spotsLeft ? spotsLeft+' open' : 'Full · waitlist open')+'</div></div>'
         +'<div style="font-size:13px;color:var(--muted);font-weight:600;margin-top:4px;">'+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+(s.location?' · 📍 '+s.location:'')+(s.level?' · 🎚 '+s.level:'')+(_ad?' · <span style="color:var(--cyan);">💎 avg '+_ad.avg.toFixed(2)+'</span>':'')+'</div>'
         +'<div style="font-size:12px;color:var(--white);font-weight:600;margin-top:6px;">'+roster.map(r=>r.name).join(' · ')+'</div>'
         +'</div>';
@@ -5426,6 +5448,7 @@ window.editSession = async function(sid) {
   document.getElementById('scSpots').value    = String(s.spots || 4);
   document.getElementById('scLevel').value    = s.level || '';
   document.getElementById('scNote').value     = s.note  || '';
+  window.scFillPrice(s);
   scSetVis(s.visibility || 'public');
   scSetRec(s.recurring || null);
   renderScSuggestions();
@@ -5466,6 +5489,7 @@ window.saveEditSession = async function() {
       endTime:   document.getElementById('scEnd').value || '09:30',
       spots,
       level:      document.getElementById('scLevel').value.trim() || null,
+      ...window.scPriceFields(),
       note:       document.getElementById('scNote').value.trim()  || null,
       visibility: scVis,
       recurring:  scRec,
@@ -5590,7 +5614,7 @@ window.createSession = async function() {
   const sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   const me = { name: userProfile?.name || 'Organizer', uid: currentUser.uid, comment: '', at: Date.now() };
   try {
-    await set(ref(db, 'sessions/' + sid), {
+    await set(ref(db, 'sessions/' + sid), Object.assign({
       title, location, date,
       startTime: document.getElementById('scStart').value || '07:30',
       endTime: document.getElementById('scEnd').value || '09:30',
@@ -5604,7 +5628,7 @@ window.createSession = async function() {
       ownerName: userProfile?.name || null,
       createdAt: Date.now(),
       roster: [me]
-    });
+    }, window.scPriceFields()));
     document.getElementById('sessionCreate').classList.add('hidden');
     if (window._dupPrefill) {
       // This session was created by Run It Back — the old lineup + settings now belong to it
@@ -5884,6 +5908,7 @@ function renderSessionDetail(sid, s) {
     +'<div style="font-size:14px;color:var(--muted);font-weight:600;margin-top:6px;">📅 '+ds+' · '+fmtSessTime(s.startTime)+'–'+fmtSessTime(s.endTime)+'</div>'
     +(s.location?'<div onclick="openVenueSheet(\''+sid+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--cyan);font-weight:700;margin-top:4px;text-decoration:underline;text-decoration-color:rgba(0,240,255,0.35);text-underline-offset:3px;">📍 '+s.location+' <span style="font-size:11px;opacity:0.7;">›</span></div>':'')
     +(s.level?'<div style="font-size:13px;color:var(--yellow);font-weight:700;margin-top:2px;">🎚 Level '+s.level+'</div>':'')
+    +(window.sessPrice(s)?'<div style="font-size:13px;color:var(--aqua);font-weight:800;margin-top:4px;">💳 '+window.priceLabel(s)+' · pay to reserve'+(s.refundCutoffH>0?' · full refund up to '+s.refundCutoffH+'h before':'')+'</div>':'')
     +(s.note?'<div style="font-size:13px;color:var(--white);font-weight:600;margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;">💬 '+s.note+(isOwner?' <span onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;color:var(--cyan);font-size:12px;margin-left:6px;">✎ edit</span>':'')+'</div>':(isOwner?'<div onclick="editSessionNote(\''+sid+'\')" style="cursor:pointer;font-size:12px;color:var(--cyan);font-weight:700;margin-top:8px;">➕ Add a note for the group</div>':''))
     +((s.tournamentId && window._liveOk && window._liveOk[sid] === s.tournamentId)?'<div onclick="joinLiveTournament(\''+s.tournamentId+'\')" style="cursor:pointer;text-align:center;margin-top:12px;padding:14px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:12px;color:white;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;box-shadow:0 4px 16px rgba(255,45,120,0.3);">🔴 TOURNAMENT IS LIVE — VIEW GAMES</div>'
       +(isOwner && window._liveNoScores && window._liveNoScores[sid] ? '<div onclick="undoStartTournament(\''+sid+'\')" style="cursor:pointer;text-align:center;margin-top:8px;padding:9px;border:1px solid rgba(255,79,107,0.4);border-radius:10px;color:var(--danger);font-weight:800;font-size:11px;letter-spacing:1px;">↩ STARTED BY ACCIDENT? UNDO — BACK TO SIGN-UPS</div>' : '')
@@ -5898,6 +5923,8 @@ function renderSessionDetail(sid, s) {
   const _rAvg = window.avgDpr ? window.avgDpr(roster.map(r => r && r.name)) : null;
   h += '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">Roster · '+roster.length+'/'+spots
     + (_rAvg ? ' <span style="color:var(--aqua);letter-spacing:0.5px;font-size:11px;">· 💎 avg '+_rAvg.avg.toFixed(2)+'</span>' : '') + '</div>';
+  if (window.sessPrice(s) && isOwner) { const _paidN = roster.filter(r => r && r.paid).length, _pc2 = window.sessPrice(s);
+    h += '<div id="sdCollected" style="font-size:12px;color:var(--aqua);font-weight:800;margin:-4px 0 8px;">💳 Collected '+window.fmtMoney(_paidN*_pc2)+' of '+window.fmtMoney(spots*_pc2)+' · '+_paidN+' paid'+(roster.length>_paidN?' · '+(roster.length-_paidN)+' seated free (organizer/added by hand)':'')+'</div>'; }
   for (let i = 0; i < spots; i++) {
     const r = roster[i];
     if (r) {
@@ -5906,17 +5933,19 @@ function renderSessionDetail(sid, s) {
         +'<span onclick="openRosterPlayerSheet(\''+encodeURIComponent(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'\\\'')+'\',\'roster\')" style="font-weight:700;color:var(--white);font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">'
           +(window._avatarCache && window._avatarCache[r.uid] ? '<span style="width:24px;height:24px;border-radius:50%;background:url('+window._avatarCache[r.uid]+') center/cover;flex-shrink:0;display:inline-block;"></span>' : '')
           +r.name
+          +(r.paid ? '<span title="Paid" style="font-size:11px;">💳</span>' : '')
           +(function(){ const d = window.dprOf && window.dprOf(r.name); return d ? '<span style="font-size:10px;color:var(--cyan);font-weight:800;">💎'+d.toFixed(2)+'</span>' : ''; })()
           +(window._awayCache && window._awayCache[r.uid] ? '<span title="' + (window._awayCache[r.uid] === 'injured' ? 'Injured / sick' : 'Traveling') + '" style="font-size:12px;">' + (window._awayCache[r.uid] === 'injured' ? '🤕' : '✈️') + '</span>' : '')+'</span>'
         +(!isNameEcho(r.comment, r.name) ?'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-left:24px;">💬 '+r.comment+'</div>':'')+'</div>'
         +(r.uid === currentUser?.uid
           ? '<button onclick="releaseSpot(\'' + sid + '\')" style="flex-shrink:0;padding:6px 12px;background:transparent;border:1px solid rgba(255,79,107,0.4);color:var(--danger);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">I\'m out</button>'
-          : (isOwner ? '<button onclick="removeRosterEntry(\''+sid+'\',\''+(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'')+'\')" style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button>' : ''))
+          : (isOwner && r.paid ? '<button onclick="refundPlayer(\''+sid+'\',\''+(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'')+'\')" style="flex-shrink:0;padding:6px 10px;background:transparent;border:1px solid rgba(255,224,0,0.45);color:var(--yellow);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">↩︎ Refund</button>' : isOwner ? '<button onclick="removeRosterEntry(\''+sid+'\',\''+(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'')+'\')" style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(255,79,107,0.12);border:1px solid rgba(255,79,107,0.4);color:var(--danger);font-size:12px;font-weight:800;cursor:pointer;">✕</button>' : ''))
         +'</div>';
     } else {
-      h += '<div onclick="claimSpot(\'' + sid + '\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;background:transparent;border:2px dashed rgba(0,240,255,0.35);border-radius:10px;margin-bottom:6px;">'
+      const _pc = window.sessPrice(s);
+      h += '<div onclick="claimSpot(\'' + sid + '\')" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;background:transparent;border:2px dashed '+(_pc?'rgba(0,245,196,0.45)':'rgba(0,240,255,0.35)')+';border-radius:10px;margin-bottom:6px;">'
         +'<span style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--muted);">'+(i+1)+'</span>'
-        +'<span style="font-weight:800;color:var(--cyan);font-size:13px;letter-spacing:1px;">🙋 CLAIM THIS SPOT</span></div>';
+        +(_pc ? '<span style="font-weight:800;color:var(--aqua);font-size:13px;letter-spacing:1px;">💳 RESERVE · '+window.fmtMoney(_pc)+'</span>' : '<span style="font-weight:800;color:var(--cyan);font-size:13px;letter-spacing:1px;">🙋 CLAIM THIS SPOT</span>')+'</div>';
     }
   }
 
@@ -6343,6 +6372,78 @@ window.joinLiveTournament = async function(tid) {
   } catch(e) { alert('Could not join: ' + (e.message||e)); }
 };
 
+// ═══════════ PAID SESSIONS (Stripe via the worker) ═══════════
+window._scPriceMode = 'person';
+window.scTogglePaid = function() { const on = document.getElementById('scPaid').checked; document.getElementById('scPaidFields').style.display = on ? 'block' : 'none'; if (on) window.scPricePreview(); };
+window.scSetPriceMode = function(m) { window._scPriceMode = m; document.getElementById('scPmPerson').classList.toggle('active', m === 'person'); document.getElementById('scPmTotal').classList.toggle('active', m === 'total'); document.getElementById('scPriceLbl').textContent = m === 'total' ? 'Total to split across all spots ($)' : 'Price per player ($)'; window.scPricePreview(); };
+window.scPricePreview = function() {
+  const v = parseFloat(document.getElementById('scPrice').value) || 0, spots = Math.max(2, Math.min(24, parseInt(document.getElementById('scSpots').value) || 4));
+  const el = document.getElementById('scPricePreview'); if (!el) return;
+  if (!v) { el.textContent = ''; return; }
+  el.textContent = window._scPriceMode === 'total' ? '$' + v.toFixed(2) + ' ÷ ' + spots + ' spots = $' + (Math.ceil(v * 100 / spots) / 100).toFixed(2) + ' each · you collect $' + v.toFixed(2) + ' when it fills' : '$' + v.toFixed(2) + ' each · $' + (v * spots).toFixed(2) + ' when all ' + spots + ' spots fill';
+};
+window.scPriceFields = function() {   // what the form says → session fields
+  const on = document.getElementById('scPaid') && document.getElementById('scPaid').checked;
+  const v = on ? Math.round((parseFloat(document.getElementById('scPrice').value) || 0) * 100) : 0;
+  if (!on || !v) return { price: null, priceMode: null, priceTotal: null, refundCutoffH: null };
+  const m = window._scPriceMode; const spots = Math.max(2, Math.min(24, parseInt(document.getElementById('scSpots').value) || 4));
+  return { price: m === 'total' ? Math.ceil(v / spots) : v, priceMode: m, priceTotal: m === 'total' ? v : null, refundCutoffH: parseFloat(document.getElementById('scRefundH').value) };
+};
+window.scFillPrice = function(s) {
+  const on = !!(s && (s.price || s.priceTotal));
+  document.getElementById('scPaid').checked = on; document.getElementById('scPaidFields').style.display = on ? 'block' : 'none';
+  window.scSetPriceMode((s && s.priceMode) || 'person');
+  document.getElementById('scPrice').value = on ? ((s.priceMode === 'total' ? s.priceTotal : s.price) / 100).toFixed(2).replace(/\.00$/, '') : '';
+  document.getElementById('scRefundH').value = String(s && s.refundCutoffH != null ? s.refundCutoffH : 24);
+  window.scPricePreview();
+};
+window.sessPrice = s => (s && (s.price || s.priceTotal)) ? (s.priceMode === 'total' && s.priceTotal ? Math.ceil(Number(s.priceTotal) / Math.max(1, Number(s.spots) || 1)) : Number(s.price) || 0) : 0;   // cents per player
+window.fmtMoney = c => '$' + (c / 100).toFixed(2).replace(/\.00$/, '');
+window.priceLabel = s => { const c = window.sessPrice(s); if (!c) return ''; return s.priceMode === 'total' ? window.fmtMoney(c) + ' each (' + window.fmtMoney(s.priceTotal) + ' split ' + s.spots + ' ways)' : window.fmtMoney(c) + ' per player'; };
+async function payCall(route, body) {
+  if (aiUrl === null) { try { aiUrl = (await get(ref(db, 'config/assistantUrl'))).val() || ''; } catch (e) { aiUrl = ''; } }
+  if (!aiUrl) throw new Error('Payments aren\'t connected yet — ask Mike.');
+  const r = await fetch(aiUrl.replace(/\/+$/, '') + route, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + await aiToken() }, body: JSON.stringify(body || {}) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error || ('Payment service error ' + r.status)); e.code = j.error; e.hours = j.hours; throw e; }
+  return j;
+}
+window.myPayment = async function(sid) { try { return (await get(ref(db, 'payments/' + sid + '/' + currentUser.uid))).val(); } catch (e) { return null; } };
+// Reserve = pay. Stripe's page opens; it sends them back to ?s=sid&paid=1 and finishPayment() seats them.
+window.startCheckout = async function(sid) {
+  if (!currentUser) { guestSignIn('Sign in with your phone to reserve a spot 🏓'); return; }
+  const nm = (userProfile?.name || '').trim();
+  if (!nm) { window._pendingClaimSid = sid; document.getElementById('profileOverlay').classList.remove('hidden'); return; }
+  try {
+    const r = await payCall('/pay/checkout', { sid, name: nm, origin: window.location.origin });
+    if (r.paid) { await claimSpot(sid); return; }
+    if (r.url) { try { sessionStorage.setItem('pbt_paying', sid); } catch (e) {} (window._go || (u => { window.location.href = u; }))(r.url); }
+  } catch (e) { alert(e.code === 'full' ? 'That game just filled up — you can join the waitlist.' : ('Could not start payment: ' + (e.message || e))); }
+};
+window.finishPayment = async function(sid) {
+  const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s || !window.sessPrice(s)) return;
+  const roster = Array.isArray(s.roster) ? s.roster : Object.values(s.roster || {});
+  if (roster.some(r => r && r.uid === currentUser.uid)) { copiedToast('✓ You\'re in!'); return; }
+  copiedToast('Confirming your payment…');
+  let st = null;
+  for (let i = 0; i < 8; i++) { try { st = (await payCall('/pay/sync', { sid })).status; } catch (e) { st = null; } if (st === 'paid' || st === 'expired' || st === 'none') break; await new Promise(r => setTimeout(r, 1500)); }
+  if (st === 'paid') { await claimSpot(sid); copiedToast('✓ Paid — your spot is reserved!'); }
+  else if (st === 'expired' || st === 'none') copiedToast('Payment not completed — tap Reserve to try again.');
+  else alert('We\'re still waiting on Stripe to confirm. Your card was charged only if Stripe showed you a success page; reopen this game in a minute and your spot will be there.');
+};
+window.refundPlayer = async function(sid, uid, name) {
+  if (!confirm('Refund ' + (name || 'this player') + ' and open their spot?')) return;
+  try { const r = await payCall('/pay/refund', { sid, uid }); copiedToast('✓ Refunded ' + window.fmtMoney(r.amount || 0));
+    const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s) return;
+    const roster = (Array.isArray(s.roster) ? s.roster : Object.values(s.roster || {})).filter(r => r && r.uid !== uid);
+    await set(ref(db, 'sessions/' + sid + '/roster'), roster);
+  } catch (e) { alert('Refund failed: ' + (e.message || e)); }
+};
+window.refundEveryone = async function(sid, s) {
+  const roster = Array.isArray(s.roster) ? s.roster : Object.values(s.roster || {}); let n = 0, failed = [];
+  for (const r of roster) { if (!r || !r.paid || !r.uid) continue; try { await payCall('/pay/refund', { sid, uid: r.uid }); n++; } catch (e) { failed.push(r.name || r.uid); } }
+  return { n, failed };
+};
 window.claimSpot = async function(sid) {
   if (!currentUser) { guestSignIn('Sign in with your phone to claim your spot 🏓'); return; }
   if (!currentUser) { alert('Sign in to claim a spot!'); return; }
@@ -6360,9 +6461,16 @@ window.claimSpot = async function(sid) {
     setTimeout(() => { try { document.getElementById('profileNameInput').focus(); } catch(e) {} }, 100);
     return;
   }
-  let comment = (prompt("You're in, " + nm + "! 🏓\n\nAdd a note for the group? (e.g. \"running 15 min late\")\nLeave EMPTY and press OK to skip:") || '').trim();
+  let paidFlag = false;
+  if (window.sessPrice(s) && roster.length < (s.spots||4)) {
+    const p = await window.myPayment(sid);
+    if (!p || p.status !== 'paid') { return window.startCheckout(sid); }
+    paidFlag = true;
+  }
+  let comment = paidFlag ? '' : (prompt("You're in, " + nm + "! 🏓\n\nAdd a note for the group? (e.g. \"running 15 min late\")\nLeave EMPTY and press OK to skip:") || '').trim();
   if (isNameEcho(comment, nm)) comment = '';  // typed their name (or name + initial) — not a note
   const entry = { name: nm, uid: currentUser.uid, comment, at: Date.now() };
+  if (paidFlag) entry.paid = true;
   try {
     if (roster.length < (s.spots||4)) await set(ref(db, 'sessions/'+sid+'/roster'), [...roster, entry]);
     else await set(ref(db, 'sessions/'+sid+'/waitlist'), [...wait, entry]);
@@ -6373,6 +6481,7 @@ window.removeRosterEntry = async function(sid, uid, name) {
   const snap = await get(ref(db, 'sessions/' + sid));
   const s = snap.val(); if (!s) return;
   if (s.ownerUid !== currentUser?.uid && !isAdmin()) return;
+  { const _r = (Array.isArray(s.roster) ? s.roster : Object.values(s.roster || {})).find(x => x && x.uid === uid); if (_r && _r.paid) return window.refundPlayer(sid, uid, name); }
   if (!uid) { alert('Cannot remove this entry.'); return; }
   if (!confirm('Remove ' + (name || 'this player') + ' from the session?\n\nIf someone is on the waitlist, they will be auto-promoted and emailed.')) return;
   let roster = s.roster ? (Array.isArray(s.roster)?s.roster:Object.values(s.roster)) : [];
@@ -6394,15 +6503,25 @@ window.removeRosterEntry = async function(sid, uid, name) {
 
 window.releaseSpot = async function(sid) {
   if (!currentUser) { guestSignIn('Sign in first'); return; }
-  if (!confirm('Give up your spot?')) return;
   const snap = await get(ref(db, 'sessions/' + sid));
   const s = snap.val(); if (!s) return;
   let roster = s.roster ? (Array.isArray(s.roster)?s.roster:Object.values(s.roster)) : [];
   let wait = s.waitlist ? (Array.isArray(s.waitlist)?s.waitlist:Object.values(s.waitlist)) : [];
+  const mine = roster.find(r => r && r.uid === currentUser.uid);
+  const paidSess = !!window.sessPrice(s);
+  if (paidSess && mine && mine.paid) {
+    const hrs = s.refundCutoffH == null ? 24 : Number(s.refundCutoffH);
+    const start = new Date((s.date || '2000-01-01') + 'T' + (s.startTime || '00:00') + ':00').getTime();
+    const refundable = hrs > 0 && Date.now() <= start - hrs * 3600000;
+    if (!confirm(refundable ? 'Give up your spot? Your ' + window.fmtMoney(window.sessPrice(s)) + ' is refunded automatically.' : 'Give up your spot?\n\n⚠ We\'re inside the ' + hrs + '-hour cutoff, so there\'s no automatic refund (the organizer can still refund you).')) return;
+    if (refundable) { try { await payCall('/pay/refund', { sid }); copiedToast('✓ Refunded'); } catch (e) { if (!confirm('Refund didn\'t go through (' + (e.message || e) + '). Give up the spot anyway?')) return; } }
+  } else if (!confirm('Give up your spot?')) return;
   roster = roster.filter(r => r.uid !== currentUser.uid);
   wait = wait.filter(r => r.uid !== currentUser.uid);
   const promoted = [];
-  while (roster.length < (s.spots||4) && wait.length) { const p = wait.shift(); roster.push(p); promoted.push(p); }
+  if (!paidSess) { while (roster.length < (s.spots||4) && wait.length) { const p = wait.shift(); roster.push(p); promoted.push(p); } }
+  else if (wait.length && roster.length < (s.spots||4)) { // paid game: nobody is seated unpaid — the next in line gets first dibs with a pay link
+    try { const w0 = wait[0]; if (w0 && w0.uid) await window.pushNotif(w0.uid, { type: 'invite', sid, text: 'A spot opened in ' + (s.title || 'the game') + ' — tap Reserve (' + window.fmtMoney(window.sessPrice(s)) + ') to claim it before someone else does' }); } catch (e) {} }
   try {
     await set(ref(db, 'sessions/'+sid+'/roster'), roster);
     await set(ref(db, 'sessions/'+sid+'/waitlist'), wait.length ? wait : null);
@@ -6599,8 +6718,11 @@ window.scheduleNextWeek = async function(sid) {
 };
 
 window.deleteSession = async function(sid) {
-  if (!confirm('Delete this session for everyone?')) return;
+  const _s = (await get(ref(db, 'sessions/' + sid))).val();
+  const _paidN = _s ? (Array.isArray(_s.roster) ? _s.roster : Object.values(_s.roster || {})).filter(r => r && r.paid).length : 0;
+  if (!confirm('Delete this session for everyone?' + (_paidN ? '\n\n' + _paidN + ' player' + (_paidN === 1 ? '' : 's') + ' paid — they will be refunded first.' : ''))) return;
   try {
+    if (_paidN) { const rr = await window.refundEveryone(sid, _s); if (rr.failed.length && !confirm('Could not refund: ' + rr.failed.join(', ') + '. Delete anyway? (refund them from the Stripe dashboard)')) return; else if (rr.n) copiedToast('✓ Refunded ' + rr.n); }
     await set(ref(db, 'sessions/' + sid), null);
     closeSessionDetail();
     openSessions();
@@ -7071,6 +7193,7 @@ function copiedToast(msg) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 1800);
 }
+window.copiedToast = copiedToast;
 
 window.copyInviteLink = async function() {
   if (!activeTid) return;
@@ -7793,7 +7916,7 @@ function finalPodiumHtml(fin) {
   }
   h += '<div style="background:var(--surface);border:1px solid rgba(255,224,0,0.3);border-radius:14px;padding:14px;margin-bottom:14px;">'
     + '<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:4px;">🏅 Final Standings</div>'
-    + '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px;">Decided by the finals · everyone else follows by round-robin rank</div>';
+    + '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px;">Decided by the finals · everyone else follows by round-robin rank <span style="opacity:0.55;font-size:9.5px;">· ' + (window.BUILD_TAG || '') + '</span></div>';
   const all = fin.rows.concat(fin.rest);
   // shared places show "T-1st" style when more than one player holds it
   const count = {}; all.forEach(r => { count[r.place] = (count[r.place] || 0) + 1; });
@@ -9181,6 +9304,11 @@ function openSplit(n)        { if(window.openSplit) window.openSplit(n); }
 function doSplit()           { if(window.doSplit) window.doSplit(); }
 function saveLastName()      { if(window.saveLastName) window.saveLastName(); }
 function splitPickAccount()  { if(window.splitPickAccount) window.splitPickAccount(); }
+function scTogglePaid()      { if(window.scTogglePaid) window.scTogglePaid(); }
+function scSetPriceMode(m)   { if(window.scSetPriceMode) window.scSetPriceMode(m); }
+function scPricePreview()    { if(window.scPricePreview) window.scPricePreview(); }
+function startCheckout(s)    { if(window.startCheckout) window.startCheckout(s); }
+function refundPlayer(s,u,n) { if(window.refundPlayer) window.refundPlayer(s,u,n); }
 function adminIgnoreIssue(k,v){ if(window.adminIgnoreIssue) window.adminIgnoreIssue(k,v); }
 function setAwayKind(k)      { if(window.setAwayKind) window.setAwayKind(k); }
 function ngToggle(u)         { if(window.ngToggle) window.ngToggle(u); }
@@ -9232,13 +9360,34 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-17.2';
+window.BUILD_TAG = 'v2026-10-19.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
   var lastCheck = 0;
+  // Quiet moments (nothing being typed, no score half-entered, no sheet open) → just switch to the new build.
+  // Otherwise fall back to the tap-to-update banner. One automatic attempt per version so a CDN lag can't loop.
+  function safeToReload(){
+    try {
+      var ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'checkbox') return false;
+      if (window._editingScores && window._editingScores.size) return false;
+      var busy = ['addGameOverlay','setupOverlay','sessionCreate','splitModal','adPlayerModal','lastNameSheet','profileOverlay','consentOverlay','chatThread','dmThread'];
+      for (var i = 0; i < busy.length; i++) { var el = document.getElementById(busy[i]); if (el && !el.classList.contains('hidden') && el.style.display !== 'none') return false; }
+      if (document.querySelector('input[id^="s1_"],input[id^="s2_"]')) { var ins = document.querySelectorAll('input[id^="s1_"],input[id^="s2_"]'); for (var j = 0; j < ins.length; j++) if (ins[j].value) return false; }
+    } catch(e) { return false; }
+    return true;
+  }
   function showUpdateBanner(tag){
     if (document.getElementById('updBanner') || window.__updSnoozed) return;
+    try {
+      var k = 'pbt_autoupd_' + tag;
+      if (!sessionStorage.getItem(k) && safeToReload() && !window.__noAutoUpdate) {
+        sessionStorage.setItem(k, '1');
+        if (window.copiedToast) copiedToast('\u27F3 Updating to the latest version\u2026');
+        setTimeout(function(){ try { location.replace(location.pathname + '?v=' + encodeURIComponent(tag)); } catch(e) { try { location.reload(); } catch(e2) {} } }, 900);
+        return;
+      }
+    } catch(e) {}
     var b = document.createElement('div');
     b.id = 'updBanner';
     // Sits just BELOW the top bar (never under the iPhone status bar, where taps become "scroll to top" and the
@@ -9246,7 +9395,7 @@ window.BUILD_TAG = 'v2026-10-17.2';
     b.style.cssText = 'position:fixed;top:calc(56px + env(safe-area-inset-top));left:12px;right:12px;z-index:950;background:linear-gradient(135deg,#00F0FF,#0090FF);color:#04060F;text-align:center;padding:13px 40px 13px 14px;border-radius:14px;font-family:DM Sans,sans-serif;font-weight:800;font-size:13.5px;cursor:pointer;box-shadow:0 6px 24px rgba(0,144,255,0.45);';
     b.innerHTML = '\u27F3 New version available \u2014 tap to update<span id="updBannerX" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:rgba(4,6,15,0.18);display:flex;align-items:center;justify-content:center;font-size:13px;">\u2715</span>';
     b.onclick = function(ev){
-      if (ev && ev.target && ev.target.id === 'updBannerX') { b.remove(); window.__updSnoozed = true; return; }
+      if (ev && ev.target && ev.target.id === 'updBannerX') { b.remove(); window.__updSnoozed = true; setTimeout(function(){ window.__updSnoozed = false; }, 10 * 60000); return; }
       b.textContent = '\u27F3 Updating\u2026';
       var go = function(){ try { location.replace(location.pathname + '?v=' + encodeURIComponent(tag)); } catch(e) { try { location.reload(); } catch(e2) {} } };
       var done = false; var fin = function(){ if (done) return; done = true; go(); };
