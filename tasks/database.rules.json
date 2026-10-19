@@ -1,6 +1,7 @@
 {
-  "_comment": "Paste the `daybook` block inside your existing rules object in Firebase Console > Realtime Database > Rules (project pickle-tourney). Keep everything else you already have.",
-  "daybook": {
+  "rules": {
+    ".read": false,
+    ".write": false,
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",

@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daybook Admin — mikek.ai</title>
+<title>Tasks Admin — mikek.ai</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="firebase-config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -77,7 +78,7 @@
 <div class="gate" id="gate">
   <div class="gate-card">
     <span class="brand">mikek<span class="dot">.</span>ai</span>
-    <p>Daybook admin. Sign in with your Google account.</p>
+    <p>Tasks admin. Sign in with your Google account.</p>
     <button class="btn solid" id="login">Continue with Google</button>
     <p class="err" id="gateErr"></p>
   </div>
@@ -91,8 +92,8 @@
         <span class="h-title">Admin hub</span>
         <nav class="nav">
           <a href="/admin/">Referral inbox</a>
-          <a href="/tasks/admin.html" class="on">Daybook</a>
-          <a href="/tasks/">Open Daybook ↗</a>
+          <a href="/tasks/admin.html" class="on">Tasks</a>
+          <a href="/tasks/">Open Tasks ↗</a>
         </nav>
       </div>
       <div><button class="btn subtle" id="signout">Sign out</button></div>
@@ -120,7 +121,7 @@
       <tbody id="userRows"></tbody>
     </table></div><div class="state hide" id="usersEmpty">No users yet.</div></div>
 
-    <p class="foot">Feedback also lands in the <a href="/admin/">referral inbox</a> under "Daybook feedback" and is emailed to m@mikek.ai once the Daybook route is added to the backend.</p>
+    <p class="foot">Feedback also lands in the <a href="/admin/">referral inbox</a> under "Tasks feedback" and is emailed to m@mikek.ai once the Tasks route is added to the backend.</p>
   </div>
 </div>
 
@@ -129,7 +130,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const ADMINS = ['michaelkrilivsky@gmail.com','m@mikek.ai'];
-const cfg={ apiKey:"AIzaSyBtq_zSwn1KgALGhxoiEJQeiSaNEuH6yeo", authDomain:"pickle-tourney.firebaseapp.com", databaseURL:"https://pickle-tourney-default-rtdb.firebaseio.com", projectId:"pickle-tourney", storageBucket:"pickle-tourney.firebasestorage.app", messagingSenderId:"285299739591", appId:"1:285299739591:web:a1e5f34844d28e6274e7e2" };
+const cfg=window.TASKS_FIREBASE_CONFIG;
 const app=initializeApp(cfg), db=getDatabase(app), auth=getAuth(app);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -141,8 +142,8 @@ onAuthStateChanged(auth,u=>{
   if(!u){ $('#app').classList.add('hide'); $('#gate').classList.remove('hide'); return; }
   if(!ADMINS.includes((u.email||'').toLowerCase())){ $('#gateErr').textContent='This account is not an admin ('+u.email+').'; signOut(auth); return; }
   $('#gate').classList.add('hide'); $('#app').classList.remove('hide');
-  onValue(ref(db,'daybook/profiles'),s=>{ profiles=s.val()||{}; render(); },e=>{ $('#usersEmpty').textContent='Could not read users: '+e.code+'. Check the database rules.'; $('#usersEmpty').classList.remove('hide'); });
-  onValue(ref(db,'daybook/feedback'),s=>{ feedback=s.val()||{}; render(); },e=>{ $('#fbEmpty').textContent='Could not read feedback: '+e.code+'. Check the database rules.'; $('#fbEmpty').classList.remove('hide'); });
+  onValue(ref(db,'profiles'),s=>{ profiles=s.val()||{}; render(); },e=>{ $('#usersEmpty').textContent='Could not read users: '+e.code+'. Check the database rules.'; $('#usersEmpty').classList.remove('hide'); });
+  onValue(ref(db,'feedback'),s=>{ feedback=s.val()||{}; render(); },e=>{ $('#fbEmpty').textContent='Could not read feedback: '+e.code+'. Check the database rules.'; $('#fbEmpty').classList.remove('hide'); });
 });
 function render(){
   const users=Object.entries(profiles).map(([id,p])=>({id,...p})).sort((a,b)=>(b.lastActive||0)-(a.lastActive||0));

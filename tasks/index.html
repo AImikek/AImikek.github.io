@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Daybook · Tasks</title>
+<title>Tasks · mikek.ai</title>
 <meta name="description" content="Fast personal tasks with a calendar, projects, photos and steps. Free, syncs across devices, works offline.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0a7c59">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Daybook">
+<meta name="apple-mobile-web-app-title" content="Tasks">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -18,6 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
 <script src="/config.js"></script>
+<script src="firebase-config.js"></script>
 <style>
 /* Layout: a fixed command bar (quick add) on top, one content area below that is a list or a month grid, and a detail panel that slides in from the right on desktop and up as a sheet on phones. */
 :root{
@@ -331,7 +332,7 @@ input,textarea{font:inherit;color:inherit}
 <body>
 <div class="app">
   <header class="top">
-    <div class="brand">Daybook <small id="count"></small></div>
+    <div class="brand">Tasks <small id="count"></small></div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-view="list" aria-selected="true" id="tab-list">List</button>
       <button class="tab" role="tab" data-view="cal" aria-selected="false" id="tab-cal">Calendar</button>
@@ -340,7 +341,7 @@ input,textarea{font:inherit;color:inherit}
     <span class="status" id="status"></span>
     <div class="me"><button class="ava" id="ava" title="Account">?</button></div>
   </header>
-  <div class="installbar" id="installbar" hidden>📲 Put Daybook on your home screen <button id="installHow">Show me how</button><button class="x" id="installX">✕</button></div>
+  <div class="installbar" id="installbar" hidden>📲 Put Tasks on your home screen <button id="installHow">Show me how</button><button class="x" id="installX">✕</button></div>
 
   <form class="qa" id="qa">
     <input id="qi" placeholder="Add a task… try “call broker tomorrow” or “invoice friday”" autocomplete="off" enterkeyhint="done">
@@ -357,7 +358,7 @@ input,textarea{font:inherit;color:inherit}
 </div>
 <div class="gate" id="gate">
   <div class="gcard">
-    <h1>Daybook</h1>
+    <h1>Tasks</h1>
     <p>Tasks that take two seconds to add. Calendar, projects, photos, steps. Syncs to your phone and computer, works offline.</p>
     <div class="gfeat"><span>quick add</span><span>week view</span><span>projects</span><span>offline</span><span>free</span></div>
     <button class="gbtn alt" id="gGoogle"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.5 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.6-2 15.4-5.6l-7.5-5.8c-2.1 1.4-4.8 2.3-7.9 2.3-6.3 0-11.7-4.1-13.6-9.9l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg>Continue with Google</button>
@@ -376,7 +377,7 @@ input,textarea{font:inherit;color:inherit}
   <h2>Feedback</h2>
   <p>Bugs, ideas, feature requests. Goes straight to Mike.</p>
   <div class="seg" id="fbType"><button data-t="idea" aria-selected="true">Idea</button><button data-t="bug" aria-selected="false">Bug</button><button data-t="other" aria-selected="false">Other</button></div>
-  <textarea id="fbText" placeholder="What would make Daybook better?"></textarea>
+  <textarea id="fbText" placeholder="What would make Tasks better?"></textarea>
   <div class="mrow"><button class="gbtn alt" id="fbCancel">Cancel</button><button class="gbtn" id="fbSend">Send</button></div>
 </div></div>
 <button class="fb" id="fbBtn" hidden>💬 Feedback</button>
@@ -388,7 +389,8 @@ input,textarea{font:inherit;color:inherit}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, goOnline } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-const cfg={ apiKey:"AIzaSyBtq_zSwn1KgALGhxoiEJQeiSaNEuH6yeo", authDomain:"pickle-tourney.firebaseapp.com", databaseURL:"https://pickle-tourney-default-rtdb.firebaseio.com", projectId:"pickle-tourney", storageBucket:"pickle-tourney.firebasestorage.app", messagingSenderId:"285299739591", appId:"1:285299739591:web:a1e5f34844d28e6274e7e2" };
+const cfg=window.TASKS_FIREBASE_CONFIG;
+if(!cfg||String(cfg.apiKey).startsWith('PASTE')){ document.querySelector('#gErr').textContent='Setup in progress: Firebase config not added yet.'; }
 const app=initializeApp(cfg); const db=getDatabase(app); const auth=getAuth(app);
 try{ await setPersistence(auth, browserLocalPersistence); }catch(e){}
 const provider=new GoogleAuthProvider();
@@ -467,7 +469,7 @@ let toastT; const toast=m=>{ toastEl.textContent=m; toastEl.classList.add('show'
 
 /* ---------- persistence: Firebase Realtime Database + local cache + offline queue ---------- */
 const FB=window.__fb; // set by the module script below
-const base=()=>'daybook/users/'+me;
+const base=()=>'users/'+me;
 const cacheKey=k=>'db_'+me+'_'+k;
 const queueKey=()=>'db_'+me+'_queue';
 function saveLocal(){ if(!me) return; LS(cacheKey('tasks'), JSON.stringify([...tasks.values()])); LS(cacheKey('projects'), JSON.stringify([...projects.values()])); }
@@ -483,7 +485,7 @@ async function persist(id, data){ tasks.set(id, data); render(); saveLocal(); wr
 async function remove(id){ tasks.delete(id); if(sel===id) sel=null; render(); saveLocal(); write(base()+'/tasks/'+id, null); }
 async function persistProj(p){ projects.set(p.id,p); render(); saveLocal(); write(base()+'/projects/'+p.id, p); }
 async function removeProj(id){ projects.delete(id); if(curProj===id) curProj=null; render(); saveLocal(); write(base()+'/projects/'+id, null); }
-let lastTouch=0; function touchActivity(){ const now=Date.now(); if(now-lastTouch<60000) return; lastTouch=now; write('daybook/profiles/'+me+'/lastActive', now); write('daybook/profiles/'+me+'/taskCount', tasks.size); }
+let lastTouch=0; function touchActivity(){ const now=Date.now(); if(now-lastTouch<60000) return; lastTouch=now; write('profiles/'+me+'/lastActive', now); write('profiles/'+me+'/taskCount', tasks.size); }
 const sortKey = t => (t.done?'1':'0')+(t.due||'9999-99-99')+String(1e13-(t.createdAt||0));
 
 /* ---------- actions ---------- */
@@ -874,7 +876,7 @@ document.addEventListener('click',e=>{ if(!menu.hidden && !menu.contains(e.targe
 function exportBackup(){
   const data={exportedAt:new Date().toISOString(), tasks:[...tasks.values()], projects:[...projects.values()]};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='daybook-backup-'+todayStr()+'.json'; document.body.appendChild(a); a.click(); a.remove();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='tasks-backup-'+todayStr()+'.json'; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 function importBackup(file){
@@ -882,7 +884,7 @@ function importBackup(file){
   rd.onload=()=>{ try{ const d=JSON.parse(rd.result); let n=0;
       (d.projects||[]).forEach(p=>{ if(p&&p.id&&p.name){ projects.set(p.id,p); write(base()+'/projects/'+p.id,p); } });
       (d.tasks||[]).forEach(t=>{ if(t&&t.id&&t.title){ const cur=tasks.get(t.id); if(!cur||(cur.updatedAt||0)<(t.updatedAt||0)){ tasks.set(t.id,t); write(base()+'/tasks/'+t.id,t); n++; } } });
-      saveLocal(); render(); toast('Imported '+n+' tasks'); }catch(e){ toast('That file is not a Daybook backup'); } };
+      saveLocal(); render(); toast('Imported '+n+' tasks'); }catch(e){ toast('That file is not a Tasks backup'); } };
   rd.readAsText(file);
 }
 
@@ -893,14 +895,14 @@ let bip=null; window.addEventListener('beforeinstallprompt',e=>{ e.preventDefaul
 const installModal=$('#installModal'), installCard=$('#installCard'), installbar=$('#installbar');
 function showInstall(){
   installCard.innerHTML='';
-  const h=el('h2',null,'Make Daybook an app'); installCard.appendChild(h);
+  const h=el('h2',null,'Make Tasks an app'); installCard.appendChild(h);
   const seg=el('div','seg'); const tabs=[['phone','On my phone'],['desktop','On my computer']]; let cur=(isIOS||isAndroid)?'phone':'desktop';
   const body=el('div');
   const draw=()=>{ body.innerHTML=''; seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.k===cur)));
     if(cur==='phone'){
       if(isIOS||!isAndroid){
         body.appendChild(el('p',null,'iPhone or iPad (Safari):'));
-        const ol=el('ol'); ['Open mikek.ai/tasks in Safari (not inside Instagram or another app).','Tap the Share button, the square with an arrow at the bottom.','Scroll down and tap Add to Home Screen.','Tap Add. Daybook now opens full screen like a real app, and works with no signal.'].forEach(s=>ol.appendChild(el('li',null,s))); body.appendChild(ol);
+        const ol=el('ol'); ['Open mikek.ai/tasks in Safari (not inside Instagram or another app).','Tap the Share button, the square with an arrow at the bottom.','Scroll down and tap Add to Home Screen.','Tap Add. Tasks now opens full screen like a real app, and works with no signal.'].forEach(s=>ol.appendChild(el('li',null,s))); body.appendChild(ol);
         if(!isSafari&&isIOS) body.appendChild(el('p',null,'You are not in Safari right now. Copy the link and open it in Safari first.'));
       }
       if(isAndroid||!isIOS){
@@ -910,7 +912,7 @@ function showInstall(){
       }
     } else {
       body.appendChild(el('p',null,'Chrome or Edge:'));
-      const ol=el('ol'); ol.innerHTML='<li>Bookmark it: press <b class="k">⌘ D</b> on Mac or <b class="k">Ctrl D</b> on Windows while on mikek.ai/tasks.</li><li>Or install it as its own window: click the install icon at the right end of the address bar (a monitor with a down arrow), or open the three dots menu and choose Install Daybook. It gets its own dock icon and opens instantly.</li>'; body.appendChild(ol);
+      const ol=el('ol'); ol.innerHTML='<li>Bookmark it: press <b class="k">⌘ D</b> on Mac or <b class="k">Ctrl D</b> on Windows while on mikek.ai/tasks.</li><li>Or install it as its own window: click the install icon at the right end of the address bar (a monitor with a down arrow), or open the three dots menu and choose Install Tasks. It gets its own dock icon and opens instantly.</li>'; body.appendChild(ol);
       if(bip){ const b=el('button','gbtn','Install now'); b.addEventListener('click',async()=>{ bip.prompt(); try{ await bip.userChoice; }catch(e){} bip=null; installModal.hidden=true; }); body.appendChild(b); }
       body.appendChild(el('p',null,'Safari on Mac: File menu, then Add to Dock.'));
     }
@@ -938,8 +940,8 @@ $('#fbSend').addEventListener('click',async()=>{
   const btn=$('#fbSend'); btn.disabled=true; btn.textContent='Sending…';
   const entry={kind:fbKind,text,uid:me,email:user&&user.email||'',name:user&&user.displayName||'',createdAt:Date.now(),ua:navigator.userAgent.slice(0,120),standalone:isStandalone(),page:view};
   const id=me.slice(0,6)+'_'+Date.now().toString(36);
-  write('daybook/feedback/'+id, entry);
-  try{ if(window.MIKEK_ENDPOINT){ const p=new URLSearchParams(); p.append('_route','Daybook'); p.append('_business','Daybook feedback'); p.append('name',entry.name||entry.email||'Daybook user'); p.append('email',entry.email); p.append('type',fbKind); p.append('details','['+fbKind+'] '+text); p.append('device',entry.ua); await fetch(window.MIKEK_ENDPOINT,{method:'POST',body:p}); } }catch(e){ console.warn(e); }
+  write('feedback/'+id, entry);
+  try{ if(window.MIKEK_ENDPOINT){ const p=new URLSearchParams(); p.append('_route','Tasks'); p.append('_business','Tasks feedback'); p.append('name',entry.name||entry.email||'Tasks user'); p.append('email',entry.email); p.append('type',fbKind); p.append('details','['+fbKind+'] '+text); p.append('device',entry.ua); await fetch(window.MIKEK_ENDPOINT,{method:'POST',body:p}); } }catch(e){ console.warn(e); }
   btn.disabled=false; btn.textContent='Send'; fbText.value=''; fbModal.hidden=true; toast('Thanks, sent to Mike');
 });
 
@@ -970,9 +972,9 @@ FB.onUser(async u=>{
   if(window.innerWidth>760) qi.focus();
   maybeInstallBar();
   // profile for the admin hub (safe fields only)
-  write('daybook/profiles/'+me+'/email', u.email||''); write('daybook/profiles/'+me+'/name', u.displayName||''); write('daybook/profiles/'+me+'/photo', u.photoURL||'');
-  FB.once('daybook/profiles/'+me+'/createdAt').then(v=>{ if(!v) write('daybook/profiles/'+me+'/createdAt', Date.now()); });
-  write('daybook/profiles/'+me+'/lastActive', Date.now()); write('daybook/profiles/'+me+'/standalone', isStandalone());
+  write('profiles/'+me+'/email', u.email||''); write('profiles/'+me+'/name', u.displayName||''); write('profiles/'+me+'/photo', u.photoURL||'');
+  FB.once('profiles/'+me+'/createdAt').then(v=>{ if(!v) write('profiles/'+me+'/createdAt', Date.now()); });
+  write('profiles/'+me+'/lastActive', Date.now()); write('profiles/'+me+'/standalone', isStandalone());
   await flushQueue();
   detach=FB.listen(base(), val=>{
     const t=val&&val.tasks||{}, p=val&&val.projects||{};

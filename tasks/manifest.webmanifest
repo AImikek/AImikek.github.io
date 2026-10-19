@@ -1,6 +1,6 @@
 {
-  "name": "Daybook",
-  "short_name": "Daybook",
+  "name": "Tasks",
+  "short_name": "Tasks",
   "description": "Fast personal tasks with a calendar, projects, photos and steps. Works offline.",
   "start_url": "./",
   "scope": "./",
