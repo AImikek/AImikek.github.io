@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daybook Admin — mikek.ai</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#06060a; --bg-2:#0a0a12; --card:#0e0e18; --card-hover:#121220;
+    --line:rgba(123,159,255,.14); --line-strong:rgba(123,159,255,.30);
+    --text:#f3f4f9; --muted:#8b8fa3; --muted-2:#666a7e;
+    --accent:#7b9fff; --accent-ink:#06060a; --accent-soft:rgba(123,159,255,.12);
+    --good:#3fcf98; --warn:#f0b445; --bad:#ff7a6e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-weight:450;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(640px 380px at 12% -10%,rgba(123,159,255,.13),transparent 70%)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4.5vw,52px);position:relative;z-index:1}
+  header{border-bottom:1px solid var(--line);padding:18px 0;background:linear-gradient(to bottom,rgba(6,6,10,.9),rgba(6,6,10,.6));position:sticky;top:0;z-index:20;backdrop-filter:blur(12px)}
+  .head-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .h-left{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .brand{font-family:'Space Grotesk';font-weight:700;font-size:1.18rem;letter-spacing:-.02em}
+  .brand .dot{color:var(--accent)}
+  .h-title{font-family:'Space Grotesk';font-weight:600;color:var(--muted);font-size:.95rem}
+  .nav{display:flex;gap:6px;flex-wrap:wrap}
+  .nav a{font-family:'Space Grotesk';font-weight:600;font-size:.85rem;padding:7px 12px;border-radius:9px;border:1px solid var(--line);color:var(--muted)}
+  .nav a.on{color:var(--text);border-color:var(--line-strong);background:var(--accent-soft)}
+  .nav a:hover{text-decoration:none;color:var(--text)}
+  .btn{font-family:'Space Grotesk';font-weight:600;font-size:.88rem;border-radius:10px;padding:9px 16px;cursor:pointer;border:1px solid var(--line-strong);background:transparent;color:var(--text)}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .btn.solid{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn.subtle{color:var(--muted);border-color:var(--line)}
+
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:24px 0 8px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .tile .k{font-family:'Space Grotesk';font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .tile .v{font-family:'Space Grotesk';font-size:2rem;font-weight:700;letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+  .tile .s{color:var(--muted-2);font-size:.8rem;margin-top:2px}
+
+  h2{font-family:'Space Grotesk';font-size:1rem;font-weight:600;color:var(--muted);margin:28px 0 10px;display:flex;align-items:baseline;gap:10px}
+  h2 .n{color:var(--accent)}
+  .tablewrap{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card)}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:720px}
+  thead th{text-align:left;font-family:'Space Grotesk';font-weight:600;color:var(--muted);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;padding:13px 16px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--bg-2)}
+  tbody td{padding:12px 16px;border-bottom:1px solid rgba(123,159,255,.07);vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--card-hover)}
+  .who{display:flex;align-items:center;gap:10px;font-weight:600;white-space:nowrap}
+  .who img,.who i{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--accent-soft);display:grid;place-items:center;font-style:normal;font-size:12px;color:var(--accent);flex:none}
+  .who small{display:block;color:var(--muted);font-weight:400;font-size:.8rem}
+  .when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;font-family:'Space Grotesk';font-size:.72rem;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+  .pill.bug{background:rgba(255,122,110,.14);color:var(--bad)}
+  .pill.other{background:rgba(139,143,163,.14);color:var(--muted)}
+  .pill.good{background:rgba(63,207,152,.14);color:var(--good)}
+  .fbtext{white-space:pre-wrap;max-width:560px;line-height:1.45}
+  .state{padding:48px 24px;text-align:center;color:var(--muted-2)}
+  .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1}
+  .gate-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line-strong);border-radius:20px;padding:34px}
+  .gate-card .brand{font-size:1.4rem;margin-bottom:6px;display:block}
+  .gate-card p{color:var(--muted);font-size:.92rem;margin:0 0 22px}
+  .gate-card .btn{width:100%;padding:13px}
+  .err{color:#ff8b8b;font-size:.85rem;margin:12px 0 0;min-height:1em}
+  .hide{display:none!important}
+  .foot{color:var(--muted-2);font-size:.8rem;padding:40px 0 60px}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <span class="brand">mikek<span class="dot">.</span>ai</span>
+    <p>Daybook admin. Sign in with your Google account.</p>
+    <button class="btn solid" id="login">Continue with Google</button>
+    <p class="err" id="gateErr"></p>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <header>
+    <div class="wrap head-inner">
+      <div class="h-left">
+        <span class="brand">mikek<span class="dot">.</span>ai</span>
+        <span class="h-title">Admin hub</span>
+        <nav class="nav">
+          <a href="/admin/">Referral inbox</a>
+          <a href="/tasks/admin.html" class="on">Daybook</a>
+          <a href="/tasks/">Open Daybook ↗</a>
+        </nav>
+      </div>
+      <div><button class="btn subtle" id="signout">Sign out</button></div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="tiles">
+      <div class="tile"><div class="k">Users</div><div class="v" id="tUsers">0</div><div class="s" id="tUsersS"></div></div>
+      <div class="tile"><div class="k">Active 7 days</div><div class="v" id="tActive">0</div><div class="s">opened the app this week</div></div>
+      <div class="tile"><div class="k">Installed</div><div class="v" id="tInst">0</div><div class="s">opened from home screen</div></div>
+      <div class="tile"><div class="k">Tasks total</div><div class="v" id="tTasks">0</div><div class="s">across all users</div></div>
+      <div class="tile"><div class="k">Feedback</div><div class="v" id="tFb">0</div><div class="s" id="tFbS"></div></div>
+    </div>
+
+    <h2>Feedback <span class="n" id="nFb">0</span></h2>
+    <div class="tablewrap"><div class="scroll"><table>
+      <thead><tr><th>When</th><th>Type</th><th>From</th><th>Message</th><th>Where</th></tr></thead>
+      <tbody id="fbRows"></tbody>
+    </table></div><div class="state hide" id="fbEmpty">No feedback yet.</div></div>
+
+    <h2>Users <span class="n" id="nUsers">0</span></h2>
+    <div class="tablewrap"><div class="scroll"><table>
+      <thead><tr><th>User</th><th>Signed up</th><th>Last active</th><th>Tasks</th><th>Home screen</th></tr></thead>
+      <tbody id="userRows"></tbody>
+    </table></div><div class="state hide" id="usersEmpty">No users yet.</div></div>
+
+    <p class="foot">Feedback also lands in the <a href="/admin/">referral inbox</a> under "Daybook feedback" and is emailed to m@mikek.ai once the Daybook route is added to the backend.</p>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+const ADMINS = ['michaelkrilivsky@gmail.com','m@mikek.ai'];
+const cfg={ apiKey:"AIzaSyBtq_zSwn1KgALGhxoiEJQeiSaNEuH6yeo", authDomain:"pickle-tourney.firebaseapp.com", databaseURL:"https://pickle-tourney-default-rtdb.firebaseio.com", projectId:"pickle-tourney", storageBucket:"pickle-tourney.firebasestorage.app", messagingSenderId:"285299739591", appId:"1:285299739591:web:a1e5f34844d28e6274e7e2" };
+const app=initializeApp(cfg), db=getDatabase(app), auth=getAuth(app);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=ms=>{ if(!ms) return '—'; const d=new Date(ms); const diff=Date.now()-ms; if(diff<3600e3) return Math.max(1,Math.round(diff/60e3))+'m ago'; if(diff<86400e3) return Math.round(diff/3600e3)+'h ago'; if(diff<7*86400e3) return Math.round(diff/86400e3)+'d ago'; return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:d.getFullYear()!==new Date().getFullYear()?'numeric':undefined}); };
+$('#login').onclick=async()=>{ $('#gateErr').textContent=''; try{ await signInWithPopup(auth,new GoogleAuthProvider()); }catch(e){ $('#gateErr').textContent=e.code||'Sign-in failed'; } };
+$('#signout').onclick=()=>signOut(auth);
+let profiles={}, feedback={};
+onAuthStateChanged(auth,u=>{
+  if(!u){ $('#app').classList.add('hide'); $('#gate').classList.remove('hide'); return; }
+  if(!ADMINS.includes((u.email||'').toLowerCase())){ $('#gateErr').textContent='This account is not an admin ('+u.email+').'; signOut(auth); return; }
+  $('#gate').classList.add('hide'); $('#app').classList.remove('hide');
+  onValue(ref(db,'daybook/profiles'),s=>{ profiles=s.val()||{}; render(); },e=>{ $('#usersEmpty').textContent='Could not read users: '+e.code+'. Check the database rules.'; $('#usersEmpty').classList.remove('hide'); });
+  onValue(ref(db,'daybook/feedback'),s=>{ feedback=s.val()||{}; render(); },e=>{ $('#fbEmpty').textContent='Could not read feedback: '+e.code+'. Check the database rules.'; $('#fbEmpty').classList.remove('hide'); });
+});
+function render(){
+  const users=Object.entries(profiles).map(([id,p])=>({id,...p})).sort((a,b)=>(b.lastActive||0)-(a.lastActive||0));
+  const week=Date.now()-7*86400e3;
+  $('#tUsers').textContent=users.length; const newWeek=users.filter(u=>(u.createdAt||0)>week).length; $('#tUsersS').textContent=newWeek?'+'+newWeek+' this week':'';
+  $('#tActive').textContent=users.filter(u=>(u.lastActive||0)>week).length;
+  $('#tInst').textContent=users.filter(u=>u.standalone).length;
+  $('#tTasks').textContent=users.reduce((n,u)=>n+(u.taskCount||0),0);
+  const fbs=Object.entries(feedback).map(([id,f])=>({id,...f})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  $('#tFb').textContent=fbs.length; const fbWeek=fbs.filter(f=>(f.createdAt||0)>week).length; $('#tFbS').textContent=fbWeek?'+'+fbWeek+' this week':'';
+  $('#nUsers').textContent=users.length; $('#nFb').textContent=fbs.length;
+  $('#userRows').innerHTML=users.map(u=>`<tr><td><div class="who">${u.photo?`<img src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">`:`<i>${esc((u.name||u.email||'?')[0].toUpperCase())}</i>`}<div>${esc(u.name||'(no name)')}<small>${esc(u.email||'')}</small></div></div></td><td class="when">${fmt(u.createdAt)}</td><td class="when">${fmt(u.lastActive)}</td><td>${u.taskCount||0}</td><td>${u.standalone?'<span class="pill good">yes</span>':'<span class="pill other">no</span>'}</td></tr>`).join('');
+  $('#usersEmpty').classList.toggle('hide',users.length>0);
+  $('#fbRows').innerHTML=fbs.map(f=>`<tr><td class="when">${fmt(f.createdAt)}</td><td><span class="pill ${esc(f.kind||'other')}">${esc(f.kind||'other')}</span></td><td><div class="who"><div>${esc(f.name||'(no name)')}<small>${esc(f.email||'')}</small></div></div></td><td class="fbtext">${esc(f.text)}</td><td class="when">${f.standalone?'app':'browser'} · ${esc(f.page||'')}</td></tr>`).join('');
+  $('#fbEmpty').classList.toggle('hide',fbs.length>0);
+}
+</script>
+</body>
+</html>

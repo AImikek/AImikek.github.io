@@ -1,0 +1,24 @@
+{
+  "_comment": "Paste the `daybook` block inside your existing rules object in Firebase Console > Realtime Database > Rules (project pickle-tourney). Keep everything else you already have.",
+  "daybook": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "profiles": {
+      ".read": "auth != null && (auth.token.email == 'michaelkrilivsky@gmail.com' || auth.token.email == 'm@mikek.ai')",
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+    "feedback": {
+      ".read": "auth != null && (auth.token.email == 'michaelkrilivsky@gmail.com' || auth.token.email == 'm@mikek.ai')",
+      "$id": {
+        ".write": "auth != null && !data.exists() && newData.child('uid').val() == auth.uid"
+      }
+    }
+  }
+}
