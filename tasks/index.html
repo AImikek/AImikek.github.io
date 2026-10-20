@@ -45,7 +45,7 @@ html{height:100%}
 html{background:var(--bg);overflow:hidden}
 [hidden]{display:none!important}
 img{max-width:100%}
-body{margin:0;position:fixed;inset:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;overflow:hidden;
+body{margin:0;position:fixed;inset:0;height:calc(100% + var(--vfix,0px));background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;-webkit-text-size-adjust:100%}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 *{box-sizing:border-box}
@@ -253,6 +253,8 @@ input,textarea{font:inherit;color:inherit}
 .task.dragsrc{opacity:.35}
 .task.ghost{position:fixed;z-index:60;pointer-events:none;box-shadow:var(--shadow);opacity:.95;margin:0}
 .drop-line{height:3px;border-radius:2px;background:var(--accent);margin:2px 0}
+/* fixed bottom things follow the corrected height */
+.fb,.toast,.multibar{margin-bottom:var(--vfix,0px)}
 /* multi-select */
 .ev.multi{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent-soft)}
 .nav.today.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -1073,7 +1075,7 @@ ava.addEventListener('click',()=>{
   if(!menu.hidden){ closeMenu(); return; }
   menu.innerHTML='';
   menu.appendChild(el('small',null,(user?(user.displayName||user.email||''):'')+' · '+APP_VERSION));
-  try{ const vv=window.visualViewport; menu.appendChild(el('small',null,'screen '+screen.width+'×'+screen.height+' · win '+window.innerWidth+'×'+window.innerHeight+(vv?' · vv '+Math.round(vv.height)+' @'+Math.round(vv.offsetTop):'')+' · scrollY '+Math.round(window.scrollY)+' · inset '+getComputedStyle(document.body).paddingBottom)); }catch(e){}
+  try{ const vv=window.visualViewport; menu.appendChild(el('small',null,'screen '+screen.width+'×'+screen.height+' · win '+window.innerWidth+'×'+window.innerHeight+(vv?' · vv '+Math.round(vv.height)+' @'+Math.round(vv.offsetTop):'')+' · scrollY '+Math.round(window.scrollY)+' · inset '+getComputedStyle(document.body).paddingBottom+' · fix '+getComputedStyle(document.documentElement).getPropertyValue('--vfix'))); }catch(e){}
   const inst=el('button',null,'📲 Add to home screen / bookmark'); inst.addEventListener('click',()=>{ closeMenu(); showInstall(); }); menu.appendChild(inst);
   const fb=el('button',null,'💬 Send feedback'); fb.addEventListener('click',()=>{ closeMenu(); openFeedback(); }); menu.appendChild(fb);
   menu.appendChild(el('div','sep'));
@@ -1278,7 +1280,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.1604';
+const APP_VERSION='v2026-10-20.1614';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); }
@@ -1288,6 +1290,21 @@ async function checkVersion(){ try{ const r=await fetch('version.json?nc='+Date.
 $('#updateNow').addEventListener('click',hardReload);
 setTimeout(checkVersion,1500); setInterval(checkVersion,5*60*1000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkVersion(); });
+
+/* ---------- iOS standalone bug: the window is reported shorter than the screen by the status bar height
+   but is still anchored at the top, leaving a black band at the bottom. Measure the gap and stretch the page. ---------- */
+function fixViewport(){
+  try{
+    const portrait=window.innerHeight>=window.innerWidth;
+    const sh=portrait?Math.max(screen.height,screen.width):Math.min(screen.height,screen.width);
+    const gap=sh-window.innerHeight;
+    const standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+    const kb=window.visualViewport && (window.innerHeight-window.visualViewport.height)>80; // keyboard open: leave it alone
+    const v = (standalone && !kb && gap>0 && gap<=120) ? gap : 0;
+    document.documentElement.style.setProperty('--vfix', v+'px');
+  }catch(e){}
+}
+fixViewport(); window.addEventListener('resize',fixViewport); window.addEventListener('orientationchange',()=>setTimeout(fixViewport,300));
 
 /* ---------- iOS keyboard dead-space fix: when the keyboard closes, iOS can leave the page scrolled up ---------- */
 function snapBack(){ try{ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }catch(e){} }
