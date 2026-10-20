@@ -233,6 +233,14 @@ input,textarea{font:inherit;color:inherit}
 .ev.over-top{box-shadow:0 -3px 0 0 var(--accent)}
 .ev{cursor:grab}
 .ev:active{cursor:grabbing}
+/* inline edit on calendar cards */
+.evt.evedit{outline:none;background:var(--accent-soft);border-radius:4px;padding:0 3px;margin:0 -3px;cursor:text;white-space:normal}
+.ev .evt{cursor:text}
+.evmore{flex:none;width:18px;height:18px;border-radius:5px;color:var(--muted);font-weight:800;opacity:0;line-height:1;align-self:center}
+.ev:hover .evmore{opacity:1}
+.evmore:hover{background:var(--line);color:var(--fg)}
+.grid.month .evmore{display:none}
+@media (max-width:760px){ .evmore{display:none} }
 /* assistant */
 .fb.ai{right:auto;left:max(16px,env(safe-area-inset-left,0px));background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .fb.ai:hover{color:var(--accent-ink);filter:brightness(1.05)}
@@ -617,15 +625,23 @@ qi.addEventListener('paste', e=>{
 document.addEventListener('keydown', e=>{
   const tag=(e.target.tagName||'').toLowerCase();
   if(e.key==='Escape'){ if(!dp.hidden){ closeDp(); } else if(sel){ sel=null; render(); } else qi.blur(); return; }
+  if(e.target.isContentEditable) return;
   if((e.key==='/'||e.key==='n') && tag!=='input' && tag!=='textarea'){ e.preventDefault(); qi.focus(); }
 });
 
 /* ---------- rendering ---------- */
+let renderPending=false;
 function render(){
+  if(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('evedit')){ renderPending=true; return; }
+  // remember scroll positions so re-rendering doesn't jump
+  const sc={content:content.scrollTop, contentX:content.scrollLeft}; const g=content.querySelector('.grid'); if(g){ sc.grid=g.scrollTop; sc.gridX=g.scrollLeft; }
+  const cells=[...content.querySelectorAll('.cell')].map(c=>c.scrollTop);
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', String(b.dataset.view===view)));
   const open=[...tasks.values()].filter(t=>!t.done).length;
   $('#count').textContent = open? open+' open' : '';
   if(view==='list') renderList(); else if(view==='proj') renderProjects(); else renderCal();
+  content.scrollTop=sc.content; content.scrollLeft=sc.contentX; const g2=content.querySelector('.grid'); if(g2&&sc.grid!=null){ g2.scrollTop=sc.grid; g2.scrollLeft=sc.gridX; }
+  content.querySelectorAll('.cell').forEach((c,i)=>{ if(cells[i]) c.scrollTop=cells[i]; });
   renderPanel();
   const pr=view==='proj'&&curProj?projects.get(curProj):null;
   qi.placeholder = pr ? 'Add to '+pr.name+'…' : 'Add a task… try “call broker tomorrow” or “invoice friday”';
@@ -740,8 +756,10 @@ function renderCal(){
         const e=el('div','ev'+(t.done?' done':(key<today?' over':''))+(sel===t.id?' sel':'')); e.draggable=true; e.title=t.title;
         const ck=el('button','evchk'); ck.innerHTML=CHECK; ck.setAttribute('aria-label',t.done?'Mark not done':'Mark done');
         ck.addEventListener('click',ev=>{ ev.stopPropagation(); toggleDone(t.id); });
-        e.append(ck, el('span','evt',t.title));
-        e.addEventListener('click',ev=>{ ev.stopPropagation(); sel=t.id; render(); });
+        const title=el('span','evt',t.title); const more=el('button','evmore','›'); more.title='Open details';
+        more.addEventListener('click',ev=>{ ev.stopPropagation(); sel=t.id; render(); });
+        e.append(ck, title, more);
+        e.addEventListener('click',ev=>{ ev.stopPropagation(); if(mobile){ sel=t.id; render(); return; } startInlineEdit(title, t.id); });
         e.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain',t.id); ev.dataTransfer.effectAllowed='move'; e.classList.add('drag'); });
         e.addEventListener('dragend',()=>{ e.classList.remove('drag'); document.querySelectorAll('.ev.over-top').forEach(x=>x.classList.remove('over-top')); });
         e.addEventListener('dragover',ev=>{ ev.preventDefault(); ev.stopPropagation(); e.classList.add('over-top'); });
@@ -808,6 +826,22 @@ function renderProjects(){
   h.append(name, reset, del); content.appendChild(h);
   if(!ts.length){ const e=el('div','empty'); e.innerHTML='<b>Empty project</b>Type above to add items. Open an item to add steps underneath it.'; content.appendChild(e); }
   ts.forEach(t=>content.appendChild(taskRow(t)));
+}
+
+// Edit a calendar card's title in place. Enter saves, Esc cancels, blur saves.
+function startInlineEdit(span, id){
+  if(span.classList.contains('evedit')) return;
+  const t=tasks.get(id); if(!t) return;
+  const card=span.closest('.ev'); if(card) card.draggable=false;
+  span.classList.add('evedit'); span.contentEditable='true'; span.spellcheck=false; span.textContent=t.title;
+  const sel=window.getSelection(); const range=document.createRange(); range.selectNodeContents(span); range.collapse(false); sel.removeAllRanges(); sel.addRange(range);
+  span.focus();
+  let finished=false;
+  const finish=save=>{ if(finished) return; finished=true; const v=span.textContent.replace(/\s+/g,' ').trim(); span.contentEditable='false'; span.classList.remove('evedit'); if(card) card.draggable=true;
+    if(save && v && v!==t.title){ upd(id,{title:v}); } else { span.textContent=t.title; if(renderPending){ renderPending=false; render(); } } };
+  span.addEventListener('keydown',ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); finish(true); } else if(ev.key==='Escape'){ ev.preventDefault(); finish(false); } ev.stopPropagation(); });
+  span.addEventListener('blur',()=>finish(true),{once:true});
+  span.addEventListener('click',ev=>ev.stopPropagation());
 }
 
 /* ---------- detail panel ---------- */
