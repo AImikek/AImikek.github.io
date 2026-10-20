@@ -254,7 +254,16 @@ input,textarea{font:inherit;color:inherit}
 .task.ghost{position:fixed;z-index:60;pointer-events:none;box-shadow:var(--shadow);opacity:.95;margin:0}
 .drop-line{height:3px;border-radius:2px;background:var(--accent);margin:2px 0}
 /* fixed bottom things follow the corrected height */
-.fb,.toast,.multibar{margin-bottom:var(--vfix,0px)}
+.fb,.toast,.multibar{transform:translateY(var(--vfix,0px))}
+.toast{transform:translate(-50%,var(--vfix,0px))}
+.multibar{transform:translate(-50%,var(--vfix,0px))}
+/* layout ruler (diagnostics) */
+.ruler{position:fixed;left:0;right:0;top:0;height:3000px;z-index:99;pointer-events:none;font-family:var(--mono);font-size:10px;color:#fff}
+.ruler[hidden]{display:none}
+.ruler i{position:absolute;left:0;right:0;height:1px;background:rgba(255,80,80,.9)}
+.ruler i::after{content:attr(data-l);position:absolute;left:6px;top:2px;background:rgba(0,0,0,.7);padding:1px 4px;border-radius:3px}
+.ruler b{position:absolute;right:0;width:40%;height:1px;background:rgba(80,160,255,.95)}
+.ruler b::after{content:attr(data-l);position:absolute;right:6px;bottom:2px;background:rgba(0,0,0,.7);padding:1px 4px;border-radius:3px;font-weight:500}
 /* multi-select */
 .ev.multi{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent-soft)}
 .nav.today.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -1082,6 +1091,7 @@ ava.addEventListener('click',()=>{
   const exp=el('button',null,'⬇ Export backup (JSON)'); exp.addEventListener('click',()=>{ closeMenu(); exportBackup(); }); menu.appendChild(exp);
   const impL=el('label',null,'⬆ Import backup'); const impI=el('input'); impI.type='file'; impI.accept='application/json,.json'; impI.addEventListener('change',()=>{ closeMenu(); importBackup(impI.files[0]); }); impL.appendChild(impI); menu.appendChild(impL);
   menu.appendChild(el('div','sep'));
+  const rl=el('button',null,'📏 Layout ruler (debug)'); rl.addEventListener('click',()=>{ closeMenu(); toggleRuler(); }); menu.appendChild(rl);
   const out=el('button',null,'Sign out'); out.addEventListener('click',()=>{ closeMenu(); FB.signOut(); }); menu.appendChild(out);
   menu.hidden=false;
   const r=ava.getBoundingClientRect(); menu.style.top=(r.bottom+6)+'px'; menu.style.right=Math.max(8,window.innerWidth-r.right)+'px'; menu.style.left='auto';
@@ -1280,7 +1290,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.1614';
+const APP_VERSION='v2026-10-20.1618';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); }
@@ -1290,6 +1300,17 @@ async function checkVersion(){ try{ const r=await fetch('version.json?nc='+Date.
 $('#updateNow').addEventListener('click',hardReload);
 setTimeout(checkVersion,1500); setInterval(checkVersion,5*60*1000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkVersion(); });
+
+function toggleRuler(){
+  let r=$('#ruler'); if(r){ r.remove(); return; }
+  r=el('div','ruler'); r.id='ruler';
+  for(let y=0;y<=1200;y+=50){ const i=el('i'); i.style.top=y+'px'; i.dataset.l='top '+y; r.appendChild(i); }
+  // blue lines anchored to the bottom of the layout viewport (fixed bottom:N)
+  for(let y=0;y<=300;y+=50){ const b=el('b'); b.style.top='auto'; b.style.bottom=y+'px'; b.dataset.l='bottom '+y; r.appendChild(b); }
+  r.style.height='auto'; r.style.bottom='-400px';
+  document.body.appendChild(r);
+  toast('inner '+innerHeight+' · screen '+screen.height+' · fix '+getComputedStyle(document.documentElement).getPropertyValue('--vfix'));
+}
 
 /* ---------- iOS standalone bug: the window is reported shorter than the screen by the status bar height
    but is still anchored at the top, leaving a black band at the bottom. Measure the gap and stretch the page. ---------- */
