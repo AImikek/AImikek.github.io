@@ -95,6 +95,11 @@
   .mcard.active { box-shadow: 0 0 22px rgba(0,240,255,0.18), inset 0 0 18px rgba(0,240,255,0.05); }
   .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
   .pwrap { position:relative; }
+  .psug { position:absolute; left:0; right:0; top:100%; z-index:40; background:var(--surface); border:1px solid rgba(0,240,255,0.35); border-radius:10px; margin-top:4px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+  .psug div { padding:10px 12px; font-size:14px; font-weight:700; color:var(--white); border-bottom:1px solid var(--border); cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .psug div:last-child { border-bottom:none; }
+  .psug div span { font-size:10px; color:var(--muted); font-weight:600; white-space:nowrap; }
+  .psug div.hint { color:var(--muted); font-size:12px; font-weight:600; cursor:default; }
   .pinput { background:var(--surface2); border:2px solid var(--border); border-radius:10px;
     color:var(--white); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
     padding:11px 12px; outline:none; transition:border-color 0.2s; width:100%; }
@@ -1594,6 +1599,10 @@ document.addEventListener('touchend',   _unlockAudio, true);
       </div>
       <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin:10px 0 6px;opacity:0.8;">2 · Pick your format</div>
       <div class="mtoggle" style="grid-template-columns:1fr;">
+        <div class="mcard" id="fmtH2H" onclick="chooseFormat('h2h')" style="display:none;border-color:rgba(0,245,196,0.45);">
+          <div class="micon">⚡</div><div class="mname">1 on 1 — just play</div>
+          <div class="mdesc">You vs one opponent · log each game as you go · Done shows who won</div>
+        </div>
         <div class="mcard" id="fmtRR" onclick="chooseFormat('rr')">
           <div class="micon">🔄</div><div class="mname">Round Robin</div>
           <div class="mdesc" id="rrDesc">Everyone partners with everyone · Fair &amp; balanced</div>
@@ -2267,13 +2276,15 @@ function closeSetup() {
 
 function applyModeToStep2() {
   const sb2 = document.getElementById('startBtn');
-  if (sb2) sb2.innerHTML = selMode_ === 'log' ? '🚀 Start Games' : '🚀 Start Tournament';
+  const h2h = !!window._h2h;
+  if (sb2) sb2.innerHTML = h2h ? '🚀 Go!' : selMode_ === 'log' ? '🚀 Start Games' : '🚀 Start Tournament';
   const isLog = selMode_ === 'log';
   document.getElementById('tNameWrap').style.display = isLog ? 'none' : 'block';
-  document.getElementById('step2Title').textContent = isLog ? '📝 Who\'s Playing Today?' : '🏓 Who\'s Playing?';
-  document.getElementById('step2Sub').textContent = isLog
-    ? 'Add players — the session name is auto-created (you can rename later)'
-    : 'Add your players below';
+  document.getElementById('step2Title').textContent = h2h ? '⚡ You vs who?' : isLog ? '📝 Who\'s Playing Today?' : '🏓 Who\'s Playing?';
+  document.getElementById('step2Sub').textContent = h2h ? 'Type a name — tap it when it pops up. Then Go and start logging games.'
+    : isLog ? 'Add players — the session name is auto-created (you can rename later)' : 'Add your players below';
+  const addRow = document.querySelector('#setupStep2 .pgrid + .pgrid'); if (addRow) addRow.style.display = h2h ? 'none' : '';
+  const rw = document.getElementById('rankRuleWrap'); if (rw) rw.style.display = h2h ? 'none' : '';
   updPCnt();
 }
 
@@ -2285,6 +2296,8 @@ window.setPlayType = function(t) {
   // 4-Player Rotation is a doubles-only concept
   const f4 = document.getElementById('fmt4P');
   if (f4) f4.style.display = t === 'singles' ? 'none' : '';
+  const fh = document.getElementById('fmtH2H');
+  if (fh) fh.style.display = t === 'singles' ? '' : 'none';
   const rd = document.getElementById('rrDesc');
   if (rd) rd.textContent = t === 'singles'
     ? 'Everyone plays everyone · 1 vs 1'
@@ -2292,6 +2305,8 @@ window.setPlayType = function(t) {
 };
 
 window.chooseFormat = function(m) {
+  try { loadPlayerDirectory(); } catch (e) {}
+  window._h2h = (m === 'h2h'); if (m === 'h2h') m = 'log';
   selMode_ = m;
   document.getElementById('setupStep1').style.display = 'none';
   document.getElementById('setupStep2').style.display = 'block';
@@ -2320,6 +2335,7 @@ window.chooseFormat = function(m) {
     buildPFields(playType_ === 'singles' ? ['',''] : ['','','','']);
     document.getElementById('tName').value = '';
   }
+  if (window._h2h) buildPFields([(userProfile?.name || ''), '']);
   applyModeToStep2();
   renderWlQuickAdd();
   window.setRankRule(rankRule, true);
@@ -2373,7 +2389,7 @@ function buildPFields(arr) { document.getElementById('pgrid').innerHTML=''; arr.
 function addPFVal(val) {
   const g=document.getElementById('pgrid'), idx=g.querySelectorAll('.pwrap').length;
   const w=document.createElement('div'); w.className='pwrap';
-  w.innerHTML='<input class="pinput" list="playerDir" placeholder="Player '+(idx+1)+'" value="'+val+'" oninput="updPCnt()">'
+  w.innerHTML='<input class="pinput" autocomplete="off" autocorrect="off" autocapitalize="words" placeholder="Player '+(idx+1)+'" value="'+val.replace(/"/g,'&quot;')+'" oninput="updPCnt();pfSuggest(this)" onfocus="pfSuggest(this)" onblur="pfHideSuggest(this)" onkeydown="pfKey(event,this)">'
     +(idx>=2?'<button class="prmbtn" onclick="this.parentNode.remove();updPCnt()">×</button>':'');
   g.appendChild(w); updPCnt();
   return w.querySelector('input');
@@ -2445,7 +2461,9 @@ async function _finalizeTournament() {
     };
   }
   let { name, players, mode } = window._pendingSetup;
-  if (mode === 'log' && (!name || name === 'Pickleball Tournament')) {
+  const h2h = !!(window._h2h && mode === 'log' && playType_ === 'singles' && players.length === 2);
+  if (h2h) { const d = new Date(); name = players[0].split(' ')[0] + ' vs ' + players[1].split(' ')[0] + ' · ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+  else if (mode === 'log' && (!name || name === 'Pickleball Tournament')) {
     const firsts = players.slice(0,4).map(p => p.split(' ')[0]);
     const d = new Date();
     const month = d.toLocaleDateString('en-US',{month:'long'});
@@ -2456,10 +2474,11 @@ async function _finalizeTournament() {
   const isDoublesRR = mode === 'rr' && playType_ !== 'singles';
   if (isDoublesRR && players.length >= 9 && !window._pendingSetup.rounds) { window.showRoundsChooser(players.length); return; }
   const rrRounds = isDoublesRR ? (window._pendingSetup.rounds || rrDefaultRounds(players.length)) : null;
-  const schedule = mode==='log' ? []
+  const schedule = mode==='log' ? (h2h ? [{ key: 'h' + Date.now().toString(36), t1: [players[0]], t2: [players[1]], round: 'Game', added: true }] : [])
     : mode==='4p' ? make4PSchedule(players)
     : (playType_ === 'singles' ? makeSinglesRRSchedule(players) : makeRRSchedule(players, rrRounds));
-  cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null,rankRule:rankRule,rounds:rrRounds}; scores={};
+  cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null,rankRule:rankRule,rounds:rrRounds}; if (h2h) cfg.h2h = true; scores={};
+  window._h2h = false;
   window._fromSid = null; window._sessRoster = null; window._dupPrefill = null; window._dupCarry = null;
   rankMode = rankRule; _rankModeTouched = false;
   const tid = makeTid();
@@ -5045,13 +5064,31 @@ window.recallSessionInvites = async function(sid, o) {
   return { invites, messages, notified };
 };
 // ── the actions Claude can take (all run as the signed-in user) ──
-const _sessSummary = (sid, s) => { const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; return { sid, title: s.title, date: s.date, startTime: s.startTime, endTime: s.endTime, location: s.location, level: s.level || null, spots: s.spots, open: Math.max(0, (s.spots || 0) - roster.length), players: roster.map(r => r.name), ownerName: s.ownerName || null, mine: s.ownerUid === currentUser.uid }; };
+const _sessSummary = (sid, s) => { const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; return { sid, title: s.title, date: s.date, startTime: s.startTime, endTime: s.endTime, location: s.location, level: s.level || null, spots: s.spots, open: Math.max(0, (s.spots || 0) - roster.length), players: roster.map(r => r.name), ownerName: s.ownerName || null, mine: s.ownerUid === currentUser.uid, hasFullDetails: !!(s.info && String(s.info).trim()), detailSections: s.info ? (String(s.info).match(/^##\s*(.+)$/gm) || []).map(x => x.replace(/^##\s*/, '').trim()) : [], price: window.sessPrice ? window.sessPrice(s) : 0, visibility: s.visibility || 'public', recurring: s.recurring || null, tournamentPlayed: !!s.tournamentId }; };
+async function _pastSessions(q, limit) { const all = (await get(ref(db, 'sessions'))).val() || {}; const today = new Date().toISOString().slice(0, 10); q = String(q || '').trim().toLowerCase();
+  return Object.entries(all).filter(([sid, s]) => s && s.date && s.date < today && (s.visibility === 'public' || s.ownerUid === currentUser.uid) && (!q || [s.title, s.location, s.date, s.ownerName, s.level].some(v => v && String(v).toLowerCase().includes(q)))).map(([sid, s]) => _sessSummary(sid, s)).sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, Math.max(1, Math.min(30, limit || 10))); }
+const _addDays = (iso, n) => { const d = new Date(iso + 'T12:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 async function _upcoming() { const all = (await get(ref(db, 'sessions'))).val() || {}; const today = new Date(); today.setHours(0, 0, 0, 0);
   return Object.entries(all).filter(([sid, s]) => s && s.date && new Date(s.date + 'T23:59') >= today && (s.visibility === 'public' || s.ownerUid === currentUser.uid)).map(([sid, s]) => _sessSummary(sid, s)).sort((a, b) => (a.date || '').localeCompare(b.date || '')); }
 async function _attachFor(sid) { const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s) return null; const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; return { sid, title: s.title || 'Session', date: s.date || '', when: sessWhen(s), location: s.location || '', spots: s.spots || 4, taken: roster.length, level: s.level || '' }; }
 window.aiRunTool = async function(name, a) {
   const me = currentUser.uid;
   if (name === 'list_upcoming_sessions') { const up = await _upcoming(); return { result: up, label: '📅 Found ' + up.length + ' upcoming session' + (up.length === 1 ? '' : 's') }; }
+  if (name === 'list_past_sessions') { const ps = await _pastSessions(a.query, a.limit); return { result: ps, label: '📜 Found ' + ps.length + ' past session' + (ps.length === 1 ? '' : 's') + (a.query ? ' matching "' + a.query + '"' : '') }; }
+  if (name === 'duplicate_session') {
+    const src = (await get(ref(db, 'sessions/' + a.sid))).val(); if (!src) throw new Error('source session not found');
+    const date = a.date || _addDays(src.date || new Date().toISOString().slice(0, 10), 7);
+    const sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const s = { title: (a.title || bumpDateInName(src.title) || src.title || 'Pickleball Session'), location: a.location || src.location || '', date, startTime: a.startTime || src.startTime || '07:30', endTime: a.endTime || src.endTime || '09:30',
+      spots: Math.max(2, Math.min(24, parseInt(a.spots) || src.spots || 8)), level: src.level || null, note: src.note || null, visibility: src.visibility || 'public', recurring: null,
+      info: src.info || null,                                   // the Full Details page — the part that takes the longest to type
+      price: src.price || null, priceMode: src.priceMode || null, priceTotal: src.priceTotal || null, refundCutoffH: src.refundCutoffH == null ? null : src.refundCutoffH,
+      ownerUid: me, ownerName: chatName(), createdAt: Date.now(), roster: [{ name: chatName(), uid: me, comment: '', at: Date.now() }], copiedFrom: a.sid };
+    if (a.endTime == null && a.startTime && src.startTime && src.endTime) { const mins = t => { const [hh, mm] = t.split(':').map(Number); return hh * 60 + mm; }; const dur = mins(src.endTime) - mins(src.startTime); const e = mins(a.startTime) + (dur > 0 ? dur : 150); s.endTime = String(Math.floor(e / 60) % 24).padStart(2, '0') + ':' + String(e % 60).padStart(2, '0'); }
+    await set(ref(db, 'sessions/' + sid), s);
+    const sum = _sessSummary(sid, s);
+    return { result: Object.assign(sum, { copiedFullDetails: !!src.info, copiedSections: sum.detailSections }), label: '✓ Copied "' + (src.title || 'session') + '" → ' + date + (src.info ? ' with full details (' + sum.detailSections.length + ' sections)' : ''), html: sessCardHtml(await _attachFor(sid)) };
+  }
   if (name === 'create_session') {
     if (!a.date || !a.startTime || !a.location) throw new Error('date, startTime and location are required');
     const sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -7135,6 +7172,7 @@ async function saveDirectoryEntry() {
   } catch(e) { console.log('directory save err', e); }
 }
 let _dirLoaded = false;
+window._nameBook = window._nameBook || {};   // lower → { name, sub, claimed, games }
 async function loadPlayerDirectory() {
   if (_dirLoaded) return;
   try {
@@ -7142,11 +7180,56 @@ async function loadPlayerDirectory() {
     const data = snap.val();
     if (!data) return;
     const dl = document.getElementById('playerDir');
-    dl.innerHTML = Object.values(data).map(p =>
+    if (dl) dl.innerHTML = Object.values(data).map(p =>
       '<option value="'+(p.name||'')+'" label="'+[p.city,p.email,p.phone].filter(Boolean).join(' · ')+'"></option>').join('');
+    Object.values(data).forEach(p => { if (!p || !p.name) return; const k = String(p.name).trim().toLowerCase(); if (!k) return;
+      const cur = window._nameBook[k] || {}; window._nameBook[k] = { name: String(p.name).trim(), sub: cur.sub || (p.unclaimed ? '' : '✓ on the app'), claimed: cur.claimed || !p.unclaimed, games: cur.games || 0, last: Math.max(cur.last || 0, p.lastActive || 0) }; });
     _dirLoaded = true;
   } catch(e) { console.log('directory load err', e); }
 }
+window.loadPlayerDirectory = loadPlayerDirectory;
+window.pfGameNames = function() {
+  if (!lbData || !lbData.games) return {};
+  if (window._pfGameCache && window._pfGameCache.src === lbData) return window._pfGameCache.map;
+  const map = {}; lbData.games.forEach(g => [].concat(g.t1, g.t2).forEach(n => { const k = String(n).trim().toLowerCase(); if (!k) return; const e = map[k] = map[k] || { name: String(n).trim(), games: 0, last: 0 }; e.games++; e.last = Math.max(e.last, g.when || 0); }));
+  window._pfGameCache = { src: lbData, map }; return map;
+};
+// Suggestions under a player box: prefix matches first, then anywhere-in-name; names already used in other boxes skipped.
+window.pfMatches = function(q, excludeLower) {
+  q = String(q || '').trim().toLowerCase(); const ex = new Set(excludeLower || []);
+  const gm = window.pfGameNames(); const book = Object.assign({}, window._nameBook || {});
+  Object.entries(gm).forEach(([k, e]) => { const cur = book[k]; book[k] = cur ? Object.assign({}, cur, { games: e.games, last: Math.max(cur.last || 0, e.last), sub: (cur.claimed ? '✓ on the app · ' : '') + e.games + ' game' + (e.games === 1 ? '' : 's') }) : { name: e.name, sub: e.games + ' game' + (e.games === 1 ? '' : 's'), claimed: false, games: e.games, last: e.last }; });
+  const all = Object.values(book).filter(b => b && b.name && !ex.has(b.name.toLowerCase()));
+  const score = b => { const n = b.name.toLowerCase(); if (!q) return 0; if (n.startsWith(q)) return 3; if (n.split(/\s+/).some(w => w.startsWith(q))) return 2; if (n.includes(q)) return 1; return 0; };
+  return all.map(b => [score(b), b]).filter(x => q ? x[0] > 0 : true).sort((a, b) => (b[0] - a[0]) || ((b[1].games || 0) - (a[1].games || 0)) || ((b[1].last || 0) - (a[1].last || 0)) || a[1].name.localeCompare(b[1].name)).slice(0, 6).map(x => x[1]);
+};
+window.pfSuggest = function(inp) {
+  if (!inp) return; const w = inp.parentNode; if (!w) return;
+  let box = w.querySelector('.psug'); if (!box) { box = document.createElement('div'); box.className = 'psug'; w.appendChild(box); }
+  const q = inp.value.trim();
+  const others = [...document.querySelectorAll('.pinput')].filter(i => i !== inp).map(i => i.value.trim().toLowerCase()).filter(Boolean);
+  const m = window.pfMatches(q, others).filter(b => b.name.toLowerCase() !== q.toLowerCase());
+  if (!m.length) { box.style.display = 'none'; return; }
+  box.innerHTML = m.map((b, i) => '<div data-i="' + i + '" onmousedown="event.preventDefault();pfPick(this)" ontouchstart="" data-name="' + b.name.replace(/"/g, '&quot;') + '">' + escInfo(b.name) + (b.sub ? '<span>' + escInfo(b.sub) + '</span>' : '') + '</div>').join('');
+  box.style.display = 'block'; box._inp = inp; window._pfActive = -1;
+  if (!_dirLoaded) loadPlayerDirectory().then(() => { if (document.activeElement === inp) window.pfSuggest(inp); });
+};
+window.pfPick = function(el) {
+  const box = el.parentNode, inp = box._inp; if (!inp) return;
+  inp.value = el.getAttribute('data-name') || el.textContent; box.style.display = 'none';
+  updPCnt();
+  // hop to the next empty box so a lineup is a tap-tap-tap affair
+  const nxt = [...document.querySelectorAll('.pinput')].find(i => !i.value.trim());
+  if (nxt) { try { nxt.focus({ preventScroll: true }); } catch (e) { nxt.focus(); } } else { try { inp.blur(); } catch (e) {} }
+};
+window.pfHideSuggest = function(inp) { setTimeout(() => { const box = inp && inp.parentNode && inp.parentNode.querySelector('.psug'); if (box) box.style.display = 'none'; }, 150); };
+window.pfKey = function(ev, inp) {
+  const box = inp.parentNode.querySelector('.psug'); if (!box || box.style.display === 'none') return;
+  const rows = [...box.querySelectorAll('div[data-name]')]; if (!rows.length) return;
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); window._pfActive = Math.max(0, Math.min(rows.length - 1, (window._pfActive == null ? -1 : window._pfActive) + (ev.key === 'ArrowDown' ? 1 : -1))); rows.forEach((r, i) => r.style.background = i === window._pfActive ? 'rgba(0,240,255,0.12)' : ''); }
+  else if (ev.key === 'Enter' || ev.key === 'Tab') { const r = rows[window._pfActive >= 0 ? window._pfActive : 0]; if (r && (ev.key === 'Enter' || inp.value.trim())) { ev.preventDefault(); window.pfPick(r); } }
+  else if (ev.key === 'Escape') box.style.display = 'none';
+};
 
 window.showTournamentQR = function() {
   if (!activeTid) { alert('Start a tournament first!'); return; }
@@ -7563,6 +7646,14 @@ function renderGames() {
   }
   // Extra added games
   const extraGames = cfg.schedule.filter(g => g.added && !g.finals);
+  if (cfg.h2h && cfg.players && cfg.players.length === 2) {
+    const [A, B] = cfg.players; let wa = 0, wb = 0;
+    cfg.schedule.filter(g => !g.deleted).forEach(g => { const s = scores[g.key]; if (!s || s.s1 == null || s.s2 == null) return; const aOnT1 = g.t1.some(p => p === A); const sa = aOnT1 ? s.s1 : s.s2, sb = aOnT1 ? s.s2 : s.s1; if (sa > sb) wa++; else if (sb > sa) wb++; });
+    html += '<div id="h2hTally" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;margin-bottom:12px;background:linear-gradient(135deg,rgba(0,240,255,0.10),rgba(255,45,120,0.08));border:1px solid var(--border);border-radius:14px;">'
+      + '<div style="text-align:center;flex:1;"><div style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--cyan);">' + escInfo(A) + '</div><div style="font-family:\'Russo One\',sans-serif;font-size:30px;color:var(--white);">' + wa + '</div></div>'
+      + '<div style="font-size:11px;color:var(--muted);font-weight:800;letter-spacing:2px;">SERIES</div>'
+      + '<div style="text-align:center;flex:1;"><div style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--pink);">' + escInfo(B) + '</div><div style="font-family:\'Russo One\',sans-serif;font-size:30px;color:var(--white);">' + wb + '</div></div></div>';
+  }
   if (extraGames.length) {
     html += '<div class="rhdr">'+(cfg.mode==='log'?'Games':'Extra Games')+'</div>';
     extraGames.forEach((g, i) => {
@@ -7598,7 +7689,7 @@ function renderGames() {
     var wrap = document.createElement('div');
     wrap.id = 'gamesActions';
     var hasAnyScore = Object.values(scores).some(function(s){ return s && s.s1 !== null && s.s1 !== undefined; });
-    wrap.innerHTML = '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>'
+    wrap.innerHTML = (cfg.h2h ? '<button onclick="h2hNextGame()" class="addrbtn" style="margin-top:8px;border-color:rgba(0,245,196,0.5);color:var(--aqua);">➕ Next game · ' + escInfo(cfg.players[0].split(' ')[0]) + ' vs ' + escInfo(cfg.players[1].split(' ')[0]) + '</button>' : '<button onclick="openAddGame()" class="addrbtn" style="margin-top:8px;">➕ Add Game</button>')
       + (cfg.mode === 'rr' ? '<button onclick="addPlayerToTournament()" class="addrbtn" style="margin-top:8px;">👤 Add Player — rebuilds unplayed games</button>' : '')
       + (hasAnyScore ? '<a href="builder-summary.html" onclick="markDone();return false;" style="display:block;text-align:center;margin-top:14px;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border-radius:14px;font-family:\'Russo One\',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;box-shadow:0 4px 20px rgba(0,144,255,0.35);">🏆 Done — See Winner!</a>' : '');
     el.appendChild(wrap);
@@ -7849,6 +7940,16 @@ window.saveAddedGame = function() {
 };
 
 // Log-mode pre-game: create the first game (unscored) from the inline builder
+// 1 on 1: one tap adds the next game between the same two players (no team picking)
+window.h2hNextGame = function() {
+  if (!cfg || !cfg.h2h || !cfg.players || cfg.players.length !== 2) return openAddGame();
+  const open = cfg.schedule.find(g => !g.deleted && !(scores[g.key] && scores[g.key].s1 != null));
+  if (open) { copiedToast('Score game ' + (cfg.schedule.filter(g => !g.deleted).indexOf(open) + 1) + ' first'); try { const e = document.getElementById('s1_' + open.key); if (e) { e.scrollIntoView({ block: 'center', behavior: 'smooth' }); e.focus(); } } catch (e) {} return; }
+  const n = cfg.schedule.filter(g => !g.deleted).length; const flip = n % 2 === 1;   // alternate sides each game
+  cfg.schedule.push({ key: 'h' + Date.now().toString(36), t1: [cfg.players[flip ? 1 : 0]], t2: [cfg.players[flip ? 0 : 1]], round: 'Game', added: true });
+  push(); renderGames(); updateNav();
+  setTimeout(() => { try { const last = cfg.schedule[cfg.schedule.length - 1]; const e = document.getElementById('s1_' + last.key); if (e) { e.scrollIntoView({ block: 'center', behavior: 'smooth' }); } } catch (e) {} }, 100);
+};
 window.lgStartGame = function() {
   const cap = agCap();
   if (agT1.length !== cap || agT2.length !== cap) {
@@ -8043,7 +8144,16 @@ function renderStandings() {
   } else if (_fin) {
     html += '<div class="tieinfo" style="margin-bottom:12px;border-color:rgba(255,224,0,0.2);color:var(--yellow);">🏁 Finals are set — the final standings appear here as scores come in</div>';
   }
-  if (allDone && champ && !(_fin && _fin.scored > 0)) {
+  if (cfg.h2h && cfg.players && cfg.players.length === 2) {
+    const [A, B] = cfg.players; let wa = 0, wb = 0, pa = 0, pb = 0;
+    cfg.schedule.filter(g => !g.deleted).forEach(g => { const s = scores[g.key]; if (!s || s.s1 == null || s.s2 == null) return; const aOnT1 = g.t1.some(p => p === A); const sa = aOnT1 ? s.s1 : s.s2, sb = aOnT1 ? s.s2 : s.s1; pa += sa; pb += sb; if (sa > sb) wa++; else if (sb > sa) wb++; });
+    const lead = wa === wb ? null : (wa > wb ? A : B), lw = Math.max(wa, wb), ll = Math.min(wa, wb);
+    html += '<div class="champbox" id="h2hBox" style="margin-bottom:12px;"><div style="font-size:44px;margin-bottom:6px;">' + (lead ? '🏆' : '🤝') + '</div>'
+      + '<div class="clbl">' + (lead ? (allDone ? 'Winner' : 'Leading') : 'All square') + '</div>'
+      + '<div class="cname">' + (lead ? escInfo(lead) : escInfo(A) + ' & ' + escInfo(B)) + '</div>'
+      + '<div class="cpts">' + (lead ? lw + '–' + ll : wa + '–' + wb) + ' in games · points ' + (lead === B ? pb + '–' + pa : pa + '–' + pb) + '</div></div>';
+  }
+  if (allDone && champ && !(_fin && _fin.scored > 0) && !cfg.h2h) {
     html += '<div class="champbox" id="statsChampBox"><div style="font-size:48px;margin-bottom:8px;">🏆</div>'
       +'<div class="clbl">Champion</div><div class="cname">'+champ.name+'</div>'
       +'<div class="cpts">'+champ.ptsFor+' pts · '+champ.wins+' wins · '+(champ.avgDiff>=0?'+':'')+champ.avgDiff.toFixed(1)+' avg diff</div></div>';
@@ -9308,6 +9418,11 @@ function scTogglePaid()      { if(window.scTogglePaid) window.scTogglePaid(); }
 function scSetPriceMode(m)   { if(window.scSetPriceMode) window.scSetPriceMode(m); }
 function scPricePreview()    { if(window.scPricePreview) window.scPricePreview(); }
 function startCheckout(s)    { if(window.startCheckout) window.startCheckout(s); }
+function h2hNextGame()       { if(window.h2hNextGame) window.h2hNextGame(); }
+function pfSuggest(i)        { if(window.pfSuggest) window.pfSuggest(i); }
+function pfHideSuggest(i)    { if(window.pfHideSuggest) window.pfHideSuggest(i); }
+function pfPick(e)           { if(window.pfPick) window.pfPick(e); }
+function pfKey(ev,i)         { if(window.pfKey) window.pfKey(ev,i); }
 function refundPlayer(s,u,n) { if(window.refundPlayer) window.refundPlayer(s,u,n); }
 function adminIgnoreIssue(k,v){ if(window.adminIgnoreIssue) window.adminIgnoreIssue(k,v); }
 function setAwayKind(k)      { if(window.setAwayKind) window.setAwayKind(k); }
@@ -9360,7 +9475,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-19.1';
+window.BUILD_TAG = 'v2026-10-19.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
