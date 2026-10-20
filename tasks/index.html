@@ -42,6 +42,7 @@
   --today:#3fcf98; --shadow:0 12px 40px rgba(0,0,0,.5); color-scheme:dark}
 
 html,body{height:100%}
+@supports (height:100dvh){ html{height:100dvh} }
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
 [hidden]{display:none!important}
 img{max-width:100%}
@@ -241,6 +242,11 @@ input,textarea{font:inherit;color:inherit}
 .evmore:hover{background:var(--line);color:var(--fg)}
 .grid.month .evmore{display:none}
 @media (max-width:760px){ .evmore{display:none} }
+/* touch reorder */
+.task.lifting{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent)}
+.task.dragsrc{opacity:.35}
+.task.ghost{position:fixed;z-index:60;pointer-events:none;box-shadow:var(--shadow);opacity:.95;margin:0}
+.drop-line{height:3px;border-radius:2px;background:var(--accent);margin:2px 0}
 /* multi-select */
 .ev.multi{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent-soft)}
 .nav.today.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -315,7 +321,10 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
     padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
   .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20}
   .scrim[hidden]{display:none}
-  .main{padding-bottom:12px}
+  .main{padding-bottom:0}
+  .content{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))}
+  .cal{height:auto;min-height:100%}
+  .daylist .task{touch-action:pan-y}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
@@ -537,8 +546,17 @@ async function write(path, value){ // value null = delete
   if(!navigator.onLine){ enqueue({path,value}); status.textContent='offline · will sync'; return; }
   try{ await FB.write(path,value); }catch(e){ console.warn(e); enqueue({path,value}); status.textContent='saved on device · retrying'; }
 }
-async function persist(id, data){ tasks.set(id, data); render(); saveLocal(); write(base()+'/tasks/'+id, data); touchActivity(); }
-async function remove(id){ tasks.delete(id); if(sel===id) sel=null; render(); saveLocal(); write(base()+'/tasks/'+id, null); }
+/* undo / redo: each entry is a list of {id, before, after} task snapshots */
+const undoStack=[], redoStack=[]; let applyingHistory=false;
+const snap=t=>t?JSON.parse(JSON.stringify(t)):null;
+function recordHistory(entries){ if(applyingHistory||!entries.length) return; undoStack.push(entries); if(undoStack.length>100) undoStack.shift(); redoStack.length=0; }
+function restore(entries, dir){ applyingHistory=true; try{
+  for(const e of entries){ const v=dir==='undo'?e.before:e.after; if(v){ tasks.set(e.id,snap(v)); write(base()+'/tasks/'+e.id, tasks.get(e.id)); } else { tasks.delete(e.id); if(sel===e.id) sel=null; write(base()+'/tasks/'+e.id, null); } }
+  saveLocal(); render(); } finally{ applyingHistory=false; } }
+function undo(){ const e=undoStack.pop(); if(!e){ toast('Nothing to undo'); return; } redoStack.push(e); restore(e,'undo'); toast('Undone'); }
+function redo(){ const e=redoStack.pop(); if(!e){ toast('Nothing to redo'); return; } undoStack.push(e); restore(e,'redo'); toast('Redone'); }
+async function persist(id, data){ recordHistory([{id,before:snap(tasks.get(id)),after:snap(data)}]); tasks.set(id, data); render(); saveLocal(); write(base()+'/tasks/'+id, data); touchActivity(); }
+async function remove(id){ recordHistory([{id,before:snap(tasks.get(id)),after:null}]); tasks.delete(id); if(sel===id) sel=null; render(); saveLocal(); write(base()+'/tasks/'+id, null); }
 async function persistProj(p){ projects.set(p.id,p); render(); saveLocal(); write(base()+'/projects/'+p.id, p); }
 async function removeProj(id){ projects.delete(id); if(curProj===id) curProj=null; render(); saveLocal(); write(base()+'/projects/'+id, null); }
 let lastTouch=0; function touchActivity(){ const now=Date.now(); if(now-lastTouch<60000) return; lastTouch=now; write('profiles/'+me+'/lastActive', now); write('profiles/'+me+'/taskCount', tasks.size); }
@@ -551,7 +569,7 @@ function addTask(title, due, project){
 }
 function upd(id, patch){ const t=tasks.get(id); if(!t) return; const n={...t,...patch,updatedAt:Date.now()}; persist(id,n); }
 // Apply several patches with one render (used for reordering)
-function updMany(list){ const now=Date.now(); for(const [id,patch] of list){ const t=tasks.get(id); if(t) tasks.set(id,{...t,...patch,updatedAt:now}); } render(); saveLocal(); for(const [id] of list){ const t=tasks.get(id); if(t) write(base()+'/tasks/'+id, t); } touchActivity(); }
+function updMany(list){ const now=Date.now(); const hist=[]; for(const [id,patch] of list){ const t=tasks.get(id); if(t){ const n={...t,...patch,updatedAt:now}; hist.push({id,before:snap(t),after:snap(n)}); tasks.set(id,n); } } recordHistory(hist); render(); saveLocal(); for(const [id] of list){ const t=tasks.get(id); if(t) write(base()+'/tasks/'+id, t); } touchActivity(); }
 // Drop task `id` into day `key`, before task `beforeId` (or at the end when null), renumbering that day's order
 function placeInDay(ids, key, beforeId){
   ids=(Array.isArray(ids)?ids:String(ids).split(',')).filter(id=>tasks.get(id));
@@ -654,6 +672,7 @@ qi.addEventListener('paste', e=>{
 });
 document.addEventListener('keydown', e=>{
   const tag=(e.target.tagName||'').toLowerCase();
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='z' && tag!=='input' && tag!=='textarea' && !e.target.isContentEditable){ e.preventDefault(); if(e.shiftKey) redo(); else undo(); return; }
   if(e.key==='Escape'){ if(!dp.hidden){ closeDp(); } else if(multi.size){ clearMulti(); } else if(sel){ sel=null; render(); } else qi.blur(); return; }
   if(e.target.isContentEditable) return;
   if((e.key==='/'||e.key==='n') && tag!=='input' && tag!=='textarea'){ e.preventDefault(); qi.focus(); }
@@ -778,6 +797,7 @@ function renderCal(){
   days.forEach(key=>{
     const d=parseYmd(key);
     const c=el('div','cell'+(isMonth&&d.getMonth()!==cm-1?' other':'')+(key===today?' istoday':'')+(mobile&&key===selDay?' selday':'')+(!mobile&&!isMonth&&key<today?' past':''));
+    c.dataset.key=key;
     const dn=el('div','dn'); dn.appendChild(el('b',null,String(d.getDate())));
     const items=sorted(key);
     if(isMonth||mobile) c.appendChild(dn);
@@ -821,7 +841,7 @@ function renderCal(){
     dl.appendChild(gh);
     const items=sorted(selDay);
     if(!items.length) dl.appendChild(el('div','empty','Nothing due. Add one above and it lands on this day.'));
-    items.forEach(t=>dl.appendChild(taskRow(t)));
+    items.forEach(t=>{ const r=taskRow(t); enableTouchReorder(r, t.id, selDay); dl.appendChild(r); });
     wrap.appendChild(dl);
   }
   content.appendChild(wrap);
@@ -878,6 +898,32 @@ function startInlineEdit(span, id){
   span.addEventListener('keydown',ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); finish(true); } else if(ev.key==='Escape'){ ev.preventDefault(); finish(false); } ev.stopPropagation(); });
   span.addEventListener('blur',()=>finish(true),{once:true});
   span.addEventListener('click',ev=>ev.stopPropagation());
+}
+
+// Long-press a row on the phone, then slide it up or down to reorder (or across the week dots to move days).
+function enableTouchReorder(row, id, dayKey){
+  let timer=null, dragging=false, ghost=null, startY=0, placeholder=null;
+  const cancel=()=>{ clearTimeout(timer); timer=null; };
+  row.addEventListener('touchstart',ev=>{ if(ev.touches.length!==1) return; startY=ev.touches[0].clientY; timer=setTimeout(()=>{ dragging=true; row.classList.add('lifting'); try{ navigator.vibrate&&navigator.vibrate(10); }catch(e){} },350); },{passive:true});
+  row.addEventListener('touchmove',ev=>{
+    if(!dragging){ if(Math.abs(ev.touches[0].clientY-startY)>8) cancel(); return; }
+    ev.preventDefault();
+    const y=ev.touches[0].clientY, x=ev.touches[0].clientX;
+    if(!ghost){ ghost=row.cloneNode(true); ghost.className='task ghost'; ghost.style.width=row.offsetWidth+'px'; document.body.appendChild(ghost); placeholder=el('div','drop-line'); row.classList.add('dragsrc'); }
+    ghost.style.top=(y-24)+'px'; ghost.style.left=row.getBoundingClientRect().left+'px';
+    ghost.style.display='none'; const under=document.elementFromPoint(x,y); ghost.style.display='';
+    const target=under&&under.closest('.task:not(.dragsrc)'); const cell=under&&under.closest('.cell');
+    document.querySelectorAll('.cell.drop').forEach(c=>c.classList.remove('drop'));
+    if(cell){ cell.classList.add('drop'); placeholder.remove(); }
+    else if(target&&target.parentNode===row.parentNode){ const r=target.getBoundingClientRect(); if(y<r.top+r.height/2) target.before(placeholder); else target.after(placeholder); }
+  },{passive:false});
+  const end=ev=>{ cancel(); if(!dragging) return; dragging=false; row.classList.remove('lifting','dragsrc');
+    const dropCell=document.querySelector('.cell.drop'); document.querySelectorAll('.cell.drop').forEach(c=>c.classList.remove('drop'));
+    if(ghost){ ghost.remove(); ghost=null; }
+    if(dropCell){ const idx=[...dropCell.parentNode.children].indexOf(dropCell); const key=dropCell.dataset.key; placeholder&&placeholder.remove(); if(key&&key!==dayKey) placeInDay(id,key,null); return; }
+    if(placeholder&&placeholder.parentNode){ const next=placeholder.nextElementSibling; const beforeId=next&&next.classList.contains('task')?next.dataset.id:null; placeholder.remove(); placeInDay(id,dayKey,beforeId); }
+  };
+  row.addEventListener('touchend',end); row.addEventListener('touchcancel',end);
 }
 
 /* ---------- detail panel ---------- */
