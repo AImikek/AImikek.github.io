@@ -45,14 +45,14 @@ html,body{height:100%}
 html{background:var(--bg);overflow:hidden}
 [hidden]{display:none!important}
 img{max-width:100%}
-body{margin:0;position:fixed;inset:0;width:100%;height:100%;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;overflow:hidden;
+body{margin:0;position:fixed;inset:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;-webkit-text-size-adjust:100%}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 *{box-sizing:border-box}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
 input,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{height:100%;display:flex;flex-direction:column;max-width:1280px;margin:0 auto}
+.app{height:100%;min-height:100%;display:flex;flex-direction:column;max-width:1280px;margin:0 auto}
 
 /* Top bar */
 .top{display:flex;align-items:center;gap:14px;padding:14px 0 10px;flex-wrap:wrap}
@@ -1277,7 +1277,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.1550';
+const APP_VERSION='v2026-10-20.1555';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); }
