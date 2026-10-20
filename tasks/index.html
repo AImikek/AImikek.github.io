@@ -397,6 +397,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
     <span class="status" id="status"></span>
     <div class="me"><button class="ava" id="ava" title="Account">?</button></div>
   </header>
+  <div class="installbar" id="updatebar" hidden>🚀 A new version of Tasks is ready <button id="updateNow">Update now</button></div>
   <div class="installbar" id="installbar" hidden>📲 Put Tasks on your home screen <button id="installHow">Show me how</button><button class="x" id="installX">✕</button></div>
 
   <form class="qa" id="qa">
@@ -607,13 +608,15 @@ function toggleDone(id){ const t=tasks.get(id); if(t) upd(id,{done:!t.done}); }
 const qi=$('#qi'), qdateTxt=$('#qdateTxt'), qdate=$('#qdate');
 let manualDate=null;
 const qd={value:''}; // kept for compatibility with calendar click-to-add
+function defaultDue(){ if(view==='proj'&&curProj) return null; if(view==='cal'&&window.innerWidth<=760) return selDay; return todayStr(); }
+function effectiveDue(){ if(manualDate==='') return null; const p=parseQuick(qi.value); return manualDate||p.due||defaultDue(); }
 function refreshQa(){
-  const p=parseQuick(qi.value); const due=manualDate||p.due;
+  const due=effectiveDue();
   qdateTxt.textContent = due? fmtDue(due) : 'no date';
   qdate.classList.toggle('ghost', !due);
 }
 qi.addEventListener('input', refreshQa);
-qdate.addEventListener('click', ()=>{ openDatePicker(qdate, manualDate||parseQuick(qi.value).due, d=>{ manualDate=d; qd.value=d||''; refreshQa(); qi.focus(); }); });
+qdate.addEventListener('click', ()=>{ openDatePicker(qdate, effectiveDue(), d=>{ manualDate=d===null?'':d; qd.value=d||''; refreshQa(); qi.focus(); }); });
 
 /* ---------- date picker popover (native pickers can't open inside this frame) ---------- */
 const dp=$('#dp'), dpscrim=$('#dpscrim');
@@ -640,7 +643,7 @@ function openDatePicker(anchorEl, current, onPick){
       const b=el('button',(d.getMonth()!==m-1?'o':'')+(k===today?' t':'')+(k===current?' s':''),String(d.getDate()));
       b.addEventListener('click',()=>pick(k)); dg.appendChild(b); }
     dp.appendChild(dg);
-    if(current){ const c=el('button','clr','Remove date'); c.addEventListener('click',()=>pick(null)); dp.appendChild(c); }
+    { const c=el('button','clr',current?'No date':'No date'); c.addEventListener('click',()=>pick(null)); dp.appendChild(c); }
   };
   draw();
   dp.hidden=false; dpscrim.hidden=false;
@@ -652,7 +655,7 @@ function openDatePicker(anchorEl, current, onPick){
 $('#qa').addEventListener('submit', e=>{
   e.preventDefault();
   const p=parseQuick(qi.value); if(!p.title) return;
-  const due = manualDate || p.due || (view==='cal' && window.innerWidth<=760 ? selDay : null);
+  const due = effectiveDue();
   addTask(p.title, due, view==='proj'?curProj:null);
   qi.value=''; manualDate=null; qd.value=''; refreshQa(); toast('Added'+(due?' · '+fmtDue(due):''));
 });
@@ -666,7 +669,7 @@ qi.addEventListener('paste', e=>{
   if(lines.length<2) return;
   e.preventDefault();
   let n=0;
-  for(const line of lines){ const p=parseQuick(line); if(!p.title) continue; addTask(p.title, manualDate||p.due||(view==='cal'&&window.innerWidth<=760?selDay:null), view==='proj'?curProj:null); n++; }
+  for(const line of lines){ const p=parseQuick(line); if(!p.title) continue; addTask(p.title, manualDate===''?null:(manualDate||p.due||defaultDue()), view==='proj'?curProj:null); n++; }
   qi.value=''; manualDate=null; qd.value=''; refreshQa();
   toast('Added '+n+' tasks');
 });
@@ -692,6 +695,7 @@ function render(){
   content.scrollTop=sc.content; content.scrollLeft=sc.contentX; const g2=content.querySelector('.grid'); if(g2&&sc.grid!=null){ g2.scrollTop=sc.grid; g2.scrollLeft=sc.gridX; }
   content.querySelectorAll('.cell').forEach((c,i)=>{ if(cells[i]) c.scrollTop=cells[i]; });
   renderPanel(); renderMultiBar();
+  refreshQa();
   const pr=view==='proj'&&curProj?projects.get(curProj):null;
   qi.placeholder = pr ? 'Add to '+pr.name+'…' : 'Add a task… try “call broker tomorrow” or “invoice friday”';
 }
@@ -1236,6 +1240,14 @@ async function emailAuth(){ const em=$('#gEmail').value.trim(), pw=$('#gPass').v
 $('#gSubmit').addEventListener('click',emailAuth);
 $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
+
+/* ---------- stale-build defense: version.json bypasses every cache ---------- */
+const APP_VERSION='v2026-10-20.1459';
+let newVersion=null;
+async function checkVersion(){ try{ const r=await fetch('version.json?nc='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.tag && j.tag!==APP_VERSION){ newVersion=j.tag; $('#updatebar').hidden=false; } }catch(e){} }
+$('#updateNow').addEventListener('click',async()=>{ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); });
+setTimeout(checkVersion,4000); setInterval(checkVersion,5*60*1000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkVersion(); });
 
 /* ---------- boot ---------- */
 render();
