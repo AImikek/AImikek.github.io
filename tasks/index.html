@@ -248,6 +248,12 @@ input,textarea{font:inherit;color:inherit}
 .task{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y}
 .task .t,.task .meta{-webkit-user-select:none;user-select:none}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
+/* desktop list drag */
+.task[draggable="true"]{cursor:grab}
+.task.drag{opacity:.4}
+.task.over-top{box-shadow:0 -3px 0 0 var(--accent)}
+.gh.drop h2{color:var(--accent)}
+.gh.drop{box-shadow:inset 0 -2px 0 var(--accent)}
 /* touch reorder */
 .task.lifting{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent)}
 .task.dragsrc{opacity:.35}
@@ -771,8 +777,18 @@ function renderList(){
   for(const [name,cls,items] of groups){
     if(!items.length) continue;
     const g=el('section','group'); const h=el('div','gh'); const h2=el('h2',cls,name); h.append(h2, el('span','n',String(items.length)));
+    // drop onto a group header = move to that day (Today / Tomorrow / No date / Completed)
+    const headerTarget={'Today':t,'Tomorrow':addDays(t,1),'No date':null}[name];
+    if(headerTarget!==undefined || name==='Completed'){
+      h.addEventListener('dragover',ev=>{ ev.preventDefault(); h.classList.add('drop'); });
+      h.addEventListener('dragleave',()=>h.classList.remove('drop'));
+      h.addEventListener('drop',ev=>{ ev.preventDefault(); h.classList.remove('drop'); const ids=(ev.dataTransfer.getData('text/plain')||'').split(',').filter(id=>tasks.get(id)); if(!ids.length) return;
+        if(name==='Completed'){ updMany(ids.map(id=>[id,{done:true}])); toast('Checked off'); }
+        else if(headerTarget===null){ updMany(ids.map(id=>[id,{due:null}])); toast('Moved to No date'); }
+        else placeInDay(ids, headerTarget, null); });
+    }
     g.appendChild(h);
-    (name==='Completed'? items.slice(0,30): items).forEach(x=>{ const r=taskRow(x); if(x.due && !x.done) enableTouchReorder(r, x.id, x.due); enableSwipeDelete(r, x.id); g.appendChild(r); });
+    (name==='Completed'? items.slice(0,30): items).forEach(x=>{ const r=taskRow(x); if(x.due && !x.done) enableTouchReorder(r, x.id, x.due); enableSwipeDelete(r, x.id); enableListDrag(r, x); g.appendChild(r); });
     content.appendChild(g);
   }
 }
@@ -982,6 +998,22 @@ function enableSwipeDelete(row, id){
 // Insert bins after rows are in the DOM (needs a positioned wrapper)
 function mountSwipeBins(root){ root.querySelectorAll('.task.swipeable').forEach(r=>{ if(r.__bin && !r.__mounted){ r.__mounted=true; const w=el('div','swipewrap'); r.replaceWith(w); w.append(r.__bin, r); } }); }
 function toastAction(msg, label, fn){ toastEl.innerHTML=''; toastEl.append(el('span',null,msg)); const b=el('button','tbtn',label); b.addEventListener('click',e=>{ e.stopPropagation(); fn(); toastEl.classList.remove('show'); }); toastEl.appendChild(b); toastEl.classList.add('show'); toastEl.style.pointerEvents='auto'; clearTimeout(toastT); toastT=setTimeout(()=>{ toastEl.classList.remove('show'); toastEl.style.pointerEvents=''; },5000); }
+
+// Desktop List view: drag a row onto another row to reorder (same day) or move it to that row's day;
+// drop on a group header (Today, Tomorrow, No date, Completed) to send it there.
+function enableListDrag(row, t){
+  if(window.innerWidth<=760) return;
+  row.draggable=true;
+  row.addEventListener('dragstart',ev=>{ const ids=multi.has(t.id)?[...multi]:[t.id]; ev.dataTransfer.setData('text/plain',ids.join(',')); ev.dataTransfer.effectAllowed='move'; row.classList.add('drag'); });
+  row.addEventListener('dragend',()=>{ document.querySelectorAll('.task.drag,.task.over-top,.gh.drop').forEach(x=>x.classList.remove('drag','over-top','drop')); });
+  row.addEventListener('dragover',ev=>{ ev.preventDefault(); ev.stopPropagation(); row.classList.add('over-top'); });
+  row.addEventListener('dragleave',()=>row.classList.remove('over-top'));
+  row.addEventListener('drop',ev=>{ ev.preventDefault(); ev.stopPropagation(); row.classList.remove('over-top');
+    const ids=(ev.dataTransfer.getData('text/plain')||'').split(',').filter(id=>tasks.get(id)&&id!==t.id); if(!ids.length) return;
+    if(t.done){ updMany(ids.map(id=>[id,{done:true}])); toast('Checked off'); return; }
+    if(!t.due){ updMany(ids.map(id=>[id,{due:null}])); toast('Moved to No date'); return; }
+    placeInDay(ids, t.due, t.id); });
+}
 
 /* ---------- detail panel ---------- */
 let confirmDel=false, panelFor=null;
@@ -1297,7 +1329,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.1628';
+const APP_VERSION='v2026-10-20.2250';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
