@@ -418,12 +418,21 @@
   #tabLeaderboard.lb-active { transform: scale(1.25); filter: drop-shadow(0 0 10px rgba(255,224,0,0.9)); }
 
   /* Home (Let's Play): compact so everything fits one screen */
-  #setupStep1 .mcard { padding:11px 10px; }
-  #setupStep1 .micon { font-size:24px; margin-bottom:3px; }
-  #setupStep1 .mname { font-size:16px; }
-  #setupStep1 .mdesc { font-size:11px; margin-top:3px; }
+  #setupOverlay { padding:calc(58px + env(safe-area-inset-top)) 14px 24px; }
+  #setupOverlay .modal { padding:18px 16px 16px; }
+  #setupStep1 .mcard { padding:10px 10px; }
+  #setupStep1 .micon { font-size:22px; margin-bottom:2px; }
+  #setupStep1 .mname { font-size:15px; }
+  #setupStep1 .mdesc { font-size:11px; margin-top:2px; }
   #setupStep1 .mtitle { font-size:22px !important; margin-bottom:2px; }
-  #setupStep1 .msub { margin-bottom:10px !important; font-size:13px; }
+  #setupStep1 .msub { margin-bottom:8px !important; font-size:12.5px; }
+  /* format rows: icon left, words right — half the height of stacked cards */
+  #setupStep1 .mtoggle { gap:8px; margin-bottom:10px; }
+  #setupStep1 .mtoggle .mcard { display:flex; align-items:center; gap:12px; text-align:left; padding:11px 14px; }
+  #setupStep1 .mtoggle .micon { font-size:26px; margin:0; flex-shrink:0; width:34px; text-align:center; }
+  #setupStep1 .mtoggle .mname { font-size:15px; letter-spacing:1px; }
+  #setupStep1 .mtoggle .mdesc { margin-top:1px; }
+  #setupStep1 .joinbtn { width:100%; padding:13px; background:transparent; border:2px solid rgba(0,240,255,0.3); color:var(--cyan); border-radius:12px; font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
   #setupStep1 .mtoggle { gap:8px; }
   #setupOverlay { padding-top:calc(58px + env(safe-area-inset-top)); padding-bottom:calc(150px + env(safe-area-inset-bottom)); }
 
@@ -588,7 +597,7 @@
 </div>
 
 <!-- PAST TOURNAMENTS PAGE -->
-<div id="pageHistory" style="display:none;position:fixed;inset:0;z-index:350;background:var(--bg);overflow-y:auto;padding:60px 16px 120px;">
+<div id="pageHistory" style="display:none;position:fixed;inset:0;z-index:350;background:var(--bg);overflow-y:auto;padding:calc(68px + env(safe-area-inset-top)) 16px 120px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
   <div style="max-width:600px;margin:0 auto;padding-top:8px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-top:4px;">
       <button onclick="goBack()"
@@ -1337,7 +1346,7 @@
       <button class="rtbtn active" id="chatTabGroups" onclick="chatSetTab('groups')" style="flex:1;">Groups</button>
       <button class="rtbtn" id="chatTabDms" onclick="chatSetTab('dms')" style="flex:1;">Messages <span id="chatDmBadge"></span></button>
       <button class="rtbtn" id="chatTabFriends" onclick="chatSetTab('friends')" style="flex:1;">Friends</button>
-      <button class="rtbtn" id="chatTabAi" onclick="chatSetTab('ai')" style="flex:1;">✨ Assistant</button>
+      <button class="rtbtn" id="chatTabAi" onclick="chatSetTab('ai')" style="flex:1;min-width:0;white-space:nowrap;">✨ AI</button>
     </div>
     <div id="chatBody"></div>
   </div>
@@ -1554,7 +1563,6 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item" id="menuInstall" onclick="closeSettings();installApp();">📲 Install the App</button>
     <button class="settings-item" onclick="closeSettings();openQuickStart();">📖 Quick Start Guide</button>
     <div class="settings-divider"></div>
-    <button class="settings-item" onclick="closeSettings();newTournament();">🏠 New Tournament</button>
     <button class="settings-item" onclick="closeSettings();openHistory();">📜 Past Tournaments</button>
     <button class="settings-item" id="menuMoreBtn" onclick="toggleMenuMore()" style="color:var(--muted);">⋯ More</button>
     <div id="menuMore" style="display:none;padding-left:6px;border-left:2px solid var(--border);margin-left:8px;">
@@ -1587,7 +1595,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
       <div class="mtitle" style="font-size:26px;">🏓 Let's Play</div>
       <div class="msub" id="step1Sub" style="margin-bottom:18px;">How are you playing today?</div>
       <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin-bottom:6px;opacity:0.8;">1 · Pick your game</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         <div class="mcard" id="ptSingles" onclick="setPlayType('singles')" style="padding:14px 8px;">
           <div class="micon">🙋</div><div class="mname">Singles</div>
           <div class="mdesc">1 vs 1</div>
@@ -1597,30 +1605,34 @@ document.addEventListener('touchend',   _unlockAudio, true);
           <div class="mdesc">2 vs 2</div>
         </div>
       </div>
-      <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin:10px 0 6px;opacity:0.8;">2 · Pick your format</div>
+      <div id="step1FmtLbl" style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase;margin:4px 0 6px;opacity:0.8;">2 · Pick your format</div>
       <div class="mtoggle" style="grid-template-columns:1fr;">
         <div class="mcard" id="fmtH2H" onclick="chooseFormat('h2h')" style="display:none;border-color:rgba(0,245,196,0.45);">
-          <div class="micon">⚡</div><div class="mname">1 on 1 — just play</div>
-          <div class="mdesc">You vs one opponent · log each game as you go · Done shows who won</div>
+          <div class="micon">⚡</div><div><div class="mname">1 on 1 · Just Play</div>
+          <div class="mdesc">You vs one opponent · log games as you go · Done shows who won</div></div>
         </div>
+        <div class="mcard" id="fmtMulti" onclick="showSinglesMulti()" style="display:none;">
+          <div class="micon">👥</div><div><div class="mname">More than 2 players</div>
+          <div class="mdesc">Singles round robin, or just log games</div></div>
+        </div>
+        <div id="fmtMultiBack" onclick="setPlayType('singles')" style="display:none;cursor:pointer;font-size:12px;color:var(--muted);font-weight:700;padding:2px 0 6px;">← Back</div>
         <div class="mcard" id="fmtRR" onclick="chooseFormat('rr')">
-          <div class="micon">🔄</div><div class="mname">Round Robin</div>
-          <div class="mdesc" id="rrDesc">Everyone partners with everyone · Fair &amp; balanced</div>
+          <div class="micon">🔄</div><div><div class="mname">Round Robin</div>
+          <div class="mdesc" id="rrDesc">Everyone partners with everyone · Fair &amp; balanced</div></div>
         </div>
         <div class="mcard" id="fmt4P" onclick="chooseFormat('4p')">
-          <div class="micon">⚡</div><div class="mname">Best 2 Out of 3!</div>
-          <div class="mdesc">Partners rotate every matchup · Best of 3 games</div>
+          <div class="micon">⚡</div><div><div class="mname">Best 2 Out of 3!</div>
+          <div class="mdesc">Partners rotate every matchup · Best of 3 games</div></div>
         </div>
-        <div class="mcard" onclick="chooseFormat('log')">
-          <div class="micon">📝</div><div class="mname">Log Games</div>
-          <div class="mdesc">No schedule — just add games as you play</div>
+        <div class="mcard" id="fmtLog" onclick="chooseFormat('log')">
+          <div class="micon">📝</div><div><div class="mname">Log Games</div>
+          <div class="mdesc">No schedule — just add games as you play</div></div>
         </div>
-        <button onclick="joinTournamentPrompt()"
-          style="width:100%;padding:18px;background:transparent;border:2px solid rgba(0,240,255,0.3);color:var(--cyan);border-radius:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
+        <button id="fmtJoin" class="joinbtn" onclick="joinTournamentPrompt()">
           🔗 Join a Friend's Tournament
         </button>
       </div>
-      <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted);font-weight:600;">Got an invite link? Just open it — you'll join automatically.</div>
+
     </div>
 
     <!-- STEP 2: players (+ name unless Log Games) -->
@@ -2294,16 +2306,23 @@ window.setPlayType = function(t) {
   document.getElementById('ptSingles').classList.toggle('active', t === 'singles');
   document.getElementById('ptDoubles').classList.toggle('active', t === 'doubles');
   // 4-Player Rotation is a doubles-only concept
-  const f4 = document.getElementById('fmt4P');
-  if (f4) f4.style.display = t === 'singles' ? 'none' : '';
-  const fh = document.getElementById('fmtH2H');
-  if (fh) fh.style.display = t === 'singles' ? '' : 'none';
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+  const s = t === 'singles';
+  show('fmtH2H', s); show('fmtMulti', s); show('fmtMultiBack', false);
+  show('fmtRR', !s); show('fmt4P', !s); show('fmtLog', !s); show('fmtJoin', true);
+  const lbl = document.getElementById('step1FmtLbl'); if (lbl) lbl.textContent = '2 · Pick your format';
   const rd = document.getElementById('rrDesc');
   if (rd) rd.textContent = t === 'singles'
     ? 'Everyone plays everyone · 1 vs 1'
     : 'Everyone partners with everyone · Fair & balanced';
 };
 
+// Singles → "More than 2 players": swap the two singles cards for Round Robin / Log Games (same screen, no scroll)
+window.showSinglesMulti = function() {
+  const show = (id, on) => { const el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+  show('fmtH2H', false); show('fmtMulti', false); show('fmtJoin', false); show('fmtMultiBack', true); show('fmtRR', true); show('fmtLog', true); show('fmt4P', false);
+  const lbl = document.getElementById('step1FmtLbl'); if (lbl) lbl.textContent = '2 · Singles · 3 or more players';
+};
 window.chooseFormat = function(m) {
   try { loadPlayerDirectory(); } catch (e) {}
   window._h2h = (m === 'h2h'); if (m === 'h2h') m = 'log';
@@ -2346,6 +2365,7 @@ window.chooseFormat = function(m) {
 window.setupBack = function() {
   document.getElementById('setupStep2').style.display = 'none';
   document.getElementById('setupStep1').style.display = 'block';
+  window.setPlayType(playType_);
 };
 
 window.selMode = window._selMode = function(m) {
@@ -4985,12 +5005,12 @@ async function renderAssistant() {
   aiLog.forEach(m => {
     if (m.role === 'user') h += '<div class="cbub me">' + escInfo(m.text) + '</div>';
     else if (m.role === 'tool') h += '<div style="font-size:11.5px;color:var(--muted);font-weight:700;margin:2px 4px 8px;">' + escInfo(m.text) + (m.html || '') + '</div>';
-    else h += '<div class="cbub them" style="white-space:pre-wrap;">' + escInfo(m.text) + (m.html || '') + '</div>';
+    else h += '<div class="cbub them" style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:92%;">' + escInfo(m.text) + (m.html || '') + '</div>';
   });
   if (aiBusy) h += '<div style="font-size:12px;color:var(--cyan);font-weight:700;margin:4px;">✨ working…</div>';
   h += '</div>';
   h += '<div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0;">' + AI_CHIPS.map(c => '<span onclick="aiAsk(\'' + c.replace(/'/g, "\\'") + '\')" style="flex-shrink:0;cursor:pointer;padding:7px 11px;border-radius:99px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);color:var(--cyan);font-size:11.5px;font-weight:700;white-space:nowrap;">' + escInfo(c) + '</span>').join('') + '</div>';
-  h += '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:4px;"><textarea id="aiInput" rows="1" placeholder="Ask me to set up a game, invite people, post to a group…" oninput="growChatInput(this)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();aiAsk();}" style="flex:1;min-height:44px;max-height:160px;resize:none;padding:11px 14px;font-size:16px;line-height:1.4;font-family:\'DM Sans\',sans-serif;font-weight:600;color:var(--white);background:var(--surface2);border:1px solid var(--border);border-radius:14px;outline:none;"></textarea>'
+  h += '<div style="display:flex;gap:8px;align-items:flex-end;margin-top:4px;"><textarea id="aiInput" rows="1" placeholder="Ask me anything…" oninput="growChatInput(this)" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();aiAsk();}" style="flex:1;min-height:44px;max-height:160px;resize:none;padding:11px 14px;font-size:16px;line-height:1.4;font-family:\'DM Sans\',sans-serif;font-weight:600;color:var(--white);background:var(--surface2);border:1px solid var(--border);border-radius:14px;outline:none;"></textarea>'
     + '<button onclick="aiAsk()" ' + (aiBusy ? 'disabled' : '') + ' style="height:44px;padding:0 16px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">✨ Go</button></div>'
     + (aiLog.length ? '<div onclick="aiReset()" style="text-align:center;font-size:11px;color:var(--muted);font-weight:700;margin-top:8px;cursor:pointer;">↺ start over</div>' : '');
   el.innerHTML = h;
@@ -9419,6 +9439,7 @@ function scSetPriceMode(m)   { if(window.scSetPriceMode) window.scSetPriceMode(m
 function scPricePreview()    { if(window.scPricePreview) window.scPricePreview(); }
 function startCheckout(s)    { if(window.startCheckout) window.startCheckout(s); }
 function h2hNextGame()       { if(window.h2hNextGame) window.h2hNextGame(); }
+function showSinglesMulti()  { if(window.showSinglesMulti) window.showSinglesMulti(); }
 function pfSuggest(i)        { if(window.pfSuggest) window.pfSuggest(i); }
 function pfHideSuggest(i)    { if(window.pfHideSuggest) window.pfHideSuggest(i); }
 function pfPick(e)           { if(window.pfPick) window.pfPick(e); }
@@ -9475,7 +9496,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-19.2';
+window.BUILD_TAG = 'v2026-10-19.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
