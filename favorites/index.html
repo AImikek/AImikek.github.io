@@ -393,6 +393,10 @@ const ENDPOINT = (window.MIKEK_ENDPOINT || ""); // set in /config.js
      hook      — optional punchy card title, e.g. "Brand - $100 FREE".
                  Text after the first " - " shows in accent blue.
      logo      — the company's website domain, like "mercury.com".
+     logoCss   — optional fine-tuning, e.g. "transform:scale(1.2);" to
+                 enlarge, "border-radius:26%;" to round, or
+                 "background:#f3f4f9;padding:12px;border-radius:24%;"
+                 to put a dark logo on a light chip.
                  Pulls in their real logo automatically. Leave "" for
                  a clean colored letter tile instead.
      image     — a custom photo URL (overrides logo). Usually leave "".
@@ -449,6 +453,7 @@ const FAVORITES = [
     category: "Events",
     blurb: "Miami's #1 health, wellness and animal advocacy event — my own. Sauna, ice baths, fitness, adoptable pups and the best crowd in Miami. 20% off with my link.",
     logo: "/pnc-logo.png",
+    logoCss: "transform:scale(1.28);",
     image: "",
     tags: ["pups n chill","dog event miami","wellness event","sauna","ice bath","animal advocacy","things to do miami","brickell events","puppies"],
     action: "link",
@@ -541,6 +546,7 @@ const FAVORITES = [
     category: "Banking",
     blurb: "The bank I run everything on — personal and business. My links get you a real signup bonus.",
     logo: "mercury.com",
+    logoCss: "border-radius:26%;",
     image: "",
     tags: ["bank","banking","finance","startup","business","money"],
     action: "page",
@@ -560,6 +566,7 @@ const FAVORITES = [
     category: "Rides",
     blurb: "Cheaper than Uber and Lyft, and 100% of the fare goes to the driver. My code gets you $10 in ride credit.",
     logo: "driveempower.com",
+    logoCss: "background:#f3f4f9;padding:12px;border-radius:24%;",
     image: "",
     tags: ["rideshare","rides","uber","lyft","taxi","driver","transport"],
     action: "page",
@@ -579,6 +586,7 @@ const FAVORITES = [
     category: "Tools",
     blurb: "The fastest email I've ever used — I clear my inbox in half the time. Try it free for 30 days.",
     logo: "superhuman.com",
+    logoCss: "background:#f3f4f9;padding:12px;border-radius:24%;",
     image: "",
     tags: ["email","productivity","superhuman","inbox","software","saas"],
     action: "link",
@@ -591,7 +599,7 @@ const FAVORITES = [
     perk: "FREE!",
     category: "Tools",
     blurb: "My free task and to-do list app. Simple, easy, effective — no accounts, no subscriptions, just get things done.",
-    logo: "/tasks-logo.svg",
+    logo: "/tasks-logo.png",
     image: "",
     tags: ["tasks","todo","to do list","productivity","app","free","checklist"],
     action: "link",
@@ -697,7 +705,7 @@ function cardHTML(f){
   const thumb = f.image
     ? `<div class="thumb"><img src="${f.image}" alt="${f.name}" loading="lazy"/>`
     : f.logo
-    ? `<div class="thumb logowrap"><img src="${logoURL(f)}" alt="${f.name} logo" loading="lazy"${f.logoFallback?` data-fb="${favicon(f.logoFallback)}"`:""} onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb}else{this.style.display='none'}"/>`
+    ? `<div class="thumb logowrap"><img src="${logoURL(f)}" alt="${f.name} logo" loading="lazy"${f.logoCss?` style="${f.logoCss}"`:""}${f.logoFallback?` data-fb="${favicon(f.logoFallback)}"`:""} onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb}else{this.style.display='none'}"/>`
     : `<div class="thumb mono" style="background:${tile(f.name)}"><span>${f.name[0]}</span>`;
   return `
     <article class="card" tabindex="0" data-slug="${slug(f.name)}" role="button" aria-label="${f.name}">
@@ -739,7 +747,7 @@ let lastFocus = null;
 
 function heroBlock(f){
   if(f.image) return `<div class="sheet-hero"><img src="${f.image}" alt="${f.name}"/></div>`;
-  if(f.logo)  return `<div class="sheet-hero" style="background:radial-gradient(circle at 50% 42%, rgba(123,159,255,.16), transparent 70%), #0b0b14"><img class="logomark" src="${logoURL(f)}" alt="${f.name} logo"${f.logoFallback?` data-fb="${favicon(f.logoFallback)}"`:""} onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb}else{this.style.display='none'}"/></div>`;
+  if(f.logo)  return `<div class="sheet-hero" style="background:radial-gradient(circle at 50% 42%, rgba(123,159,255,.16), transparent 70%), #0b0b14"><img class="logomark" src="${logoURL(f)}" alt="${f.name} logo"${f.logoCss?` style="${f.logoCss}"`:""}${f.logoFallback?` data-fb="${favicon(f.logoFallback)}"`:""} onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb}else{this.style.display='none'}"/></div>`;
   return `<div class="sheet-hero" style="background:${tile(f.name)}"><span class="mono">${f.name[0]}</span></div>`;
 }
 
