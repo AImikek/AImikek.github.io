@@ -241,6 +241,16 @@ input,textarea{font:inherit;color:inherit}
 .evmore:hover{background:var(--line);color:var(--fg)}
 .grid.month .evmore{display:none}
 @media (max-width:760px){ .evmore{display:none} }
+/* multi-select */
+.ev.multi{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent-soft)}
+.nav.today.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.multibar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:16;background:var(--fg);color:var(--bg);border-radius:14px;padding:8px 10px;display:flex;align-items:center;gap:6px;box-shadow:var(--shadow);font-size:13px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px)}
+.multibar[hidden]{display:none}
+.multibar b{padding:0 6px;font-weight:800}
+.multibar button{padding:7px 10px;border-radius:9px;background:rgba(255,255,255,.14);color:inherit;font-weight:700;font-size:13px}
+.multibar button:hover{background:rgba(255,255,255,.26)}
+.multibar button.ghost{background:transparent;opacity:.7}
+body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
 /* assistant */
 .fb.ai{right:auto;left:max(16px,env(safe-area-inset-left,0px));background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .fb.ai:hover{color:var(--accent-ink);filter:brightness(1.05)}
@@ -543,15 +553,35 @@ function upd(id, patch){ const t=tasks.get(id); if(!t) return; const n={...t,...
 // Apply several patches with one render (used for reordering)
 function updMany(list){ const now=Date.now(); for(const [id,patch] of list){ const t=tasks.get(id); if(t) tasks.set(id,{...t,...patch,updatedAt:now}); } render(); saveLocal(); for(const [id] of list){ const t=tasks.get(id); if(t) write(base()+'/tasks/'+id, t); } touchActivity(); }
 // Drop task `id` into day `key`, before task `beforeId` (or at the end when null), renumbering that day's order
-function placeInDay(id, key, beforeId){
-  const moving=tasks.get(id); if(!moving) return;
-  const day=[...tasks.values()].filter(t=>t.due===key && t.id!==id && !t.done).sort(daySort);
-  let idx=beforeId? day.findIndex(t=>t.id===beforeId) : -1; if(idx<0) idx=day.length;
-  day.splice(idx,0,moving);
-  const patches=day.map((t,i)=>[t.id,{order:i*10, ...(t.id===id?{due:key}:{})}]);
+function placeInDay(ids, key, beforeId){
+  ids=(Array.isArray(ids)?ids:String(ids).split(',')).filter(id=>tasks.get(id));
+  if(!ids.length) return;
+  const moving=ids.map(id=>tasks.get(id)).sort(daySort);
+  const day=[...tasks.values()].filter(t=>t.due===key && !ids.includes(t.id) && !t.done).sort(daySort);
+  let idx=beforeId&&!ids.includes(beforeId)? day.findIndex(t=>t.id===beforeId) : -1; if(idx<0) idx=day.length;
+  day.splice(idx,0,...moving);
+  const patches=day.map((t,i)=>[t.id,{order:i*10, ...(ids.includes(t.id)?{due:key}:{})}]);
   updMany(patches);
-  if(moving.due!==key) toast('Moved to '+fmtDue(key));
+  const movedDays=moving.filter(t=>t.due!==key).length; if(movedDays) toast('Moved '+(movedDays>1?movedDays+' tasks':'')+' to '+fmtDue(key));
 }
+/* ---------- multi-select bar ---------- */
+function renderMultiBar(){
+  let bar=$('#multibar'); if(!bar){ bar=el('div'); bar.id='multibar'; bar.className='multibar'; document.body.appendChild(bar); }
+  for(const id of [...multi]) if(!tasks.get(id)) multi.delete(id);
+  if(!multi.size || view!=='cal'){ bar.hidden=true; return; }
+  bar.hidden=false; bar.innerHTML='';
+  bar.appendChild(el('b',null,multi.size+' selected'));
+  const mk=(label,fn,cls)=>{ const b=el('button',cls||'',label); b.addEventListener('click',fn); bar.appendChild(b); return b; };
+  mk('← 1 day',()=>{ multiPatch(t=>({due:addDays(t.due||todayStr(),-1)})); toast('Moved back a day'); });
+  mk('1 day →',()=>{ multiPatch(t=>({due:addDays(t.due||todayStr(),1)})); toast('Moved forward a day'); });
+  const dateBtn=mk('Move to…',()=>openDatePicker(dateBtn,null,d=>{ if(d) placeInDay([...multi],d,null); }));
+  mk('Done',()=>{ const allDone=[...multi].every(id=>tasks.get(id).done); multiPatch(()=>({done:!allDone})); toast(allDone?'Reopened':'Checked off'); });
+  mk('Clear',()=>{ multi.clear(); selectMode=false; render(); },'ghost');
+}
+/* ---------- multi-select ---------- */
+let multi=new Set(), selectMode=false;
+function clearMulti(){ multi.clear(); render(); }
+function multiPatch(fn){ const list=[...multi].filter(id=>tasks.get(id)).map(id=>[id,fn(tasks.get(id))]); if(list.length) updMany(list); }
 const daySort=(a,b)=>{ const ad=a.done?1:0, bd=b.done?1:0; if(ad!==bd) return ad-bd; const ao=typeof a.order==='number'?a.order:1e9, bo=typeof b.order==='number'?b.order:1e9; if(ao!==bo) return ao-bo; return (a.createdAt||0)-(b.createdAt||0); };
 function toggleDone(id){ const t=tasks.get(id); if(t) upd(id,{done:!t.done}); }
 
@@ -624,7 +654,7 @@ qi.addEventListener('paste', e=>{
 });
 document.addEventListener('keydown', e=>{
   const tag=(e.target.tagName||'').toLowerCase();
-  if(e.key==='Escape'){ if(!dp.hidden){ closeDp(); } else if(sel){ sel=null; render(); } else qi.blur(); return; }
+  if(e.key==='Escape'){ if(!dp.hidden){ closeDp(); } else if(multi.size){ clearMulti(); } else if(sel){ sel=null; render(); } else qi.blur(); return; }
   if(e.target.isContentEditable) return;
   if((e.key==='/'||e.key==='n') && tag!=='input' && tag!=='textarea'){ e.preventDefault(); qi.focus(); }
 });
@@ -642,7 +672,7 @@ function render(){
   if(view==='list') renderList(); else if(view==='proj') renderProjects(); else renderCal();
   content.scrollTop=sc.content; content.scrollLeft=sc.contentX; const g2=content.querySelector('.grid'); if(g2&&sc.grid!=null){ g2.scrollTop=sc.grid; g2.scrollLeft=sc.gridX; }
   content.querySelectorAll('.cell').forEach((c,i)=>{ if(cells[i]) c.scrollTop=cells[i]; });
-  renderPanel();
+  renderPanel(); renderMultiBar();
   const pr=view==='proj'&&curProj?projects.get(curProj):null;
   qi.placeholder = pr ? 'Add to '+pr.name+'…' : 'Add a task… try “call broker tomorrow” or “invoice friday”';
 }
@@ -722,7 +752,9 @@ function renderCal(){
   prev.addEventListener('click',()=>{ if(calMode==='month'){ const [y,m]=calMonth.split('-').map(Number); calMonth=ymd(new Date(y,m-2,1)).slice(0,7); } else anchor=addDays(anchor,-step); render(); });
   next.addEventListener('click',()=>{ if(calMode==='month'){ const [y,m]=calMonth.split('-').map(Number); calMonth=ymd(new Date(y,m,1)).slice(0,7); } else anchor=addDays(anchor,step); render(); });
   tod.addEventListener('click',()=>{ calMonth=today.slice(0,7); anchor=today; selDay=today; render(); });
-  h.append(title, prev, next, tod);
+  const selBtn=el('button','nav today'+(selectMode?' on':''),selectMode?'Done selecting':'Select'); selBtn.title='Pick several tasks, then move or check them together (or Cmd/Ctrl-click)';
+  selBtn.addEventListener('click',()=>{ selectMode=!selectMode; if(!selectMode) multi.clear(); render(); });
+  h.append(title, prev, next, tod, selBtn);
   const modes=el('div','tabs modes');
   [['week','Sun–Sat'],['roll','Next 7'],['five','Next 5'],['month','Month']].forEach(([k,l])=>{ const b=el('button','tab',l); b.setAttribute('aria-selected',String(calMode===k)); b.addEventListener('click',()=>{ calMode=k; LS('calMode',k); if(k!=='month'&&anchor<addDays(today,-60)) anchor=today; render(); }); modes.appendChild(b); });
   h.appendChild(modes);
@@ -759,22 +791,26 @@ function renderCal(){
         const title=el('span','evt',t.title); const more=el('button','evmore','›'); more.title='Open details';
         more.addEventListener('click',ev=>{ ev.stopPropagation(); sel=t.id; render(); });
         e.append(ck, title, more);
-        e.addEventListener('click',ev=>{ ev.stopPropagation(); if(mobile){ sel=t.id; render(); return; } startInlineEdit(title, t.id); });
-        e.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain',t.id); ev.dataTransfer.effectAllowed='move'; e.classList.add('drag'); });
-        e.addEventListener('dragend',()=>{ e.classList.remove('drag'); document.querySelectorAll('.ev.over-top').forEach(x=>x.classList.remove('over-top')); });
+        e.addEventListener('click',ev=>{ ev.stopPropagation();
+          if(ev.metaKey||ev.ctrlKey||ev.shiftKey||selectMode){ if(multi.has(t.id)) multi.delete(t.id); else multi.add(t.id); render(); return; }
+          if(mobile){ sel=t.id; render(); return; } startInlineEdit(title, t.id); });
+        if(multi.has(t.id)) e.classList.add('multi');
+        e.addEventListener('dragstart',ev=>{ const ids=multi.has(t.id)?[...multi]:[t.id]; ev.dataTransfer.setData('text/plain',ids.join(',')); ev.dataTransfer.effectAllowed='move'; e.classList.add('drag'); if(ids.length>1) document.querySelectorAll('.ev.multi').forEach(x=>x.classList.add('drag')); });
+        e.addEventListener('dragend',()=>{ document.querySelectorAll('.ev.drag').forEach(x=>x.classList.remove('drag')); document.querySelectorAll('.ev.over-top').forEach(x=>x.classList.remove('over-top')); });
         e.addEventListener('dragover',ev=>{ ev.preventDefault(); ev.stopPropagation(); e.classList.add('over-top'); });
         e.addEventListener('dragleave',()=>e.classList.remove('over-top'));
-        e.addEventListener('drop',ev=>{ ev.preventDefault(); ev.stopPropagation(); e.classList.remove('over-top'); c.classList.remove('drop'); const id=ev.dataTransfer.getData('text/plain'); if(id&&id!==t.id&&tasks.get(id)) placeInDay(id,key,t.id); });
+        e.addEventListener('drop',ev=>{ ev.preventDefault(); ev.stopPropagation(); e.classList.remove('over-top'); c.classList.remove('drop'); const id=ev.dataTransfer.getData('text/plain'); if(id&&!id.split(',').includes(t.id)) placeInDay(id,key,t.id); });
         c.appendChild(e);
       });
       if(items.length>lim) c.appendChild(el('div','more','+'+(items.length-lim)+' more'));
       if(!isMonth){ const add=el('button','cadd','+ Add'); add.addEventListener('click',ev=>{ ev.stopPropagation(); manualDate=key; qd.value=key; refreshQa(); qi.placeholder='Add a task for '+fmtDue(key)+'…'; qi.focus(); }); c.appendChild(add); }
       c.addEventListener('dragover',ev=>{ ev.preventDefault(); c.classList.add('drop'); });
       c.addEventListener('dragleave',()=>c.classList.remove('drop'));
-      c.addEventListener('drop',ev=>{ ev.preventDefault(); c.classList.remove('drop'); const id=ev.dataTransfer.getData('text/plain'); if(id&&tasks.get(id)) placeInDay(id,key,null); });
+      c.addEventListener('drop',ev=>{ ev.preventDefault(); c.classList.remove('drop'); const id=ev.dataTransfer.getData('text/plain'); if(id) placeInDay(id,key,null); });
     }
     c.addEventListener('click',()=>{
       if(mobile){ selDay=key; render(); return; }
+      if(sel){ sel=null; render(); return; }
       manualDate=key; qd.value=key; refreshQa(); qi.focus(); qi.placeholder='Add a task for '+fmtDue(key)+'…';
     });
     grid.appendChild(c);
