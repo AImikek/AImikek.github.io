@@ -3,7 +3,12 @@
 name = "bitter-dawn-bb19"
 main = "worker.js"
 compatibility_date = "2026-10-14"
-# All variables and secrets are managed in the Cloudflare dashboard (Settings → Variables and Secrets):
-# ANTHROPIC_API_KEY, ALLOWED_UIDS, MODEL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, FIREBASE_SERVICE_ACCOUNT, FIREBASE_DB_URL.
-# keep_vars stops a deploy from wiping them.
+
+# Plain variables live HERE (a deploy re-applies them every time).
+# SECRETS live in the dashboard only (Settings -> Variables and Secrets -> type Secret) and are never touched by a deploy:
+#   ANTHROPIC_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, FIREBASE_SERVICE_ACCOUNT
 keep_vars = true
+[vars]
+ALLOWED_UIDS = "4VIYfWzAOsWwp6e2j7f0U2vUurh2"
+MODEL = "claude-sonnet-5-5"
+FIREBASE_DB_URL = "https://pickle-tourney-default-rtdb.firebaseio.com"
