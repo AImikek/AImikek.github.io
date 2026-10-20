@@ -1,0 +1,9 @@
+# PB Tourney assistant + payments worker — deployed by Cloudflare "Deploy from GitHub" (Workers Builds)
+name = "bitter-dawn-bb19"
+main = "worker.js"
+compatibility_date = "2026-10-14"
+# Secrets (ANTHROPIC_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, FIREBASE_SERVICE_ACCOUNT) live in the
+# Cloudflare dashboard → Settings → Variables and Secrets. Plain variables can live here or there.
+[vars]
+MODEL = "claude-sonnet-5-5"
+FIREBASE_DB_URL = "https://pickle-tourney-default-rtdb.firebaseio.com"
