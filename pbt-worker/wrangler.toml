@@ -9,6 +9,6 @@ compatibility_date = "2026-10-14"
 #   ANTHROPIC_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, FIREBASE_SERVICE_ACCOUNT
 keep_vars = true
 [vars]
-ALLOWED_UIDS = "4VIYfWzAOsWwp6e2j7f0U2vUurh2"
+ALLOWED_UIDS = "all"
 MODEL = "claude-sonnet-5-5"
 FIREBASE_DB_URL = "https://pickle-tourney-default-rtdb.firebaseio.com"
