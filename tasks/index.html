@@ -419,7 +419,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
     <aside class="panel" id="panel" hidden></aside>
   </div>
 </div>
-<div class="gate" id="gate">
+<div class="gate" id="gate" hidden>
   <div class="gcard">
     <h1>Tasks</h1>
     <p>Tasks that take two seconds to add. Calendar, projects, photos, steps. Syncs to your phone and computer, works offline.</p>
@@ -434,6 +434,10 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
     <button class="glink" id="gForgot">Forgot password</button>
   </div>
 </div>
+<script>
+// Runs before Firebase loads: if this device was signed in last time, never flash the sign-in screen.
+try{ if(!localStorage.getItem('lastUid')) document.getElementById('gate').hidden=false; }catch(e){ document.getElementById('gate').hidden=false; }
+</script>
 <div class="menu" id="menu" hidden></div>
 <div class="modal" id="installModal" hidden><div class="mcard" id="installCard"></div></div>
 <div class="modal" id="fbModal" hidden><div class="mcard">
@@ -1068,7 +1072,7 @@ function closeMenu(){ menu.hidden=true; }
 ava.addEventListener('click',()=>{
   if(!menu.hidden){ closeMenu(); return; }
   menu.innerHTML='';
-  menu.appendChild(el('small',null,user?(user.displayName||user.email||''):''));
+  menu.appendChild(el('small',null,(user?(user.displayName||user.email||''):'')+' · '+APP_VERSION));
   const inst=el('button',null,'📲 Add to home screen / bookmark'); inst.addEventListener('click',()=>{ closeMenu(); showInstall(); }); menu.appendChild(inst);
   const fb=el('button',null,'💬 Send feedback'); fb.addEventListener('click',()=>{ closeMenu(); openFeedback(); }); menu.appendChild(fb);
   menu.appendChild(el('div','sep'));
@@ -1273,18 +1277,22 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.1547';
+const APP_VERSION='v2026-10-20.1550';
 let newVersion=null;
-async function checkVersion(){ try{ const r=await fetch('version.json?nc='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.tag && j.tag!==APP_VERSION){ newVersion=j.tag; $('#updatebar').hidden=false; } }catch(e){} }
-$('#updateNow').addEventListener('click',async()=>{ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); });
-setTimeout(checkVersion,4000); setInterval(checkVersion,5*60*1000);
+const bootAt=Date.now();
+async function hardReload(){ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); }
+async function checkVersion(){ try{ const r=await fetch('version.json?nc='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.tag && j.tag!==APP_VERSION){ newVersion=j.tag;
+  if(Date.now()-bootAt<15000 && LS('autoReloadedFor')!==j.tag){ LS('autoReloadedFor',j.tag); status.textContent='updating…'; hardReload(); return; }
+  $('#updatebar').hidden=false; } }catch(e){} }
+$('#updateNow').addEventListener('click',hardReload);
+setTimeout(checkVersion,1500); setInterval(checkVersion,5*60*1000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkVersion(); });
 
 /* ---------- boot ---------- */
 // If this device was signed in last time, skip the sign-in flash: show the cached tasks immediately
 // and let Firebase confirm in the background. If it turns out we're signed out, the gate appears then.
 const lastUid=LS('lastUid');
-if(lastUid){ me=lastUid; loadLocal(); gate.hidden=true; $('#fbBtn').hidden=false; $('#aiBtn').hidden=false; const ini=LS('lastInitial'); if(ini) ava.textContent=ini; status.textContent='connecting…'; }
+if(lastUid){ me=lastUid; loadLocal(); gate.hidden=true; $('#fbBtn').hidden=false; $('#aiBtn').hidden=false; const ini=LS('lastInitial'); if(ini) ava.textContent=ini; status.textContent='connecting…'; } else { gate.hidden=false; }
 render();
 try{ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){}
 window.addEventListener('online',()=>{ status.textContent='back online · syncing'; flushQueue(); });
