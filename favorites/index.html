@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Favorites — mikek.ai</title>
 <meta name="description" content="A running index of the products, people, and places Mike Krilivsky actually vouches for." />
+<link rel="canonical" href="https://mikek.ai/favorites"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="mikek.ai"/>
+<meta property="og:url" content="https://mikek.ai/favorites"/>
+<meta property="og:title" content="Favorites — mikek.ai"/>
+<meta property="og:description" content="Free passes, real discounts, and the products Mike actually vouches for."/>
+<meta property="og:image" content="https://mikek.ai/og-default.jpg"/>
+<meta name="twitter:card" content="summary_large_image"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
@@ -151,7 +159,7 @@
   /* real brand logos (logo: "domain.com" on an entry) */
   .thumb.logowrap{display:flex;align-items:center;justify-content:center;
     background:radial-gradient(circle at 50% 42%, rgba(123,159,255,.16), transparent 70%), #0b0b14}
-  .thumb.logowrap img{max-width:68%;max-height:76px;width:auto;height:auto;object-fit:contain;border-radius:12px;transition:transform .5s var(--ease)}
+  .thumb.logowrap img{max-width:74%;max-height:76px;width:auto;height:auto;object-fit:contain;transition:transform .5s var(--ease)}
   .card:hover .thumb.logowrap img{transform:scale(1.08)}
   .sheet-hero img.logomark{max-width:62%;max-height:104px;width:auto;height:auto;object-fit:contain;border-radius:14px}
   /* pathway tag overlay */
@@ -335,6 +343,15 @@
     <span>© <span id="yr"></span> Mike Krilivsky · mikek.ai</span>
     <a href="mailto:m@mikek.ai">m@mikek.ai</a>
   </div>
+  <nav class="wrap" style="padding-top:14px;font-size:.8rem;color:var(--muted-2);line-height:2" aria-label="Offers">
+    Offers:
+    <a href="/freeequinoxpass">Free Equinox Day Pass</a> ·
+    <a href="/freeequinoxbrickellpass">Equinox Brickell Heights Pass</a> ·
+    <a href="/freeequinoxcoralgablespass">Equinox Coral Gables Pass</a> ·
+    <a href="/freeequinoxaventurapass">Equinox Aventura Pass</a> ·
+    <a href="/freeequinoxsouthbeachpass">Equinox South Beach Pass</a> ·
+    <a href="/instagramrecovery">Instagram Account Recovery</a>
+  </nav>
 </footer>
 
 <!-- ============== OVERLAY ============== -->
@@ -368,6 +385,8 @@ const ENDPOINT = (window.MIKEK_ENDPOINT || ""); // set in /config.js
      category  — makes the filter chips automatically (reuse existing
                  names to group things, or type a new one)
      blurb     — the one-liner on the card. Edit freely!
+     hook      — optional punchy card title, e.g. "Brand - $100 FREE".
+                 Text after the first " - " shows in accent blue.
      logo      — the company's website domain, like "mercury.com".
                  Pulls in their real logo automatically. Leave "" for
                  a clean colored letter tile instead.
@@ -388,6 +407,7 @@ const FAVORITES = [
 
   {
     name: "Equinox",
+    hook: "Equinox - $100 Day Pass FREE",
     category: "Fitness",
     blurb: "The gym I actually keep going to. Requesting an intro routes you straight to the VP of Sales and myself for a free $100 day pass.",
     logo: "/equinox-logo.png",          // upload equinox-logo.png to the repo root
@@ -460,8 +480,9 @@ const FAVORITES = [
 
   {
     name: "The Spot",
+    hook: "The Spot - Best Barber, 15% Off!",
     category: "Grooming",
-    blurb: "Zach at The Spot is the only person who touches my hair. Drop your info and he'll reach out to get you in the chair.",
+    blurb: "Zach at The Spot is the only person who touches my hair. Drop your info and he'll reach out to get you in the chair, 15% off for my people.",
     logo: "thespotbarbershop.com",
     image: "",
     tags: ["hair","haircut","barber","barbershop","grooming","zach"],
@@ -493,6 +514,7 @@ const FAVORITES = [
 
   {
     name: "Mercury",
+    hook: "Mercury - Best Bank, $250 Free!",
     category: "Banking",
     blurb: "The bank I run everything on — personal and business. My links get you a real signup bonus.",
     logo: "mercury.com",
@@ -510,6 +532,7 @@ const FAVORITES = [
 
   {
     name: "Empower",
+    hook: "Empower - Cheaper than Uber/Lyft",
     category: "Rides",
     blurb: "Cheaper than Uber and Lyft, and 100% of the fare goes to the driver. My code gets you $10 in ride credit.",
     logo: "driveempower.com",
@@ -574,6 +597,13 @@ function tile(name){
 }
 
 const pathwayLabel = { link:"Visit", page:"Read", form:"Apply" };
+// hook: "Brand - offer" renders the offer in accent blue so it pops
+function hookHTML(f){
+  const h = f.hook || f.name;
+  const i = h.indexOf(" - ");
+  if(i < 0) return h;
+  return `${h.slice(0,i)} <span style="color:var(--accent)">${h.slice(i+3)}</span>`;
+}
 const ctaLabel = f => f.action==="link" ? "Visit" : f.action==="page" ? "Why I like it" : (f.form?.cta || "Open form");
 
 // ---- categories ----
@@ -612,7 +642,7 @@ function cardHTML(f){
       </div>
       <div class="card-body">
         <span class="cat">${f.category}</span>
-        <h3 class="card-name">${f.name}</h3>
+        <h3 class="card-name">${hookHTML(f)}</h3>
         <p class="card-blurb">${f.blurb}</p>
         <span class="card-cta">${ctaLabel(f)} <span class="arr">→</span></span>
       </div>
