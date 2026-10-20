@@ -230,6 +230,9 @@ input,textarea{font:inherit;color:inherit}
 .grid.week .evchk{width:18px;height:18px;margin-top:0}
 .grid.week .evchk svg{width:10px;height:10px}
 
+.ev.over-top{box-shadow:0 -3px 0 0 var(--accent)}
+.ev{cursor:grab}
+.ev:active{cursor:grabbing}
 /* projects */
 .projhead{display:flex;align-items:center;gap:10px;padding:6px 2px 12px;flex-wrap:wrap}
 .projhead h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em;flex:1;min-width:0}
@@ -505,6 +508,19 @@ function addTask(title, due, project){
   persist(t.id,t); return t;
 }
 function upd(id, patch){ const t=tasks.get(id); if(!t) return; const n={...t,...patch,updatedAt:Date.now()}; persist(id,n); }
+// Apply several patches with one render (used for reordering)
+function updMany(list){ const now=Date.now(); for(const [id,patch] of list){ const t=tasks.get(id); if(t) tasks.set(id,{...t,...patch,updatedAt:now}); } render(); saveLocal(); for(const [id] of list){ const t=tasks.get(id); if(t) write(base()+'/tasks/'+id, t); } touchActivity(); }
+// Drop task `id` into day `key`, before task `beforeId` (or at the end when null), renumbering that day's order
+function placeInDay(id, key, beforeId){
+  const moving=tasks.get(id); if(!moving) return;
+  const day=[...tasks.values()].filter(t=>t.due===key && t.id!==id && !t.done).sort(daySort);
+  let idx=beforeId? day.findIndex(t=>t.id===beforeId) : -1; if(idx<0) idx=day.length;
+  day.splice(idx,0,moving);
+  const patches=day.map((t,i)=>[t.id,{order:i*10, ...(t.id===id?{due:key}:{})}]);
+  updMany(patches);
+  if(moving.due!==key) toast('Moved to '+fmtDue(key));
+}
+const daySort=(a,b)=>{ const ad=a.done?1:0, bd=b.done?1:0; if(ad!==bd) return ad-bd; const ao=typeof a.order==='number'?a.order:1e9, bo=typeof b.order==='number'?b.order:1e9; if(ao!==bo) return ao-bo; return (a.createdAt||0)-(b.createdAt||0); };
 function toggleDone(id){ const t=tasks.get(id); if(t) upd(id,{done:!t.done}); }
 
 /* ---------- quick add ---------- */
@@ -673,7 +689,7 @@ function renderCal(){
   wrap.appendChild(h);
 
   const byDay={}; for(const t of tasks.values()) if(t.due) (byDay[t.due]=byDay[t.due]||[]).push(t);
-  const sorted=k=>(byDay[k]||[]).sort((a,b)=>sortKey(a)<sortKey(b)?-1:1);
+  const sorted=k=>(byDay[k]||[]).sort(daySort);
   const isMonth=calMode==='month'; const cols=isMonth?7:days.length;
   const [cy,cm]=calMonth.split('-').map(Number);
 
@@ -703,14 +719,17 @@ function renderCal(){
         e.append(ck, el('span','evt',t.title));
         e.addEventListener('click',ev=>{ ev.stopPropagation(); sel=t.id; render(); });
         e.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain',t.id); ev.dataTransfer.effectAllowed='move'; e.classList.add('drag'); });
-        e.addEventListener('dragend',()=>e.classList.remove('drag'));
+        e.addEventListener('dragend',()=>{ e.classList.remove('drag'); document.querySelectorAll('.ev.over-top').forEach(x=>x.classList.remove('over-top')); });
+        e.addEventListener('dragover',ev=>{ ev.preventDefault(); ev.stopPropagation(); e.classList.add('over-top'); });
+        e.addEventListener('dragleave',()=>e.classList.remove('over-top'));
+        e.addEventListener('drop',ev=>{ ev.preventDefault(); ev.stopPropagation(); e.classList.remove('over-top'); c.classList.remove('drop'); const id=ev.dataTransfer.getData('text/plain'); if(id&&id!==t.id&&tasks.get(id)) placeInDay(id,key,t.id); });
         c.appendChild(e);
       });
       if(items.length>lim) c.appendChild(el('div','more','+'+(items.length-lim)+' more'));
       if(!isMonth){ const add=el('button','cadd','+ Add'); add.addEventListener('click',ev=>{ ev.stopPropagation(); manualDate=key; qd.value=key; refreshQa(); qi.placeholder='Add a task for '+fmtDue(key)+'…'; qi.focus(); }); c.appendChild(add); }
       c.addEventListener('dragover',ev=>{ ev.preventDefault(); c.classList.add('drop'); });
       c.addEventListener('dragleave',()=>c.classList.remove('drop'));
-      c.addEventListener('drop',ev=>{ ev.preventDefault(); c.classList.remove('drop'); const id=ev.dataTransfer.getData('text/plain'); if(id&&tasks.get(id)&&tasks.get(id).due!==key){ upd(id,{due:key}); toast('Moved to '+fmtDue(key)); } });
+      c.addEventListener('drop',ev=>{ ev.preventDefault(); c.classList.remove('drop'); const id=ev.dataTransfer.getData('text/plain'); if(id&&tasks.get(id)) placeInDay(id,key,null); });
     }
     c.addEventListener('click',()=>{
       if(mobile){ selDay=key; render(); return; }
