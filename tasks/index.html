@@ -45,7 +45,7 @@ html{height:100%}
 html{background:var(--bg);overflow:hidden}
 [hidden]{display:none!important}
 img{max-width:100%}
-body{margin:0;position:fixed;inset:0;height:calc(100% + var(--vfix,0px));background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;overflow:hidden;
+body{margin:0;position:fixed;inset:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;-webkit-text-size-adjust:100%}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 *{box-sizing:border-box}
@@ -254,9 +254,7 @@ input,textarea{font:inherit;color:inherit}
 .task.ghost{position:fixed;z-index:60;pointer-events:none;box-shadow:var(--shadow);opacity:.95;margin:0}
 .drop-line{height:3px;border-radius:2px;background:var(--accent);margin:2px 0}
 /* fixed bottom things follow the corrected height */
-.fb,.toast,.multibar{transform:translateY(var(--vfix,0px))}
-.toast{transform:translate(-50%,var(--vfix,0px))}
-.multibar{transform:translate(-50%,var(--vfix,0px))}
+/* (bottom-anchored fixed elements sit above the home indicator via env(); no extra shift) */
 /* layout ruler (diagnostics) */
 .ruler{position:fixed;left:0;right:0;top:0;height:3000px;z-index:99;pointer-events:none;font-family:var(--mono);font-size:10px;color:#fff}
 .ruler[hidden]{display:none}
@@ -317,6 +315,15 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
 .task.open .t{font-size:17px}
 
 @media (max-width:760px){
+  /* Phone: a normally scrolling page (iOS paints that to the true bottom even when it misreports the window height) */
+  html{overflow:auto;height:auto}
+  body{position:static;height:auto;min-height:100vh;overflow:visible}
+  .app{height:auto;min-height:0;display:block}
+  .main{display:block;min-height:0}
+  .content{overflow:visible;height:auto}
+  .qa{position:sticky;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:6;box-shadow:0 6px 18px -8px rgba(0,0,0,.35)}
+  body::before{display:none}
+  .gh{top:calc(env(safe-area-inset-top,0px) + 64px)}
   .top{padding-top:10px}
   .brand small{display:none}
   .hint{display:none}
@@ -1290,10 +1297,13 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.1618';
+const APP_VERSION='v2026-10-20.1625';
 let newVersion=null;
 const bootAt=Date.now();
-async function hardReload(){ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); }
+async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
+  try{ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.unregister())); }catch(e){}
+  try{ const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){}
+  location.replace(location.pathname+'?v='+Date.now()); }
 async function checkVersion(){ try{ const r=await fetch('version.json?nc='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.tag && j.tag!==APP_VERSION){ newVersion=j.tag;
   if(Date.now()-bootAt<15000 && LS('autoReloadedFor')!==j.tag){ LS('autoReloadedFor',j.tag); status.textContent='updating…'; hardReload(); return; }
   $('#updatebar').hidden=false; } }catch(e){} }
