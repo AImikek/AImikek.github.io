@@ -219,6 +219,17 @@ input,textarea{font:inherit;color:inherit}
 .dpscrim{position:fixed;inset:0;z-index:39}
 .dpscrim[hidden]{display:none}
 
+
+.ev{display:flex;align-items:flex-start;gap:7px}
+.ev .evt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.evchk{flex:none;width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;opacity:.55;display:grid;place-items:center;margin-top:1px;cursor:pointer;color:inherit;background:transparent}
+.evchk svg{width:9px;height:9px;stroke:var(--accent-ink);stroke-width:3.5;fill:none;opacity:0}
+.evchk:hover{opacity:1;border-color:var(--accent);color:var(--accent)}
+.ev.done .evchk{background:var(--accent);border-color:var(--accent);opacity:1}
+.ev.done .evchk svg{opacity:1}
+.grid.week .evchk{width:18px;height:18px;margin-top:0}
+.grid.week .evchk svg{width:10px;height:10px}
+
 /* projects */
 .projhead{display:flex;align-items:center;gap:10px;padding:6px 2px 12px;flex-wrap:wrap}
 .projhead h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em;flex:1;min-width:0}
@@ -686,7 +697,10 @@ function renderCal(){
     else{
       const lim=isMonth?4:999;
       items.slice(0,lim).forEach(t=>{
-        const e=el('div','ev'+(t.done?' done':(key<today?' over':''))+(sel===t.id?' sel':''),t.title); e.draggable=true; e.title=t.title;
+        const e=el('div','ev'+(t.done?' done':(key<today?' over':''))+(sel===t.id?' sel':'')); e.draggable=true; e.title=t.title;
+        const ck=el('button','evchk'); ck.innerHTML=CHECK; ck.setAttribute('aria-label',t.done?'Mark not done':'Mark done');
+        ck.addEventListener('click',ev=>{ ev.stopPropagation(); toggleDone(t.id); });
+        e.append(ck, el('span','evt',t.title));
         e.addEventListener('click',ev=>{ ev.stopPropagation(); sel=t.id; render(); });
         e.addEventListener('dragstart',ev=>{ ev.dataTransfer.setData('text/plain',t.id); ev.dataTransfer.effectAllowed='move'; e.classList.add('drag'); });
         e.addEventListener('dragend',()=>e.classList.remove('drag'));
