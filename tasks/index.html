@@ -1073,6 +1073,7 @@ ava.addEventListener('click',()=>{
   if(!menu.hidden){ closeMenu(); return; }
   menu.innerHTML='';
   menu.appendChild(el('small',null,(user?(user.displayName||user.email||''):'')+' · '+APP_VERSION));
+  try{ const vv=window.visualViewport; menu.appendChild(el('small',null,'screen '+screen.width+'×'+screen.height+' · win '+window.innerWidth+'×'+window.innerHeight+(vv?' · vv '+Math.round(vv.height)+' @'+Math.round(vv.offsetTop):'')+' · scrollY '+Math.round(window.scrollY)+' · inset '+getComputedStyle(document.body).paddingBottom)); }catch(e){}
   const inst=el('button',null,'📲 Add to home screen / bookmark'); inst.addEventListener('click',()=>{ closeMenu(); showInstall(); }); menu.appendChild(inst);
   const fb=el('button',null,'💬 Send feedback'); fb.addEventListener('click',()=>{ closeMenu(); openFeedback(); }); menu.appendChild(fb);
   menu.appendChild(el('div','sep'));
@@ -1277,7 +1278,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.1555';
+const APP_VERSION='v2026-10-20.1604';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); }
@@ -1287,6 +1288,13 @@ async function checkVersion(){ try{ const r=await fetch('version.json?nc='+Date.
 $('#updateNow').addEventListener('click',hardReload);
 setTimeout(checkVersion,1500); setInterval(checkVersion,5*60*1000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkVersion(); });
+
+/* ---------- iOS keyboard dead-space fix: when the keyboard closes, iOS can leave the page scrolled up ---------- */
+function snapBack(){ try{ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }catch(e){} }
+document.addEventListener('focusout',()=>{ setTimeout(snapBack,60); setTimeout(snapBack,350); });
+if(window.visualViewport){ let lastH=window.visualViewport.height; window.visualViewport.addEventListener('resize',()=>{ const h=window.visualViewport.height; if(h>lastH+50) setTimeout(snapBack,50); lastH=h; }); }
+window.addEventListener('pageshow',snapBack); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) snapBack(); });
+window.addEventListener('scroll',()=>{ if(window.scrollY>0 && !document.activeElement.matches('input,textarea,[contenteditable=true]')) snapBack(); },{passive:true});
 
 /* ---------- boot ---------- */
 // If this device was signed in last time, skip the sign-in flash: show the cached tasks immediately
