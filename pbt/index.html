@@ -602,7 +602,7 @@
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-top:4px;">
       <button onclick="goBack()"
         style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
-      <div style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">📜 Past Tournaments</div>
+      <div style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">📜 Past Games</div>
     </div>
     <div id="historyList"></div>
     <div id="historyDetail" style="display:none;"></div>
@@ -1046,13 +1046,13 @@
       <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">📥 Import Tournament</div>
     </div>
     <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:14px;line-height:1.5;">
-      Paste the tournament JSON below and hit Import. It will appear in Past Tournaments with the original date.
+      Paste the tournament JSON below and hit Import. It will appear in Past Games with the original date.
     </div>
     <textarea class="finput" id="importJson" rows="12" placeholder='{"name":"Sunday Funday","date":"2026-05-25","mode":"4p","games":[{"t1":["Mike","Al"],"t2":["Thomas","Enrique"],"s1":4,"s2":11}]}'
       style="font-family:monospace;font-size:12px;resize:vertical;"></textarea>
     <button onclick="runImport()" id="importBtn"
       style="width:100%;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:10px;">
-      📥 Import to Past Tournaments
+      📥 Import to Past Games
     </button>
     <div id="importResult" style="margin-top:12px;text-align:center;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1px;"></div>
   </div>
@@ -1143,7 +1143,7 @@
 
     <div class="guide-card"><div class="guide-icon">🏆</div><div><div class="guide-t">Champions & Stats</div><div class="guide-s">Finish a session and the Stats page crowns your champion with a celebration. Standings auto-calculate wins, points for/against, and average differential. Share a public results link anyone can view without signing in, or save the standings as an image for the group chat.</div></div></div>
 
-    <div class="guide-card"><div class="guide-icon">📜</div><div><div class="guide-t">Past Tournaments</div><div class="guide-s">Every finished session is archived automatically in <span class="glink" onclick="openHistory()">Past Tournaments</span>. Reopen any past tournament to relive the standings, sort the stats, and share the results — your whole pickleball history in one place.</div></div></div>
+    <div class="guide-card"><div class="guide-icon">📜</div><div><div class="guide-t">Past Games</div><div class="guide-s">Every finished session is archived automatically in <span class="glink" onclick="openHistory()">Past Games</span>. Reopen any past tournament to relive the standings, sort the stats, and share the results — your whole pickleball history in one place.</div></div></div>
 
     <div class="guide-card"><div class="guide-icon">👤</div><div><div class="guide-t">Your Player Profile</div><div class="guide-s">Head to <span class="glink" onclick="openProfile()">My Profile</span> and add your name, city, Instagram, official DUPR, home court, and a photo. Your 💎 DPR card sits right at the top, computed live from your games. One login connects everything — your sign-ups, your scores, your stats, your spot on the leaderboard.</div></div></div>
 
@@ -1558,12 +1558,12 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item" onclick="closeSettings();openChat();">💬 Chat <span id="menuChatBadge"></span></button>
     <button class="settings-item" onclick="closeSettings();openGuide();">✨ App Guide</button>
     <button class="settings-item" onclick="closeSettings();openSessions();">📅 Games to Join</button>
-    <button class="settings-item" onclick="closeSettings();openSetup(true);">🏓 Start a Tournament Now</button>
+    <button class="settings-item" onclick="closeSettings();openSetup(true);">🏓 New Game / Tournament</button>
     <button class="settings-item" onclick="closeSettings();openCourts();">🏟 Find Courts</button>
     <button class="settings-item" id="menuInstall" onclick="closeSettings();installApp();">📲 Install the App</button>
     <button class="settings-item" onclick="closeSettings();openQuickStart();">📖 Quick Start Guide</button>
     <div class="settings-divider"></div>
-    <button class="settings-item" onclick="closeSettings();openHistory();">📜 Past Tournaments</button>
+    <button class="settings-item" onclick="closeSettings();openHistory();">📜 Past Games</button>
     <button class="settings-item" id="menuMoreBtn" onclick="toggleMenuMore()" style="color:var(--muted);">⋯ More</button>
     <div id="menuMore" style="display:none;padding-left:6px;border-left:2px solid var(--border);margin-left:8px;">
       <button class="settings-item" onclick="closeSettings();shareTournamentLink();">🔗 Invite Players to Edit Scores</button>
@@ -2462,7 +2462,7 @@ window.doStart = window._doStart = async function() {
 
 async function _finalizeTournament() {
   const _hadPrev = !!activeTid;
-  if (_hadPrev) setTimeout(() => copiedToast('Previous tournament saved in 📜 Past Tournaments'), 1500);
+  if (_hadPrev) setTimeout(() => copiedToast('Previous game saved in 📜 Past Games'), 1500);
   // Never land anywhere but Games after starting
   try { history.replaceState({}, '', window.location.pathname); } catch(e) {}
   try { window.scrollTo(0, 0); } catch(e) {}
@@ -2753,7 +2753,7 @@ window.dupFromHistory = function(tid) {
   window.duplicateTournament({ name: c.name, players: Array.isArray(c.players) ? c.players.slice() : Object.values(c.players || {}), mode: c.mode, playType: c.playType, rankRule: c.rankRule, fromSession: c.fromSession || null });
 };
 window.newTournament = window._newTournament = function() {
-  if (!confirm('Start completely fresh? The current tournament will be saved to Past Tournaments.')) return;
+  if (!confirm('Start completely fresh? The current game will be saved to Past Games.')) return;
   const _oldTid = activeTid;
   archiveCurrentTournament().then(async () => {
     if (_tournamentUnsub) { _tournamentUnsub(); _tournamentUnsub = null; }
@@ -4725,11 +4725,11 @@ window.openDm = async function(uid, name) {
 window.openCreateChooser = function() {
   if (!currentUser) { alert('Sign in first.'); return; }
   const sh = document.getElementById('groupMembersSheet'); sh.classList.remove('hidden');
-  document.getElementById('gmTitle').textContent = '➕ New game';
+  document.getElementById('gmTitle').textContent = '➕ New Game / Tournament';
   document.getElementById('gmSub').textContent = 'What are we doing?';
   const opt = (icon, title, sub, fn) => '<div onclick="document.getElementById(\'groupMembersSheet\').classList.add(\'hidden\');' + fn + '" style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:14px;border-radius:14px;background:var(--surface2);border:1px solid rgba(0,240,255,0.3);margin-bottom:8px;"><div style="font-size:28px;">' + icon + '</div><div><div style="font-family:\'Russo One\',sans-serif;font-size:14px;color:var(--white);">' + title + '</div><div style="font-size:11.5px;color:var(--muted);font-weight:600;">' + sub + '</div></div></div>';
   document.getElementById('gmList').innerHTML = opt('📅', 'Schedule a game', 'Sign-up sheet · people claim spots · invite friends, post to chat', 'openSessionCreate()')
-    + opt('🏓', 'Start a tournament now', 'Round robin or Best 2 of 3 · type names, hit Start', 'openSetup(true)')
+    + opt('🏓', 'New game / tournament', 'Play now · singles or doubles · 1 on 1, round robin, best 2 of 3, or just log games', 'openSetup(true)')
     + opt('✨', 'Ask the assistant', '"Set up doubles at Brickell Place Thursday 7pm"', "openChat('ai')");
 };
 window.newGroupChat = async function() {
@@ -8253,7 +8253,7 @@ function renderStandings() {
     html += '<div style="text-align:center;margin-top:20px;padding:14px;color:var(--muted);font-size:13px;font-weight:600;border:1px dashed var(--border);border-radius:12px;">📊 Enter your first score and sharing options appear here</div>';
   }
   html += '<button onclick="runItBack()" style="display:block;width:100%;margin-top:20px;padding:14px;background:transparent;border:1px solid rgba(0,240,255,0.4);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🔁 Run It Back — Same Setup, New Week</button>';
-  html += '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;font-weight:600;">Same players, format and ranking rule — tweak anything before starting. This one gets saved to Past Tournaments.</div>';
+  html += '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;font-weight:600;">Same players, format and ranking rule — tweak anything before starting. This one gets saved to Past Games.</div>';
   html += '<button onclick="newTournament()" style="display:block;margin:14px auto 0;padding:11px 28px;background:transparent;border:1px solid rgba(255,79,107,0.35);color:var(--danger);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">⚠ New Tournament</button>';
   el.innerHTML = html;
   const cb = document.getElementById('statsChampBox');
@@ -8798,7 +8798,7 @@ window.openHistory = function() {
   onValue(ref(db, 'users/' + currentUser.uid + '/history'), snap => {
     const data = snap.val();
     if (!data) {
-      listEl.innerHTML = '<div class="empty"><div class="empty-icon">📜</div><div class="empty-t">No Past Tournaments</div><div class="empty-s">Finished tournaments will appear here automatically</div></div>';
+      listEl.innerHTML = '<div class="empty"><div class="empty-icon">📜</div><div class="empty-t">No Past Games</div><div class="empty-s">Finished tournaments will appear here automatically</div></div>';
       return;
     }
     window._historyData = data;
@@ -9496,7 +9496,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-19.3';
+window.BUILD_TAG = 'v2026-10-19.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
