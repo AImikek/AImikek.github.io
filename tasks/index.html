@@ -1242,7 +1242,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.1459';
+const APP_VERSION='v2026-10-20.1502';
 let newVersion=null;
 async function checkVersion(){ try{ const r=await fetch('version.json?nc='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.tag && j.tag!==APP_VERSION){ newVersion=j.tag; $('#updatebar').hidden=false; } }catch(e){} }
 $('#updateNow').addEventListener('click',async()=>{ try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const r of regs){ await r.update(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }catch(e){} location.reload(); });
@@ -1250,6 +1250,10 @@ setTimeout(checkVersion,4000); setInterval(checkVersion,5*60*1000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkVersion(); });
 
 /* ---------- boot ---------- */
+// If this device was signed in last time, skip the sign-in flash: show the cached tasks immediately
+// and let Firebase confirm in the background. If it turns out we're signed out, the gate appears then.
+const lastUid=LS('lastUid');
+if(lastUid){ me=lastUid; loadLocal(); gate.hidden=true; $('#fbBtn').hidden=false; $('#aiBtn').hidden=false; const ini=LS('lastInitial'); if(ini) ava.textContent=ini; status.textContent='connecting…'; }
 render();
 try{ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){}
 window.addEventListener('online',()=>{ status.textContent='back online · syncing'; flushQueue(); });
@@ -1259,7 +1263,8 @@ FB.onUser(async u=>{
   if(detach){ detach(); detach=null; }
   tasks=new Map(); projects=new Map(); sel=null; curProj=null;
   user=u; me=u?u.uid:null;
-  if(!u){ gate.hidden=false; $('#fbBtn').hidden=true; $('#aiBtn').hidden=true; ava.textContent='?'; render(); return; }
+  if(!u){ try{ localStorage.removeItem('lastUid'); localStorage.removeItem('lastInitial'); }catch(e){} me=null; tasks=new Map(); projects=new Map(); gate.hidden=false; $('#fbBtn').hidden=true; $('#aiBtn').hidden=true; ava.textContent='?'; render(); return; }
+  LS('lastUid',u.uid); LS('lastInitial',(u.displayName||u.email||'?').trim()[0].toUpperCase());
   gate.hidden=true; $('#fbBtn').hidden=false; $('#aiBtn').hidden=false;
   ava.innerHTML=''; if(u.photoURL){ const im=el('img'); im.src=u.photoURL; im.alt=''; im.referrerPolicy='no-referrer'; ava.appendChild(im); } else ava.textContent=(u.displayName||u.email||'?').trim()[0].toUpperCase();
   loadLocal(); render(); status.textContent=navigator.onLine?'connecting…':'offline';
