@@ -177,6 +177,10 @@
   .cat{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
   .card-name{font-family:'Space Grotesk';font-weight:700;font-size:1.22rem;letter-spacing:-.01em;line-height:1.15}
   .card-blurb{font-size:.92rem;color:var(--muted);margin:0;flex:1}
+  .perk{display:inline-flex;align-items:center;gap:8px;margin-top:2px;align-self:flex-start;
+    font-size:.8rem;font-weight:600;color:var(--accent);
+    background:var(--accent-soft);border:1px solid var(--line-strong);border-radius:9px;padding:6px 10px}
+  .perk b{color:var(--muted);font-weight:600;letter-spacing:.09em;font-size:.62rem;text-transform:uppercase;white-space:nowrap}
   .card-cta{
     display:inline-flex;align-items:center;gap:7px;margin-top:6px;
     font-size:.9rem;font-weight:600;color:var(--text);
@@ -308,7 +312,7 @@
     <a class="brand" href="/">mikek<span class="dot">.</span>ai</a>
     <nav class="nav-links">
       <a href="/">Home</a>
-      <a href="#" class="nav-cta">Work with Mike</a>
+      <a href="/partner" class="nav-cta">Partner with Mike</a>
     </nav>
   </div>
 </header>
@@ -350,7 +354,8 @@
     <a href="/freeequinoxcoralgablespass">Equinox Coral Gables Pass</a> ·
     <a href="/freeequinoxaventurapass">Equinox Aventura Pass</a> ·
     <a href="/freeequinoxsouthbeachpass">Equinox South Beach Pass</a> ·
-    <a href="/instagramrecovery">Instagram Account Recovery</a>
+    <a href="/instagramrecovery">Instagram Account Recovery</a> ·
+    <a href="/partner" style="color:var(--accent)">Partner with Mike</a>
   </nav>
 </footer>
 
@@ -408,6 +413,7 @@ const FAVORITES = [
   {
     name: "Equinox",
     hook: "Equinox - $100 Day Pass FREE",
+    perk: "Free $100 all-access day pass",
     category: "Fitness",
     blurb: "The gym I actually keep going to. Requesting an intro routes you straight to the VP of Sales and myself for a free $100 day pass.",
     logo: "/equinox-logo.png",          // upload equinox-logo.png to the repo root
@@ -434,6 +440,19 @@ const FAVORITES = [
           ] }
       ]
     }
+  },
+
+  {
+    name: "Pups N Chill",
+    hook: "Pups N Chill - 20% Off Tickets!",
+    perk: "20% off admission",
+    category: "Events",
+    blurb: "Miami's #1 health, wellness and animal advocacy event — my own. Sauna, ice baths, fitness, adoptable pups and the best crowd in Miami. 20% off with my link.",
+    logo: "/pnc-logo.png",
+    image: "",
+    tags: ["pups n chill","dog event miami","wellness event","sauna","ice bath","animal advocacy","things to do miami","brickell events","puppies"],
+    action: "link",
+    url: "https://pupsnchill.com/rsvp?ref=mikek#admission"
   },
 
   /* ============ SAVED FOR LATER ============
@@ -481,6 +500,7 @@ const FAVORITES = [
   {
     name: "The Spot",
     hook: "The Spot - Best Barber, 15% Off!",
+    perk: "15% off with Zach",
     category: "Grooming",
     blurb: "Zach at The Spot is the only person who touches my hair. Drop your info and he'll reach out to get you in the chair, 15% off for my people.",
     logo: "thespotbarbershop.com",
@@ -515,6 +535,7 @@ const FAVORITES = [
   {
     name: "Mercury",
     hook: "Mercury - Best Bank, $250 Free!",
+    perk: "$120 personal · $250 business bonus",
     category: "Banking",
     blurb: "The bank I run everything on — personal and business. My links get you a real signup bonus.",
     logo: "mercury.com",
@@ -533,6 +554,7 @@ const FAVORITES = [
   {
     name: "Empower",
     hook: "Empower - Cheaper than Uber/Lyft",
+    perk: "$10 ride credit · code 8M16WD",
     category: "Rides",
     blurb: "Cheaper than Uber and Lyft, and 100% of the fare goes to the driver. My code gets you $10 in ride credit.",
     logo: "driveempower.com",
@@ -549,8 +571,22 @@ const FAVORITES = [
   },
 
   {
+    name: "Superhuman",
+    hook: "Superhuman - 30 Days FREE",
+    perk: "30-day free trial",
+    category: "Tools",
+    blurb: "The fastest email I've ever used — I clear my inbox in half the time. Try it free for 30 days.",
+    logo: "superhuman.com",
+    image: "",
+    tags: ["email","productivity","superhuman","inbox","software","saas"],
+    action: "link",
+    url: "https://superhuman.com"
+  },
+
+  {
     name: "Instagram Unban",
     category: "Social",
+    perk: "Free case review",
     blurb: "Banned or disabled on Instagram? Tell me what happened and I'll point you to the fastest legitimate path back.",
     logo: "/igunban-logo.svg",
     image: "",
@@ -644,6 +680,7 @@ function cardHTML(f){
         <span class="cat">${f.category}</span>
         <h3 class="card-name">${hookHTML(f)}</h3>
         <p class="card-blurb">${f.blurb}</p>
+        ${f.perk?`<span class="perk"><b>Mike's Perk</b> ${f.perk}</span>`:""}
         <span class="card-cta">${ctaLabel(f)} <span class="arr">→</span></span>
       </div>
     </article>`;
@@ -709,6 +746,7 @@ function pageView(f){
     <div class="sheet-pad">
       <div class="sheet-cat">${f.category}</div>
       <h2>${f.name}</h2>
+      ${f.perk?`<p style="margin:0 0 14px"><span class="perk"><b>Mike's Perk</b> ${f.perk}</span></p>`:""}
       <div class="why">${f.why||`<p>${f.blurb}</p>`}</div>
       ${visit}
     </div>`;
@@ -733,6 +771,7 @@ function formView(f){
     <div class="sheet-pad">
       <div class="sheet-cat">${f.category}</div>
       <h2>${f.name}</h2>
+      ${f.perk?`<p style="margin:0 0 10px"><span class="perk"><b>Mike's Perk</b> ${f.perk}</span></p>`:""}
       <p class="why" style="margin-bottom:6px">${f.blurb}</p>
       <form class="refform" novalidate>
         ${fields}
