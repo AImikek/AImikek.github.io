@@ -2,11 +2,17 @@
   const form = document.getElementById('formBody');
   const button = document.getElementById('submitBtn');
   const error = document.getElementById('formError');
-  const fields = ['email', 'fullName', 'phone', 'arrivalDate', 'arrivalTime', 'departureDate', 'departureTime', 'food', 'ec1Name', 'ec1Relation', 'ec1Phone', 'ec2Name', 'ec2Relation', 'ec2Phone'];
+  const fields = ['email', 'fullName', 'phone', 'arrivalDate', 'arrivalTime', 'departureDate', 'departureTime', 'dietaryRestrictions', 'foodPreferences', 'ec1Name', 'ec1Relation', 'ec1Phone', 'ec2Name', 'ec2Relation', 'ec2Phone'];
+  const preferences = document.getElementById('foodPreferences');
+  preferences.addEventListener('input', () => preferences.setCustomValidity(''));
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (button.disabled) return;
     error.classList.remove('show');
+    const genericPreference = /^(none|n\/?a|no preferences?|anything|whatever|nothing|not applicable)[.!]*$/i;
+    preferences.setCustomValidity(genericPreference.test(preferences.value.trim())
+      ? 'Please share a few foods or meals you enjoy, even if you have no dietary restrictions.'
+      : '');
     if (!form.reportValidity()) return;
     const data = new URLSearchParams();
     for (const name of fields) {
@@ -19,6 +25,11 @@
       }
       data.append(name, field.value.trim());
     }
+    // Label both answers in the existing food field so the sheet and host
+    // notification retain both without changing the deployed endpoint.
+    data.set('food', `Dietary restrictions & food allergies: ${data.get('dietaryRestrictions')}\n\nFood preferences (favorites & dislikes): ${data.get('foodPreferences')}`);
+    data.delete('dietaryRestrictions');
+    data.delete('foodPreferences');
     // Preserve the existing sheet and email contract: each contact name includes
     // their relationship, collected and validated separately in the form.
     for (const contact of ['ec1', 'ec2']) {
