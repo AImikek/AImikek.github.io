@@ -233,6 +233,21 @@ input,textarea{font:inherit;color:inherit}
 .ev.over-top{box-shadow:0 -3px 0 0 var(--accent)}
 .ev{cursor:grab}
 .ev:active{cursor:grabbing}
+/* assistant */
+.fb.ai{right:auto;left:max(16px,env(safe-area-inset-left,0px));background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.fb.ai:hover{color:var(--accent-ink);filter:brightness(1.05)}
+.mcard.ai{max-width:520px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font-family:var(--mono);font-size:11px;padding:5px 9px;border-radius:7px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+.chips button:hover{border-color:var(--accent);color:var(--accent)}
+.aiout{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;max-height:40vh;overflow-y:auto}
+.aiout b{display:block;margin-bottom:6px}
+.aiout ul{margin:0;padding-left:18px}
+.aiout li{margin:2px 0}
+.aiout li s{color:var(--muted)}
+.aiout .mono{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.aiout.err{border-color:var(--danger);color:var(--danger)}
+@media (max-width:760px){ .fb.ai{left:max(14px,env(safe-area-inset-left,0px))} }
 /* projects */
 .projhead{display:flex;align-items:center;gap:10px;padding:6px 2px 12px;flex-wrap:wrap}
 .projhead h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em;flex:1;min-width:0}
@@ -395,6 +410,15 @@ input,textarea{font:inherit;color:inherit}
   <div class="mrow"><button class="gbtn alt" id="fbCancel">Cancel</button><button class="gbtn" id="fbSend">Send</button></div>
 </div></div>
 <button class="fb" id="fbBtn" hidden>💬 Feedback</button>
+<button class="fb ai" id="aiBtn" hidden>✦ Assistant</button>
+<div class="modal" id="aiModal" hidden><div class="mcard ai">
+  <h2>Assistant</h2>
+  <p>Tell it what to do with your tasks, in plain English.</p>
+  <div class="chips" id="aiChips"></div>
+  <textarea id="aiText" rows="2" placeholder="e.g. shift all unfinished tasks this week forward one day"></textarea>
+  <div class="aiout" id="aiOut" hidden></div>
+  <div class="mrow"><button class="gbtn alt" id="aiCancel">Close</button><button class="gbtn" id="aiGo">Preview</button></div>
+</div></div>
 <div class="dpscrim" id="dpscrim" hidden></div>
 <div class="dp" id="dp" hidden></div>
 <div class="toast" id="toast"></div>
@@ -966,6 +990,112 @@ const fbModal=$('#fbModal'), fbText=$('#fbText'); let fbKind='idea';
 $('#fbType').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ fbKind=b.dataset.t; $('#fbType').querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',String(x===b))); }));
 function openFeedback(){ fbModal.hidden=false; setTimeout(()=>fbText.focus(),50); }
 $('#fbBtn').addEventListener('click',openFeedback);
+
+/* ---------- assistant: plain-English commands over your tasks ---------- */
+const aiModal=$('#aiModal'), aiText=$('#aiText'), aiOut=$('#aiOut'), aiGo=$('#aiGo');
+let aiPlan=null;
+const AI_EXAMPLES=['shift all unfinished tasks this week forward one day','move overdue tasks to today','push today\'s unfinished tasks to tomorrow','spread today\'s tasks across this week','mark everything today as done','delete completed tasks','what\'s left today'];
+AI_EXAMPLES.forEach(x=>{ const b=el('button',null,x); b.addEventListener('click',()=>{ aiText.value=x; runAi(); }); $('#aiChips').appendChild(b); });
+function openAi(){ aiModal.hidden=false; aiOut.hidden=true; aiPlan=null; aiGo.textContent='Preview'; setTimeout(()=>aiText.focus(),50); }
+$('#aiBtn').addEventListener('click',openAi);
+$('#aiCancel').addEventListener('click',()=>{ aiModal.hidden=true; });
+aiModal.addEventListener('click',e=>{ if(e.target===aiModal) aiModal.hidden=true; });
+aiText.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); runAi(); } });
+aiText.addEventListener('input',()=>{ if(aiPlan){ aiPlan=null; aiGo.textContent='Preview'; aiOut.hidden=true; } });
+document.addEventListener('keydown',e=>{ const tag=(e.target.tagName||'').toLowerCase(); if((e.key==='k'&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); if(user) openAi(); } });
+aiGo.addEventListener('click',runAi);
+
+function runAi(){
+  if(aiPlan && aiPlan.changes.length){ applyPlan(aiPlan); return; }
+  const q=aiText.value.trim(); if(!q) return;
+  try{ aiPlan=interpret(q); }catch(e){ console.warn(e); aiPlan={error:'Something went wrong reading that.'}; }
+  showPlan(aiPlan);
+}
+function showPlan(p){
+  aiOut.hidden=false; aiOut.className='aiout'+(p.error?' err':''); aiOut.innerHTML='';
+  if(p.error){ aiOut.textContent=p.error; aiGo.textContent='Preview'; aiPlan=null; return; }
+  aiOut.appendChild(el('b',null,p.summary));
+  if(p.lines&&p.lines.length){ const ul=el('ul'); p.lines.slice(0,40).forEach(l=>{ const li=el('li'); if(typeof l==='string') li.textContent=l; else { li.append(el('span',null,l.title+' '), el('span','mono',l.note)); } ul.appendChild(li); }); if(p.lines.length>40) ul.appendChild(el('li','mono','…and '+(p.lines.length-40)+' more')); aiOut.appendChild(ul); }
+  aiGo.textContent = p.changes.length ? 'Do it ('+p.changes.length+')' : 'Preview';
+}
+function applyPlan(p){
+  const dels=p.changes.filter(c=>c.del), ups=p.changes.filter(c=>!c.del);
+  if(ups.length) updMany(ups.map(c=>[c.id,c.patch]));
+  dels.forEach(c=>remove(c.id));
+  toast(p.done||'Done'); aiModal.hidden=true; aiPlan=null;
+}
+// Resolve a day word to YYYY-MM-DD
+function dayFromWords(q){
+  const t=todayStr(); const m=q.match(/\b(today|tonight|tomorrow|tmrw|yesterday|sun(day)?|mon(day)?|tue(s|sday)?|wed(nesday)?|thu(rs|rsday)?|fri(day)?|sat(urday)?)\b/);
+  if(!m) { const p=parseQuick('x '+q); return p.due; }
+  const w=m[1];
+  if(w.startsWith('today')||w==='tonight') return t; if(w.startsWith('tom')||w==='tmrw') return addDays(t,1); if(w==='yesterday') return addDays(t,-1);
+  const idx=DOW.indexOf(w.slice(0,3)); const d=parseYmd(t); let diff=(idx-d.getDay()+7)%7; return addDays(t,diff);
+}
+function weekRange(){ const t=todayStr(); const d=parseYmd(t); const start=addDays(t,-d.getDay()); return [start, addDays(start,6)]; }
+function interpret(raw){
+  const q=raw.toLowerCase().replace(/[’']/g,"'");
+  const t=todayStr(); const all=[...tasks.values()];
+  const open=x=>!x.done; const hasDue=x=>!!x.due;
+  const wantsDone=/\b(done|finished|completed|checked)\b/.test(q) && !/\b(unfinished|not done|incomplete|undone|open|remaining|left)\b/.test(q);
+  const wantsOpen=/\b(unfinished|not done|incomplete|undone|open|remaining|left|unchecked)\b/.test(q);
+  // ----- scope (look only at the part before any destination phrase)
+  let scope, scopeName, explicit=true;
+  const sq=q.replace(/\b(across|over|onto|into|to|until|till|by)\b.*$/,'');
+  if(/\boverdue\b|\bpast due\b|\blate\b/.test(sq)){ scope=all.filter(x=>hasDue(x)&&x.due<t); scopeName='overdue'; }
+  else if(/\bthis week\b|\bthe week\b|\bweek\b/.test(sq)){ const [a,b]=weekRange(); scope=all.filter(x=>hasDue(x)&&x.due>=a&&x.due<=b); scopeName='this week'; }
+  else if(/\bnext week\b/.test(sq)){ const [a]=weekRange(); const s=addDays(a,7); scope=all.filter(x=>hasDue(x)&&x.due>=s&&x.due<=addDays(s,6)); scopeName='next week'; }
+  else if(/\bbacklog\b/.test(sq)){ const p=[...projects.values()].find(p=>/backlog/i.test(p.name)); scope=p?all.filter(x=>x.project===p.id):[]; scopeName='backlog'; }
+  else if(/\b(everything|all tasks|all my tasks|all completed|all done)\b/.test(sq) && !/\b(today|tomorrow|mon|tue|wed|thu|fri|sat|sun)/.test(sq)){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='all tasks'; }
+  else { const srcDay=dayFromWords(sq); if(srcDay){ scope=all.filter(x=>x.due===srcDay); scopeName=fmtDue(srcDay); } else { explicit=false; scope=all.filter(x=>x.due===t); scopeName='today'; } }
+  // deleting with no scope means everywhere
+  if(!explicit && /\b(delete|remove|clear|trash)\b/.test(q)){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='everywhere'; }
+  // default to unfinished unless they said done
+  let items = wantsDone ? scope.filter(x=>x.done) : scope.filter(open);
+  const label=(wantsDone?'completed ':'unfinished ')+'task'+(items.length===1?'':'s')+' '+scopeName;
+
+  // ----- questions
+  if(/^(what|which|how many|show|list)\b/.test(q)){
+    if(!items.length) return {summary:'Nothing '+(wantsDone?'completed':'open')+' '+scopeName+'.',lines:[],changes:[]};
+    return {summary:items.length+' '+label+':',lines:items.sort(daySort).map(x=>({title:x.title,note:x.due?fmtDue(x.due):''})),changes:[]};
+  }
+  // ----- delete
+  if(/\b(delete|remove|clear|trash)\b/.test(q)){
+    if(!wantsDone && !wantsOpen) items=scope.filter(x=>x.done); // "delete completed" is the safe default
+    if(!items.length) return {summary:'Nothing to delete '+scopeName+'.',lines:[],changes:[]};
+    return {summary:'Delete '+items.length+' '+(items.every(x=>x.done)?'completed ':'')+'task'+(items.length===1?'':'s')+' '+scopeName+'. This cannot be undone.',lines:items.map(x=>({title:x.title,note:''})),changes:items.map(x=>({id:x.id,del:true})),done:'Deleted '+items.length};
+  }
+  // ----- mark done / undone
+  if(/\b(mark|check|complete|finish|tick)\b/.test(q) || /\bas done\b/.test(q)){
+    const undo=/\b(undone|not done|uncheck|incomplete|reopen)\b/.test(q);
+    items = undo ? scope.filter(x=>x.done) : scope.filter(open);
+    if(!items.length) return {summary:'Nothing to '+(undo?'reopen':'check off')+' '+scopeName+'.',lines:[],changes:[]};
+    return {summary:(undo?'Reopen ':'Mark done: ')+items.length+' task'+(items.length===1?'':'s')+' '+scopeName+'.',lines:items.map(x=>({title:x.title,note:x.due?fmtDue(x.due):''})),changes:items.map(x=>({id:x.id,patch:{done:!undo}})),done:(undo?'Reopened ':'Checked off ')+items.length};
+  }
+  // ----- spread / distribute
+  if(/\b(spread|distribute|split|spread out)\b/.test(q)){
+    if(!items.length) return {summary:'No '+label+' to spread.',lines:[],changes:[]};
+    let days=[]; if(/\bnext week\b/.test(q)){ const [a]=weekRange(); const s=addDays(a,7); for(let i=0;i<7;i++) days.push(addDays(s,i)); }
+    else { const n=(q.match(/(\d+)\s*days?/)||[])[1]; const cnt=n?Number(n):(/\bweek\b/.test(q)?7:7); for(let i=0;i<cnt;i++) days.push(addDays(t,i)); }
+    const sorted=items.sort(daySort); const changes=sorted.map((x,i)=>({id:x.id,patch:{due:days[Math.floor(i*days.length/sorted.length)]}}));
+    return {summary:'Spread '+sorted.length+' '+label+' evenly across '+fmtDue(days[0])+' to '+fmtDue(days[days.length-1])+'.',lines:sorted.map((x,i)=>({title:x.title,note:'→ '+fmtDue(changes[i].patch.due)})),changes,done:'Spread '+sorted.length+' tasks'};
+  }
+  // ----- move / shift
+  if(/\b(shift|move|push|bump|postpone|delay|reschedule|roll|slide|bring|pull)\b/.test(q)){
+    if(!items.length) return {summary:'No '+label+' to move.',lines:[],changes:[]};
+    let changes, how;
+    const toM=q.match(/\b(?:to|until|till|onto|into)\s+([a-z0-9\/ ]+)$/);
+    const nM=q.match(/\b(a|an|one|two|three|four|five|six|seven|1|2|3|4|5|6|7|\d+)\s*(day|days|week|weeks)\b/);
+    const back=/\b(back|backward|backwards|earlier|up|pull|bring)\b/.test(q) && !/\bforward\b/.test(q);
+    if(toM && dayFromWords(toM[1])){ const d=dayFromWords(toM[1]); changes=items.map(x=>({id:x.id,patch:{due:d}})); how='to '+fmtDue(d); }
+    else if(/\bto today\b|\bto tomorrow\b/.test(q)){ const d=/tomorrow/.test(q)?addDays(t,1):t; changes=items.map(x=>({id:x.id,patch:{due:d}})); how='to '+fmtDue(d); }
+    else { const words={a:1,an:1,one:1,two:2,three:3,four:4,five:5,six:6,seven:7}; let n=nM?(words[nM[1]]||Number(nM[1])):1; if(nM&&/week/.test(nM[2])) n*=7; if(back) n=-n;
+      changes=items.map(x=>({id:x.id,patch:{due:addDays(x.due||t,n)}})); how=(n<0?'back ':'forward ')+Math.abs(n)+' day'+(Math.abs(n)===1?'':'s'); }
+    const byId=new Map(changes.map(c=>[c.id,c.patch.due]));
+    return {summary:'Move '+items.length+' '+label+' '+how+'.',lines:items.sort(daySort).map(x=>({title:x.title,note:(x.due?fmtDue(x.due):'no date')+' → '+fmtDue(byId.get(x.id))})),changes,done:'Moved '+items.length+' tasks'};
+  }
+  return {error:"I didn't catch that. Try: \"shift unfinished tasks this week forward one day\", \"move overdue to today\", \"mark today done\", \"spread today across this week\", or \"what's left tomorrow\"."};
+}
 $('#fbCancel').addEventListener('click',()=>{ fbModal.hidden=true; });
 fbModal.addEventListener('click',e=>{ if(e.target===fbModal) fbModal.hidden=true; });
 $('#fbSend').addEventListener('click',async()=>{
@@ -1001,8 +1131,8 @@ FB.onUser(async u=>{
   if(detach){ detach(); detach=null; }
   tasks=new Map(); projects=new Map(); sel=null; curProj=null;
   user=u; me=u?u.uid:null;
-  if(!u){ gate.hidden=false; $('#fbBtn').hidden=true; ava.textContent='?'; render(); return; }
-  gate.hidden=true; $('#fbBtn').hidden=false;
+  if(!u){ gate.hidden=false; $('#fbBtn').hidden=true; $('#aiBtn').hidden=true; ava.textContent='?'; render(); return; }
+  gate.hidden=true; $('#fbBtn').hidden=false; $('#aiBtn').hidden=false;
   ava.innerHTML=''; if(u.photoURL){ const im=el('img'); im.src=u.photoURL; im.alt=''; im.referrerPolicy='no-referrer'; ava.appendChild(im); } else ava.textContent=(u.displayName||u.email||'?').trim()[0].toUpperCase();
   loadLocal(); render(); status.textContent=navigator.onLine?'connecting…':'offline';
   if(window.innerWidth>760) qi.focus();
