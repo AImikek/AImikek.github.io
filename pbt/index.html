@@ -418,6 +418,13 @@
   #tabLeaderboard.lb-active { transform: scale(1.25); filter: drop-shadow(0 0 10px rgba(255,224,0,0.9)); }
 
   /* Home (Let's Play): compact so everything fits one screen */
+  .adsec { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:0 14px; margin-bottom:10px; }
+  .adsec > summary { list-style:none; cursor:pointer; padding:14px 0; font-family:'Russo One',sans-serif; font-size:11px; letter-spacing:2px; color:var(--cyan); text-transform:uppercase; display:flex; align-items:center; justify-content:space-between; }
+  .adsec > summary::-webkit-details-marker { display:none; }
+  .adsec > summary::after { content:'▸'; color:var(--muted); font-size:14px; transition:transform .15s; }
+  .adsec[open] > summary::after { transform:rotate(90deg); }
+  .adsec .adn { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--muted); letter-spacing:0; text-transform:none; margin-left:8px; }
+  .adsec-card { margin:0 0 10px; padding:12px 14px; background:rgba(0,245,196,0.05); border:1px solid rgba(0,245,196,0.3); border-radius:12px; }
   #setupOverlay { padding:calc(58px + env(safe-area-inset-top)) 14px 24px; }
   #setupOverlay .modal { padding:18px 16px 16px; }
   #setupStep1 .mcard { padding:10px 10px; }
@@ -1460,7 +1467,7 @@
 </div>
 
 <!-- ADMIN DASHBOARD -->
-<div id="adminDash" class="hidden" style="position:fixed;inset:0;z-index:585;background:var(--bg);overflow-y:auto;padding:60px 16px 100px;">
+<div id="adminDash" class="hidden" style="position:fixed;inset:0;z-index:585;background:var(--bg);overflow-y:auto;padding:calc(64px + env(safe-area-inset-top)) 16px 100px;-webkit-overflow-scrolling:touch;">
   <div style="max-width:560px;margin:0 auto;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
       <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
@@ -1470,15 +1477,15 @@
       <span id="adCourtBannerTxt" style="font-weight:800;color:var(--yellow);font-size:13px;"></span>
       <span style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1px;color:var(--yellow);">REVIEW →</span>
     </div>
-    <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;"></div>
-    <div id="adActiveNames" style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;margin:-8px 0 16px;"></div>
-    <div id="adCharts" style="margin:0 0 20px;scroll-margin-top:70px;"></div>
-    <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">👥 Registered Players</div>
-    <div id="adSignups" style="margin-bottom:20px;"></div>
-    <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">🏟 Court Submissions (Pending)</div>
-    <div id="adCourts" style="margin-bottom:20px;"></div>
-    <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">🏓 Recent Tournament Activity</div>
-    <div id="adActivity"></div>
+    <!-- needs attention: contacts to add + account issues (same components as the profile panel) -->
+    <div id="adContactsCard" class="adsec-card" style="display:none;"></div>
+    <div id="adIssues" style="display:none;"></div>
+    <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;"></div>
+    <div id="adActiveNames" style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;margin:-2px 0 14px;"></div>
+    <details class="adsec" id="adSecCharts"><summary>📈 Charts</summary><div id="adCharts" style="margin:8px 0 6px;scroll-margin-top:70px;"></div></details>
+    <details class="adsec" id="adSecPlayers"><summary>👥 Registered Players <span id="adPlayersN" class="adn"></span></summary><div id="adSignups" style="margin:8px 0 6px;"></div></details>
+    <details class="adsec" id="adSecCourts"><summary>🏟 Court Submissions <span id="adCourtsN" class="adn"></span></summary><div id="adCourts" style="margin:8px 0 6px;"></div></details>
+    <details class="adsec" id="adSecActivity"><summary>🏓 Recent Tournament Activity</summary><div id="adActivity" style="margin:8px 0 6px;"></div></details>
     <div style="margin-top:16px;font-size:11px;color:var(--muted);font-weight:600;text-align:center;">Full auth list (incl. users without profiles): Firebase Console → Authentication → Users</div>
   </div>
 </div>
@@ -3830,6 +3837,11 @@ window.adminAudit = async function(opts) {
   }
   const open = issues.filter(i => !i.done && !(ignored(i.kind, i.key) && !i.auto));
   window._adminAudit = { at: Date.now(), issues: open, fixed };
+  // 4b. new members not yet in Mike's phone → one notification, re-sent only when the list changes
+  try { const pend = await window.newContactsForAdmin(); const psig = pend.map(p => p.uid).sort().join('|');
+    const cur = (await get(ref(db, 'notifs/' + currentUser.uid + '/new_members'))).val();
+    if (pend.length && (!cur || cur.sig !== psig)) await set(ref(db, 'notifs/' + currentUser.uid + '/new_members'), { type: 'info', go: 'admin', fromName: '📇 New members', text: pend.length + ' new member' + (pend.length === 1 ? '' : 's') + ' registered — ' + pend.slice(0, 3).map(p => p.name.split(' ')[0]).join(', ') + (pend.length > 3 ? ' +' + (pend.length - 3) : '') + ' · tap to add to Contacts', at: Date.now(), read: false, sig: psig });
+    else if (!pend.length && cur) await set(ref(db, 'notifs/' + currentUser.uid + '/new_members'), null); } catch (e) {}
   // 5. ping the admin's notifications when the picture changes
   const sig = open.map(i => i.kind + ':' + i.key).sort().join('|');
   try { const cur = (await get(ref(db, 'notifs/' + currentUser.uid + '/admin_audit'))).val();
@@ -3858,29 +3870,42 @@ window.adminFriendEveryone = async function(dir) {
   }
   return n;
 };
+// 📇 card: who's registered but not in Mike's phone yet (used on the profile panel and the dashboard)
+window.renderContactsCard = function(hostId) {
+  const c = document.getElementById(hostId); if (!c || !isAdmin()) return;
+  window.newContactsForAdmin().then(pend => {
+    c.innerHTML = pend.length
+      ? '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><div><div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;">📇 ' + pend.length + ' new member' + (pend.length === 1 ? '' : 's') + ' not in your Contacts</div><div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px;">' + escInfo(pend.slice(0, 4).map(p => p.name).join(', ')) + (pend.length > 4 ? ' +' + (pend.length - 4) + ' more' : '') + '</div></div>'
+        + '<button onclick="syncNewContacts()" style="flex-shrink:0;padding:10px 12px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Add all</button></div>'
+      : '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:11.5px;color:var(--muted);font-weight:700;">📇 Every member is in your Contacts</div><span onclick="resetContactSync()" style="font-size:10.5px;color:var(--muted);cursor:pointer;text-decoration:underline;">reset</span></div>';
+    c.style.display = 'block';
+  }).catch(() => {});
+};
 window.renderAdminIssues = function() {
   const el = document.getElementById('adminIssues'); if (!el) return;
   if (!isAdmin() || !window._adminAudit) { el.style.display = 'none'; el.innerHTML = ''; return; }
   const a = window._adminAudit; const auto = a.issues.filter(i => i.auto), manual = a.issues.filter(i => !i.auto);
-  // contacts card: who's registered but not in Mike's phone yet
-  window.newContactsForAdmin().then(pend => { const c = document.getElementById('adminContactsCard'); if (!c) return;
-    c.innerHTML = pend.length
-      ? '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><div><div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;">📇 ' + pend.length + ' member' + (pend.length === 1 ? '' : 's') + ' not in your Contacts</div><div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px;">' + escInfo(pend.slice(0, 4).map(p => p.name).join(', ')) + (pend.length > 4 ? ' +' + (pend.length - 4) + ' more' : '') + '</div></div>'
-        + '<button onclick="syncNewContacts()" style="flex-shrink:0;padding:10px 12px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Add all</button></div>'
-      : '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:11.5px;color:var(--muted);font-weight:700;">📇 Every member is in your Contacts</div><span onclick="resetContactSync()" style="font-size:10.5px;color:var(--muted);cursor:pointer;text-decoration:underline;">reset</span></div>';
-    c.style.display = 'block'; }).catch(() => {});
-  if (!a.issues.length && !a.fixed.length) { el.innerHTML = '<div id="adminContactsCard" style="display:none;margin:4px 0 14px;padding:12px 14px;background:rgba(0,245,196,0.05);border:1px solid rgba(0,245,196,0.3);border-radius:12px;"></div>'; el.style.display = 'block'; return; }
+  const mirror = document.getElementById('adIssues');
+  if (!a.issues.length && !a.fixed.length) {
+    el.innerHTML = '<div id="adminContactsCard" class="adsec-card" style="display:none;"></div><div onclick="openAdminDash()" style="font-size:11.5px;color:var(--muted);font-weight:700;cursor:pointer;margin:-4px 0 12px;">🛠 Admin · accounts look clean · <span style="color:var(--cyan);">open dashboard →</span></div>'; el.style.display = 'block';
+    window.renderContactsCard('adminContactsCard'); if (mirror) { mirror.innerHTML = ''; mirror.style.display = 'none'; }
+    return;
+  }
   const esc = s => escInfo(String(s)).replace(/'/g, "\\'");
-  let x = '<div style="margin:4px 0 14px;padding:12px 14px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.4);border-radius:12px;">'
-    + '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:8px;">🛠 Admin · ' + (a.issues.length ? a.issues.length + ' account issue' + (a.issues.length === 1 ? '' : 's') : 'accounts look clean') + '</div>';
+  let x = '<div style="margin:0;padding:0;">';
   if (auto.length) x += '<button onclick="adminFixAll()" style="width:100%;padding:11px;margin-bottom:10px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">✨ Fix ' + auto.length + ' automatically</button>';
   a.issues.forEach(i => { x += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;"><div style="font-size:12px;font-weight:700;color:var(--white);line-height:1.4;">' + (i.auto ? '🔗 ' : '⚠️ ') + escInfo(i.text) + '</div>'
     + (i.auto ? '<button onclick="adminFixOne(\'' + i.kind + '\',\'' + esc(i.key) + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(0,240,255,0.45);color:var(--cyan);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">' + (i.kind === 'rename' ? 'Finish rename' : 'Combine') + '</button>'
       : '<div style="display:flex;flex-direction:column;gap:5px;"><button onclick="openSplit(\'' + esc(i.kind === 'phone' ? ((i.names || []).find(Boolean) || i.key) : i.key) + '\')" style="padding:7px 10px;background:transparent;border:1px solid rgba(0,240,255,0.45);color:var(--cyan);border-radius:8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;">✂️ Split</button><button onclick="adminIgnoreIssue(\'' + i.kind + '\',\'' + esc(i.key) + '\')" style="padding:6px 10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;">Different people, leave it</button></div>') + '</div>'; });
   if (a.fixed.length) x += '<div style="font-size:11px;color:var(--aqua);font-weight:700;margin-top:6px;">✓ Just fixed: ' + a.fixed.slice(0, 6).map(escInfo).join(' · ') + (a.fixed.length > 6 ? ' +' + (a.fixed.length - 6) + ' more' : '') + '</div>';
   x += '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:6px;">Combine keeps the real login, carries phone / email / DUPR / photo over, moves followers, renames the ghost\'s games onto the real name, deletes the ghost. Checked at ' + new Date(a.at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' · <span onclick="adminAudit({fix:false})" style="color:var(--cyan);cursor:pointer;">re-check</span></div></div>';
-  x = '<div id="adminContactsCard" style="display:none;margin:4px 0 10px;padding:12px 14px;background:rgba(0,245,196,0.05);border:1px solid rgba(0,245,196,0.3);border-radius:12px;"></div>' + x;
-  el.innerHTML = x; el.style.display = 'block';
+  // profile: contacts card + a collapsible issues panel (open when something can be fixed with a tap)
+  const openIt = auto.length > 0;
+  el.innerHTML = '<div id="adminContactsCard" class="adsec-card" style="display:none;"></div>'
+    + '<details class="adsec" style="border-color:rgba(255,224,0,0.4);margin-bottom:14px;"' + (openIt ? ' open' : '') + '><summary style="color:var(--yellow);">🛠 ' + a.issues.length + ' account issue' + (a.issues.length === 1 ? '' : 's') + (auto.length ? ' <span class="adn">' + auto.length + ' one-tap</span>' : '') + '</summary><div style="margin:0 0 8px;">' + x + '</div></details>';
+  el.style.display = 'block';
+  window.renderContactsCard('adminContactsCard');
+  if (mirror) { mirror.innerHTML = x; mirror.style.display = 'block'; }
 };
 window.adminFixAll = async function() {
   if (!isAdmin()) return;
@@ -4969,7 +4994,7 @@ function renderNotifs() {
   Object.entries(myNotifs).forEach(([nid, n]) => { if (!n) return;
     if (n.type === 'follow') items.push({ at: n.at, unread: !n.read, icon: '➕', title: escInfo(n.fromName || 'Someone'), text: 'started following you', go: "openPlayerDetail('" + escInfo(n.fromName || '').replace(/'/g, "\\'") + "')" });
     else if (n.type === 'invite') items.push({ at: n.at, unread: !n.read, icon: '🎟', title: escInfo(n.fromName || 'Someone') + ' invited you', text: escInfo(n.text || 'to play'), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
-    else items.push({ at: n.at, unread: !n.read, icon: n.go === 'profile' ? '🛠' : '🔔', title: escInfo(n.fromName || ''), text: escInfo(n.text || ''), go: n.go === 'profile' ? "openProfile()" : "openChat()" }); });
+    else items.push({ at: n.at, unread: !n.read, icon: n.go === 'profile' ? '🛠' : n.go === 'admin' ? '📇' : '🔔', title: escInfo(n.fromName || ''), text: escInfo(n.text || ''), go: n.go === 'profile' ? "openProfile()" : n.go === 'admin' ? "openAdminDash()" : "openChat()" }); });
   items.sort((a, b) => (b.at || 0) - (a.at || 0));
   if (!items.length) { el.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--muted);font-weight:600;line-height:1.6;">Nothing yet.<br>Messages, group chat, new followers and game invites show up here.</div>'; return; }
   el.innerHTML = items.slice(0, 60).map(it => '<div onclick="' + it.go + '" class="chat-row" style="' + (it.unread ? 'border-color:rgba(255,45,120,0.45);' : '') + '">'
@@ -6965,6 +6990,8 @@ window.openAdminDash = async function() {
       if (t) t.textContent = '🏟 ' + subs.length + ' court submission' + (subs.length>1?'s':'') + ' pending';
     } else cb.style.display = 'none';
   }
+  try { const pn = document.getElementById('adPlayersN'); if (pn) pn.textContent = players.length; const cn = document.getElementById('adCourtsN'); if (cn) cn.textContent = subs.length ? subs.length + ' pending' : 'none pending'; const sc = document.getElementById('adSecCourts'); if (sc) sc.open = subs.length > 0; } catch (e) {}
+  try { window.renderContactsCard('adContactsCard'); if (!window._adminAudit) window.adminAudit({ fix: false }).then(() => window.renderAdminIssues()).catch(() => {}); else window.renderAdminIssues(); } catch (e) {}
   document.getElementById('adCourts').innerHTML = subs.length ? subs.map(([id, c]) =>
     '<div style="padding:12px;background:var(--surface);border:1px solid rgba(255,224,0,0.3);border-radius:12px;margin-bottom:8px;">'
     +'<div style="font-weight:800;color:var(--white);font-size:14px;">'+(c.n||'?')+' <span style="font-size:11px;color:var(--muted);">· '+(c.c||'')+'</span></div>'
@@ -9585,7 +9612,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-21.4';
+window.BUILD_TAG = 'v2026-10-21.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
