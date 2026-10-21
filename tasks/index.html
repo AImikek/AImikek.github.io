@@ -248,6 +248,8 @@ input,textarea{font:inherit;color:inherit}
 .task{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y}
 .task .t,.task .meta{-webkit-user-select:none;user-select:none}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
+/* multi-drag ghost badge */
+.ghostcount{position:absolute;top:-8px;right:-6px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
 /* select mode */
 .seltoggle{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--muted);margin:0 0 8px auto;display:block}
 .seltoggle.inline{margin:0 0 0 auto;display:inline-block}
@@ -993,7 +995,10 @@ function enableTouchReorder(row, id, dayKey){
     if(!dragging){ if(Math.abs(ev.touches[0].clientY-startY)>10 || Math.abs(ev.touches[0].clientX-startX)>10) cancel(); return; }
     ev.preventDefault();
     const y=ev.touches[0].clientY, x=ev.touches[0].clientX;
-    if(!ghost){ ghost=row.cloneNode(true); ghost.className='task ghost'; ghost.style.width=row.offsetWidth+'px'; document.body.appendChild(ghost); placeholder=el('div','drop-line'); row.classList.add('dragsrc'); }
+    if(!ghost){ ghost=row.cloneNode(true); ghost.className='task ghost'; ghost.style.width=row.offsetWidth+'px';
+      const ids=multi.has(id)?[...multi]:[id];
+      if(ids.length>1){ const badge=el('span','ghostcount',ids.length+' tasks'); ghost.appendChild(badge); ids.forEach(x=>{ const r2=document.querySelector('.task[data-id="'+x+'"]'); if(r2) r2.classList.add('dragsrc'); }); }
+      document.body.appendChild(ghost); placeholder=el('div','drop-line'); row.classList.add('dragsrc'); }
     ghost.style.top=(y-24)+'px'; ghost.style.left=row.getBoundingClientRect().left+'px';
     ghost.style.display='none'; const under=document.elementFromPoint(x,y); ghost.style.display='';
     const target=under&&under.closest('.task:not(.dragsrc)'); const cell=under&&under.closest('.cell');
@@ -1002,11 +1007,12 @@ function enableTouchReorder(row, id, dayKey){
     if(cell){ cell.classList.add('drop'); placeholder.remove(); }
     else if(target&&unit(target).parentNode===me.parentNode){ const tu=unit(target); const r=tu.getBoundingClientRect(); if(y<r.top+r.height/2) tu.before(placeholder); else tu.after(placeholder); }
   },{passive:false});
-  const end=ev=>{ cancel(); if(!dragging) return; dragging=false; row.classList.remove('lifting','dragsrc'); row.addEventListener('click',e=>{ e.stopPropagation(); e.preventDefault(); },{capture:true,once:true}); setTimeout(()=>{ /* clear the one-shot guard if no click came */ },400);
+  const end=ev=>{ cancel(); if(!dragging) return; dragging=false; row.classList.remove('lifting','dragsrc'); document.querySelectorAll('.task.dragsrc').forEach(x=>x.classList.remove('dragsrc'));
+    const ids=multi.has(id)?[...multi]:[id]; row.addEventListener('click',e=>{ e.stopPropagation(); e.preventDefault(); },{capture:true,once:true}); setTimeout(()=>{ /* clear the one-shot guard if no click came */ },400);
     const dropCell=document.querySelector('.cell.drop'); document.querySelectorAll('.cell.drop').forEach(c=>c.classList.remove('drop'));
     if(ghost){ ghost.remove(); ghost=null; }
-    if(dropCell){ const idx=[...dropCell.parentNode.children].indexOf(dropCell); const key=dropCell.dataset.key; placeholder&&placeholder.remove(); if(key&&key!==dayKey) placeInDay(id,key,null); return; }
-    if(placeholder&&placeholder.parentNode){ let next=placeholder.nextElementSibling; while(next && !(next.classList.contains('task')||next.querySelector('.task'))) next=next.nextElementSibling; const nt=next?(next.classList.contains('task')?next:next.querySelector('.task')):null; const beforeId=nt?nt.dataset.id:null; placeholder.remove(); placeInDay(id,dayKey,beforeId); }
+    if(dropCell){ const key=dropCell.dataset.key; placeholder&&placeholder.remove(); if(key) placeInDay(ids,key,null); return; }
+    if(placeholder&&placeholder.parentNode){ let next=placeholder.nextElementSibling; while(next && !(next.classList.contains('task')||next.querySelector('.task'))) next=next.nextElementSibling; const nt=next?(next.classList.contains('task')?next:next.querySelector('.task')):null; const beforeId=nt?nt.dataset.id:null; placeholder.remove(); placeInDay(ids,dayKey,beforeId); }
   };
   row.addEventListener('touchend',end); row.addEventListener('touchcancel',end);
 }
@@ -1364,7 +1370,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-21.1646';
+const APP_VERSION='v2026-10-21.1651';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
