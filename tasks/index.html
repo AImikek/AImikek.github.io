@@ -248,6 +248,27 @@ input,textarea{font:inherit;color:inherit}
 .task{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y}
 .task .t,.task .meta{-webkit-user-select:none;user-select:none}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
+/* select mode */
+.seltoggle{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--muted);margin:0 0 8px auto;display:block}
+.seltoggle.inline{margin:0 0 0 auto;display:inline-block}
+.seltoggle.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.task.pick{cursor:pointer}
+.pickmark{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line-strong);display:grid;place-items:center;margin-top:1px}
+.pickmark svg{width:12px;height:12px;stroke:var(--accent-ink);stroke-width:3;fill:none;opacity:0}
+.task.pick .chk{display:none}
+.task.pick.multi{border-color:var(--accent);background:var(--accent-soft)}
+.task.pick.multi .pickmark{background:var(--accent);border-color:var(--accent)}
+.task.pick.multi .pickmark svg{opacity:1}
+.gh .selall{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:500}
+.multibar button.danger{background:rgba(255,122,110,.25)}
+@media (max-width:760px){
+  .multibar{left:12px;right:12px;transform:none;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px;border-radius:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .multibar b{grid-column:1 / -1;text-align:center;padding:0 0 2px}
+  .multibar button{padding:10px 6px;font-size:13px}
+  .multibar button.ghost{grid-column:1 / -1}
+  body:has(.multibar:not([hidden])) .fb{display:none}
+  body:has(.multibar:not([hidden])) .toast{bottom:calc(190px + env(safe-area-inset-bottom,0px))}
+}
 /* desktop list drag */
 .task[draggable="true"]{cursor:grab}
 .task.drag{opacity:.4}
@@ -617,11 +638,17 @@ function placeInDay(ids, key, beforeId){
   updMany(patches);
   const movedDays=moving.filter(t=>t.due!==key).length; if(movedDays) toast('Moved '+(movedDays>1?movedDays+' tasks':'')+' to '+fmtDue(key));
 }
+/* ---------- select mode toggle (shared by List and the phone day list) ---------- */
+function selectToggle(inline){
+  const b=el('button','seltoggle'+(selectMode?' on':'')+(inline?' inline':''), selectMode?'Done':'Select');
+  b.addEventListener('click',ev=>{ ev.stopPropagation(); selectMode=!selectMode; if(!selectMode) multi.clear(); render(); });
+  return b;
+}
 /* ---------- multi-select bar ---------- */
 function renderMultiBar(){
   let bar=$('#multibar'); if(!bar){ bar=el('div'); bar.id='multibar'; bar.className='multibar'; document.body.appendChild(bar); }
   for(const id of [...multi]) if(!tasks.get(id)) multi.delete(id);
-  if(!multi.size || view!=='cal'){ bar.hidden=true; return; }
+  if(!multi.size || view==='proj'){ bar.hidden=true; return; }
   bar.hidden=false; bar.innerHTML='';
   bar.appendChild(el('b',null,multi.size+' selected'));
   const mk=(label,fn,cls)=>{ const b=el('button',cls||'',label); b.addEventListener('click',fn); bar.appendChild(b); return b; };
@@ -629,6 +656,7 @@ function renderMultiBar(){
   mk('1 day →',()=>{ multiPatch(t=>({due:addDays(t.due||todayStr(),1)})); toast('Moved forward a day'); });
   const dateBtn=mk('Move to…',()=>openDatePicker(dateBtn,null,d=>{ if(d) placeInDay([...multi],d,null); }));
   mk('Done',()=>{ const allDone=[...multi].every(id=>tasks.get(id).done); multiPatch(()=>({done:!allDone})); toast(allDone?'Reopened':'Checked off'); });
+  mk('Delete',()=>{ const ids=[...multi]; const n=ids.length; ids.forEach(id=>remove(id)); multi.clear(); selectMode=false; render(); toastAction('Deleted '+n+' task'+(n===1?'':'s'),'Undo',()=>{ for(let i=0;i<n;i++) undo(); }); },'danger');
   mk('Clear',()=>{ multi.clear(); selectMode=false; render(); },'ghost');
 }
 /* ---------- multi-select ---------- */
@@ -757,7 +785,11 @@ function taskRow(t){
   }
   r.append(c,b);
   if(t.photos&&t.photos.length){ const im=el('img','thumb'); im.src=t.photos[0]; im.alt=''; r.appendChild(im); }
-  r.addEventListener('click', ()=>{ if(view==='proj' && t.subtasks && t.subtasks.length){ openTask=openTask===t.id?null:t.id; render(); } else { sel=t.id; render(); } });
+  if(selectMode && view!=='proj'){ r.classList.add('pick'); if(multi.has(t.id)) r.classList.add('multi'); const pk=el('span','pickmark'); pk.innerHTML=CHECK; r.prepend(pk); }
+  r.addEventListener('click', ev=>{
+    if(selectMode && view!=='proj'){ if(multi.has(t.id)) multi.delete(t.id); else multi.add(t.id); render(); return; }
+    if(ev.metaKey||ev.ctrlKey||ev.shiftKey){ if(multi.has(t.id)) multi.delete(t.id); else multi.add(t.id); selectMode=true; render(); return; }
+    if(view==='proj' && t.subtasks && t.subtasks.length){ openTask=openTask===t.id?null:t.id; render(); } else { sel=t.id; render(); } });
   return r;
 }
 function renderList(){
@@ -774,9 +806,11 @@ function renderList(){
     else groups[4][2].push(x);
   }
   if(!all.length){ const e=el('div','empty'); e.innerHTML='<b>Nothing here yet</b>Type a task above and hit Enter. Add a day like “friday” or “10/25” right in the text.'; content.appendChild(e); return; }
+  content.appendChild(selectToggle());
   for(const [name,cls,items] of groups){
     if(!items.length) continue;
     const g=el('section','group'); const h=el('div','gh'); const h2=el('h2',cls,name); h.append(h2, el('span','n',String(items.length)));
+    if(selectMode){ h.classList.add('pickable'); const all=items.every(x=>multi.has(x.id)); const sa=el('button','selall',all?'Deselect all':'Select all'); sa.addEventListener('click',()=>{ items.forEach(x=>all?multi.delete(x.id):multi.add(x.id)); render(); }); h.appendChild(sa); }
     // drop onto a group header = move to that day (Today / Tomorrow / No date / Completed)
     const headerTarget={'Today':t,'Tomorrow':addDays(t,1),'No date':null}[name];
     if(headerTarget!==undefined || name==='Completed'){
@@ -887,6 +921,7 @@ function renderCal(){
   wrap.appendChild(grid);
   if(mobile){
     const dl=el('div','daylist'); const gh=el('div','gh'); gh.append(el('h2',selDay===today?'today':'',fmtDue(selDay)), el('span','n',(byDay[selDay]||[]).length+''));
+    gh.appendChild(selectToggle(true));
     dl.appendChild(gh);
     const items=sorted(selDay);
     if(!items.length) dl.appendChild(el('div','empty','Nothing due. Add one above and it lands on this day.'));
@@ -1329,7 +1364,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-20.2250';
+const APP_VERSION='v2026-10-21.1646';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
