@@ -1922,14 +1922,9 @@ onAuthStateChanged(auth, user => {
     // GUEST MODE: a session link (?s=) is viewable without an account — roster, waitlist, info, venue.
     // Claiming, dropping, or opening live games asks for a quick sign-in (and the ?s= URL brings them back).
     const gs = new URLSearchParams(window.location.search).get('s');
-    const gp = new URLSearchParams(window.location.search).get('p');
     if (gs) {
       document.getElementById('loginScreen').style.display = 'none';
       openSessionDetail(gs);
-    } else if (gp === 'courts') {
-      // the court finder is public — anyone with the link can browse it; signing in is one tap away in the menu
-      document.getElementById('loginScreen').style.display = 'none';
-      openCourts();
     } else {
       document.getElementById('loginScreen').style.display = 'flex';
       prefillLastPhone();
@@ -5303,12 +5298,18 @@ window.addToContacts = async function(uid) {
     const v = await window.buildVCard(uid);
     const file = new File([v.text], v.name.replace(/[^\w ]+/g, '').trim().replace(/\s+/g, '-') + '.vcf', { type: 'text/vcard' });
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    if (ios && !window._vcfShareInstead) {
-      // iPhone: opening the card itself brings up the contact preview with "Create New Contact" / "Add to Existing".
-      const durl = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(v.text);
-      const a = document.createElement('a'); a.href = durl; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
-      copiedToast('Tap "Create New Contact" on the card');
-      return;
+    if (ios) {
+      // iPhone: a real https .vcf served as text/vcard opens the system contact card with "Create New Contact".
+      // (The share sheet has no Contacts target and data: URLs are blocked in the installed app.)
+      if (aiUrl === null) { try { aiUrl = (await get(ref(db, 'config/assistantUrl'))).val() || ''; } catch (e) { aiUrl = ''; } }
+      if (aiUrl) {
+        let txt = v.text; if (txt.length > 6000) txt = txt.replace(/^PHOTO[^\n]*\n?/m, '');   // keep the URL a sane length
+        const b64 = btoa(unescape(encodeURIComponent(txt))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        const vurl = aiUrl.replace(/\/+$/, '') + '/vcard/' + encodeURIComponent(file.name) + '?d=' + b64;
+        copiedToast('Opening the contact card…');
+        const w2 = window.open(vurl, '_blank'); if (!w2) window.location.href = vurl;
+        return;
+      }
     }
     if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
       try { await navigator.share({ files: [file], title: v.name }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
@@ -9537,7 +9538,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-21.2';
+window.BUILD_TAG = 'v2026-10-21.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
