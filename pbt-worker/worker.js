@@ -1,4 +1,4 @@
-// PB Tourney ✨ Assistant — Cloudflare Worker
+// PB Tourney ✨ Assistant + 💳 Payments — Cloudflare Worker (auto-deployed from GitHub: pbt-worker/)
 // ───────────────────────────────────────────────────────────────────────────────────────────────
 // What this does: the app sends the conversation; this worker (1) checks the caller is a signed-in
 // PB Tourney user, (2) asks Claude what to do, giving it the app's actions as tools, and (3) returns
@@ -208,6 +208,16 @@ export default {
     const H = Object.assign({ 'Content-Type': 'application/json' }, cors(origin));
     if (request.method === 'OPTIONS') return new Response(null, { headers: H });
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/vcard/') && request.method === 'GET') {
+      // Echoes a vCard the app built, with the content type iOS needs to show its "Create New Contact" card.
+      try {
+        const d = (url.searchParams.get('d') || '').replace(/-/g, '+').replace(/_/g, '/');
+        const txt = new TextDecoder().decode(Uint8Array.from(atob(d), c => c.charCodeAt(0)));
+        if (!/^BEGIN:VCARD/i.test(txt) || txt.length > 60000) return new Response('bad card', { status: 400 });
+        const name = decodeURIComponent(url.pathname.split('/').pop() || 'contact.vcf').replace(/[^\w.\- ]+/g, '') || 'contact.vcf';
+        return new Response(txt, { headers: { 'Content-Type': 'text/vcard; charset=utf-8', 'Content-Disposition': 'inline; filename="' + name + '"', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
+      } catch (e) { return new Response('bad card', { status: 400 }); }
+    }
     if (url.pathname.startsWith('/pay/')) { try { return await handlePay(request, env, H, url); } catch (e) { return new Response(JSON.stringify({ error: String(e && e.message || e) }), { status: 500, headers: H }); } }
     if (request.method !== 'POST') return new Response(JSON.stringify({ ok: true, service: 'pbt-assistant', payments: !!(env.STRIPE_SECRET_KEY && env.FIREBASE_SERVICE_ACCOUNT) }), { headers: H });
     try {
