@@ -2148,7 +2148,7 @@ async function bootApp() {
   }
   if (urlTid) {
     await set(ref(db, 'users/' + uid + '/activeTournamentId'), urlTid);
-    history.replaceState({}, '', window.location.pathname); // clean URL
+    try { history.replaceState({}, '', window.location.pathname); } catch (e) {} // clean URL
     subscribeTournament(urlTid);
     return;
   }
@@ -2156,6 +2156,13 @@ async function bootApp() {
   // Refresh → same screen. Only when the URL isn't already steering somewhere (?s= ?t= ?p=).
   if (!_sessParam && !urlTid && !_pageParam) setTimeout(() => { try { window._restoreScreen(); } catch(e) {} }, 700);
 
+  // 1a. Already pointed at a tournament that is live right now (a QR / link put them there)? Keep it.
+  //     The roster rule below only takes over when the pointer is stale or finished — otherwise a session
+  //     whose tournamentId still names an earlier, abandoned attempt would drag people into the wrong games.
+  try {
+    const _p0 = (await get(ref(db, 'users/' + uid + '/activeTournamentId'))).val();
+    if (_p0 && await window.tournamentIsLive(_p0)) { subscribeTournament(_p0); return; }
+  } catch (e) {}
   // 1b. On a roster whose tournament is LIVE right now? Adopt it — no QR / link needed.
   //     (Wins over an older active pointer so people don't get stuck on last week's games.)
   const rosterLive = await findMyLiveRosterTournament(uid);
@@ -2462,6 +2469,11 @@ window.doStart = window._doStart = async function() {
 
 async function _finalizeTournament() {
   const _hadPrev = !!activeTid;
+  if (_hadPrev && cfg && !Object.values(scores || {}).some(s => s && s.s1 !== null && s.s1 !== undefined)) {
+    // the one being replaced never got a score → it was a false start; mark it done so sessions/rosters let go of it
+    try { await update(ref(db, 'tournaments/' + activeTid), { done: true, abandonedAt: Date.now() }); } catch (e) {}
+    try { if (cfg.fromSession) { const sv = (await get(ref(db, 'sessions/' + cfg.fromSession + '/tournamentId'))).val(); if (sv === activeTid) await set(ref(db, 'sessions/' + cfg.fromSession + '/tournamentId'), null); } } catch (e) {}
+  }
   if (_hadPrev) setTimeout(() => copiedToast('Previous game saved in 📜 Past Games'), 1500);
   // Never land anywhere but Games after starting
   try { history.replaceState({}, '', window.location.pathname); } catch(e) {}
@@ -5850,6 +5862,17 @@ async function hasUpcomingSessions() {
 }
 // Scan sessions where I'm on the roster/waitlist and today is the session date (±1 day);
 // return the tournamentId if that session's tournament is live. Most recent session wins.
+// A tournament counts as live if it exists, isn't done/cancelled, was touched in the last 36 hours,
+// and still has unscored games.
+window.tournamentIsLive = async function(tid) {
+  try {
+    const t = (await get(ref(db, 'tournaments/' + tid))).val(); if (!t || t.done || t.cancelled) return false;
+    const when = t.updatedAt || t.createdAt || 0; if (Math.abs(Date.now() - when) > 36 * 3600 * 1000) return false;
+    const sched = (t.cfg && t.cfg.schedule) ? (Array.isArray(t.cfg.schedule) ? t.cfg.schedule : Object.values(t.cfg.schedule)) : [];
+    const open = sched.filter(g => g && !g.deleted);
+    return open.length === 0 || open.some(g => { const sc = (t.scores || {})[g.key]; return !(sc && sc.s1 !== null && sc.s1 !== undefined); });
+  } catch (e) { return false; }
+};
 async function findMyLiveRosterTournament(uid) {
   try {
     const snap = await get(ref(db, 'sessions'));
@@ -9501,7 +9524,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-20.1';
+window.BUILD_TAG = 'v2026-10-21.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
