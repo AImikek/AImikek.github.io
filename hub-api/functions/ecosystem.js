@@ -38,7 +38,7 @@ function networkReport(visits,links,siteId='all'){
  }
  const favoritesRows=favorites.map(f=>({...f,visitors:f.visitors.size}));
  const categories={};for(const f of favoritesRows){categories[f.category]??={name:f.category,listings:0,opens:0,outbound:0,clicks:0};const c=categories[f.category];c.listings++;c.opens+=f.opens;c.outbound+=f.outbound;c.clicks+=f.clicks;}
- return {...result,site:siteId,perSite,favorites:favoritesRows,categories:Object.values(categories),pages:Object.values(pages).sort((a,b)=>b.views-a.views)};
+ return {...result,allByDay:siteId==='all'?result.byDay:summarize(visits.map(normalize),links).byDay,site:siteId,perSite,favorites:favoritesRows,categories:Object.values(categories),pages:Object.values(pages).sort((a,b)=>b.views-a.views)};
 }
 function referralReport(docs,total){
  const categoryFor=Object.fromEntries(catalog.map(c=>[c.name.toLowerCase(),c.category]));

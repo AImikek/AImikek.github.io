@@ -8,3 +8,8 @@ test('saved partner applications and referrals are distinct and sensitive detail
 test('a repeated visit cannot switch apps or origins',()=>{const v=visit('tasks','one');assert.throws(()=>mergeVisit(v,{...v,site:'home'}));assert.throws(()=>mergeVisit(v,{...v,origin:'https://pupsnchill.com'}));assert.equal(mergeVisit(v,{...v,activeSeconds:5}).activeSeconds,10);});
 
 test('unknown click IDs cannot resolve inherited object properties',()=>{const r=networkReport([visit('home','one',[{id:'__proto__',ms:1000},{id:'constructor',ms:2000}])],[]);assert.equal(r.totals.clicks,2);assert.equal(r.favorites.reduce((n,f)=>n+f.clicks,0),0);});
+
+test('overview daily graph stays cumulative when drilling into one site',()=>{
+ const at=Date.parse('2026-10-22T18:00:00Z');const visits=[{site:'home',visitor:'a',startedAt:at,clicks:[]},{site:'pupsnchill',visitor:'b',startedAt:at,clicks:[{id:'x',ms:1000}]}];
+ const report=networkReport(visits,[],'home');assert.equal(report.totals.views,1);assert.equal(report.allByDay['2026-10-22'].views,2);assert.equal(report.allByDay['2026-10-22'].clicks,1);
+});

@@ -7,7 +7,8 @@ function summarizeGuestDates(values,days,now=Date.now()){
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
  const since=new Date(today+'T00:00:00Z').getTime()-(days-1)*86400000;
  const dates=values.map(row=>row[0]).filter(n=>typeof n==='number'&&Number.isFinite(n)&&n>20000&&n<100000).map(n=>(Math.floor(n)-25569)*86400000);
- return {connected:true,total:dates.length,inPeriod:dates.filter(n=>n>=since&&n<=new Date(today+'T00:00:00Z').getTime()).length};
+ const byDay={};for(const n of dates){const d=new Date(n).toISOString().slice(0,10);byDay[d]=(byDay[d]||0)+1;}
+ return {connected:true,byDay,total:dates.length,inPeriod:dates.filter(n=>n>=since&&n<=new Date(today+'T00:00:00Z').getTime()).length};
 }
 async function guestRecords(days){
  try{

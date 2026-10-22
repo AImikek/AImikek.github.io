@@ -53,6 +53,10 @@ exports.hub=onRequest({region:'us-central1',memory:'256MiB',secrets:[nvmToken],t
         tx.set(db.collection('hubAudit').doc(),{at:Date.now(),action:'Homepage published',detail:c.links.filter(l=>!l.hidden).length+' visible links',uid:token.uid});return next;
       });return result?res.json(result):res.status(409).json({error:'The homepage changed in another session. Reload before publishing.'});
     }
+    if(path==='/admin/pnc'&&req.method==='GET'){
+      const days=Math.min(90,Math.max(1,Number(req.query.days)||30));
+      try{const upstream=await fetch('https://pupsnchill.com/api/hub/summary?days='+days,{headers:{Authorization:req.get('authorization')||''},signal:AbortSignal.timeout(18000)});if(!upstream.ok)throw Error();const data=await upstream.json();if(!Number.isFinite(data.website?.total))throw Error();return res.json({...data,connected:true,days});}catch{return res.json({connected:false,error:'Pups N Chill records are temporarily unavailable. Traffic remains available in Analytics.'});}
+    }
     if(path==='/admin/forms'&&req.method==='GET'){
       const days=Math.min(90,Math.max(1,Number(req.query.days)||30));
       const outcomes=await Promise.allSettled([nvmSummary(nvmToken.value()),duaSummary(req.get('authorization')||''),db.collection('hubVisits').where('startedAt','>=',Date.now()-days*86400000).orderBy('startedAt','desc').limit(10000).get(),guestRecords(days)]);
