@@ -6,7 +6,7 @@
 <title>Tasks · mikek.ai</title>
 <meta name="description" content="Fast personal tasks with a calendar, projects, photos and steps. Free, syncs across devices, works offline.">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0a7c59">
+<meta name="theme-color" content="#141412">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -248,8 +248,13 @@ input,textarea{font:inherit;color:inherit}
 .task{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y}
 .task .t,.task .meta{-webkit-user-select:none;user-select:none}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
+/* theme row in account menu */
+.themerow{display:flex;align-items:center;gap:10px;padding:8px 12px;font-weight:600;font-size:14px}
+.themerow .seg{margin-left:auto;min-width:150px}
+.themerow .seg button{padding:5px 8px;font-size:12px}
 /* multi-drag ghost badge */
 .ghostcount{position:absolute;top:-8px;right:-6px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+#tools{display:flex;align-items:center}
 /* select mode */
 .seltoggle{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--muted);margin:0 0 8px auto;display:block}
 .seltoggle.inline{margin:0 0 0 auto;display:inline-block}
@@ -350,9 +355,15 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
   .app{height:auto;min-height:0;display:block}
   .main{display:block;min-height:0}
   .content{overflow:visible;height:auto}
-  .qa{position:sticky;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:6;box-shadow:0 6px 18px -8px rgba(0,0,0,.35)}
+  body{padding-top:0}
+  .hdr{position:sticky;top:0;z-index:7;background:var(--bg);padding-top:env(safe-area-inset-top,0px);margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:8px;box-shadow:0 8px 20px -14px rgba(0,0,0,.5)}
+  .top{flex-wrap:nowrap}
+  .brand{font-size:16px}
+  .tabs{margin-left:auto}
+  .tab{padding:6px 9px;font-size:12px}
+  #tools .seltoggle{margin:0;padding:5px 8px;font-size:11px}
   body::before{display:none}
-  .gh{top:calc(env(safe-area-inset-top,0px) + 64px)}
+  .gh{top:var(--hdrH,120px)}
   .top{padding-top:10px}
   .brand small{display:none}
   .hint{display:none}
@@ -440,6 +451,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
 </head>
 <body>
 <div class="app">
+ <div class="hdr" id="hdr">
   <header class="top">
     <div class="brand">Tasks <small id="count"></small></div>
     <div class="tabs" role="tablist">
@@ -448,6 +460,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
       <button class="tab" role="tab" data-view="proj" aria-selected="false" id="tab-proj">Projects</button>
     </div>
     <span class="status" id="status"></span>
+    <span id="tools"></span>
     <div class="me"><button class="ava" id="ava" title="Account">?</button></div>
   </header>
   <div class="installbar" id="updatebar" hidden>🚀 A new version of Tasks is ready <button id="updateNow">Update now</button></div>
@@ -459,6 +472,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
     <button class="go" type="submit">Add</button>
   </form>
   <div class="hint">Enter adds · <kbd>/</kbd> jumps here · dates in the text are picked up automatically · paste a list and each line becomes a task</div>
+ </div>
 
   <div class="main">
     <div class="content" id="content"></div>
@@ -484,6 +498,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
 <script>
 // Runs before Firebase loads: if this device was signed in last time, never flash the sign-in screen.
 try{ if(!localStorage.getItem('lastUid')) document.getElementById('gate').hidden=false; }catch(e){ document.getElementById('gate').hidden=false; }
+try{ const t=localStorage.getItem('theme')||'dark'; if(t!=='system') document.documentElement.setAttribute('data-theme',t); }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
 </script>
 <div class="menu" id="menu" hidden></div>
 <div class="modal" id="installModal" hidden><div class="mcard" id="installCard"></div></div>
@@ -760,6 +775,7 @@ function render(){
   content.scrollTop=sc.content; content.scrollLeft=sc.contentX; const g2=content.querySelector('.grid'); if(g2&&sc.grid!=null){ g2.scrollTop=sc.grid; g2.scrollLeft=sc.gridX; }
   content.querySelectorAll('.cell').forEach((c,i)=>{ if(cells[i]) c.scrollTop=cells[i]; });
   renderPanel(); renderMultiBar();
+  const tools=$('#tools'); tools.innerHTML=''; if(view==='list' || (view==='cal' && window.innerWidth<=760)) tools.appendChild(selectToggle(true));
   refreshQa();
   const pr=view==='proj'&&curProj?projects.get(curProj):null;
   qi.placeholder = pr ? 'Add to '+pr.name+'…' : 'Add a task… try “call broker tomorrow” or “invoice friday”';
@@ -808,7 +824,7 @@ function renderList(){
     else groups[4][2].push(x);
   }
   if(!all.length){ const e=el('div','empty'); e.innerHTML='<b>Nothing here yet</b>Type a task above and hit Enter. Add a day like “friday” or “10/25” right in the text.'; content.appendChild(e); return; }
-  content.appendChild(selectToggle());
+
   for(const [name,cls,items] of groups){
     if(!items.length) continue;
     const g=el('section','group'); const h=el('div','gh'); const h2=el('h2',cls,name); h.append(h2, el('span','n',String(items.length)));
@@ -923,7 +939,7 @@ function renderCal(){
   wrap.appendChild(grid);
   if(mobile){
     const dl=el('div','daylist'); const gh=el('div','gh'); gh.append(el('h2',selDay===today?'today':'',fmtDue(selDay)), el('span','n',(byDay[selDay]||[]).length+''));
-    gh.appendChild(selectToggle(true));
+
     dl.appendChild(gh);
     const items=sorted(selDay);
     if(!items.length) dl.appendChild(el('div','empty','Nothing due. Add one above and it lands on this day.'));
@@ -1157,21 +1173,32 @@ function shrink(file){
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{ view=b.dataset.view; LS('view',view); render(); }));
 let rz; window.addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(render,120); });
 
+/* ---------- theme (dark by default) ---------- */
+function getTheme(){ return LS('theme')||'dark'; }
+function applyTheme(){ const t=getTheme(); const root=document.documentElement; if(t==='system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme',t);
+  const dark = t==='dark' || (t==='system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const m=document.querySelector('meta[name=theme-color]'); if(m) m.setAttribute('content', dark?'#141412':'#f6f5f1'); }
+function setTheme(t){ LS('theme',t); applyTheme(); toast(t==='dark'?'Dark mode':t==='light'?'Light mode':'Follows your phone'); }
+applyTheme();
+try{ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme); }catch(e){}
+
 /* ---------- account menu ---------- */
 const ava=$('#ava'), menu=$('#menu');
 function closeMenu(){ menu.hidden=true; }
 ava.addEventListener('click',()=>{
   if(!menu.hidden){ closeMenu(); return; }
   menu.innerHTML='';
-  menu.appendChild(el('small',null,(user?(user.displayName||user.email||''):'')+' · '+APP_VERSION));
-  try{ const vv=window.visualViewport; menu.appendChild(el('small',null,'screen '+screen.width+'×'+screen.height+' · win '+window.innerWidth+'×'+window.innerHeight+(vv?' · vv '+Math.round(vv.height)+' @'+Math.round(vv.offsetTop):'')+' · scrollY '+Math.round(window.scrollY)+' · inset '+getComputedStyle(document.body).paddingBottom+' · fix '+getComputedStyle(document.documentElement).getPropertyValue('--vfix'))); }catch(e){}
+  menu.appendChild(el('small',null,(user?(user.displayName||user.email||''):'')));
+  const th=el('div','themerow'); th.appendChild(el('span',null,'Appearance'));
+  const seg=el('div','seg'); [['dark','Dark'],['light','Light'],['system','Auto']].forEach(([k,l])=>{ const b=el('button',null,l); b.setAttribute('aria-selected',String(getTheme()===k)); b.addEventListener('click',e=>{ e.stopPropagation(); setTheme(k); seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',String(x===b))); }); seg.appendChild(b); });
+  th.appendChild(seg); menu.appendChild(th);
   const inst=el('button',null,'📲 Add to home screen / bookmark'); inst.addEventListener('click',()=>{ closeMenu(); showInstall(); }); menu.appendChild(inst);
   const fb=el('button',null,'💬 Send feedback'); fb.addEventListener('click',()=>{ closeMenu(); openFeedback(); }); menu.appendChild(fb);
   menu.appendChild(el('div','sep'));
   const exp=el('button',null,'⬇ Export backup (JSON)'); exp.addEventListener('click',()=>{ closeMenu(); exportBackup(); }); menu.appendChild(exp);
   const impL=el('label',null,'⬆ Import backup'); const impI=el('input'); impI.type='file'; impI.accept='application/json,.json'; impI.addEventListener('change',()=>{ closeMenu(); importBackup(impI.files[0]); }); impL.appendChild(impI); menu.appendChild(impL);
   menu.appendChild(el('div','sep'));
-  const rl=el('button',null,'📏 Layout ruler (debug)'); rl.addEventListener('click',()=>{ closeMenu(); toggleRuler(); }); menu.appendChild(rl);
+  menu.appendChild(el('small',null,APP_VERSION));
   const out=el('button',null,'Sign out'); out.addEventListener('click',()=>{ closeMenu(); FB.signOut(); }); menu.appendChild(out);
   menu.hidden=false;
   const r=ava.getBoundingClientRect(); menu.style.top=(r.bottom+6)+'px'; menu.style.right=Math.max(8,window.innerWidth-r.right)+'px'; menu.style.left='auto';
@@ -1370,7 +1397,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-21.1651';
+const APP_VERSION='v2026-10-22.0053';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
@@ -1409,6 +1436,11 @@ function fixViewport(){
   }catch(e){}
 }
 fixViewport(); window.addEventListener('resize',fixViewport); window.addEventListener('orientationchange',()=>setTimeout(fixViewport,300));
+
+/* ---------- keep sticky group headers below the sticky header block ---------- */
+function measureHdr(){ try{ const h=$('#hdr').getBoundingClientRect().height; document.documentElement.style.setProperty('--hdrH', Math.round(h)+'px'); }catch(e){} }
+try{ new ResizeObserver(measureHdr).observe($('#hdr')); }catch(e){ window.addEventListener('resize',measureHdr); }
+measureHdr();
 
 /* ---------- boot ---------- */
 // If this device was signed in last time, skip the sign-in flash: show the cached tasks immediately
