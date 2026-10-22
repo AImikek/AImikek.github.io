@@ -8,6 +8,7 @@ const seed=require('./seed.json');
 const {defineSecret}=require('firebase-functions/params');
 const nvmToken=defineSecret('NVM_AIRTABLE_READ_TOKEN');
 const {nvmSummary,duaSummary,guestSummary}=require('./forms');
+const {guestRecords}=require('./guest-records');
 const {sites,eventContext,enrichClicks,networkReport,referralReport}=require('./ecosystem');
 const app=initializeApp();const tasks=initializeApp({projectId:'mikek-tasks'},'tasks-auth');
 const db=getFirestore(app);const configRef=db.doc('adminHub/config');
@@ -54,10 +55,11 @@ exports.hub=onRequest({region:'us-central1',memory:'256MiB',secrets:[nvmToken],t
     }
     if(path==='/admin/forms'&&req.method==='GET'){
       const days=Math.min(90,Math.max(1,Number(req.query.days)||30));
-      const outcomes=await Promise.allSettled([nvmSummary(nvmToken.value()),duaSummary(req.get('authorization')||''),db.collection('hubVisits').where('startedAt','>=',Date.now()-days*86400000).orderBy('startedAt','desc').limit(10000).get()]);
+      const outcomes=await Promise.allSettled([nvmSummary(nvmToken.value()),duaSummary(req.get('authorization')||''),db.collection('hubVisits').where('startedAt','>=',Date.now()-days*86400000).orderBy('startedAt','desc').limit(10000).get(),guestRecords(days)]);
       const source=(i)=>outcomes[i].status==='fulfilled'?outcomes[i].value:{connected:false,error:outcomes[i].reason.message};
       const visits=outcomes[2].status==='fulfilled'?outcomes[2].value:null;
-      return res.json({nvm:source(0),dua:source(1),guest:visits?{...guestSummary(visits.docs.map(d=>d.data())),capped:visits.size===10000}:{error:'Guest traffic is temporarily unavailable.'},days});
+      const saved=source(3);
+      return res.json({nvm:source(0),dua:source(1),guest:visits?{...guestSummary(visits.docs.map(d=>d.data())),saved,capped:visits.size===10000}:{error:'Guest traffic is temporarily unavailable.',saved},days});
     }
     if(path==='/admin/referrals'&&req.method==='GET'){
       const [s,total]=await Promise.all([db.collection('submissions').orderBy('created_at','desc').limit(10000).get(),db.collection('submissions').count().get()]);

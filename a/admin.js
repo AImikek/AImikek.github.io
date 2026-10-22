@@ -1,4 +1,4 @@
-import {formsUI} from './forms.js?v=20261022-forms';
+import {formsUI} from './forms.js?v=20261022-forms2';
 import {networkUI} from './network.js?v=20261022-network';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {getAuth,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signOut} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
