@@ -1,0 +1,62 @@
+[
+  {
+    "id": "equinox",
+    "name": "Equinox",
+    "category": "Fitness",
+    "action": "form"
+  },
+  {
+    "id": "pups-n-chill",
+    "name": "Pups N Chill",
+    "category": "Events",
+    "action": "link"
+  },
+  {
+    "id": "the-spot",
+    "name": "The Spot",
+    "category": "Grooming",
+    "action": "form"
+  },
+  {
+    "id": "pickleball-court-finder",
+    "name": "Pickleball Court Finder",
+    "category": "Pickleball",
+    "action": "link"
+  },
+  {
+    "id": "mercury",
+    "name": "Mercury",
+    "category": "Banking",
+    "action": "page"
+  },
+  {
+    "id": "empower",
+    "name": "Empower",
+    "category": "Rides",
+    "action": "page"
+  },
+  {
+    "id": "superhuman",
+    "name": "Superhuman",
+    "category": "Tools",
+    "action": "link"
+  },
+  {
+    "id": "tasks",
+    "name": "Tasks",
+    "category": "Tools",
+    "action": "link"
+  },
+  {
+    "id": "instagram-unban",
+    "name": "Instagram Unban",
+    "category": "Social",
+    "action": "form"
+  },
+  {
+    "id": "pickleball-tournament-builder",
+    "name": "Pickleball Tournament Builder",
+    "category": "Pickleball",
+    "action": "link"
+  }
+]

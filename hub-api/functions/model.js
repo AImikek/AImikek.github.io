@@ -29,22 +29,23 @@ function cleanVisit(b, now=Date.now()) {
 function mergeVisit(old,next,now=Date.now()) {
   if(!old)return {...next,startedAt:now};
   // A visit cannot change identity/source or decrease counters on retried beacons.
-  if(old.visitor!==next.visitor)throw Error('Visit identity mismatch');
+  if(old.visitor!==next.visitor||(old.site||'home')!==(next.site||'home')||(old.origin||'https://mikek.ai')!==(next.origin||'https://mikek.ai'))throw Error('Visit identity mismatch');
   const elapsed=Math.max(0,(now-old.startedAt)/1000)+30;
   return {...old,activeSeconds:Math.max(old.activeSeconds,Math.min(next.activeSeconds,elapsed)),scroll:Math.max(old.scroll,next.scroll),clicks:next.clicks.length>old.clicks.length?next.clicks:old.clicks,updatedAt:now};
 }
 function summarize(visits, links=[]) {
   const totals={views:visits.length,visitors:new Set(visits.map(v=>v.visitor)).size,clicks:0,clickedVisits:0,activeSeconds:0,firstClickSeconds:0,scroll:0};
-  const byDay={},byHour={},byLink={},sources={},devices={};const titles=Object.fromEntries(links.map(l=>[l.id,l.title]));
+  const byDay=Object.create(null),byHour=Object.create(null),byLink=Object.create(null),sources=Object.create(null),devices=Object.create(null);const titles=Object.fromEntries(links.map(l=>[l.id,l.title]));
   const zone={timeZone:'America/New_York'};
+  const dayFormat=new Intl.DateTimeFormat('en-CA',{...zone,year:'numeric',month:'2-digit',day:'2-digit'}),hourFormat=new Intl.DateTimeFormat('en-US',{...zone,hour:'2-digit',hourCycle:'h23'});
   for(const v of visits){
-    const day=new Intl.DateTimeFormat('en-CA',{...zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(v.startedAt);
+    const day=dayFormat.format(v.startedAt);
     byDay[day]??={views:0,clicks:0};byDay[day].views++;
     sources[v.source]=(sources[v.source]||0)+1;devices[v.device]=(devices[v.device]||0)+1;
     totals.activeSeconds+=v.activeSeconds||0;totals.scroll+=v.scroll||0;
     if(v.clicks?.length){totals.clickedVisits++;totals.firstClickSeconds+=v.clicks[0].ms/1000;}
-    for(const c of v.clicks||[]){totals.clicks++;const clickDay=new Intl.DateTimeFormat('en-CA',{...zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(v.startedAt+c.ms);byDay[clickDay]??={views:0,clicks:0};byDay[clickDay].clicks++;byLink[c.id]??={id:c.id,title:titles[c.id]||c.id,clicks:0};byLink[c.id].clicks++;
-      const hour=new Intl.DateTimeFormat('en-US',{...zone,hour:'2-digit',hourCycle:'h23'}).format(v.startedAt+c.ms);byHour[hour]=(byHour[hour]||0)+1;}
+    for(const c of v.clicks||[]){totals.clicks++;const clickDay=dayFormat.format(v.startedAt+c.ms);byDay[clickDay]??={views:0,clicks:0};byDay[clickDay].clicks++;byLink[c.id]??={id:c.id,title:titles[c.id]||c.id,clicks:0};byLink[c.id].clicks++;
+      const hour=hourFormat.format(v.startedAt+c.ms);byHour[hour]=(byHour[hour]||0)+1;}
   }
   return {totals:{...totals,clickRate:totals.views?totals.clickedVisits/totals.views*100:0,averageActiveSeconds:totals.views?totals.activeSeconds/totals.views:0,averageFirstClickSeconds:totals.clickedVisits?totals.firstClickSeconds/totals.clickedVisits:0,averageScroll:totals.views?totals.scroll/totals.views:0},byDay,byHour,byLink:Object.values(byLink).sort((a,b)=>b.clicks-a.clicks),sources,devices};
 }

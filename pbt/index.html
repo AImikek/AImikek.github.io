@@ -508,6 +508,7 @@
 <meta name="apple-mobile-web-app-title" content="PB Tourney">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<script defer src="https://mikek.ai/assets/analytics/track.js?v=20261022-network" data-site="pickleball" data-page="/pbt/"></script>
 </head>
 <body>
 
@@ -1518,20 +1519,20 @@ document.addEventListener('touchend',   _unlockAudio, true);
 </script>
 
 <nav id="topBar">
-  <button class="tab tab-settings" id="navSettings" onclick="openSettings()" style="font-size:22px;position:relative;">☰<span id="navChatDot" style="display:none;position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
-  <button class="topbar-title" id="topNewGame" onclick="openCreateChooser()" style="background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:99px;padding:8px 16px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 3px 12px rgba(255,45,120,0.35);">➕ New Game</button>
+  <button class="tab tab-settings" id="navSettings" data-analytics-id="pbt-navsettings" data-analytics-label="Menu" data-analytics-kind="navigation" onclick="openSettings()" style="font-size:22px;position:relative;">☰<span id="navChatDot" style="display:none;position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
+  <button class="topbar-title" id="topNewGame" data-analytics-id="pbt-topnewgame" data-analytics-label="New game" data-analytics-kind="navigation" onclick="openCreateChooser()" style="background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:99px;padding:8px 16px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 3px 12px rgba(255,45,120,0.35);">➕ New Game</button>
   <span style="display:flex;align-items:center;">
-    <button class="tab" id="tabNotifs" onclick="openNotifs()" style="font-size:20px;position:relative;padding-right:6px;">❤️<span id="notifDot" style="display:none;position:absolute;top:2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
-    <button class="tab" id="tabLeaderboard" onclick="openLeaderboard()" style="font-size:20px;">🏆</button>
+    <button class="tab" id="tabNotifs" data-analytics-id="pbt-tabnotifs" data-analytics-label="Notifications" data-analytics-kind="navigation" onclick="openNotifs()" style="font-size:20px;position:relative;padding-right:6px;">❤️<span id="notifDot" style="display:none;position:absolute;top:2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
+    <button class="tab" id="tabLeaderboard" data-analytics-id="pbt-tableaderboard" data-analytics-label="Leaderboard" data-analytics-kind="navigation" onclick="openLeaderboard()" style="font-size:20px;">🏆</button>
   </span>
 </nav>
 
 <div id="bottomBar">
-  <button class="bbtn" id="navChat" onclick="openChat()"><span class="bicon-wrap"><span class="bicon">💬</span><span id="chatTabDot" style="display:none;position:absolute;top:-4px;right:-12px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Chat</span></button>
-  <button class="bbtn" id="navHome" onclick="openSessions()"><span class="bicon">📅</span><span class="blbl">Games</span></button>
-  <button class="bbtn" id="tabGames" onclick="closeAllOverlaysAndShow('games')"><span class="bicon-wrap"><span class="bicon">🎮</span><span id="gamesBadge" style="display:none;position:absolute;top:-4px;right:-14px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Live</span></button>
-  <button class="bbtn" id="tabStats" onclick="closeAllOverlaysAndShow('standings')"><span class="bicon">📊</span><span class="blbl">Stats</span></button>
-  <button class="bbtn" id="navProfileBtn" onclick="closeSettings();openProfile();"><span class="bicon">👤</span><span class="blbl">Profile</span></button>
+  <button class="bbtn" id="navChat" data-analytics-id="pbt-navchat" data-analytics-label="Chat" data-analytics-kind="navigation" onclick="openChat()"><span class="bicon-wrap"><span class="bicon">💬</span><span id="chatTabDot" style="display:none;position:absolute;top:-4px;right:-12px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Chat</span></button>
+  <button class="bbtn" id="navHome" data-analytics-id="pbt-navhome" data-analytics-label="Calendar" data-analytics-kind="navigation" onclick="openSessions()"><span class="bicon">📅</span><span class="blbl">Games</span></button>
+  <button class="bbtn" id="tabGames" data-analytics-id="pbt-tabgames" data-analytics-label="Games" data-analytics-kind="navigation" onclick="closeAllOverlaysAndShow('games')"><span class="bicon-wrap"><span class="bicon">🎮</span><span id="gamesBadge" style="display:none;position:absolute;top:-4px;right:-14px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Live</span></button>
+  <button class="bbtn" id="tabStats" data-analytics-id="pbt-tabstats" data-analytics-label="Stats" data-analytics-kind="navigation" onclick="closeAllOverlaysAndShow('standings')"><span class="bicon">📊</span><span class="blbl">Stats</span></button>
+  <button class="bbtn" id="navProfileBtn" data-analytics-id="pbt-navprofilebtn" data-analytics-label="Profile" data-analytics-kind="navigation" onclick="closeSettings();openProfile();"><span class="bicon">👤</span><span class="blbl">Profile</span></button>
 </div>
 
 <span id="tabSummary" style="display:none;"></span>

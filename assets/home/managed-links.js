@@ -15,14 +15,3 @@ export function card(l){
  const arrow=node('span','card-arrow');arrow.append(symbol('arrow'));a.append(icon,copy,arrow);return a;
 }
 (async()=>{try{const r=await fetch(API+'/public',{signal:AbortSignal.timeout(5000)});if(r.ok){const c=await r.json();if(Array.isArray(c.links)){document.querySelector('.link-list').replaceChildren(...c.links.filter(l=>!l.hidden).map(card));document.querySelector('.follower-count').textContent=c.followers||'';}}}catch{/* Static links stay available if the service cannot be reached. */}})();
-if(!['localhost','127.0.0.1'].includes(location.hostname)&&navigator.doNotTrack!=='1'&&!navigator.globalPrivacyControl){
- const uuid=()=>crypto.randomUUID();let visitor=uuid();try{const old=JSON.parse(localStorage.getItem('mk-visitor')||'null');if(old&&old.until>Date.now())visitor=old.id;else localStorage.setItem('mk-visitor',JSON.stringify({id:visitor,until:Date.now()+30*86400000}));}catch{}
- const visit={id:uuid(),visitor,referrer:document.referrer?new URL(document.referrer).origin:'',device:/iPad|Tablet/i.test(navigator.userAgent)?'Tablet':/Mobile|Android|iPhone/i.test(navigator.userAgent)?'Mobile':'Desktop',activeSeconds:0,scroll:0,clicks:[]};
- const start=performance.now();let last=start,lastInput=start,dirty=true;
- const tick=()=>{const now=performance.now();if(document.visibilityState==='visible'&&now-lastInput<60000)visit.activeSeconds+=Math.min(5,(now-last)/1000);last=now;const h=document.documentElement;visit.scroll=Math.max(visit.scroll,Math.round(Math.min(1,(scrollY+innerHeight)/Math.max(h.scrollHeight,1))*100));};
- for(const event of ['pointerdown','keydown','scroll','touchstart'])addEventListener(event,()=>{lastInput=performance.now();dirty=true;},{passive:true});
- function send(){tick();const body=JSON.stringify({...visit,activeSeconds:Math.floor(visit.activeSeconds)});fetch(API+'/event',{method:'POST',credentials:'omit',headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});dirty=false;}
- document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;let id=a.dataset.homeLink;if(!id&&a.closest('.socials'))id='social-'+(a.title||'website').toLowerCase().replace(/[^a-z0-9]+/g,'-');if(!id&&a.classList.contains('pay-direct'))id='pay';if(!id)return;if(visit.clicks.length<50)visit.clicks.push({id,ms:Math.round(performance.now()-start)});send();});
- setInterval(tick,5000);setInterval(()=>{if(document.visibilityState==='visible'&&performance.now()-lastInput<60000)send();},30000);
- document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')send();else last=performance.now();});addEventListener('pagehide',send);send();
-}

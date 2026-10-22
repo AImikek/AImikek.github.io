@@ -5,9 +5,10 @@ const {getFirestore}=require('firebase-admin/firestore');
 const {createHash}=require('node:crypto');
 const {owner,cleanConfig,cleanVisit,mergeVisit,summarize}=require('./model');
 const seed=require('./seed.json');
+const {sites,eventContext,enrichClicks,networkReport,referralReport}=require('./ecosystem');
 const app=initializeApp();const tasks=initializeApp({projectId:'mikek-tasks'},'tasks-auth');
 const db=getFirestore(app);const configRef=db.doc('adminHub/config');
-const allowedOrigin=o=>['https://mikek.ai','https://www.mikek.ai'].includes(o)||/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o);
+const allowedOrigin=o=>sites.some(s=>s.origins.includes(o))||/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o);
 exports.hub=onRequest({region:'us-central1',memory:'256MiB',timeoutSeconds:30,maxInstances:3,minInstances:0},async(req,res)=>{
   const origin=req.get('origin')||'';res.set('Cache-Control','no-store');res.set('X-Content-Type-Options','nosniff');
   if(origin&&!allowedOrigin(origin))return res.status(403).json({error:'Origin not allowed'});
@@ -24,10 +25,10 @@ exports.hub=onRequest({region:'us-central1',memory:'256MiB',timeoutSeconds:30,ma
     if(path==='/event'&&req.method==='POST'){
       if(!origin||req.get('DNT')==='1'||/bot|crawler|spider/i.test(req.get('user-agent')||''))return res.status(204).end();
       if(Buffer.byteLength(JSON.stringify(req.body||{}))>12000)return res.status(413).end();
-      let v;try{v=cleanVisit(req.body);}catch{return res.status(400).json({error:'Invalid event'});}
+      let v;try{v={...cleanVisit(req.body),...eventContext(req.body,origin)};v.clicks=enrichClicks(v.clicks,req.body.clicks||[]);}catch{return res.status(400).json({error:'Invalid event'});}
       // Short-lived salted network bucket: no raw IPs or full referrer URLs are stored.
       const bucket=createHash('sha256').update((req.ip||'unknown')+new Date().toISOString().slice(0,13)).digest('hex');
-      const rate=db.doc('hubRate/'+bucket),visit=db.doc('hubVisits/'+v.id);
+      const rate=db.doc('hubRate/'+bucket),visit=db.doc('hubVisits/'+(req.body.site?createHash('sha256').update(v.origin+'|'+v.id).digest('hex'):v.id));
       const accepted=await db.runTransaction(async tx=>{
         const [r,s]=await Promise.all([tx.get(rate),tx.get(visit)]);if((r.data()?.n||0)>=600)return false;
         if(s.exists&&Date.now()-s.data().startedAt>2*3600000)return false;
@@ -48,10 +49,15 @@ exports.hub=onRequest({region:'us-central1',memory:'256MiB',timeoutSeconds:30,ma
         tx.set(db.collection('hubAudit').doc(),{at:Date.now(),action:'Homepage published',detail:c.links.filter(l=>!l.hidden).length+' visible links',uid:token.uid});return next;
       });return result?res.json(result):res.status(409).json({error:'The homepage changed in another session. Reload before publishing.'});
     }
+    if(path==='/admin/referrals'&&req.method==='GET'){
+      const [s,total]=await Promise.all([db.collection('submissions').orderBy('created_at','desc').limit(10000).get(),db.collection('submissions').count().get()]);
+      return res.json(referralReport(s.docs,total.data().count));
+    }
     if(path==='/admin/analytics'&&req.method==='GET'){
       const days=Math.min(90,Math.max(1,Number(req.query.days)||30));const since=Date.now()-days*86400000;
       const [s,c]=await Promise.all([db.collection('hubVisits').where('startedAt','>=',since).orderBy('startedAt','desc').limit(10000).get(),configRef.get()]);
-      return res.json({...summarize(s.docs.map(d=>d.data()),c.exists?c.data().links:seed.links),days,capped:s.size===10000,timezone:'America/New_York'});
+      const selected=String(req.query.site||'all');if(selected!=='all'&&!sites.some(x=>x.id===selected))return res.status(400).json({error:'Unknown site'});
+      return res.json({...networkReport(s.docs.map(d=>d.data()),c.exists?c.data().links:seed.links,selected),days,capped:s.size===10000,timezone:'America/New_York'});
     }
     if(path==='/admin/activity'&&req.method==='GET'){
       const [sub,audit]=await Promise.all([db.collection('submissions').orderBy('created_at','desc').limit(100).get(),db.collection('hubAudit').orderBy('at','desc').limit(30).get()]);

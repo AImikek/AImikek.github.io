@@ -1,0 +1,128 @@
+[
+  {
+    "id": "home",
+    "name": "MikeK homepage",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/"
+  },
+  {
+    "id": "favorites",
+    "name": "Favorites",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/favorites/"
+  },
+  {
+    "id": "partner",
+    "name": "Partner applications",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/partner/"
+  },
+  {
+    "id": "tasks",
+    "name": "Tasks",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/tasks/"
+  },
+  {
+    "id": "pickleball",
+    "name": "Pickleball",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/pbt/"
+  },
+  {
+    "id": "pay",
+    "name": "Payments page",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/pay/"
+  },
+  {
+    "id": "bio",
+    "name": "MikeK bio",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/h/"
+  },
+  {
+    "id": "signal",
+    "name": "Signal",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/signal/"
+  },
+  {
+    "id": "dua",
+    "name": "DUA",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/dua/"
+  },
+  {
+    "id": "nexsis",
+    "name": "Nexsis",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/nexsis/"
+  },
+  {
+    "id": "mikek-pages",
+    "name": "Other MikeK pages",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/"
+  },
+  {
+    "id": "pupsnchill",
+    "name": "Pups N Chill",
+    "origins": [
+      "https://pupsnchill.com",
+      "https://www.pupsnchill.com",
+      "https://pupsnchill-website.onrender.com"
+    ],
+    "url": "https://pupsnchill.com/"
+  },
+  {
+    "id": "housemanager",
+    "name": "House Manager",
+    "origins": [
+      "https://housemanager-kappa.vercel.app"
+    ],
+    "url": "https://housemanager-kappa.vercel.app/"
+  },
+  {
+    "id": "liveworkmiami",
+    "name": "LiveWork Miami",
+    "origins": [
+      "https://liveworkmiami.com",
+      "https://www.liveworkmiami.com"
+    ],
+    "url": "https://www.liveworkmiami.com/"
+  }
+]
