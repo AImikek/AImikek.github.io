@@ -1,5 +1,5 @@
 import {route} from './dashboard.js?v=20261022-dashboard';
-import {pncUI} from './pnc.js?v=20261022-dashboard';
+import {pncUI} from './pnc.js?v=20261022-dashboard2';
 import {formsUI} from './forms.js?v=20261022-dashboard';
 import {networkUI} from './network.js?v=20261022-dashboard';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
