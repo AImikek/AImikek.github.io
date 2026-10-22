@@ -42,6 +42,7 @@
       // The existing Apps Script endpoint accepts form-encoded, no-CORS requests.
       // An opaque response confirms the request was sent, not server processing.
       await fetch(ENDPOINT, {method:'POST', mode:'no-cors', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:data.toString()});
+      window.MikeKAnalytics?.track({id:'guest-registration-sent',kind:'action',label:'Guest registration request sent'});
       form.hidden = true;
       document.querySelector('.form-intro').hidden = true;
       const success = document.getElementById('formSuccess');

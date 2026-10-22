@@ -16,6 +16,7 @@ function enrichClicks(clicks,raw){
  });
 }
 function networkReport(visits,links,siteId='all'){
+ visits=visits.map(v=>(v.site==='mikek-pages'&&['/guest.html','/register.html'].includes(v.page))?{...v,site:v.page==='/guest.html'?'guest':'guest-register'}:v);
  const selected=siteId==='all'?visits:visits.filter(v=>(v.site||'home')===siteId);
  const normalize=v=>({...v,visitor:(v.origin||'https://mikek.ai')+'|'+v.visitor});
  const result=summarize(selected.map(normalize),links);

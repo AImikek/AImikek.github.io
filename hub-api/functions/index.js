@@ -5,11 +5,14 @@ const {getFirestore}=require('firebase-admin/firestore');
 const {createHash}=require('node:crypto');
 const {owner,cleanConfig,cleanVisit,mergeVisit,summarize}=require('./model');
 const seed=require('./seed.json');
+const {defineSecret}=require('firebase-functions/params');
+const nvmToken=defineSecret('NVM_AIRTABLE_READ_TOKEN');
+const {nvmSummary,duaSummary,guestSummary}=require('./forms');
 const {sites,eventContext,enrichClicks,networkReport,referralReport}=require('./ecosystem');
 const app=initializeApp();const tasks=initializeApp({projectId:'mikek-tasks'},'tasks-auth');
 const db=getFirestore(app);const configRef=db.doc('adminHub/config');
 const allowedOrigin=o=>sites.some(s=>s.origins.includes(o))||/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o);
-exports.hub=onRequest({region:'us-central1',memory:'256MiB',timeoutSeconds:30,maxInstances:3,minInstances:0},async(req,res)=>{
+exports.hub=onRequest({region:'us-central1',memory:'256MiB',secrets:[nvmToken],timeoutSeconds:30,maxInstances:3,minInstances:0},async(req,res)=>{
   const origin=req.get('origin')||'';res.set('Cache-Control','no-store');res.set('X-Content-Type-Options','nosniff');
   if(origin&&!allowedOrigin(origin))return res.status(403).json({error:'Origin not allowed'});
   if(origin){res.set('Access-Control-Allow-Origin',origin);res.set('Vary','Origin');}
@@ -48,6 +51,13 @@ exports.hub=onRequest({region:'us-central1',memory:'256MiB',timeoutSeconds:30,ma
         const next={...c,revision:revision+1,updatedAt:Date.now()};tx.set(configRef,next);
         tx.set(db.collection('hubAudit').doc(),{at:Date.now(),action:'Homepage published',detail:c.links.filter(l=>!l.hidden).length+' visible links',uid:token.uid});return next;
       });return result?res.json(result):res.status(409).json({error:'The homepage changed in another session. Reload before publishing.'});
+    }
+    if(path==='/admin/forms'&&req.method==='GET'){
+      const days=Math.min(90,Math.max(1,Number(req.query.days)||30));
+      const outcomes=await Promise.allSettled([nvmSummary(nvmToken.value()),duaSummary(req.get('authorization')||''),db.collection('hubVisits').where('startedAt','>=',Date.now()-days*86400000).orderBy('startedAt','desc').limit(10000).get()]);
+      const source=(i)=>outcomes[i].status==='fulfilled'?outcomes[i].value:{connected:false,error:outcomes[i].reason.message};
+      const visits=outcomes[2].status==='fulfilled'?outcomes[2].value:null;
+      return res.json({nvm:source(0),dua:source(1),guest:visits?{...guestSummary(visits.docs.map(d=>d.data())),capped:visits.size===10000}:{error:'Guest traffic is temporarily unavailable.'},days});
     }
     if(path==='/admin/referrals'&&req.method==='GET'){
       const [s,total]=await Promise.all([db.collection('submissions').orderBy('created_at','desc').limit(10000).get(),db.collection('submissions').count().get()]);

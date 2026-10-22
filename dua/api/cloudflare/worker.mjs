@@ -1,3 +1,4 @@
+import {hubSummary} from './hub-summary.mjs';
 const encoder = new TextEncoder();
 const CURRENT_TERMS_VERSION = 'DUA-NDA-2026-07-31-v2';
 const PRIOR_FULL_NDA_VERSION = 'DUA-NDA-2026-07-31-v1';
@@ -22,6 +23,9 @@ export default {
 
       await ensureSchema(env);
 
+      if (request.method === 'GET' && url.pathname === '/api/hub/summary') {
+        return hubSummary(request, env, headers);
+      }
       if (request.method === 'GET' && url.pathname === '/health') {
         return json({ status: 'ok', service: 'dua-nda-backend' }, 200, headers);
       }

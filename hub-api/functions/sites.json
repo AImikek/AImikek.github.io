@@ -124,5 +124,32 @@
       "https://www.liveworkmiami.com"
     ],
     "url": "https://www.liveworkmiami.com/"
+  },
+  {
+    "id": "guest",
+    "name": "Guest guide",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/guest"
+  },
+  {
+    "id": "guest-register",
+    "name": "Guest registration",
+    "origins": [
+      "https://mikek.ai",
+      "https://www.mikek.ai"
+    ],
+    "url": "https://mikek.ai/register"
+  },
+  {
+    "id": "nvm-sign",
+    "name": "NVM creator agreements",
+    "origins": [
+      "https://sign.nvmmgmt.co",
+      "https://nvm-agreement.netlify.app"
+    ],
+    "url": "https://sign.nvmmgmt.co/"
   }
 ]
