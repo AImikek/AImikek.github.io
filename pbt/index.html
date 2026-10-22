@@ -9299,6 +9299,21 @@ window._doSignOut = async function() {
   cfg=null; scores={};
   await signOut(auth);
 };
+
+// Owner-only summary for the central admin hub. Existing Firebase rules still authorize every read.
+if (new URLSearchParams(location.search).get('hub') === '1') {
+  async function sendHubSummary() {
+    if (window.parent === window) return;
+    if (!isAdmin()) { window.parent.postMessage({type:'mikek-pickleball-summary',error:'Sign in below with your Pickleball admin account.'},location.origin); return; }
+    try {
+      const paths=['directory','tournaments','feedback','courtSubmissions'];
+      const data=await Promise.all(paths.map(p=>get(ref(db,p))));
+      window.parent.postMessage({type:'mikek-pickleball-summary',players:data[0].numChildren(),tournaments:data[1].numChildren(),feedback:data[2].numChildren(),courtSubmissions:data[3].numChildren()},location.origin);
+    } catch(e) { window.parent.postMessage({type:'mikek-pickleball-summary',error:'Could not read Pickleball activity. Check the app login below.'},location.origin); }
+  }
+  window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='mikek-hub-summary')sendHubSummary();});
+  onAuthStateChanged(auth,()=>setTimeout(sendHubSummary,1000));
+}
 </script>
 
 <script>

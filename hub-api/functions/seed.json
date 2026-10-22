@@ -1,0 +1,150 @@
+{
+  "links": [
+    {
+      "id": "bio",
+      "title": "Meet Mike Krilivsky",
+      "description": "My story, ventures & what’s next.",
+      "header": "A LITTLE ABOUT ME",
+      "href": "/h/",
+      "logo": "",
+      "icon": "mk",
+      "badge": "",
+      "featured": true,
+      "hidden": false
+    },
+    {
+      "id": "pups",
+      "title": "Pups N Chill",
+      "description": "Miami’s #1 Health, Wellness, & Animal Advocacy Event!",
+      "header": "",
+      "href": "https://pupsnchill.com",
+      "logo": "/assets/home/pupsnchill.png?v=2",
+      "icon": "pnc",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "favorites",
+      "title": "My Favorites",
+      "description": "Places, products & services I love.",
+      "header": "",
+      "href": "/favorites/",
+      "logo": "",
+      "icon": "star",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "pickleball",
+      "title": "The Pickleball App",
+      "description": "Find your game. Run your tournament.",
+      "header": "",
+      "href": "/pbt/",
+      "logo": "/assets/home/pickleball-logo.png",
+      "icon": "pickleball",
+      "badge": "LET’S PLAY",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "tasks",
+      "title": "Tasks",
+      "description": "Your tasks, calendar & projects. In sync, wherever you go.",
+      "header": "",
+      "href": "/tasks/",
+      "logo": "/tasks-logo.png",
+      "icon": "image",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "booking",
+      "title": "Book time with me",
+      "description": "Learn how to build and scale your startup.",
+      "header": "",
+      "href": "https://intro.co/michaelkrilivsky",
+      "logo": "/assets/home/mike-headshot-centered.jpg",
+      "icon": "booking",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "guide",
+      "title": "Pickleball Quick-Start Guide",
+      "description": "From your first serve to your next obsession.",
+      "header": "",
+      "href": "/pbt/?p=guide",
+      "logo": "/assets/home/pickleball-logo.png",
+      "icon": "pickleball",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "pnc-instagram",
+      "title": "Pups N Chill on Instagram",
+      "description": "Good people. Happy pups. Follow the fun.",
+      "header": "",
+      "href": "https://www.instagram.com/pupsnchillmiami/",
+      "logo": "/assets/home/pupsnchill.png?v=2",
+      "icon": "pnc-ig",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "mlp",
+      "title": "Major League Pickleball Owner",
+      "description": "TX Ranchers. Big energy. Bigger dreams.",
+      "header": "",
+      "href": "https://www.instagram.com/rancherspickleball/?hl=en",
+      "logo": "/mlp-official.svg",
+      "icon": "mlp",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "equinox",
+      "title": "Equinox — Free $100 Day Pass",
+      "description": "Fill this out and try out US’s #1 Luxury gym!",
+      "header": "",
+      "href": "/favorites/#equinox",
+      "logo": "/equinox-logo.png",
+      "icon": "equinox",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "mercury",
+      "title": "Mercury - Best Banking System - get $150-$250",
+      "description": "3.5%, $5M FDIC, instant Credit Card/Debit Creation!",
+      "header": "",
+      "href": "/favorites/#mercury",
+      "logo": "https://www.google.com/s2/favicons?domain=mercury.com&sz=256",
+      "icon": "image",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "empower",
+      "title": "Empower - Less than Uber/Lyft - get $10!",
+      "description": "Plus the driver gets 100%!!!",
+      "header": "",
+      "href": "/favorites/#empower",
+      "logo": "https://www.google.com/s2/favicons?domain=driveempower.com&sz=256",
+      "icon": "image",
+      "badge": "",
+      "featured": false,
+      "hidden": false
+    }
+  ],
+  "followers": "Cumulative 1.5M+ followers",
+  "houseUrl": "https://housemanager-kappa.vercel.app"
+}
