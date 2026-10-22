@@ -2146,6 +2146,10 @@ async function bootApp() {
   if (_playerParam) {
     setTimeout(() => { try { openPlayerDetail(_playerParam); history.replaceState({}, '', window.location.pathname); } catch(e) {} }, 700);
   }
+  if (_pageParam === 'admin') {
+    window.openAdminDash();
+    return;
+  }
   if (_pageParam) {
     setTimeout(() => { try {
       if (_pageParam === 'courts') openCourts();
@@ -9308,7 +9312,7 @@ if (new URLSearchParams(location.search).get('hub') === '1') {
     try {
       const paths=['directory','tournaments','feedback','courtSubmissions'];
       const data=await Promise.all(paths.map(p=>get(ref(db,p))));
-      window.parent.postMessage({type:'mikek-pickleball-summary',players:data[0].numChildren(),tournaments:data[1].numChildren(),feedback:data[2].numChildren(),courtSubmissions:data[3].numChildren()},location.origin);
+      window.parent.postMessage({type:'mikek-pickleball-summary',players:data[0].size,tournaments:data[1].size,feedback:data[2].size,courtSubmissions:data[3].size},location.origin);
     } catch(e) { window.parent.postMessage({type:'mikek-pickleball-summary',error:'Could not read Pickleball activity. Check the app login below.'},location.origin); }
   }
   window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='mikek-hub-summary')sendHubSummary();});
