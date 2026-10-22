@@ -21,7 +21,14 @@
   const target=e.target instanceof Element?e.target:null;if(!target)return;
   const marked=target.closest('[data-analytics-id]');
   if(marked){track({id:marked.dataset.analyticsId,item:marked.dataset.analyticsItem,kind:marked.dataset.analyticsKind,label:marked.dataset.analyticsLabel});return;}
-  const a=target.closest('a');if(!a)return;
+  const a=target.closest('a');
+  if(!a){
+   const button=target.closest('button,[role="button"],input[type="submit"],input[type="button"]');
+   if(!button||site==='favorites'&&button.matches('.card'))return;
+   const taskActions={'tab-list':'List','tab-cal':'Calendar','tab-proj':'Projects',ava:'Account',fbBtn:'Feedback',aiBtn:'Assistant',gGoogle:'Google sign-in',gSubmit:'Sign in',updateNow:'Update app',installHow:'Install help'};
+   const label=site==='tasks'?taskActions[button.id]:null;
+   track({id:label?'tasks-'+slug(label):site+'-button',kind:'action',label:label||'Button interaction'});return;
+  }
   const custom=a.dataset.homeLink;if(custom){track({id:custom,item:custom,kind:'navigation',label:a.querySelector('.card-title')?.textContent||custom});return;}
   if(a.closest('.socials')){track({id:'social-'+slug(a.title),kind:'outbound',label:a.title});return;}
   if(a.classList.contains('pay-direct')){track({id:'pay',kind:'navigation',label:'Pay'});return;}
