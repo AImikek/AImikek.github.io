@@ -508,7 +508,6 @@
 <meta name="apple-mobile-web-app-title" content="PB Tourney">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
-<script defer src="https://mikek.ai/assets/analytics/track.js?v=20261022-network" data-site="pickleball" data-page="/pbt/"></script>
 </head>
 <body>
 
@@ -1519,20 +1518,20 @@ document.addEventListener('touchend',   _unlockAudio, true);
 </script>
 
 <nav id="topBar">
-  <button class="tab tab-settings" id="navSettings" data-analytics-id="pbt-navsettings" data-analytics-label="Menu" data-analytics-kind="navigation" onclick="openSettings()" style="font-size:22px;position:relative;">☰<span id="navChatDot" style="display:none;position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
-  <button class="topbar-title" id="topNewGame" data-analytics-id="pbt-topnewgame" data-analytics-label="New game" data-analytics-kind="navigation" onclick="openCreateChooser()" style="background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:99px;padding:8px 16px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 3px 12px rgba(255,45,120,0.35);">➕ New Game</button>
+  <button class="tab tab-settings" id="navSettings" onclick="openSettings()" style="font-size:22px;position:relative;">☰<span id="navChatDot" style="display:none;position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
+  <button class="topbar-title" id="topNewGame" onclick="openCreateChooser()" style="background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:99px;padding:8px 16px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 3px 12px rgba(255,45,120,0.35);">➕ New Game</button>
   <span style="display:flex;align-items:center;">
-    <button class="tab" id="tabNotifs" data-analytics-id="pbt-tabnotifs" data-analytics-label="Notifications" data-analytics-kind="navigation" onclick="openNotifs()" style="font-size:20px;position:relative;padding-right:6px;">❤️<span id="notifDot" style="display:none;position:absolute;top:2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
-    <button class="tab" id="tabLeaderboard" data-analytics-id="pbt-tableaderboard" data-analytics-label="Leaderboard" data-analytics-kind="navigation" onclick="openLeaderboard()" style="font-size:20px;">🏆</button>
+    <button class="tab" id="tabNotifs" onclick="openNotifs()" style="font-size:20px;position:relative;padding-right:6px;">❤️<span id="notifDot" style="display:none;position:absolute;top:2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
+    <button class="tab" id="tabLeaderboard" onclick="openLeaderboard()" style="font-size:20px;">🏆</button>
   </span>
 </nav>
 
 <div id="bottomBar">
-  <button class="bbtn" id="navChat" data-analytics-id="pbt-navchat" data-analytics-label="Chat" data-analytics-kind="navigation" onclick="openChat()"><span class="bicon-wrap"><span class="bicon">💬</span><span id="chatTabDot" style="display:none;position:absolute;top:-4px;right:-12px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Chat</span></button>
-  <button class="bbtn" id="navHome" data-analytics-id="pbt-navhome" data-analytics-label="Calendar" data-analytics-kind="navigation" onclick="openSessions()"><span class="bicon">📅</span><span class="blbl">Games</span></button>
-  <button class="bbtn" id="tabGames" data-analytics-id="pbt-tabgames" data-analytics-label="Games" data-analytics-kind="navigation" onclick="closeAllOverlaysAndShow('games')"><span class="bicon-wrap"><span class="bicon">🎮</span><span id="gamesBadge" style="display:none;position:absolute;top:-4px;right:-14px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Live</span></button>
-  <button class="bbtn" id="tabStats" data-analytics-id="pbt-tabstats" data-analytics-label="Stats" data-analytics-kind="navigation" onclick="closeAllOverlaysAndShow('standings')"><span class="bicon">📊</span><span class="blbl">Stats</span></button>
-  <button class="bbtn" id="navProfileBtn" data-analytics-id="pbt-navprofilebtn" data-analytics-label="Profile" data-analytics-kind="navigation" onclick="closeSettings();openProfile();"><span class="bicon">👤</span><span class="blbl">Profile</span></button>
+  <button class="bbtn" id="navChat" onclick="openChat()"><span class="bicon-wrap"><span class="bicon">💬</span><span id="chatTabDot" style="display:none;position:absolute;top:-4px;right:-12px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Chat</span></button>
+  <button class="bbtn" id="navHome" onclick="openSessions()"><span class="bicon">📅</span><span class="blbl">Games</span></button>
+  <button class="bbtn" id="tabGames" onclick="closeAllOverlaysAndShow('games')"><span class="bicon-wrap"><span class="bicon">🎮</span><span id="gamesBadge" style="display:none;position:absolute;top:-4px;right:-14px;background:var(--pink);color:white;font-size:9px;border-radius:99px;padding:1px 5px;font-family:'DM Sans',sans-serif;font-weight:700;"></span></span><span class="blbl">Live</span></button>
+  <button class="bbtn" id="tabStats" onclick="closeAllOverlaysAndShow('standings')"><span class="bicon">📊</span><span class="blbl">Stats</span></button>
+  <button class="bbtn" id="navProfileBtn" onclick="closeSettings();openProfile();"><span class="bicon">👤</span><span class="blbl">Profile</span></button>
 </div>
 
 <span id="tabSummary" style="display:none;"></span>
@@ -1812,10 +1811,15 @@ window.installApp = async function() {
   if (window._bip) {                       // Android / Chrome: real install prompt
     try { window._bip.prompt(); const r = await window._bip.userChoice; if (r && r.outcome === 'accepted') copiedToast('✓ Installed — check your home screen!'); window._bip = null; return; } catch (e) {}
   }
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  document.getElementById('pwaSteps').innerHTML = ios
-    ? '1️⃣ Tap the <b>Share</b> button <span style="color:var(--cyan);">⎋</span> at the bottom of Safari<br>2️⃣ Scroll down and tap <b>Add to Home Screen</b> <span style="color:var(--cyan);">➕</span><br>3️⃣ Tap <b>Add</b> — done!'
-    : '1️⃣ Open the browser menu <b>⋮</b><br>2️⃣ Tap <b>Add to Home screen</b> (or <b>Install app</b>)<br>3️⃣ Confirm — done!';
+  const ua = navigator.userAgent, ios = /iphone|ipad|ipod/i.test(ua);
+  const iosChrome = ios && /CriOS/.test(ua), samsung = /SamsungBrowser/i.test(ua), android = /Android/i.test(ua), firefox = /Firefox|FxiOS/i.test(ua);
+  document.getElementById('pwaSteps').innerHTML =
+    iosChrome ? '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Chrome on iPhone</div>1️⃣ Tap the <b>Share</b> icon <span style="color:var(--cyan);">⎋</span> at the top right (next to the address bar)<br>2️⃣ Tap <b>Add to Home Screen</b><br>3️⃣ Tap <b>Add</b> — done!<div style="font-size:11px;color:var(--muted);margin-top:6px;">Tip: it works best in Safari — open mikek.ai/pbt there if the option is missing.</div>'
+    : ios ? '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">iPhone · Safari</div>1️⃣ Tap the <b>Share</b> button <span style="color:var(--cyan);">⎋</span> at the bottom of Safari<br>2️⃣ Scroll down and tap <b>Add to Home Screen</b> <span style="color:var(--cyan);">➕</span><br>3️⃣ Tap <b>Add</b> — done!'
+    : samsung ? '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Samsung Internet</div>1️⃣ Tap the <b>menu</b> <span style="color:var(--cyan);">≡</span> at the bottom right<br>2️⃣ Tap <b>Add page to</b> → <b>Home screen</b><br>3️⃣ Tap <b>Add</b> — done!'
+    : android ? '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Android · Chrome</div>1️⃣ Tap the <b>⋮</b> menu at the top right<br>2️⃣ Tap <b>Add to Home screen</b> (or <b>Install app</b>)<br>3️⃣ Tap <b>Install</b> — done!<div style="font-size:11px;color:var(--muted);margin-top:6px;">Google Pixel and most Androids use Chrome. Samsung phones: use the Samsung Internet steps or open this page in Chrome.</div>'
+    : firefox ? '1️⃣ Open the browser menu <b>⋮</b><br>2️⃣ Tap <b>Install</b> or <b>Add to Home screen</b><br>3️⃣ Confirm — done!'
+    : '1️⃣ Open the browser menu <b>⋮</b> (or the install icon in the address bar)<br>2️⃣ Tap <b>Install PB Tourney</b> / <b>Add to Home screen</b><br>3️⃣ Confirm — done!';
   document.getElementById('pwaInstallSheet').classList.remove('hidden');
 };
 async function presenceBeat(uid) {
@@ -2146,10 +2150,6 @@ async function bootApp() {
   }
   if (_playerParam) {
     setTimeout(() => { try { openPlayerDetail(_playerParam); history.replaceState({}, '', window.location.pathname); } catch(e) {} }, 700);
-  }
-  if (_pageParam === 'admin') {
-    window.openAdminDash();
-    return;
   }
   if (_pageParam) {
     setTimeout(() => { try {
@@ -5341,10 +5341,46 @@ window.newContactsForAdmin = async function() {
   return Object.entries(dir).filter(([u, d]) => d && !d.unclaimed && d.name && u.length > 20 && u !== currentUser.uid && (d.phone || d.email) && !synced[u])
     .sort((a, b) => (b[1].joinedAt || 0) - (a[1].joinedAt || 0)).map(([u, d]) => ({ uid: u, name: d.name, phone: d.phone || '', joinedAt: d.joinedAt || 0 }));
 };
+// Opens a picker: newest members pre-ticked (joined since the last sync, or the last 14 days the first time);
+// "Add selected" sends them to your phone, "I already have the rest" marks everything else as done so the
+// card only ever shows real newcomers from then on.
 window.syncNewContacts = async function() {
   if (!isAdmin()) return;
   const pend = await window.newContactsForAdmin();
   if (!pend.length) { copiedToast('✓ Everyone is already in your Contacts'); return; }
+  let lastSync = 0; try { const cs = (await get(ref(db, 'users/' + currentUser.uid + '/contactSync'))).val() || {}; lastSync = Math.max(0, ...Object.values(cs).map(Number)); } catch (e) {}
+  const since = lastSync || (Date.now() - 14 * 86400000);
+  window._csPend = pend;
+  const el = document.getElementById('gmList'); const sh = document.getElementById('groupMembersSheet');
+  document.getElementById('gmTitle').textContent = '📇 Add members to Contacts';
+  document.getElementById('gmSub').textContent = pend.length + ' not marked as saved · newest first · tick who to add';
+  el.innerHTML = '<div style="display:flex;gap:6px;margin-bottom:8px;"><button onclick="csTickAll(true)" class="rtbtn" style="flex:1;">All</button><button onclick="csTickAll(false)" class="rtbtn" style="flex:1;">None</button><button onclick="csTickRecent()" class="rtbtn active" style="flex:1;">Recent</button></div>'
+    + pend.map(p => '<label style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;cursor:pointer;"><input type="checkbox" class="csPick" value="' + p.uid + '" data-joined="' + (p.joinedAt || 0) + '"' + ((p.joinedAt || 0) >= since ? ' checked' : '') + ' style="width:20px;height:20px;accent-color:var(--aqua);"><span style="flex:1;font-weight:700;color:var(--white);font-size:13.5px;">' + escInfo(p.name) + '</span><span style="font-size:10.5px;color:var(--muted);font-weight:600;">' + (p.joinedAt ? new Date(p.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '') + '</span></label>').join('')
+    + '<button onclick="csAddSelected()" style="display:block;width:100%;margin-top:10px;padding:13px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Add selected to Contacts</button>'
+    + '<button onclick="csMarkRestSaved()" style="display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">I already have the unticked ones</button>'
+    + '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:8px;line-height:1.5;">Marking people as saved only affects this list — nothing is removed from your phone. iPhone adds the ticked ones as one card with "Add All".</div>';
+  sh.classList.remove('hidden');
+};
+window.csTickAll = function(on) { document.querySelectorAll('.csPick').forEach(c => c.checked = on); };
+window.csTickRecent = function() { const cut = Date.now() - 14 * 86400000; document.querySelectorAll('.csPick').forEach(c => c.checked = Number(c.getAttribute('data-joined') || 0) >= cut); };
+window.csMarkRestSaved = async function() {
+  const un = [...document.querySelectorAll('.csPick')].filter(c => !c.checked).map(c => c.value);
+  if (!un.length) { copiedToast('Nothing unticked'); return; }
+  if (!confirm('Mark ' + un.length + ' member' + (un.length === 1 ? '' : 's') + ' as already in your Contacts? They won\'t be offered again.')) return;
+  const upd = {}; un.forEach(u => { upd[u] = Date.now(); });
+  try { await update(ref(db, 'users/' + currentUser.uid + '/contactSync'), upd); } catch (e) {}
+  document.getElementById('groupMembersSheet').classList.add('hidden');
+  copiedToast('✓ ' + un.length + ' marked as saved'); try { window.renderContactsCard('adContactsCard'); window.renderContactsCard('adminContactsCard'); } catch (e) {}
+};
+window.csAddSelected = async function() {
+  const picked = [...document.querySelectorAll('.csPick')].filter(c => c.checked).map(c => c.value);
+  if (!picked.length) { alert('Tick at least one person.'); return; }
+  document.getElementById('groupMembersSheet').classList.add('hidden');
+  const pend = (window._csPend || []).filter(p => picked.includes(p.uid));
+  await window._pushContacts(pend);
+};
+window._pushContacts = async function(pend) {
+  if (!pend.length) return;
   if (aiUrl === null) { try { aiUrl = (await get(ref(db, 'config/assistantUrl'))).val() || ''; } catch (e) { aiUrl = ''; } }
   const batch = pend.slice(0, 20);
   const cards = []; for (const p of batch) { try { cards.push((await window.buildVCard(p.uid, { noPhoto: true })).text); } catch (e) {} }
@@ -9304,21 +9340,6 @@ window._doSignOut = async function() {
   cfg=null; scores={};
   await signOut(auth);
 };
-
-// Owner-only summary for the central admin hub. Existing Firebase rules still authorize every read.
-if (new URLSearchParams(location.search).get('hub') === '1') {
-  async function sendHubSummary() {
-    if (window.parent === window) return;
-    if (!isAdmin()) { window.parent.postMessage({type:'mikek-pickleball-summary',error:'Sign in below with your Pickleball admin account.'},location.origin); return; }
-    try {
-      const paths=['directory','tournaments','feedback','courtSubmissions'];
-      const data=await Promise.all(paths.map(p=>get(ref(db,p))));
-      window.parent.postMessage({type:'mikek-pickleball-summary',players:data[0].size,tournaments:data[1].size,feedback:data[2].size,courtSubmissions:data[3].size},location.origin);
-    } catch(e) { window.parent.postMessage({type:'mikek-pickleball-summary',error:'Could not read Pickleball activity. Check the app login below.'},location.origin); }
-  }
-  window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.type==='mikek-hub-summary')sendHubSummary();});
-  onAuthStateChanged(auth,()=>setTimeout(sendHubSummary,1000));
-}
 </script>
 
 <script>
@@ -9576,6 +9597,10 @@ function h2hNextGame()       { if(window.h2hNextGame) window.h2hNextGame(); }
 function showSinglesMulti()  { if(window.showSinglesMulti) window.showSinglesMulti(); }
 function syncNewContacts()   { if(window.syncNewContacts) window.syncNewContacts(); }
 function resetContactSync()  { if(window.resetContactSync) window.resetContactSync(); }
+function csTickAll(o)        { if(window.csTickAll) window.csTickAll(o); }
+function csTickRecent()      { if(window.csTickRecent) window.csTickRecent(); }
+function csMarkRestSaved()   { if(window.csMarkRestSaved) window.csMarkRestSaved(); }
+function csAddSelected()     { if(window.csAddSelected) window.csAddSelected(); }
 function pfSuggest(i)        { if(window.pfSuggest) window.pfSuggest(i); }
 function pfHideSuggest(i)    { if(window.pfHideSuggest) window.pfHideSuggest(i); }
 function pfPick(e)           { if(window.pfPick) window.pfPick(e); }
@@ -9632,7 +9657,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-21.5';
+window.BUILD_TAG = 'v2026-10-21.6';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
