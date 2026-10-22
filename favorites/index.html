@@ -119,6 +119,18 @@
   }
   #search::placeholder{color:var(--muted-2)}
   #search:focus{border-color:var(--line-strong);box-shadow:0 0 0 4px var(--accent-soft)}
+  #search{padding-right:52px}
+  #clearSearch{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
+    background:rgba(255,255,255,.09);color:var(--muted);font-size:1.15rem;line-height:1;
+    display:none;align-items:center;justify-content:center}
+  #clearSearch:hover{background:rgba(255,255,255,.16);color:var(--text)}
+  body.searching #clearSearch{display:flex}
+  /* mobile: hide the count, and hide chips while typing so results are clear */
+  @media(max-width:700px){
+    .count{display:none}
+    body.searching .filterrow{display:none}
+  }
 
   .filterrow{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
   .chips{display:flex;gap:10px;flex-wrap:wrap}
@@ -329,6 +341,7 @@
   <div class="searchbar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
     <input id="search" type="text" placeholder="Search favorites…" autocomplete="off" aria-label="Search favorites" />
+    <button id="clearSearch" type="button" aria-label="Clear search">&#215;</button>
   </div>
   <div class="filterrow">
     <div class="chips" id="chips"></div>
@@ -707,8 +720,7 @@ function cardHTML(f){
     : f.logo
     ? `<div class="thumb logowrap"><img src="${logoURL(f)}" alt="${f.name} logo" loading="lazy"${f.logoCss?` style="${f.logoCss}"`:""}${f.logoFallback?` data-fb="${favicon(f.logoFallback)}"`:""} onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb}else{this.style.display='none'}"/>`
     : `<div class="thumb mono" style="background:${tile(f.name)}"><span>${f.name[0]}</span>`;
-  return `
-    <article class="card" tabindex="0" data-slug="${slug(f.name)}" role="button" aria-label="${f.name}">
+  const inner = `
       ${thumb}
         <span class="ptag"><span class="pdot"></span>${pathwayLabel[f.action]||""}</span>
       </div>
@@ -718,7 +730,12 @@ function cardHTML(f){
         <p class="card-blurb">${f.blurb}</p>
         ${f.perk?`<span class="perk"><b>Mike's Perk</b> ${f.perk}</span>`:""}
         <span class="card-cta">${ctaLabel(f)} <span class="arr">→</span></span>
-      </div>
+      </div>`;
+  // link cards are REAL anchors — the whole card is natively clickable, no JS involved
+  return f.action==="link"
+    ? `<a class="card" href="${f.url}" target="_blank" rel="noopener noreferrer" data-slug="${slug(f.name)}" aria-label="${f.name}">${inner}
+    </a>`
+    : `<article class="card" tabindex="0" data-slug="${slug(f.name)}" role="button" aria-label="${f.name}">${inner}
     </article>`;
 }
 
@@ -729,9 +746,10 @@ function render(){
     grid.innerHTML = `<div class="empty"><b>Nothing here yet.</b><br>Try a different search or category.</div>`;
     return;
   }
-  grid.innerHTML = list.map((f,i)=>cardHTML(f).replace('<article class="card"',`<article class="card" style="animation-delay:${Math.min(i*40,320)}ms"`)).join("");
+  grid.innerHTML = list.map((f,i)=>cardHTML(f).replace('class="card"',`class="card" style="animation-delay:${Math.min(i*40,320)}ms"`)).join("");
   grid.querySelectorAll(".card").forEach(card=>{
     const f = FAVORITES.find(x=>slug(x.name)===card.dataset.slug);
+    if(!f || f.action==="link") return;   // anchors handle themselves
     const go = ()=>open(f);
     card.onclick = go;
     card.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
@@ -739,7 +757,16 @@ function render(){
 }
 
 // ---- search ----
-searchEl.oninput = e=>{ query=e.target.value.trim().toLowerCase(); render(); };
+searchEl.oninput = e=>{
+  query = e.target.value.trim().toLowerCase();
+  document.body.classList.toggle("searching", query.length>0);
+  render();
+};
+document.getElementById("clearSearch").onclick = ()=>{
+  searchEl.value=""; query="";
+  document.body.classList.remove("searching");
+  render(); searchEl.focus();
+};
 
 /* ---------------- OVERLAY ---------------- */
 const overlay = $("#overlay"), sheet = $("#sheet");
@@ -753,11 +780,7 @@ function heroBlock(f){
 
 function open(f){
   lastFocus = document.activeElement;
-  if(f.action==="link"){
-    const w = window.open(f.url,"_blank","noopener");
-    if(!w) window.location.href = f.url;   // iOS popup blocker fallback
-    return;
-  }
+  if(f.action==="link") return; // link cards are native anchors
   if(f.action==="form"){ sheet.innerHTML = formView(f); wireForm(f); }
   else { sheet.innerHTML = pageView(f); }
   overlay.classList.add("open");
