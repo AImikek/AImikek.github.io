@@ -203,7 +203,7 @@
     opacity:0;transition:opacity .3s}
   .overlay.open .scrim{opacity:1}
   .sheet{
-    position:relative;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;
+    position:relative;width:100%;max-width:640px;max-height:92vh;max-height:86dvh;overflow-y:auto;
     background:var(--bg-2);border:1px solid var(--line-strong);
     border-radius:22px 22px 0 0;
     transform:translateY(28px);opacity:0;
@@ -753,7 +753,11 @@ function heroBlock(f){
 
 function open(f){
   lastFocus = document.activeElement;
-  if(f.action==="link"){ window.open(f.url,"_blank","noopener"); return; }
+  if(f.action==="link"){
+    const w = window.open(f.url,"_blank","noopener");
+    if(!w) window.location.href = f.url;   // iOS popup blocker fallback
+    return;
+  }
   if(f.action==="form"){ sheet.innerHTML = formView(f); wireForm(f); }
   else { sheet.innerHTML = pageView(f); }
   overlay.classList.add("open");
