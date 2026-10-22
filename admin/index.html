@@ -54,6 +54,17 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%238b8fa3' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 14px center}
 
+  /* segmented filter */
+  .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:4px;gap:4px}
+  .seg button{font-family:'Space Grotesk';font-weight:600;font-size:.85rem;color:var(--muted);
+    background:transparent;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;transition:all .15s}
+  .seg button:hover{color:var(--text)}
+  .seg button.on{background:var(--accent);color:var(--accent-ink)}
+  .del{background:transparent;border:1px solid var(--line);color:var(--muted-2);border-radius:8px;
+    width:32px;height:32px;cursor:pointer;font-size:.95rem;line-height:1;transition:all .15s}
+  .del:hover{border-color:#ff8b8b;color:#ff8b8b}
+  .del:disabled{opacity:.4;cursor:default}
+
   /* table */
   .tablewrap{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:60px;background:var(--card)}
   .scroll{overflow-x:auto}
@@ -113,8 +124,6 @@
       <div class="h-left">
         <span class="brand">mikek<span class="dot">.</span>ai</span>
         <span class="h-title">Referral inbox · <span class="total" id="total">0</span></span>
-        <a href="/a/" class="btn subtle" style="text-decoration:none">Central admin →</a>
-        <a href="/tasks/admin.html" class="btn subtle" style="text-decoration:none">Tasks admin →</a>
       </div>
       <div class="h-actions">
         <button class="btn subtle" id="refresh">Refresh</button>
@@ -130,7 +139,12 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="q" type="text" placeholder="Search name, email, phone, location…" autocomplete="off"/>
       </div>
-      <select class="filter" id="bizFilter"><option value="">All businesses</option></select>
+      <div class="seg" id="seg">
+        <button data-seg="" class="on">All</button>
+        <button data-seg="signups">Signups</button>
+        <button data-seg="partners">Partnerships</button>
+      </div>
+      <select class="filter" id="bizFilter"><option value="">All</option></select>
     </div>
 
     <div class="tablewrap">
@@ -147,10 +161,9 @@
 
 <script src="/config.js"></script>
 <script>
-/* =====================================================================
-   CONFIG — paste your Supabase function URL (ends in /functions/v1/referrals)
-   ===================================================================== */
-const FUNCTION_URL = (window.MIKEK_ENDPOINT || ""); // set in /config.js
+/* The backend URL comes from /config.js (your Firebase function). */
+const FUNCTION_URL = (window.MIKEK_ENDPOINT || "");
+const PARTNER_BIZ = "Partner Application";
 
 /* ---- columns ---- */
 const COLS = [
@@ -165,6 +178,7 @@ const COLS = [
 
 const $ = s => document.querySelector(s);
 let ADMIN_KEY = "";       // held in memory only
+let segment = "";         // "" all · "signups" · "partners"
 let DATA = [];            // all rows
 let sortKey = "created_at", sortDir = "desc";
 
@@ -184,6 +198,13 @@ $("#refresh").onclick = ()=>load(false);
 $("#export").onclick = exportCSV;
 $("#q").addEventListener("input", render);
 $("#bizFilter").addEventListener("change", render);
+document.querySelectorAll("#seg button").forEach(b=>{
+  b.onclick = ()=>{
+    segment = b.dataset.seg;
+    document.querySelectorAll("#seg button").forEach(x=>x.classList.toggle("on", x===b));
+    render();
+  };
+});
 
 /* ---- fetch ---- */
 async function load(firstTime){
@@ -217,7 +238,7 @@ function buildHead(){
   $("#headrow").innerHTML = COLS.map(c=>{
     const ind = c.key===sortKey ? `<span class="ind">${sortDir==="asc"?"▲":"▼"}</span>` : "";
     return `<th data-key="${c.key}">${c.label}${ind}</th>`;
-  }).join("");
+  }).join("") + `<th style="cursor:default"></th>`;
   $("#headrow").querySelectorAll("th").forEach(th=>{
     th.onclick = ()=>{
       const k = th.dataset.key;
@@ -231,7 +252,7 @@ function buildHead(){
 function buildBizFilter(){
   const cur = $("#bizFilter").value;
   const all = Array.from(new Set(DATA.map(r=>r.business).filter(Boolean))).sort();
-  $("#bizFilter").innerHTML = `<option value="">All businesses</option>` + all.map(b=>`<option${b===cur?" selected":""}>${b}</option>`).join("");
+  $("#bizFilter").innerHTML = `<option value="">All</option>` + all.map(b=>`<option${b===cur?" selected":""}>${b}</option>`).join("");
 }
 
 /* ---- render ---- */
@@ -242,6 +263,8 @@ function filtered(){
   const q = $("#q").value.trim().toLowerCase();
   const biz = $("#bizFilter").value;
   let rows = DATA.filter(r=>{
+    if(segment==="partners" && r.business!==PARTNER_BIZ) return false;
+    if(segment==="signups" && r.business===PARTNER_BIZ) return false;
     if(biz && r.business!==biz) return false;
     if(!q) return true;
     return [r.business,r.name,r.email,r.phone,r.location,detailsText(r.details)].join(" ").toLowerCase().includes(q);
@@ -270,7 +293,25 @@ function render(){
       <td>${r.phone?`<a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>`:""}</td>
       <td>${esc(r.location)}</td>
       <td class="details">${detailsRows(r.details)}</td>
+      <td><button class="del" data-id="${esc(r.id)}" title="Delete entry">&#215;</button></td>
     </tr>`).join("");
+  $("#rows").querySelectorAll(".del").forEach(b=>{
+    b.onclick = async ()=>{
+      if(!confirm("Delete this entry permanently? This can't be undone.")) return;
+      b.disabled = true;
+      try{
+        const r = await fetch(FUNCTION_URL + "?id=" + encodeURIComponent(b.dataset.id), {
+          method:"DELETE", headers:{ "x-admin-key": ADMIN_KEY }
+        });
+        if(!r.ok) throw new Error("HTTP " + r.status);
+        DATA = DATA.filter(x=>x.id !== b.dataset.id);
+        buildBizFilter(); render();
+      }catch(err){
+        alert("Couldn't delete: " + err.message + " (the backend may need the latest deploy)");
+        b.disabled = false;
+      }
+    };
+  });
 }
 function detailsRows(d){ if(!d||typeof d!=="object"||!Object.keys(d).length) return "—"; return Object.entries(d).map(([k,v])=>`<span>${esc(k)}: ${esc(v)}</span>`).join(""); }
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
