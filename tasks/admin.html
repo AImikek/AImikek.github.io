@@ -131,7 +131,8 @@ import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 const ADMINS = ['michaelkrilivsky@gmail.com','m@mikek.ai'];
 const cfg=window.TASKS_FIREBASE_CONFIG;
-const app=initializeApp(cfg), db=getDatabase(app), auth=getAuth(app);
+// A separately named app so the admin page keeps its own sign-in session and never signs the Tasks app out.
+const app=initializeApp(cfg,'tasks-admin'), db=getDatabase(app), auth=getAuth(app);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=ms=>{ if(!ms) return '—'; const d=new Date(ms); const diff=Date.now()-ms; if(diff<3600e3) return Math.max(1,Math.round(diff/60e3))+'m ago'; if(diff<86400e3) return Math.round(diff/3600e3)+'h ago'; if(diff<7*86400e3) return Math.round(diff/86400e3)+'d ago'; return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:d.getFullYear()!==new Date().getFullYear()?'numeric':undefined}); };

@@ -543,7 +543,8 @@ window.__fb={
   signin:(e,p)=>signInWithEmailAndPassword(auth,e,p),
   signup:(e,p)=>createUserWithEmailAndPassword(auth,e,p),
   reset:e=>sendPasswordResetEmail(auth,e),
-  signOut:()=>signOut(auth)
+  signOut:()=>signOut(auth),
+  current:()=>auth.currentUser
 };
 try{ await getRedirectResult(auth); }catch(e){ console.warn(e); }
 document.dispatchEvent(new Event('fb-ready'));
@@ -1398,7 +1399,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-22.0053';
+const APP_VERSION='v2026-10-22.2133';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
@@ -1453,7 +1454,11 @@ try{ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').
 window.addEventListener('online',()=>{ status.textContent='back online · syncing'; flushQueue(); });
 window.addEventListener('offline',()=>{ status.textContent='offline · changes saved on device'; });
 let detach=null;
+let firstAuth=true;
 FB.onUser(async u=>{
+  // Firebase can report "no user" for a moment on a cold start before it finishes restoring the session.
+  if(!u && firstAuth && lastUid){ firstAuth=false; await new Promise(r=>setTimeout(r,1500)); if(FB.current()) return; }
+  firstAuth=false;
   if(detach){ detach(); detach=null; }
   tasks=new Map(); projects=new Map(); sel=null; curProj=null;
   user=u; me=u?u.uid:null;
