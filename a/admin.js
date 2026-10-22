@@ -23,7 +23,7 @@ onAuthStateChanged(auth,async u=>{
 });
 async function loadState(){state=await api('/admin/state');dirty=false;$('#publish').textContent='Publish changes';$('#followers').value=state.followers;$('#house-open').href=state.houseUrl||'https://housemanager-kappa.vercel.app';$('#homepage-status').textContent=state.links.filter(l=>!l.hidden).length+' live links';renderLinks();}
 function showTab(){let name=location.hash.slice(1);if(!sections[name])name='overview';document.querySelectorAll('.panel').forEach(n=>n.hidden=n.id!==name);document.querySelectorAll('[data-tab]').forEach(a=>a.classList.toggle('active',a.dataset.tab===name));$('#section-label').textContent=sections[name][0];$('#page-title').textContent=sections[name][1];
- if(name==='pickleball'&&user&&!pickleLoaded){const f=el('iframe');f.title='Pickleball admin dashboard';f.src='/pbt/?p=admin&hub=1';f.addEventListener('load',()=>f.contentWindow.postMessage({type:'mikek-hub-summary'},location.origin));$('#pickle-frame').append(f);pickleLoaded=true;}}
+ if(name==='pickleball'&&user&&!pickleLoaded){const f=el('iframe');f.title='Pickleball admin dashboard';f.src='/pbt/?p=admin&hub=1&v=20261022b';f.addEventListener('load',()=>f.contentWindow.postMessage({type:'mikek-hub-summary'},location.origin));$('#pickle-frame').append(f);pickleLoaded=true;}}
 addEventListener('hashchange',showTab);addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 function safeImage(src){return typeof src==='string'&&(/^(https:\/\/|\/(?!\/))/.test(src)||/^data:image\/(png|jpeg|webp);base64,/.test(src));}
 function image(src){if(!safeImage(src))return el('span','app-icon','☆');const n=el('img');n.src=src;n.alt='';return n;}
