@@ -315,7 +315,6 @@
   .card-blurb{font-size:.84rem}
   .card-cta{font-size:.82rem}
 </style>
-<script defer src="https://mikek.ai/assets/analytics/track.js?v=20261022-network" data-site="favorites" data-page="/favorites/"></script>
 </head>
 <body>
 
@@ -439,6 +438,7 @@ const FAVORITES = [
     image: "",
     tags: ["gym","training","wellness","membership"],
     action: "form",
+    pageUrl: "/freeequinoxpass",
     form: {
       route: "Equinox",                 // matches the routing key in functions/index.js
       cta: "Request an intro",
@@ -526,6 +526,7 @@ const FAVORITES = [
     image: "",
     tags: ["hair","haircut","barber","barbershop","grooming","zach"],
     action: "form",
+    pageUrl: "/thespotbarbershop",
     form: {
       route: "The Spot",                // matches ROUTING in functions/index.js
       cta: "Get in with Zach",
@@ -629,6 +630,7 @@ const FAVORITES = [
     image: "",
     tags: ["instagram","unban","banned","disabled","recovery","account","social media"],
     action: "form",
+    pageUrl: "/instagramrecovery",
     form: {
       route: "Instagram Unban",         // matches ROUTING in functions/index.js
       cta: "Start my unban request",
@@ -734,7 +736,7 @@ function cardHTML(f){
       </div>`;
   // link cards are REAL anchors — the whole card is natively clickable, no JS involved
   return f.action==="link"
-    ? `<a class="card" href="${f.url}" target="_blank" rel="noopener noreferrer" data-slug="${slug(f.name)}" data-analytics-id="favorite-out-${slug(f.name)}" data-analytics-item="${slug(f.name)}" data-analytics-kind="outbound" data-analytics-label="${f.name}" aria-label="${f.name}">${inner}
+    ? `<a class="card" href="${f.url}" target="_blank" rel="noopener noreferrer" data-slug="${slug(f.name)}" aria-label="${f.name}">${inner}
     </a>`
     : `<article class="card" tabindex="0" data-slug="${slug(f.name)}" role="button" aria-label="${f.name}">${inner}
     </article>`;
@@ -780,9 +782,6 @@ function heroBlock(f){
 }
 
 function open(f){
-  const event={id:"favorite-open-"+slug(f.name),item:slug(f.name),kind:"open",label:f.name};
-  if(window.MikeKAnalytics)window.MikeKAnalytics.track(event);else(window.__mkAnalyticsQueue??=[]).push(event);
-  sheet.dataset.analyticsItem=slug(f.name);sheet.dataset.analyticsLabel=f.name;
   lastFocus = document.activeElement;
   if(f.action==="link") return; // link cards are native anchors
   if(f.action==="form"){ sheet.innerHTML = formView(f); wireForm(f); }
@@ -844,6 +843,7 @@ function formView(f){
         ${fields}
         <button type="submit" class="btn">${f.form.cta||"Send"}</button>
         <p class="form-note">By sending this, you agree Mike can connect you with ${f.name}.</p>
+        ${f.pageUrl?`<p class="form-note" style="text-align:center;margin-top:4px"><a href="${f.pageUrl}" style="color:var(--accent)">Prefer a full page? Open this offer's page →</a></p>`:""}
       </form>
     </div>`;
 }
