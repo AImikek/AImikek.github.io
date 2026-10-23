@@ -256,6 +256,7 @@ input,textarea{font:inherit;color:inherit}
 .mic{position:absolute;right:8px;bottom:10px;width:34px;height:34px;border-radius:50%;background:var(--surface);border:1px solid var(--line);font-size:16px;line-height:1;cursor:pointer}
 .mic.on{background:var(--accent);border-color:var(--accent);animation:pulse 1s infinite}
 .mic[hidden]{display:none}
+.qa .qmic{position:static;width:32px;height:32px;font-size:15px;flex:none}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(94,234,212,.5)}50%{box-shadow:0 0 0 8px rgba(94,234,212,0)}}
 /* projected repeating occurrences */
 .ev.ghost{opacity:.55;border-style:dashed;cursor:pointer}
@@ -483,6 +484,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
 
   <form class="qa" id="qa">
     <input id="qi" placeholder="Add a task… try “call broker tomorrow” or “invoice friday”" autocomplete="off" enterkeyhint="done">
+    <button type="button" class="mic qmic" id="qMic" title="Speak a task" aria-label="Speak a task">🎤</button>
     <button type="button" class="chip ghost" id="qdate" title="Pick a date"><span id="qdateTxt">no date</span></button>
     <button class="go" type="submit">Add</button>
   </form>
@@ -1322,26 +1324,29 @@ $('#fbBtn').addEventListener('click',openFeedback);
 
 /* ---------- assistant: plain-English commands over your tasks ---------- */
 const aiModal=$('#aiModal'), aiText=$('#aiText'), aiOut=$('#aiOut'), aiGo=$('#aiGo');
-// ----- voice: Web Speech API (Chrome, Edge, Safari). Button hides itself where unsupported.
-(function(){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition; const mic=$('#aiMic');
-  if(!SR||!mic){ if(mic) mic.hidden=true; return; }
+// ----- voice: Web Speech API (Chrome, Edge, Safari). Buttons hide themselves where unsupported.
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function attachVoice(mic, field, opts){
+  if(!mic) return; if(!SR){ mic.hidden=true; return; }
   let rec=null, base='';
   const stop=()=>{ if(rec){ try{rec.stop();}catch(e){} } };
   mic.addEventListener('click',()=>{
     if(rec){ stop(); return; }
-    rec=new SR(); rec.lang=navigator.language||'en-US'; rec.interimResults=true; rec.continuous=true;
-    base=aiText.value.trim(); mic.classList.add('on'); mic.textContent='■'; aiOut.hidden=true; aiPlan=null; aiGo.textContent='Preview';
+    rec=new SR(); rec.lang=navigator.language||'en-US'; rec.interimResults=true; rec.continuous=!!opts.continuous;
+    base=field.value.trim(); mic.classList.add('on'); mic.textContent='■'; if(opts.onStart) opts.onStart();
     let finalTxt='';
     rec.onresult=e=>{ let interim=''; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) finalTxt+=r[0].transcript+' '; else interim+=r[0].transcript; }
-      aiText.value=(base?base+' ':'')+(finalTxt+interim).trim(); };
+      field.value=(base?base+' ':'')+(finalTxt+interim).trim(); if(opts.onText) opts.onText(); };
     rec.onerror=e=>{ if(e.error==='not-allowed') toast('Microphone blocked. Allow it in the address bar and try again.'); else if(e.error!=='aborted'&&e.error!=='no-speech') toast('Could not hear you ('+e.error+')'); };
-    rec.onend=()=>{ rec=null; mic.classList.remove('on'); mic.textContent='🎤'; aiText.focus(); };
+    rec.onend=()=>{ rec=null; mic.classList.remove('on'); mic.textContent='🎤'; if(opts.onEnd) opts.onEnd(); else field.focus(); };
     try{ rec.start(); }catch(e){ rec=null; mic.classList.remove('on'); mic.textContent='🎤'; }
   });
-  aiModal.addEventListener('click',e=>{ if(e.target===aiModal) stop(); });
-  $('#aiCancel').addEventListener('click',stop);
-})();
+  return stop;
+}
+const stopAiVoice=attachVoice($('#aiMic'), aiText, {continuous:true, onStart:()=>{ aiOut.hidden=true; aiPlan=null; aiGo.textContent='Preview'; }});
+if(stopAiVoice){ aiModal.addEventListener('click',e=>{ if(e.target===aiModal) stopAiVoice(); }); $('#aiCancel').addEventListener('click',stopAiVoice); }
+// quick add: one phrase = one task; it's added the moment you stop talking ("call broker tomorrow" still picks up the date)
+attachVoice($('#qMic'), qi, {continuous:false, onText:()=>{ qi.dispatchEvent(new Event('input',{bubbles:true})); }, onEnd:()=>{ if(qi.value.trim()){ qi.form.requestSubmit(); } else qi.focus(); }});
 let aiPlan=null;
 const AI_EXAMPLES=['shift all unfinished tasks this week forward one day','recurring task: Medicine every Tuesday and Friday','move overdue tasks to today','push today\'s unfinished tasks to tomorrow','spread today\'s tasks across this week','mark everything today as done','delete completed tasks','what\'s left today'];
 AI_EXAMPLES.forEach(x=>{ const b=el('button',null,x); b.addEventListener('click',()=>{ aiText.value=x; runAi(); }); $('#aiChips').appendChild(b); });
@@ -1492,7 +1497,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-23.1250';
+const APP_VERSION='v2026-10-23.1254';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
