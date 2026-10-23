@@ -5,6 +5,7 @@ const {getFirestore}=require('firebase-admin/firestore');
 const {createHash}=require('node:crypto');
 const {owner,cleanConfig,cleanVisit,mergeVisit,summarize}=require('./model');
 const seed=require('./seed.json');
+const {createEventService}=require('./pnc-events');
 const {defineSecret}=require('firebase-functions/params');
 const nvmToken=defineSecret('NVM_AIRTABLE_READ_TOKEN');
 const {nvmSummary,duaSummary,guestSummary}=require('./forms');
@@ -12,6 +13,7 @@ const {guestRecords}=require('./guest-records');
 const {sites,eventContext,enrichClicks,networkReport,referralReport}=require('./ecosystem');
 const app=initializeApp();const tasks=initializeApp({projectId:'mikek-tasks'},'tasks-auth');
 const db=getFirestore(app);const configRef=db.doc('adminHub/config');
+const eventService=createEventService(db);
 const allowedOrigin=o=>sites.some(s=>s.origins.includes(o))||/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o);
 exports.hub=onRequest({region:'us-central1',memory:'256MiB',secrets:[nvmToken],timeoutSeconds:30,maxInstances:3,minInstances:0},async(req,res)=>{
   const origin=req.get('origin')||'';res.set('Cache-Control','no-store');res.set('X-Content-Type-Options','nosniff');
@@ -40,6 +42,10 @@ exports.hub=onRequest({region:'us-central1',memory:'256MiB',secrets:[nvmToken],t
         tx.set(rate,{n:(r.data()?.n||0)+1,expiresAt:new Date(Date.now()+7200000)});tx.set(visit,{...next,expiresAt:new Date(Date.now()+90*86400000)});return true;
       });return res.status(accepted?204:429).end();
     }
+    if(path.startsWith('/integrations/pnc/')&&req.method==='POST'){
+      if(Buffer.byteLength(JSON.stringify(req.body||{}))>200000)return res.status(413).json({error:'Payload too large'});
+      const result=await eventService.receive(path.split('/').pop(),req.get('authorization'),req.body);return res.status(result.status).json(result);
+    }
     if(!path.startsWith('/admin/'))return res.status(404).json({error:'Not found'});
     let token;try{token=await getAuth(tasks).verifyIdToken((req.get('authorization')||'').replace(/^Bearer /,''));}catch{return res.status(401).json({error:'Sign in with your Tasks admin account.'});}
     if(!owner(token))return res.status(403).json({error:'This account is not an owner.'});
@@ -53,6 +59,8 @@ exports.hub=onRequest({region:'us-central1',memory:'256MiB',secrets:[nvmToken],t
         tx.set(db.collection('hubAudit').doc(),{at:Date.now(),action:'Homepage published',detail:c.links.filter(l=>!l.hidden).length+' visible links',uid:token.uid});return next;
       });return result?res.json(result):res.status(409).json({error:'The homepage changed in another session. Reload before publishing.'});
     }
+    if(path==='/admin/pnc-events'&&req.method==='GET')return res.json(await eventService.report(Math.min(90,Math.max(1,Number(req.query.days)||30))));
+    if(path==='/admin/pnc-events/connect'&&req.method==='POST'){try{return res.json(await eventService.connect(req.body.source,token.uid));}catch(e){return res.status(409).json({error:e.message});}}
     if(path==='/admin/pnc'&&req.method==='GET'){
       const days=Math.min(90,Math.max(1,Number(req.query.days)||30));
       try{const upstream=await fetch('https://pupsnchill.com/api/hub/summary?days='+days,{headers:{Authorization:req.get('authorization')||''},signal:AbortSignal.timeout(18000)});if(!upstream.ok)throw Error();const data=await upstream.json();if(!Number.isFinite(data.website?.total))throw Error();return res.json({...data,connected:true,days});}catch{return res.json({connected:false,error:'Pups N Chill records are temporarily unavailable. Traffic remains available in Analytics.'});}
