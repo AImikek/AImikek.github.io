@@ -250,6 +250,13 @@ input,textarea{font:inherit;color:inherit}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
 .meta .rep{color:var(--accent)}
 .subnote{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
+/* voice input */
+.aiin{position:relative}
+.aiin textarea{padding-right:48px}
+.mic{position:absolute;right:8px;bottom:10px;width:34px;height:34px;border-radius:50%;background:var(--surface);border:1px solid var(--line);font-size:16px;line-height:1;cursor:pointer}
+.mic.on{background:var(--accent);border-color:var(--accent);animation:pulse 1s infinite}
+.mic[hidden]{display:none}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(94,234,212,.5)}50%{box-shadow:0 0 0 8px rgba(94,234,212,0)}}
 /* projected repeating occurrences */
 .ev.ghost{opacity:.55;border-style:dashed;cursor:pointer}
 .ev.ghost .evmore{color:var(--accent);opacity:1}
@@ -523,7 +530,7 @@ try{ const t=localStorage.getItem('theme')||'dark'; if(t!=='system') document.do
   <h2>Assistant</h2>
   <p>Tell it what to do with your tasks, in plain English.</p>
   <div class="chips" id="aiChips"></div>
-  <textarea id="aiText" rows="2" placeholder="e.g. shift all unfinished tasks this week forward one day"></textarea>
+  <div class="aiin"><textarea id="aiText" rows="2" placeholder="e.g. shift all unfinished tasks this week forward one day"></textarea><button class="mic" id="aiMic" type="button" title="Speak instead of typing" aria-label="Speak">🎤</button></div>
   <div class="aiout" id="aiOut" hidden></div>
   <div class="mrow"><button class="gbtn alt" id="aiCancel">Close</button><button class="gbtn" id="aiGo">Preview</button></div>
 </div></div>
@@ -1315,6 +1322,26 @@ $('#fbBtn').addEventListener('click',openFeedback);
 
 /* ---------- assistant: plain-English commands over your tasks ---------- */
 const aiModal=$('#aiModal'), aiText=$('#aiText'), aiOut=$('#aiOut'), aiGo=$('#aiGo');
+// ----- voice: Web Speech API (Chrome, Edge, Safari). Button hides itself where unsupported.
+(function(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition; const mic=$('#aiMic');
+  if(!SR||!mic){ if(mic) mic.hidden=true; return; }
+  let rec=null, base='';
+  const stop=()=>{ if(rec){ try{rec.stop();}catch(e){} } };
+  mic.addEventListener('click',()=>{
+    if(rec){ stop(); return; }
+    rec=new SR(); rec.lang=navigator.language||'en-US'; rec.interimResults=true; rec.continuous=true;
+    base=aiText.value.trim(); mic.classList.add('on'); mic.textContent='■'; aiOut.hidden=true; aiPlan=null; aiGo.textContent='Preview';
+    let finalTxt='';
+    rec.onresult=e=>{ let interim=''; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) finalTxt+=r[0].transcript+' '; else interim+=r[0].transcript; }
+      aiText.value=(base?base+' ':'')+(finalTxt+interim).trim(); };
+    rec.onerror=e=>{ if(e.error==='not-allowed') toast('Microphone blocked. Allow it in the address bar and try again.'); else if(e.error!=='aborted'&&e.error!=='no-speech') toast('Could not hear you ('+e.error+')'); };
+    rec.onend=()=>{ rec=null; mic.classList.remove('on'); mic.textContent='🎤'; aiText.focus(); };
+    try{ rec.start(); }catch(e){ rec=null; mic.classList.remove('on'); mic.textContent='🎤'; }
+  });
+  aiModal.addEventListener('click',e=>{ if(e.target===aiModal) stop(); });
+  $('#aiCancel').addEventListener('click',stop);
+})();
 let aiPlan=null;
 const AI_EXAMPLES=['shift all unfinished tasks this week forward one day','recurring task: Medicine every Tuesday and Friday','move overdue tasks to today','push today\'s unfinished tasks to tomorrow','spread today\'s tasks across this week','mark everything today as done','delete completed tasks','what\'s left today'];
 AI_EXAMPLES.forEach(x=>{ const b=el('button',null,x); b.addEventListener('click',()=>{ aiText.value=x; runAi(); }); $('#aiChips').appendChild(b); });
@@ -1382,14 +1409,20 @@ function interpret(raw){
   const label=(wantsDone?'completed ':'unfinished ')+'task'+(items.length===1?'':'s')+' '+scopeName;
 
   // ----- recurring: "set recurring task: Medicine every Tuesday and Friday"
-  if(/\b(re-?o?c+ur+ing|repeat|repeats|repeating|every)\b/.test(q) && /\b(sun|mon|tue|wed|thu|fri|sat)/.test(q) && !/\b(shift|move|push|spread)\b/.test(q)){
-    const dayWords=[...q.matchAll(/\b(sun|mon|tue|wed|thu|fri|sat)[a-z]*/g)].map(m=>DOW.indexOf(m[1])); const dow=[...new Set(dayWords)].sort();
+  const recurWords=/\b(re-?o?c+ur+ing|repeat|repeats|repeating|perma?n[ae]nt|standing|weekly)\b/.test(q) || /\b(every|each)\s+((sun|mon|tue|wed|thu|fri|sat)[a-z]*\s*(,|and|&)?\s*)+/.test(q);
+  const startsWithMove=/^\s*(shift|move|push|bump|postpone|spread|delay|reschedule)\b/.test(q);
+  if(recurWords && /\b(sun|mon|tue|wed|thu|fri|sat)/.test(q) && !startsWithMove){
+    // only read weekdays from the part that describes the schedule (before any "do not move…" clause)
+    const sched=q.split(/\b(do not|don't|dont|never|and not|but not|so that|so it|this is|it's|its)\b/)[0];
+    const dayWords=[...sched.matchAll(/\b(sun|mon|tue|wed|thu|fri|sat)[a-z]*/g)].map(m=>DOW.indexOf(m[1])); const dow=[...new Set(dayWords)].sort();
+    if(!dow.length) return {error:'Which days should it repeat on? Try: "recurring task: Medicine every Tuesday and Friday".'};
     let title=raw;
     if(/[:\-–]/.test(title)) title=title.split(/[:\-–]/).slice(1).join(':');   // "set recurring task: Medicine ..." → "Medicine ..."
-    title=title.replace(/^\s*(set|add|create|make)\s+(a\s+)?(re-?o?c+ur+ing|repeating|repeat)\s*(task)?\s*/i,'').replace(/\b(for\s+)?(every|each|on|re-?o?c+ur+ing|repeats?|repeating)\b.*$/i,'').replace(/[,.;]\s*$/,'').trim();
+    title=title.replace(/^\s*(please\s+)?(set|add|create|make|schedule)\s+(a\s+)?(re-?o?c+ur+ing|repeating|repeat)?\s*(task|taks|tsak)?s?\s*/i,'').replace(/\b(for\s+)?(every|each|on|re-?o?c+ur+ing|repeats?|repeating|weekly)\b.*$/i,'').replace(/\b(a|an|the|as|is)\s*$/i,'').replace(/[,.;]\s*$/,'').trim();
+    const dayList=dow.map(d=>DOWL[d]); const dayStr=dayList.length>1?dayList.slice(0,-1).join(', ')+' and '+dayList[dayList.length-1]:dayList[0];
     if(!title) return {error:'What should the recurring task be called? Try: "recurring task: Medicine every Tuesday and Friday".'};
     const first=dow.includes(parseYmd(t).getDay())?t:nextOccurrence(dow,t);
-    return {summary:'Create “'+title+'”, repeating every '+dow.map(d=>DOWL[d]).join(' and ')+'. First one '+fmtDue(first)+'. It stays on its day: shift and move commands skip it.',lines:[],changes:[{create:{title,due:first,repeat:{dow},pinned:true}}],done:'Recurring task added'};
+    return {summary:'Create “'+title+'”, repeating every '+dayStr+'. First one '+fmtDue(first)+'. It stays on its day: shift and move commands skip it.',lines:[],changes:[{create:{title,due:first,repeat:{dow},pinned:true}}],done:'Recurring task added'};
   }
   // ----- questions
   if(/^(what|which|how many|show|list)\b/.test(q)){
@@ -1459,7 +1492,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-23.1212';
+const APP_VERSION='v2026-10-23.1250';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
