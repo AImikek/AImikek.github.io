@@ -3882,7 +3882,7 @@ window.renderContactsCard = function(hostId) {
     c.innerHTML = pend.length
       ? '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><div><div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;">📇 ' + pend.length + ' member' + (pend.length === 1 ? '' : 's') + ' not marked as saved yet</div><div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px;">' + escInfo(pend.slice(0, 4).map(p => p.name).join(', ')) + (pend.length > 4 ? ' +' + (pend.length - 4) + ' more' : '') + '</div></div>'
         + '<button onclick="syncNewContacts()" style="flex-shrink:0;padding:10px 12px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Choose &amp; add</button></div>'
-      : '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:11.5px;color:var(--muted);font-weight:700;">📇 Every member is in your Contacts</div><span onclick="resetContactSync()" style="font-size:10.5px;color:var(--muted);cursor:pointer;text-decoration:underline;">reset</span></div>';
+      : '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:11.5px;color:var(--muted);font-weight:700;">📇 Every member is in your Contacts</div><span><span onclick="syncNewContacts(true)" style="font-size:10.5px;color:var(--cyan);cursor:pointer;text-decoration:underline;">recently marked</span> · <span onclick="resetContactSync()" style="font-size:10.5px;color:var(--muted);cursor:pointer;text-decoration:underline;">reset</span></span></div>';
     c.style.display = 'block';
   }).catch(() => {});
 };
@@ -5344,27 +5344,54 @@ window.newContactsForAdmin = async function() {
 // Opens a picker: newest members pre-ticked (joined since the last sync, or the last 14 days the first time);
 // "Add selected" sends them to your phone, "I already have the rest" marks everything else as done so the
 // card only ever shows real newcomers from then on.
-window.syncNewContacts = async function() {
+window._csRecent = async function(days) {
+  // members marked as saved in the last N days (default 3) — so a mis-tap can be undone
+  const cs = (await get(ref(db, 'users/' + currentUser.uid + '/contactSync'))).val() || {};
+  const cut = Date.now() - (days || 3) * 86400000;
+  const dir = (await get(ref(db, 'directory'))).val() || {};
+  return Object.entries(cs).filter(([u, t]) => Number(t) >= cut && dir[u] && dir[u].name).sort((a, b) => Number(b[1]) - Number(a[1]))
+    .map(([u, t]) => ({ uid: u, name: dir[u].name, phone: dir[u].phone || '', joinedAt: dir[u].joinedAt || 0, markedAt: Number(t) }));
+};
+window.syncNewContacts = async function(showRecent) {
   if (!isAdmin()) return;
   const pend = await window.newContactsForAdmin();
-  if (!pend.length) { copiedToast('✓ Everyone is already in your Contacts'); return; }
-  let lastSync = 0; try { const cs = (await get(ref(db, 'users/' + currentUser.uid + '/contactSync'))).val() || {}; lastSync = Math.max(0, ...Object.values(cs).map(Number)); } catch (e) {}
-  const since = lastSync || (Date.now() - 14 * 86400000);
-  window._csPend = pend;
+  let recent = []; try { recent = await window._csRecent(3); } catch (e) {}
+  if (!pend.length && !recent.length) { copiedToast('✓ Everyone is already in your Contacts'); return; }
+  if (!pend.length && !showRecent) showRecent = true;
+  const since = Date.now() - 14 * 86400000;   // pre-tick = joined in the last two weeks (same as the "Recent" button)
+  window._csPend = pend.concat(recent.filter(r => !pend.some(p => p.uid === r.uid)));
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const row = (p, extra, checked) => '<label style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;cursor:pointer;"><input type="checkbox" class="csPick" value="' + p.uid + '" data-joined="' + (p.joinedAt || 0) + '"' + (checked ? ' checked' : '') + ' style="width:20px;height:20px;accent-color:var(--aqua);"><span style="flex:1;font-weight:700;color:var(--white);font-size:13.5px;">' + escInfo(p.name) + '</span><span style="font-size:10.5px;color:var(--muted);font-weight:600;">' + extra + '</span></label>';
   const el = document.getElementById('gmList'); const sh = document.getElementById('groupMembersSheet');
   document.getElementById('gmTitle').textContent = '📇 Add members to Contacts';
   document.getElementById('gmSub').textContent = pend.length + ' not marked as saved · newest first · tick who to add';
   el.innerHTML = '<div style="display:flex;gap:6px;margin-bottom:8px;"><button onclick="csTickAll(true)" class="rtbtn" style="flex:1;">All</button><button onclick="csTickAll(false)" class="rtbtn" style="flex:1;">None</button><button onclick="csTickRecent()" class="rtbtn active" style="flex:1;">Recent</button></div>'
-    + pend.map(p => '<label style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;cursor:pointer;"><input type="checkbox" class="csPick" value="' + p.uid + '" data-joined="' + (p.joinedAt || 0) + '"' + ((p.joinedAt || 0) >= since ? ' checked' : '') + ' style="width:20px;height:20px;accent-color:var(--aqua);"><span style="flex:1;font-weight:700;color:var(--white);font-size:13.5px;">' + escInfo(p.name) + '</span><span style="font-size:10.5px;color:var(--muted);font-weight:600;">' + (p.joinedAt ? new Date(p.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '') + '</span></label>').join('')
+    + pend.map(p => row(p, p.joinedAt ? new Date(p.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '', (p.joinedAt || 0) >= since)).join('')
+    + (!pend.length ? '<div style="font-size:12px;color:var(--muted);font-weight:600;padding:8px 2px;">Nobody is waiting — everyone is marked as saved.</div>' : '')
+    + (recent.length ? (showRecent
+        ? '<div id="csRecentBox" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);"><div style="font-family:\'Russo One\',sans-serif;font-size:10.5px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin-bottom:6px;">↩ Marked as saved in the last 3 days</div><div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;line-height:1.5;">If one of these never actually made it into your phone, tick them and add again — or unmark them all to put them back on the list.</div>'
+          + recent.map(r => row(r, 'marked ' + new Date(r.markedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }), false)).join('')
+          + '<button onclick="csUnmarkRecent()" class="rtbtn" style="width:100%;margin-top:4px;">Unmark all ' + recent.length + ' (offer them again)</button></div>'
+        : '<div id="csRecentBox" style="margin-top:10px;font-size:11px;color:var(--muted);font-weight:600;">' + recent.length + ' marked as saved in the last 3 days · <span onclick="syncNewContacts(true)" style="color:var(--cyan);cursor:pointer;text-decoration:underline;">show / undo</span></div>') : '')
     + '<button onclick="csAddSelected()" style="display:block;width:100%;margin-top:10px;padding:13px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Add selected to Contacts</button>'
-    + '<button onclick="csMarkRestSaved()" style="display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">I already have the unticked ones</button>'
-    + '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:8px;line-height:1.5;">Marking people as saved only affects this list — nothing is removed from your phone. iPhone adds the ticked ones as one card with "Add All".</div>';
+    + (pend.length ? '<button onclick="csMarkRestSaved()" style="display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">I already have the unticked ones</button>' : '')
+    + '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:8px;line-height:1.5;">Marking people as saved only affects this list — nothing is removed from your phone.' + (ios ? ' iPhone opens one contact card at a time: tap Save on each, then "Saved, next".' : ' Your phone imports the ticked ones as one .vcf file.') + '</div>';
   sh.classList.remove('hidden');
 };
 window.csTickAll = function(on) { document.querySelectorAll('.csPick').forEach(c => c.checked = on); };
-window.csTickRecent = function() { const cut = Date.now() - 14 * 86400000; document.querySelectorAll('.csPick').forEach(c => c.checked = Number(c.getAttribute('data-joined') || 0) >= cut); };
+window.csTickRecent = function() { const cut = Date.now() - 14 * 86400000; document.querySelectorAll('.csPick').forEach(c => c.checked = Number(c.getAttribute('data-joined') || 0) >= cut && !c.closest('#csRecentBox')); };
+window.csUnmarkRecent = async function() {
+  let recent = []; try { recent = await window._csRecent(3); } catch (e) {}
+  if (!recent.length) return;
+  if (!confirm('Put ' + recent.length + ' member' + (recent.length === 1 ? '' : 's') + ' back on the "not saved yet" list?\n\n' + recent.slice(0, 10).map(r => '• ' + r.name).join('\n') + (recent.length > 10 ? '\n…' : ''))) return;
+  const upd = {}; recent.forEach(r => { upd[r.uid] = null; });
+  try { await update(ref(db, 'users/' + currentUser.uid + '/contactSync'), upd); } catch (e) {}
+  copiedToast('↩ ' + recent.length + ' back on the list');
+  try { window.renderContactsCard('adContactsCard'); window.renderContactsCard('adminContactsCard'); } catch (e) {}
+  window.syncNewContacts();
+};
 window.csMarkRestSaved = async function() {
-  const un = [...document.querySelectorAll('.csPick')].filter(c => !c.checked).map(c => c.value);
+  const un = [...document.querySelectorAll('.csPick')].filter(c => !c.checked && !c.closest('#csRecentBox')).map(c => c.value);
   if (!un.length) { copiedToast('Nothing unticked'); return; }
   if (!confirm('Mark ' + un.length + ' member' + (un.length === 1 ? '' : 's') + ' as already in your Contacts? They won\'t be offered again.')) return;
   const upd = {}; un.forEach(u => { upd[u] = Date.now(); });
@@ -5375,33 +5402,102 @@ window.csMarkRestSaved = async function() {
 window.csAddSelected = async function() {
   const picked = [...document.querySelectorAll('.csPick')].filter(c => c.checked).map(c => c.value);
   if (!picked.length) { alert('Tick at least one person.'); return; }
-  document.getElementById('groupMembersSheet').classList.add('hidden');
   const pend = (window._csPend || []).filter(p => picked.includes(p.uid));
   await window._pushContacts(pend);
+};
+// Builds the https .vcf link for one member (the worker serves it as text/vcard so iPhone shows "Create New Contact").
+window._vcardUrl = async function(uid) {
+  if (aiUrl === null) { try { aiUrl = (await get(ref(db, 'config/assistantUrl'))).val() || ''; } catch (e) { aiUrl = ''; } }
+  if (!aiUrl) return '';
+  const v = await window.buildVCard(uid);
+  let txt = v.text; if (txt.length > 6000) txt = txt.replace(/^PHOTO[^\n]*\n?/m, '');
+  const b64 = btoa(unescape(encodeURIComponent(txt))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return aiUrl.replace(/\/+$/, '') + '/vcard/' + encodeURIComponent(v.name.replace(/[^\w ]+/g, '').trim().replace(/\s+/g, '-') + '.vcf') + '?d=' + b64;
 };
 window._pushContacts = async function(pend) {
   if (!pend.length) return;
   if (aiUrl === null) { try { aiUrl = (await get(ref(db, 'config/assistantUrl'))).val() || ''; } catch (e) { aiUrl = ''; } }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (ios && aiUrl) {
+    // iPhone/Safari only previews the FIRST contact in a multi-contact .vcf, so we go one card at a time.
+    // Nobody is marked as saved until you tap "Saved, next" for them.
+    window._csQ = { items: pend.slice(), i: 0, opened: false, urls: {}, saved: 0 };
+    window.csQueueRender();
+    return;
+  }
+  document.getElementById('groupMembersSheet').classList.add('hidden');
   const batch = pend.slice(0, 20);
   const cards = []; for (const p of batch) { try { cards.push((await window.buildVCard(p.uid, { noPhoto: true })).text); } catch (e) {} }
   const txt = cards.join('\r\n');
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if (!confirm('Add ' + batch.length + ' member' + (batch.length === 1 ? '' : 's') + ' to your phone\'s Contacts?' + (pend.length > batch.length ? '\n(' + (pend.length - batch.length) + ' more after this batch — tap again.)' : '') + '\n\n' + batch.slice(0, 8).map(p => '• ' + p.name).join('\n') + (batch.length > 8 ? '\n…' : ''))) return;
-  if (ios && aiUrl) {
-    const b64 = btoa(unescape(encodeURIComponent(txt))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    const vurl = aiUrl.replace(/\/+$/, '') + '/vcard/PB-Tourney-members.vcf?d=' + b64;
-    const w2 = window.open(vurl, '_blank'); if (!w2) window.location.href = vurl;
-  } else {
-    const file = new File([txt], 'PB-Tourney-members.vcf', { type: 'text/vcard' });
-    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) { try { await navigator.share({ files: [file], title: 'PB Tourney members' }); } catch (e) {} }
-    else { const url = URL.createObjectURL(file); const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); }
-  }
-  // mark as synced (tap "Add All" on the card; if you cancel there, use "Reset" on the panel to offer them again)
+  const file = new File([txt], 'PB-Tourney-members.vcf', { type: 'text/vcard' });
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) { try { await navigator.share({ files: [file], title: 'PB Tourney members' }); } catch (e) {} }
+  else { const url = URL.createObjectURL(file); const a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); }
   const upd = {}; batch.forEach(p => { upd[p.uid] = Date.now(); });
   try { await update(ref(db, 'users/' + currentUser.uid + '/contactSync'), upd); } catch (e) {}
-  copiedToast('Tap "Add All ' + batch.length + ' Contacts" on the card');
+  copiedToast('Import the file when your phone asks');
   setTimeout(() => { try { window.renderAdminIssues(); } catch (e) {} }, 500);
 };
+// One-at-a-time queue (iPhone): Open card → save it in Contacts → come back → "Saved, next" (marks + opens the next one)
+window.csQueueRender = function() {
+  const q = window._csQ; if (!q) return;
+  const el = document.getElementById('gmList'); const sh = document.getElementById('groupMembersSheet');
+  if (q.i >= q.items.length) {
+    sh.classList.add('hidden'); window._csQ = null;
+    copiedToast('✓ Done — ' + (q.saved || 0) + ' added to Contacts');
+    try { window.renderContactsCard('adContactsCard'); window.renderContactsCard('adminContactsCard'); window.renderAdminIssues(); } catch (e) {}
+    return;
+  }
+  const cur = q.items[q.i], next = q.items[q.i + 1];
+  const ready = !!q.urls[cur.uid];
+  if (q.urls[cur.uid] === undefined) window.csQueuePrep(q.i);
+  if (next && q.urls[next.uid] === undefined) window.csQueuePrep(q.i + 1);
+  document.getElementById('gmTitle').textContent = '📇 Adding to Contacts';
+  document.getElementById('gmSub').textContent = (q.i + 1) + ' of ' + q.items.length + (next ? ' · next: ' + next.name : ' · last one');
+  const btn = (label, fn, primary) => '<button onclick="' + fn + '" style="display:block;width:100%;margin-top:8px;padding:13px;' + (primary ? 'background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;' : 'background:transparent;border:1px solid var(--border);color:var(--muted);') + 'border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">' + label + '</button>';
+  el.innerHTML = '<div style="padding:14px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);text-align:center;"><div style="font-family:\'Russo One\',sans-serif;font-size:18px;color:var(--white);">' + escInfo(cur.name) + '</div>' + (cur.phone ? '<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:4px;">' + escInfo(cur.phone) + '</div>' : '') + '</div>'
+    + (q.opened
+        ? '<div style="font-size:11.5px;color:var(--muted);font-weight:600;margin:10px 2px 2px;line-height:1.5;">Did the contact card open and get saved? If it didn\'t appear, tap "Open again".</div>'
+          + btn(next ? '✓ Saved, next: ' + escInfo(next.name) : '✓ Saved, done', 'csQueueDone()', true)
+          + btn('Open again', 'csQueueOpen()', false)
+          + btn('Skip ' + escInfo(cur.name.split(' ')[0]) + ' (not saved)', 'csQueueSkip()', false)
+        : '<div style="font-size:11.5px;color:var(--muted);font-weight:600;margin:10px 2px 2px;line-height:1.5;">Tap below — the iPhone contact card opens. Tap <b>Create New Contact</b>, then <b>Done</b>, then come back here.</div>'
+          + (ready ? btn('Open ' + escInfo(cur.name.split(' ')[0]) + '\'s card', 'csQueueOpen()', true) : (q.urls[cur.uid] === null ? btn('Retry building the card', 'csQueueOpen()', true) : btn('Preparing card…', '', false)))
+          + btn('Skip (not saved)', 'csQueueSkip()', false))
+    + (q.items.length - q.i - 1 > 0 ? '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:12px;">Still to do: ' + escInfo(q.items.slice(q.i + 1).map(p => p.name).join(', ')) + '</div>' : '')
+    + btn('Stop for now', 'csQueueStop()', false);
+  sh.classList.remove('hidden');
+};
+// Card URLs are built ahead of time so every window.open happens inside the tap itself (iOS blocks opens after an await).
+window.csQueuePrep = async function(i) {
+  const q = window._csQ; if (!q || i >= q.items.length) return;
+  const it = q.items[i]; if (q.urls[it.uid] !== undefined) return;
+  q.urls[it.uid] = '';   // in flight
+  let u = ''; try { u = await window._vcardUrl(it.uid); } catch (e) {}
+  if (window._csQ !== q) return;
+  q.urls[it.uid] = u || null;
+  if (i === q.i) window.csQueueRender();
+};
+window.csQueueOpen = function() {
+  const q = window._csQ; if (!q || q.i >= q.items.length) return;
+  const cur = q.items[q.i]; const u = q.urls[cur.uid];
+  if (!u) { if (u === null) { delete q.urls[cur.uid]; } window.csQueuePrep(q.i); window.csQueueRender(); return; }
+  let w2 = null; try { w2 = window.open(u, '_blank'); } catch (e) {}
+  if (!w2) { try { window.location.href = u; } catch (e) {} }
+  q.opened = true;
+  window.csQueueRender();
+};
+window.csQueueDone = function() {
+  const q = window._csQ; if (!q || q.i >= q.items.length) return;
+  const cur = q.items[q.i];
+  const upd = {}; upd[cur.uid] = Date.now();
+  try { update(ref(db, 'users/' + currentUser.uid + '/contactSync'), upd).catch(() => {}); } catch (e) {}
+  q.saved = (q.saved || 0) + 1; q.i++; q.opened = false;
+  if (q.i < q.items.length && q.urls[q.items[q.i].uid]) window.csQueueOpen();   // same tap opens the next card
+  else window.csQueueRender();
+};
+window.csQueueSkip = function() { const q = window._csQ; if (!q) return; q.i++; q.opened = false; window.csQueueRender(); };
+window.csQueueStop = function() { const q = window._csQ; window._csQ = null; document.getElementById('groupMembersSheet').classList.add('hidden'); if (q && q.saved) copiedToast('✓ ' + q.saved + ' added · the rest stay on the list'); try { window.renderContactsCard('adContactsCard'); window.renderContactsCard('adminContactsCard'); } catch (e) {} };
 window.resetContactSync = async function() { if (!isAdmin()) return; if (!confirm('Offer every member again next time? (Nothing is removed from your phone.)')) return; try { await set(ref(db, 'users/' + currentUser.uid + '/contactSync'), null); } catch (e) {} window.renderAdminIssues(); };
 window.addToContacts = async function(uid) {
   if (!isAdmin()) return;
@@ -9595,12 +9691,17 @@ function scPricePreview()    { if(window.scPricePreview) window.scPricePreview()
 function startCheckout(s)    { if(window.startCheckout) window.startCheckout(s); }
 function h2hNextGame()       { if(window.h2hNextGame) window.h2hNextGame(); }
 function showSinglesMulti()  { if(window.showSinglesMulti) window.showSinglesMulti(); }
-function syncNewContacts()   { if(window.syncNewContacts) window.syncNewContacts(); }
+function syncNewContacts(r)  { if(window.syncNewContacts) window.syncNewContacts(r); }
 function resetContactSync()  { if(window.resetContactSync) window.resetContactSync(); }
 function csTickAll(o)        { if(window.csTickAll) window.csTickAll(o); }
 function csTickRecent()      { if(window.csTickRecent) window.csTickRecent(); }
 function csMarkRestSaved()   { if(window.csMarkRestSaved) window.csMarkRestSaved(); }
 function csAddSelected()     { if(window.csAddSelected) window.csAddSelected(); }
+function csUnmarkRecent()    { if(window.csUnmarkRecent) window.csUnmarkRecent(); }
+function csQueueOpen()       { if(window.csQueueOpen) window.csQueueOpen(); }
+function csQueueDone()       { if(window.csQueueDone) window.csQueueDone(); }
+function csQueueSkip()       { if(window.csQueueSkip) window.csQueueSkip(); }
+function csQueueStop()       { if(window.csQueueStop) window.csQueueStop(); }
 function pfSuggest(i)        { if(window.pfSuggest) window.pfSuggest(i); }
 function pfHideSuggest(i)    { if(window.pfHideSuggest) window.pfHideSuggest(i); }
 function pfPick(e)           { if(window.pfPick) window.pfPick(e); }
@@ -9657,7 +9758,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-22.1';
+window.BUILD_TAG = 'v2026-10-23.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
