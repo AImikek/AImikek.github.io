@@ -250,6 +250,7 @@ input,textarea{font:inherit;color:inherit}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
 .meta .rep{color:var(--accent)}
 .subnote{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
+.gatenote{margin:10px 0 0;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
 /* help */
 .mcard.help{max-width:620px;gap:10px}
 .helphead{display:flex;align-items:center;justify-content:space-between}
@@ -526,6 +527,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
     <div class="gerr" id="gErr"></div>
     <button class="glink" id="gToggle">New here? Create an account</button>
     <button class="glink" id="gForgot">Forgot password</button>
+  <p class="gatenote" id="gateNote" hidden></p>
   </div>
 </div>
 <script>
@@ -1277,7 +1279,7 @@ ava.addEventListener('click',()=>{
   const impL=el('label',null,'⬆ Import backup'); const impI=el('input'); impI.type='file'; impI.accept='application/json,.json'; impI.addEventListener('change',()=>{ closeMenu(); importBackup(impI.files[0]); }); impL.appendChild(impI); menu.appendChild(impL);
   menu.appendChild(el('div','sep'));
   menu.appendChild(el('small',null,APP_VERSION));
-  const out=el('button',null,'Sign out'); out.addEventListener('click',()=>{ closeMenu(); FB.signOut(); }); menu.appendChild(out);
+  const out=el('button',null,'Sign out'); out.addEventListener('click',()=>{ closeMenu(); try{localStorage.removeItem('signoutLog');}catch(e){} user=null; FB.signOut(); }); menu.appendChild(out);
   menu.hidden=false;
   const r=ava.getBoundingClientRect(); menu.style.top=(r.bottom+6)+'px'; menu.style.right=Math.max(8,window.innerWidth-r.right)+'px'; menu.style.left='auto';
 });
@@ -1619,7 +1621,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-23.1337';
+const APP_VERSION='v2026-10-23.1706';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
@@ -1677,12 +1679,14 @@ let detach=null;
 let firstAuth=true;
 FB.onUser(async u=>{
   // Firebase can report "no user" for a moment on a cold start before it finishes restoring the session.
-  if(!u && firstAuth && lastUid){ firstAuth=false; await new Promise(r=>setTimeout(r,1500)); if(FB.current()) return; }
+  if(!u && firstAuth && lastUid){ firstAuth=false; for(let i=0;i<12;i++){ await new Promise(r=>setTimeout(r,500)); if(FB.current()) return; } LS('signoutLog','cold-start:'+new Date().toISOString()); }
+  else if(!u && user){ LS('signoutLog','session-ended:'+new Date().toISOString()); }
   firstAuth=false;
   if(detach){ detach(); detach=null; }
   tasks=new Map(); projects=new Map(); sel=null; curProj=null;
   user=u; me=u?u.uid:null;
-  if(!u){ try{ localStorage.removeItem('lastUid'); localStorage.removeItem('lastInitial'); }catch(e){} me=null; tasks=new Map(); projects=new Map(); gate.hidden=false; $('#fbBtn').hidden=true; $('#aiBtn').hidden=true; ava.textContent='?'; render(); return; }
+  if(!u){ try{ localStorage.removeItem('lastUid'); localStorage.removeItem('lastInitial'); }catch(e){} me=null;
+    try{ const lg=LS('signoutLog'); const n=$('#gateNote'); if(lg&&n){ const [why,when]=lg.split(/:(.+)/); n.textContent=(why==='session-ended'?'Your session ended':'Could not restore your session')+' at '+new Date(when).toLocaleString()+'. Sign in again and it will remember you.'; n.hidden=false; } }catch(e){} tasks=new Map(); projects=new Map(); gate.hidden=false; $('#fbBtn').hidden=true; $('#aiBtn').hidden=true; ava.textContent='?'; render(); return; }
   LS('lastUid',u.uid); LS('lastInitial',(u.displayName||u.email||'?').trim()[0].toUpperCase());
   gate.hidden=true; $('#fbBtn').hidden=false; $('#aiBtn').hidden=false;
   ava.innerHTML=''; if(u.photoURL){ const im=el('img'); im.src=u.photoURL; im.alt=''; im.referrerPolicy='no-referrer'; ava.appendChild(im); } else ava.textContent=(u.displayName||u.email||'?').trim()[0].toUpperCase();

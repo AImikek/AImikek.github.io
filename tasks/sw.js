@@ -1,7 +1,7 @@
 // Tasks service worker. Page is network-first (deploys land instantly), with a cached
 // copy as the offline fallback. Static files, Firebase SDK and fonts are cache-first so
 // the app opens with no connection.
-const SHELL = 'tasks-v2026-10-23.1337';
+const SHELL = 'tasks-v2026-10-23.1706';
 const STATIC = ['./', 'index.html', 'firebase-config.js', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest'];
 const CACHE_ORIGINS = ['https://www.gstatic.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'];
 self.addEventListener('install', e => {
@@ -17,7 +17,7 @@ self.addEventListener('fetch', e => {
   const sameOrigin = url.origin === location.origin;
   const cacheable = sameOrigin || CACHE_ORIGINS.includes(url.origin);
   if (!cacheable) return; // Firebase database/auth traffic: untouched
-  const isPage = e.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/tasks/') || url.pathname.endsWith('/tasks');
+  const isPage = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/tasks/') || url.pathname.endsWith('/tasks');
   if (isPage) {
     // Ask the server every time (revalidate, never trust the 10-minute HTTP cache GitHub Pages sets)
     e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(r => {
