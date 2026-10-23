@@ -248,6 +248,8 @@ input,textarea{font:inherit;color:inherit}
 .task{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y}
 .task .t,.task .meta{-webkit-user-select:none;user-select:none}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
+.meta .rep{color:var(--accent)}
+.subnote{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
 /* theme row in account menu */
 .themerow{display:flex;align-items:center;gap:10px;padding:8px 12px;font-weight:600;font-size:14px}
 .themerow .seg{margin-left:auto;min-width:150px}
@@ -683,7 +685,19 @@ let multi=new Set(), selectMode=false;
 function clearMulti(){ multi.clear(); render(); }
 function multiPatch(fn){ const list=[...multi].filter(id=>tasks.get(id)).map(id=>[id,fn(tasks.get(id))]); if(list.length) updMany(list); }
 const daySort=(a,b)=>{ const ad=a.done?1:0, bd=b.done?1:0; if(ad!==bd) return ad-bd; const ao=typeof a.order==='number'?a.order:1e9, bo=typeof b.order==='number'?b.order:1e9; if(ao!==bo) return ao-bo; return (a.createdAt||0)-(b.createdAt||0); };
-function toggleDone(id){ const t=tasks.get(id); if(t) upd(id,{done:!t.done}); }
+function nextOccurrence(dows, fromKey){ if(!dows||!dows.length) return null; for(let i=1;i<=14;i++){ const k=addDays(fromKey,i); if(dows.includes(parseYmd(k).getDay())) return k; } return null; }
+function toggleDone(id){ const t=tasks.get(id); if(!t) return;
+  if(!t.done && t.repeat && t.repeat.dow && t.repeat.dow.length){
+    // check off this occurrence and line up the next one
+    const next=nextOccurrence(t.repeat.dow, t.due||todayStr());
+    const already=[...tasks.values()].some(x=>x.repeatOf===(t.repeatOf||t.id) && x.due===next && !x.done);
+    const n={...t,done:true,updatedAt:Date.now()};
+    const spawn=(!already&&next)?{...t,id:uid(),due:next,done:false,subtasks:(t.subtasks||[]).map(s=>({...s,done:false})),createdAt:Date.now(),updatedAt:Date.now(),repeatOf:t.repeatOf||t.id,order:null}:null;
+    const hist=[{id:t.id,before:snap(t),after:snap(n)}]; tasks.set(t.id,n); if(spawn){ hist.push({id:spawn.id,before:null,after:snap(spawn)}); tasks.set(spawn.id,spawn); }
+    recordHistory(hist); render(); saveLocal(); write(base()+'/tasks/'+t.id,n); if(spawn) write(base()+'/tasks/'+spawn.id,spawn); touchActivity();
+    if(spawn) toast('Done · next '+fmtDue(next)); return;
+  }
+  upd(id,{done:!t.done}); }
 
 /* ---------- quick add ---------- */
 const qi=$('#qi'), qdateTxt=$('#qdateTxt'), qdate=$('#qdate');
@@ -791,6 +805,7 @@ function taskRow(t){
   const m=el('div','meta');
   if(t.due){ const d=el('span','due'); d.textContent=fmtDue(t.due); if(!t.done&&t.due<todayStr()) d.classList.add('over'); else if(t.due===todayStr()) d.classList.add('today'); m.appendChild(d); }
   if(t.subtasks&&t.subtasks.length){ m.appendChild(el('span',null, t.subtasks.filter(s=>s.done).length+' of '+t.subtasks.length)); }
+  if(t.repeat&&t.repeat.dow&&t.repeat.dow.length){ m.appendChild(el('span','rep','↻ '+t.repeat.dow.map(d=>DOW[d]).join(' · '))); }
   if(t.notes) m.appendChild(el('span',null,'notes'));
   if(t.project&&projects.get(t.project)&&view!=='proj') m.appendChild(el('span','pr',projects.get(t.project).name));
   if(m.children.length) b.appendChild(m);
@@ -1106,6 +1121,12 @@ function renderPanel(){
   notes.addEventListener('blur',()=>{ clearTimeout(nt); if(tasks.get(t.id)&&notes.value!==tasks.get(t.id).notes) upd(t.id,{notes:notes.value}); });
   ns.appendChild(notes); pb.appendChild(ns);
 
+  const rp=el('div'); rp.appendChild(el('span','lbl','Repeats'));
+  const days=el('div','row'); const cur=new Set((t.repeat&&t.repeat.dow)||[]);
+  DOW.forEach((d,i)=>{ const b=el('button','pill'+(cur.has(i)?' on':''), d[0].toUpperCase()+d.slice(1)); b.addEventListener('click',()=>{ const nx=new Set((tasks.get(t.id).repeat||{}).dow||[]); if(nx.has(i)) nx.delete(i); else nx.add(i); const dow=[...nx].sort(); upd(t.id,{repeat:dow.length?{dow}:null, pinned:dow.length?true:(tasks.get(t.id).pinned||false)}); }); days.appendChild(b); });
+  rp.appendChild(days);
+  if(cur.size) rp.appendChild(el('p','subnote','Pinned to these days. When you check it off, the next one appears. The assistant\'s shift and move commands leave it alone.'));
+  pb.appendChild(rp);
   const pj=el('div'); pj.appendChild(el('span','lbl','Project'));
   const psel=el('select','psel'); psel.id='p-proj'; const none=el('option',null,'None'); none.value=''; psel.appendChild(none);
   [...projects.values()].forEach(p=>{ const o=el('option',null,p.name); o.value=p.id; if(t.project===p.id) o.selected=true; psel.appendChild(o); });
@@ -1271,7 +1292,7 @@ $('#fbBtn').addEventListener('click',openFeedback);
 /* ---------- assistant: plain-English commands over your tasks ---------- */
 const aiModal=$('#aiModal'), aiText=$('#aiText'), aiOut=$('#aiOut'), aiGo=$('#aiGo');
 let aiPlan=null;
-const AI_EXAMPLES=['shift all unfinished tasks this week forward one day','move overdue tasks to today','push today\'s unfinished tasks to tomorrow','spread today\'s tasks across this week','mark everything today as done','delete completed tasks','what\'s left today'];
+const AI_EXAMPLES=['shift all unfinished tasks this week forward one day','recurring task: Medicine every Tuesday and Friday','move overdue tasks to today','push today\'s unfinished tasks to tomorrow','spread today\'s tasks across this week','mark everything today as done','delete completed tasks','what\'s left today'];
 AI_EXAMPLES.forEach(x=>{ const b=el('button',null,x); b.addEventListener('click',()=>{ aiText.value=x; runAi(); }); $('#aiChips').appendChild(b); });
 function openAi(){ aiModal.hidden=false; aiOut.hidden=true; aiPlan=null; aiGo.textContent='Preview'; setTimeout(()=>aiText.focus(),50); }
 $('#aiBtn').addEventListener('click',openAi);
@@ -1296,8 +1317,9 @@ function showPlan(p){
   aiGo.textContent = p.changes.length ? 'Do it ('+p.changes.length+')' : 'Preview';
 }
 function applyPlan(p){
-  const dels=p.changes.filter(c=>c.del), ups=p.changes.filter(c=>!c.del);
+  const dels=p.changes.filter(c=>c.del), ups=p.changes.filter(c=>!c.del&&!c.create), creates=p.changes.filter(c=>c.create);
   if(ups.length) updMany(ups.map(c=>[c.id,c.patch]));
+  creates.forEach(c=>{ const nt={id:uid(),title:c.create.title,due:c.create.due||null,project:null,notes:'',done:false,subtasks:[],photos:[],repeat:c.create.repeat||null,pinned:!!c.create.pinned,createdAt:Date.now(),updatedAt:Date.now()}; persist(nt.id,nt); });
   dels.forEach(c=>remove(c.id));
   toast(p.done||'Done'); aiModal.hidden=true; aiPlan=null;
 }
@@ -1329,8 +1351,22 @@ function interpret(raw){
   if(!explicit && /\b(delete|remove|clear|trash)\b/.test(q)){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='everywhere'; }
   // default to unfinished unless they said done
   let items = wantsDone ? scope.filter(x=>x.done) : scope.filter(open);
+  // pinned / recurring tasks never get moved by bulk commands
+  const isPinned=x=>x.pinned||(x.repeat&&x.repeat.dow&&x.repeat.dow.length);
+  const skipped=items.filter(isPinned).length;
+  if(/\b(shift|move|push|bump|postpone|delay|reschedule|roll|slide|bring|pull|spread|distribute|split)\b/.test(q)) items=items.filter(x=>!isPinned(x));
   const label=(wantsDone?'completed ':'unfinished ')+'task'+(items.length===1?'':'s')+' '+scopeName;
 
+  // ----- recurring: "set recurring task: Medicine every Tuesday and Friday"
+  if(/\b(re-?o?c+ur+ing|repeat|repeats|repeating|every)\b/.test(q) && /\b(sun|mon|tue|wed|thu|fri|sat)/.test(q) && !/\b(shift|move|push|spread)\b/.test(q)){
+    const dayWords=[...q.matchAll(/\b(sun|mon|tue|wed|thu|fri|sat)[a-z]*/g)].map(m=>DOW.indexOf(m[1])); const dow=[...new Set(dayWords)].sort();
+    let title=raw;
+    if(/[:\-–]/.test(title)) title=title.split(/[:\-–]/).slice(1).join(':');   // "set recurring task: Medicine ..." → "Medicine ..."
+    title=title.replace(/^\s*(set|add|create|make)\s+(a\s+)?(re-?o?c+ur+ing|repeating|repeat)\s*(task)?\s*/i,'').replace(/\b(for\s+)?(every|each|on|re-?o?c+ur+ing|repeats?|repeating)\b.*$/i,'').replace(/[,.;]\s*$/,'').trim();
+    if(!title) return {error:'What should the recurring task be called? Try: "recurring task: Medicine every Tuesday and Friday".'};
+    const first=dow.includes(parseYmd(t).getDay())?t:nextOccurrence(dow,t);
+    return {summary:'Create “'+title+'”, repeating every '+dow.map(d=>DOWL[d]).join(' and ')+'. First one '+fmtDue(first)+'. It stays on its day: shift and move commands skip it.',lines:[],changes:[{create:{title,due:first,repeat:{dow},pinned:true}}],done:'Recurring task added'};
+  }
   // ----- questions
   if(/^(what|which|how many|show|list)\b/.test(q)){
     if(!items.length) return {summary:'Nothing '+(wantsDone?'completed':'open')+' '+scopeName+'.',lines:[],changes:[]};
@@ -1355,7 +1391,7 @@ function interpret(raw){
     let days=[]; if(/\bnext week\b/.test(q)){ const [a]=weekRange(); const s=addDays(a,7); for(let i=0;i<7;i++) days.push(addDays(s,i)); }
     else { const n=(q.match(/(\d+)\s*days?/)||[])[1]; const cnt=n?Number(n):(/\bweek\b/.test(q)?7:7); for(let i=0;i<cnt;i++) days.push(addDays(t,i)); }
     const sorted=items.sort(daySort); const changes=sorted.map((x,i)=>({id:x.id,patch:{due:days[Math.floor(i*days.length/sorted.length)]}}));
-    return {summary:'Spread '+sorted.length+' '+label+' evenly across '+fmtDue(days[0])+' to '+fmtDue(days[days.length-1])+'.',lines:sorted.map((x,i)=>({title:x.title,note:'→ '+fmtDue(changes[i].patch.due)})),changes,done:'Spread '+sorted.length+' tasks'};
+    return {summary:'Spread '+sorted.length+' '+label+' evenly across '+fmtDue(days[0])+' to '+fmtDue(days[days.length-1])+(skipped?' (leaving '+skipped+' recurring where they are)':'')+'.',lines:sorted.map((x,i)=>({title:x.title,note:'→ '+fmtDue(changes[i].patch.due)})),changes,done:'Spread '+sorted.length+' tasks'};
   }
   // ----- move / shift
   if(/\b(shift|move|push|bump|postpone|delay|reschedule|roll|slide|bring|pull)\b/.test(q)){
@@ -1369,9 +1405,9 @@ function interpret(raw){
     else { const words={a:1,an:1,one:1,two:2,three:3,four:4,five:5,six:6,seven:7}; let n=nM?(words[nM[1]]||Number(nM[1])):1; if(nM&&/week/.test(nM[2])) n*=7; if(back) n=-n;
       changes=items.map(x=>({id:x.id,patch:{due:addDays(x.due||t,n)}})); how=(n<0?'back ':'forward ')+Math.abs(n)+' day'+(Math.abs(n)===1?'':'s'); }
     const byId=new Map(changes.map(c=>[c.id,c.patch.due]));
-    return {summary:'Move '+items.length+' '+label+' '+how+'.',lines:items.sort(daySort).map(x=>({title:x.title,note:(x.due?fmtDue(x.due):'no date')+' → '+fmtDue(byId.get(x.id))})),changes,done:'Moved '+items.length+' tasks'};
+    return {summary:'Move '+items.length+' '+label+' '+how+(skipped?' (leaving '+skipped+' recurring where they are)':'')+'.',lines:items.sort(daySort).map(x=>({title:x.title,note:(x.due?fmtDue(x.due):'no date')+' → '+fmtDue(byId.get(x.id))})),changes,done:'Moved '+items.length+' tasks'};
   }
-  return {error:"I didn't catch that. Try: \"shift unfinished tasks this week forward one day\", \"move overdue to today\", \"mark today done\", \"spread today across this week\", or \"what's left tomorrow\"."};
+  return {error:"I didn't catch that. Try: \"shift unfinished tasks this week forward one day\", \"move overdue to today\", \"recurring task: Medicine every Tuesday and Friday\", \"mark today done\", or \"what's left tomorrow\"."};
 }
 $('#fbCancel').addEventListener('click',()=>{ fbModal.hidden=true; });
 fbModal.addEventListener('click',e=>{ if(e.target===fbModal) fbModal.hidden=true; });
@@ -1399,7 +1435,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-22.2133';
+const APP_VERSION='v2026-10-23.0406';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
