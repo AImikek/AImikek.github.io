@@ -1508,6 +1508,17 @@ function dayFromWords(q){
   if(w.startsWith('today')||w==='tonight') return t; if(w.startsWith('tom')||w==='tmrw') return addDays(t,1); if(w==='yesterday') return addDays(t,-1);
   const idx=DOW.indexOf(w.slice(0,3)); const d=parseYmd(t); let diff=(idx-d.getDay()+7)%7; return addDays(t,diff);
 }
+// Every day mentioned in a phrase, in order. "sat, sun, mon" → 3 days; "sat through tue" → 4; "the weekend" → sat+sun.
+function daysFromWords(q){
+  q=q.replace(/\bweekend\b/g,'sat sun').replace(/\bweekday\s*s?\b/g,'mon tue wed thu fri');
+  const re=/\b(today|tonight|tomorrow|tmrw|sun(day)?|mon(day)?|tue(s|sday)?|wed(nesday)?|thu(rs|rsday)?|fri(day)?|sat(urday)?)\b/g;
+  const found=[...q.matchAll(re)].map(m=>dayFromWords(m[0]));
+  let out=[]; let last=null;
+  for(const d of found){ if(last && d<=last) { /* day names wrap to next week when they go backwards */ let x=d; while(x<=last) x=addDays(x,7); out.push(x); last=x; } else { out.push(d); last=d; } }
+  // "sat through tue", "sat - tue", "sat to tue": fill the gap
+  if(out.length===2 && /\b(through|thru|till|until|to)\b|[-–]/.test(q)){ const [a,b]=out; const span=[]; for(let k=a;k<=b;k=addDays(k,1)) span.push(k); if(span.length<=10) out=span; }
+  return [...new Set(out)];
+}
 function weekRange(){ const t=todayStr(); const d=parseYmd(t); const start=addDays(t,-d.getDay()); return [start, addDays(start,6)]; }
 function interpret(raw){
   const q=raw.toLowerCase().replace(/[’']/g,"'");
@@ -1523,7 +1534,7 @@ function interpret(raw){
   else if(/\bnext week\b/.test(sq)){ const [a]=weekRange(); const s=addDays(a,7); scope=all.filter(x=>hasDue(x)&&x.due>=s&&x.due<=addDays(s,6)); scopeName='next week'; }
   else if(/\bbacklog\b/.test(sq)){ const p=[...projects.values()].find(p=>/backlog/i.test(p.name)); scope=p?all.filter(x=>x.project===p.id):[]; scopeName='backlog'; }
   else if(/\b(everything|all tasks|all my tasks|all completed|all done)\b/.test(sq) && !/\b(today|tomorrow|mon|tue|wed|thu|fri|sat|sun)/.test(sq)){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='all tasks'; }
-  else { const srcDay=dayFromWords(sq); if(srcDay){ scope=all.filter(x=>x.due===srcDay); scopeName=fmtDue(srcDay); } else { explicit=false; scope=all.filter(x=>x.due===t); scopeName='today'; } }
+  else { const srcDays=daysFromWords(sq.replace(/^.*?\bfrom\b/,'')); if(srcDays.length){ const set=new Set(srcDays); scope=all.filter(x=>set.has(x.due)); scopeName=srcDays.length>1?srcDays.map(fmtDue).join(' and '):fmtDue(srcDays[0]); } else { explicit=false; scope=all.filter(x=>x.due===t); scopeName='today'; } }
   // deleting with no scope means everywhere
   if(!explicit && /\b(delete|remove|clear|trash)\b/.test(q)){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='everywhere'; }
   // default to unfinished unless they said done
@@ -1531,7 +1542,8 @@ function interpret(raw){
   // pinned / recurring tasks never get moved by bulk commands
   const isPinned=x=>x.pinned||(x.repeat&&x.repeat.dow&&x.repeat.dow.length);
   const skipped=items.filter(isPinned).length;
-  if(/\b(shift|move|push|bump|postpone|delay|reschedule|roll|slide|bring|pull|spread|distribute|split)\b/.test(q)) items=items.filter(x=>!isPinned(x));
+  const SPREAD=/\b(spread|distribute|redistribute|disperse|dispurse|divide|split|balance|rebalance|even out|spread out|space out)\b/;
+  if(SPREAD.test(q) || /\b(shift|move|push|bump|postpone|delay|reschedule|roll|slide|bring|pull)\b/.test(q)) items=items.filter(x=>!isPinned(x));
   const label=(wantsDone?'completed ':'unfinished ')+'task'+(items.length===1?'':'s')+' '+scopeName;
 
   // ----- recurring: "set recurring task: Medicine every Tuesday and Friday"
@@ -1572,10 +1584,15 @@ function interpret(raw){
     return {summary:(undo?'Reopen ':'Mark done: ')+items.length+' task'+(items.length===1?'':'s')+' '+scopeName+'.',lines:items.map(x=>({title:x.title,note:x.due?fmtDue(x.due):''})),changes:items.map(x=>({id:x.id,patch:{done:!undo}})),done:(undo?'Reopened ':'Checked off ')+items.length};
   }
   // ----- spread / distribute
-  if(/\b(spread|distribute|split|spread out)\b/.test(q)){
+  if(SPREAD.test(q)){
     if(!items.length) return {summary:'No '+label+' to spread.',lines:[],changes:[]};
-    let days=[]; if(/\bnext week\b/.test(q)){ const [a]=weekRange(); const s=addDays(a,7); for(let i=0;i<7;i++) days.push(addDays(s,i)); }
-    else { const n=(q.match(/(\d+)\s*days?/)||[])[1]; const cnt=n?Number(n):(/\bweek\b/.test(q)?7:7); for(let i=0;i<cnt;i++) days.push(addDays(t,i)); }
+    let days=[];
+    const destTxt=(q.match(/\b(across|over|onto|into|to|between|among|through|throughout)\b(.*)$/)||[])[2]||'';
+    const destDays=daysFromWords(destTxt);
+    if(destDays.length>=2) days=destDays;
+    else if(/\bnext week\b/.test(q)){ const [a]=weekRange(); const s=addDays(a,7); for(let i=0;i<7;i++) days.push(addDays(s,i)); }
+    else if(/\b(rest of|remaining|remainder of)\b.*\bweek\b/.test(q)){ const [,b]=weekRange(); for(let k=t;k<=b;k=addDays(k,1)) days.push(k); }
+    else { const n=(q.match(/(\d+)\s*days?/)||[])[1]; const cnt=n?Number(n):7; const start=destDays.length===1?destDays[0]:t; for(let i=0;i<cnt;i++) days.push(addDays(start,i)); }
     const sorted=items.sort(daySort); const changes=sorted.map((x,i)=>({id:x.id,patch:{due:days[Math.floor(i*days.length/sorted.length)]}}));
     return {summary:'Spread '+sorted.length+' '+label+' evenly across '+fmtDue(days[0])+' to '+fmtDue(days[days.length-1])+(skipped?' (leaving '+skipped+' recurring where they are)':'')+'.',lines:sorted.map((x,i)=>({title:x.title,note:'→ '+fmtDue(changes[i].patch.due)})),changes,done:'Spread '+sorted.length+' tasks'};
   }
@@ -1621,7 +1638,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-23.1706';
+const APP_VERSION='v2026-10-23.1709';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
