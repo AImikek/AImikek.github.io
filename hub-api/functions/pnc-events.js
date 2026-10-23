@@ -21,7 +21,7 @@ function cleanRecord(input,source){
 }
 function summarize(records,days,now=Date.now()){
  const since=now-days*86400000,selected=records.filter(r=>r.createdAt>=since),tickets=selected.filter(r=>r.kind==='ticket'),orders=selected.filter(r=>r.kind==='order');
- const active=tickets.filter(r=>r.status==='valid'),currencies={},byEvent={};
+ const active=tickets.filter(r=>r.status==='valid'),currencies={},byEvent=Object.create(null);
  for(const r of selected){const k=r.eventId;if(!byEvent[k])byEvent[k]={id:k,name:r.eventName,tickets:0,checkedIn:0,orders:0};if(r.kind==='ticket'&&r.status==='valid'){byEvent[k].tickets++;byEvent[k].checkedIn+=r.checkedIn?1:0;}if(r.kind==='order'&&['paid','partially_refunded'].includes(r.status))byEvent[k].orders++;}
  for(const r of orders.filter(r=>['paid','partially_refunded','refunded'].includes(r.status))){const c=currencies[r.currency]||={gross:0,refunds:0,collected:0};c.gross+=r.amountCents;c.refunds+=r.refundedCents;c.collected+=r.amountCents-r.refundedCents;}
  return {tickets:active.length,free:active.filter(r=>r.ticketType==='free').length,paid:active.filter(r=>r.ticketType==='paid').length,comp:active.filter(r=>r.ticketType==='comp').length,checkedIn:active.filter(r=>r.checkedIn).length,cancelled:tickets.filter(r=>r.status!=='valid').length,paidOrders:orders.filter(r=>['paid','partially_refunded'].includes(r.status)).length,pendingOrders:orders.filter(r=>r.status==='pending').length,currencies,byEvent:Object.values(byEvent),rows:selected.sort((a,b)=>b.updatedAt-a.updatedAt),saved:records.length};
