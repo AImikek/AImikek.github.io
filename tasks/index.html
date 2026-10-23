@@ -250,6 +250,22 @@ input,textarea{font:inherit;color:inherit}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
 .meta .rep{color:var(--accent)}
 .subnote{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
+/* help */
+.mcard.help{max-width:620px;gap:10px}
+.helphead{display:flex;align-items:center;justify-content:space-between}
+.helphead .x{width:34px;height:34px;border-radius:50%;background:var(--line);font-size:20px;line-height:1}
+.helptabs{flex-wrap:wrap}
+.helpbody{line-height:1.55;font-size:15px}
+.helpbody h3{margin:14px 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.helpbody h3:first-child{margin-top:4px}
+.helpbody p{margin:0 0 8px;color:var(--ink)}
+.helpbody ul{margin:0 0 10px;padding-left:0;list-style:none}
+.helpbody li{padding:7px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.helpbody li:last-child{border-bottom:0}
+.helpbody li .ic{flex:none;width:26px;text-align:center}
+.helpbody kbd{font-family:var(--mono);font-size:12px;background:var(--line);border:1px solid var(--line-strong);border-radius:5px;padding:1px 6px}
+.helpbody .say{font-family:var(--mono);font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 8px;display:inline-block;margin:2px 4px 2px 0}
+.helpbody .tip{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;color:var(--muted);font-size:14px}
 /* voice input */
 .aiin{position:relative}
 .aiin textarea{padding-right:48px}
@@ -518,6 +534,11 @@ try{ if(!localStorage.getItem('lastUid')) document.getElementById('gate').hidden
 try{ const t=localStorage.getItem('theme')||'dark'; if(t!=='system') document.documentElement.setAttribute('data-theme',t); }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
 </script>
 <div class="menu" id="menu" hidden></div>
+<div class="modal" id="helpModal" hidden><div class="mcard help">
+  <div class="helphead"><h2>How to use Tasks</h2><button class="x" id="helpClose" aria-label="Close">×</button></div>
+  <div class="tabs helptabs" id="helpTabs"></div>
+  <div class="helpbody" id="helpBody"></div>
+</div></div>
 <div class="modal" id="installModal" hidden><div class="mcard" id="installCard"></div></div>
 <div class="modal" id="fbModal" hidden><div class="mcard">
   <h2>Feedback</h2>
@@ -1248,6 +1269,7 @@ ava.addEventListener('click',()=>{
   const th=el('div','themerow'); th.appendChild(el('span',null,'Appearance'));
   const seg=el('div','seg'); [['dark','Dark'],['light','Light'],['system','Auto']].forEach(([k,l])=>{ const b=el('button',null,l); b.setAttribute('aria-selected',String(getTheme()===k)); b.addEventListener('click',e=>{ e.stopPropagation(); setTheme(k); seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',String(x===b))); }); seg.appendChild(b); });
   th.appendChild(seg); menu.appendChild(th);
+  const help=el('button',null,'❓ How to use Tasks'); help.addEventListener('click',()=>{ closeMenu(); openHelp(); }); menu.appendChild(help);
   const inst=el('button',null,'📲 Add to home screen / bookmark'); inst.addEventListener('click',()=>{ closeMenu(); showInstall(); }); menu.appendChild(inst);
   const fb=el('button',null,'💬 Send feedback'); fb.addEventListener('click',()=>{ closeMenu(); openFeedback(); }); menu.appendChild(fb);
   menu.appendChild(el('div','sep'));
@@ -1281,6 +1303,103 @@ const isStandalone=()=>{ try{ return window.matchMedia('(display-mode: standalon
 const ua=navigator.userAgent; const isIOS=/iPhone|iPad|iPod/.test(ua); const isAndroid=/Android/.test(ua); const isSafari=/Safari/.test(ua)&&!/Chrome|CriOS|FxiOS/.test(ua);
 let bip=null; window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); bip=e; });
 const installModal=$('#installModal'), installCard=$('#installCard'), installbar=$('#installbar');
+/* ---------- help / tutorial ---------- */
+const HELP=[
+ ['Start here',`
+  <h3>The idea</h3>
+  <p>Tasks is built for speed: type (or say) what you need to do, give it a day, and get back to work. Everything syncs between your phone and desktop and keeps working offline.</p>
+  <h3>Three views</h3>
+  <ul>
+   <li><span class="ic">☰</span><div><b>List</b> groups tasks by when they're due: Overdue, Today, Tomorrow, This week, Later, No date. Drag to set your priorities.</div></li>
+   <li><span class="ic">📅</span><div><b>Calendar</b> lays the week out like a planner. Drag tasks between days, check them off in place, click a title to rename it.</div></li>
+   <li><span class="ic">📁</span><div><b>Projects</b> are buckets for bigger things (a trip, a launch, a backlog). A task can live in a project and still show up on its day.</div></li>
+  </ul>
+  <h3>Your account menu</h3>
+  <p>Tap your avatar (top right) for appearance, this guide, install help, feedback, backups, and sign out.</p>
+  <div class="tip">Tip: press <kbd>?</kbd> anywhere to open this guide, <kbd>/</kbd> to jump to the add box.</div>`],
+ ['Adding',`
+  <h3>Quick add</h3>
+  <p>Type in the box at the top and press <kbd>Enter</kbd>. Dates in your words are picked up automatically:</p>
+  <p><span class="say">call broker tomorrow</span><span class="say">invoice friday</span><span class="say">dentist nov 12</span><span class="say">renew passport in 3 weeks</span></p>
+  <p>Or pick a day with the date chip. New tasks default to today unless you say otherwise.</p>
+  <h3>Speak it</h3>
+  <p>Tap the 🎤 in the add box, say one task, and it's added the moment you stop talking. Works on desktop and phone.</p>
+  <h3>Paste a list</h3>
+  <p>Copy a list from anywhere (notes, email, a text) and paste it into the add box. Each line becomes its own task. Bullets, numbers and checkboxes are stripped off.</p>
+  <h3>Details</h3>
+  <p>Tap a task to open it: description, steps (subtasks), photos, project, repeat days, and the trash can.</p>`],
+ ['Organizing',`
+  <h3>Reorder</h3>
+  <ul>
+   <li><span class="ic">🖱</span><div><b>Desktop:</b> drag a task up or down within its day, or into another day on the calendar.</div></li>
+   <li><span class="ic">👆</span><div><b>Phone:</b> press and hold a task, then drag.</div></li>
+  </ul>
+  <h3>Select several</h3>
+  <p>Tap <b>Select</b> (top right on desktop, in the calendar bar on phone) then tap tasks. On desktop you can also <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>-click. Then drag them together, move them to a day, mark done, or delete in one go.</p>
+  <h3>Swipe</h3>
+  <p>On phone, swipe a task left to delete it. You get a few seconds to undo.</p>
+  <h3>Undo</h3>
+  <p><kbd>Cmd</kbd>+<kbd>Z</kbd> undoes almost anything: a move, a check, a delete, an assistant command. <kbd>Shift</kbd>+<kbd>Cmd</kbd>+<kbd>Z</kbd> redoes.</p>
+  <h3>Change a date</h3>
+  <p>Click the date on any task (in the list or in the details panel) to pick a new day.</p>`],
+ ['Assistant',`
+  <h3>Plain English, in bulk</h3>
+  <p>The ✦ Assistant button (bottom left) takes an instruction, shows you exactly what it's about to change, and only does it when you say <b>Do it</b>. Type or tap 🎤 and speak.</p>
+  <p>
+   <span class="say">shift all unfinished tasks this week forward one day</span>
+   <span class="say">move overdue tasks to today</span>
+   <span class="say">push today's unfinished tasks to tomorrow</span>
+   <span class="say">spread today's tasks across this week</span>
+   <span class="say">move everything from tuesday to thursday</span>
+   <span class="say">mark everything today as done</span>
+   <span class="say">delete completed tasks</span>
+   <span class="say">what's left tomorrow</span>
+  </p>
+  <h3>Repeating tasks</h3>
+  <p><span class="say">Medicine every Tuesday and Friday</span><span class="say">Gym every Mon, Wed and Fri</span></p>
+  <p>Repeating tasks are pinned to their days. Shift, move and spread commands leave them alone, and the preview tells you how many it skipped.</p>
+  <div class="tip">Preview first, always. Nothing changes until you confirm, and <kbd>Cmd</kbd>+<kbd>Z</kbd> reverses it if you change your mind.</div>`],
+ ['Repeating',`
+  <h3>Set it up</h3>
+  <p>Two ways: tell the Assistant <span class="say">Medicine every Tuesday and Friday</span>, or open any task and tap the days under <b>Repeats</b>.</p>
+  <h3>How it behaves</h3>
+  <ul>
+   <li><span class="ic">↻</span><div>Shows a ↻ badge with its days.</div></li>
+   <li><span class="ic">📅</span><div>Appears on every future matching day in the calendar. Future ones look faded until they come up; tap one to check it off or add notes early.</div></li>
+   <li><span class="ic">✓</span><div>Check one off and the next occurrence is lined up automatically.</div></li>
+   <li><span class="ic">📌</span><div>Pinned: bulk shift and move commands skip it. You can still drag it by hand for a one-off change.</div></li>
+  </ul>
+  <p>To stop it repeating, open the task and turn off its days.</p>`],
+ ['Phone',`
+  <h3>Install it</h3>
+  <p>Put Tasks on your home screen so it opens full-screen like a regular app and works offline. Choose <b>Add to home screen / bookmark</b> in your account menu for step by step instructions for iPhone, Android, and desktop Chrome.</p>
+  <h3>Signing in on iPhone</h3>
+  <p>Inside the home-screen app, use email and password. If you normally use Google, tap <b>Forgot password</b> once with your Google email to set a password for the same account.</p>
+  <h3>Offline</h3>
+  <p>Everything you do offline is saved on the device and synced the moment you're back online. The status next to the tabs shows <b>synced</b>, <b>offline</b>, or <b>syncing</b>.</p>
+  <h3>Updates</h3>
+  <p>New versions install themselves. If you ever see an update bar, tap it once.</p>`],
+ ['Shortcuts',`
+  <ul>
+   <li><span class="ic"><kbd>/</kbd></span><div>Jump to the add box</div></li>
+   <li><span class="ic"><kbd>↵</kbd></span><div>Add the task</div></li>
+   <li><span class="ic"><kbd>Esc</kbd></span><div>Close panel, menu, or modal</div></li>
+   <li><span class="ic"><kbd>⌘Z</kbd></span><div>Undo (<kbd>⇧⌘Z</kbd> redo)</div></li>
+   <li><span class="ic"><kbd>⌘</kbd></span><div>Cmd/Ctrl-click tasks to select several</div></li>
+   <li><span class="ic"><kbd>?</kbd></span><div>Open this guide</div></li>
+  </ul>
+  <h3>Your data</h3>
+  <p>Tasks are private to your account. Export a JSON backup any time from the account menu, and import it on another account if you ever need to.</p>
+  <h3>Feedback</h3>
+  <p>The 💬 Feedback button sends ideas and bugs straight to Mike.</p>`]
+];
+const helpModal=$('#helpModal'), helpTabs=$('#helpTabs'), helpBody=$('#helpBody'); let helpIdx=0;
+function renderHelp(){ helpTabs.innerHTML=''; HELP.forEach(([name],i)=>{ const b=el('button','tab',name); b.setAttribute('aria-selected',String(i===helpIdx)); b.addEventListener('click',()=>{ helpIdx=i; renderHelp(); }); helpTabs.appendChild(b); }); helpBody.innerHTML=HELP[helpIdx][1]; helpBody.scrollTop=0; }
+function openHelp(i){ if(typeof i==='number') helpIdx=i; renderHelp(); helpModal.hidden=false; }
+$('#helpClose').addEventListener('click',()=>{ helpModal.hidden=true; });
+helpModal.addEventListener('click',e=>{ if(e.target===helpModal) helpModal.hidden=true; });
+document.addEventListener('keydown',e=>{ if(e.key==='?' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !e.metaKey && !e.ctrlKey){ e.preventDefault(); openHelp(); } if(e.key==='Escape' && !helpModal.hidden) helpModal.hidden=true; });
+
 function showInstall(){
   installCard.innerHTML='';
   const h=el('h2',null,'Make Tasks an app'); installCard.appendChild(h);
@@ -1500,7 +1619,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-23.1259';
+const APP_VERSION='v2026-10-23.1337';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
