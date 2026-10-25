@@ -1511,8 +1511,20 @@ function dayFromWords(q){
 // Every day mentioned in a phrase, in order. "sat, sun, mon" → 3 days; "sat through tue" → 4; "the weekend" → sat+sun.
 function daysFromWords(q){
   q=q.replace(/\bweekend\b/g,'sat sun').replace(/\bweekday\s*s?\b/g,'mon tue wed thu fri');
-  const re=/\b(today|tonight|tomorrow|tmrw|sun(day)?|mon(day)?|tue(s|sday)?|wed(nesday)?|thu(rs|rsday)?|fri(day)?|sat(urday)?)\b/g;
-  const found=[...q.matchAll(re)].map(m=>dayFromWords(m[0]));
+  // calendar dates: "october 24", "oct 24th", "10/24", "the 24th" → nearest such date (this year, or next if it's long past)
+  const t0=todayStr(); const yr=parseYmd(t0).getFullYear();
+  const nearest=(mi,d)=>{ let k=ymd(new Date(yr,mi,d)); if(k<addDays(t0,-180)) k=ymd(new Date(yr+1,mi,d)); return k; };
+  const hits=[];
+  for(const m of q.matchAll(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?((?:\s*(?:,|and|&|\/)\s*\d{1,2}(?:st|nd|rd|th)?)*)\b/g)){ const mi=MON.findIndex(x=>x.toLowerCase()===m[1].slice(0,3)); hits.push({i:m.index,k:nearest(mi,Number(m[2]))});
+    // "oct 26, 27 and 28" → the bare numbers share the month
+    for(const n of (m[3]||'').matchAll(/\d{1,2}/g)) hits.push({i:m.index+1,k:nearest(mi,Number(n[0]))}); }
+  for(const m of q.matchAll(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b/g)){ const mi=MON.findIndex(x=>x.toLowerCase()===m[2].slice(0,3)); hits.push({i:m.index,k:nearest(mi,Number(m[1]))}); }
+  for(const m of q.matchAll(/\b(\d{1,2})\/(\d{1,2})\b/g)){ hits.push({i:m.index,k:nearest(Number(m[1])-1,Number(m[2]))}); }
+  for(const m of q.matchAll(/\bthe\s+(\d{1,2})(?:st|nd|rd|th)\b/g)){ hits.push({i:m.index,k:nearest(parseYmd(t0).getMonth(),Number(m[1]))}); }
+  const re=/\b(today|tonight|tomorrow|tmrw|yesterday|sun(day)?|mon(day)?|tue(s|sday)?|wed(nesday)?|thu(rs|rsday)?|fri(day)?|sat(urday)?)\b/g;
+  for(const m of q.matchAll(re)) hits.push({i:m.index,k:dayFromWords(m[0])});
+  hits.sort((a,b)=>a.i-b.i); const found=hits.map(h=>h.k);
+  if(hits.some(h=>!/^(sun|mon|tue|wed|thu|fri|sat)/.test(q.slice(h.i,h.i+3)))) return [...new Set(found)]; // explicit dates: no week-wrapping or range fill
   let out=[]; let last=null;
   for(const d of found){ if(last && d<=last) { /* day names wrap to next week when they go backwards */ let x=d; while(x<=last) x=addDays(x,7); out.push(x); last=x; } else { out.push(d); last=d; } }
   // "sat through tue", "sat - tue", "sat to tue": fill the gap
@@ -1533,7 +1545,7 @@ function interpret(raw){
   else if(/\bthis week\b|\bthe week\b|\bweek\b/.test(sq)){ const [a,b]=weekRange(); scope=all.filter(x=>hasDue(x)&&x.due>=a&&x.due<=b); scopeName='this week'; }
   else if(/\bnext week\b/.test(sq)){ const [a]=weekRange(); const s=addDays(a,7); scope=all.filter(x=>hasDue(x)&&x.due>=s&&x.due<=addDays(s,6)); scopeName='next week'; }
   else if(/\bbacklog\b/.test(sq)){ const p=[...projects.values()].find(p=>/backlog/i.test(p.name)); scope=p?all.filter(x=>x.project===p.id):[]; scopeName='backlog'; }
-  else if(/\b(everything|all tasks|all my tasks|all completed|all done)\b/.test(sq) && !/\b(today|tomorrow|mon|tue|wed|thu|fri|sat|sun)/.test(sq)){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='all tasks'; }
+  else if(/\b(everything|all tasks|all my tasks|all completed|all done)\b/.test(sq) && !daysFromWords(sq).length){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='all tasks'; }
   else { const srcDays=daysFromWords(sq.replace(/^.*?\bfrom\b/,'')); if(srcDays.length){ const set=new Set(srcDays); scope=all.filter(x=>set.has(x.due)); scopeName=srcDays.length>1?srcDays.map(fmtDue).join(' and '):fmtDue(srcDays[0]); } else { explicit=false; scope=all.filter(x=>x.due===t); scopeName='today'; } }
   // deleting with no scope means everywhere
   if(!explicit && /\b(delete|remove|clear|trash)\b/.test(q)){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='everywhere'; }
@@ -1603,7 +1615,8 @@ function interpret(raw){
     const toM=q.match(/\b(?:to|until|till|onto|into)\s+([a-z0-9\/ ]+)$/);
     const nM=q.match(/\b(a|an|one|two|three|four|five|six|seven|1|2|3|4|5|6|7|\d+)\s*(day|days|week|weeks)\b/);
     const back=/\b(back|backward|backwards|earlier|up|pull|bring)\b/.test(q) && !/\bforward\b/.test(q);
-    if(toM && dayFromWords(toM[1])){ const d=dayFromWords(toM[1]); changes=items.map(x=>({id:x.id,patch:{due:d}})); how='to '+fmtDue(d); }
+    const toDays=toM?daysFromWords(toM[1]):[];
+    if(toDays.length===1){ const d=toDays[0]; changes=items.map(x=>({id:x.id,patch:{due:d}})); how='to '+fmtDue(d); }
     else if(/\bto today\b|\bto tomorrow\b/.test(q)){ const d=/tomorrow/.test(q)?addDays(t,1):t; changes=items.map(x=>({id:x.id,patch:{due:d}})); how='to '+fmtDue(d); }
     else { const words={a:1,an:1,one:1,two:2,three:3,four:4,five:5,six:6,seven:7}; let n=nM?(words[nM[1]]||Number(nM[1])):1; if(nM&&/week/.test(nM[2])) n*=7; if(back) n=-n;
       changes=items.map(x=>({id:x.id,patch:{due:addDays(x.due||t,n)}})); how=(n<0?'back ':'forward ')+Math.abs(n)+' day'+(Math.abs(n)===1?'':'s'); }
@@ -1638,7 +1651,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-23.1709';
+const APP_VERSION='v2026-10-25.1251';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
