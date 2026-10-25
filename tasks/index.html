@@ -1651,7 +1651,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-25.1251';
+const APP_VERSION='v2026-10-25.2255';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
@@ -1710,13 +1710,18 @@ let firstAuth=true;
 FB.onUser(async u=>{
   // Firebase can report "no user" for a moment on a cold start before it finishes restoring the session.
   if(!u && firstAuth && lastUid){ firstAuth=false; for(let i=0;i<12;i++){ await new Promise(r=>setTimeout(r,500)); if(FB.current()) return; } LS('signoutLog','cold-start:'+new Date().toISOString()); }
-  else if(!u && user){ LS('signoutLog','session-ended:'+new Date().toISOString()); }
+  else if(!u && user){ let why='unknown'; try{ await user.getIdToken(true); why='token-ok'; }catch(e){ why=(e&&e.code)||'error'; } LS('signoutLog','session-ended '+why+':'+new Date().toISOString()); }
   firstAuth=false;
   if(detach){ detach(); detach=null; }
   tasks=new Map(); projects=new Map(); sel=null; curProj=null;
   user=u; me=u?u.uid:null;
   if(!u){ try{ localStorage.removeItem('lastUid'); localStorage.removeItem('lastInitial'); }catch(e){} me=null;
-    try{ const lg=LS('signoutLog'); const n=$('#gateNote'); if(lg&&n){ const [why,when]=lg.split(/:(.+)/); n.textContent=(why==='session-ended'?'Your session ended':'Could not restore your session')+' at '+new Date(when).toLocaleString()+'. Sign in again and it will remember you.'; n.hidden=false; } }catch(e){} tasks=new Map(); projects=new Map(); gate.hidden=false; $('#fbBtn').hidden=true; $('#aiBtn').hidden=true; ava.textContent='?'; render(); return; }
+    try{ const lg=LS('signoutLog'); const n=$('#gateNote'); if(lg&&n){ const [why,when]=lg.split(/:(.+)/); const code=(why.split(' ')[1]||'').replace('auth/','');
+      let msg=why.startsWith('session-ended')?'Your session ended':'Could not restore your session';
+      if(/user-token-expired|invalid-user-token|invalid-credential/.test(code)) msg='Your sign-in was revoked, which happens after a password reset or change, or signing out of all devices';
+      else if(/user-disabled|user-not-found/.test(code)) msg='This account was disabled or removed';
+      else if(/network/.test(code)) msg='Lost the connection while renewing your sign-in';
+      n.textContent=msg+' at '+new Date(when).toLocaleString()+(code?' ('+code+')':'')+'. Sign in again and it will remember you.'; n.hidden=false; } }catch(e){} tasks=new Map(); projects=new Map(); gate.hidden=false; $('#fbBtn').hidden=true; $('#aiBtn').hidden=true; ava.textContent='?'; render(); return; }
   LS('lastUid',u.uid); LS('lastInitial',(u.displayName||u.email||'?').trim()[0].toUpperCase());
   gate.hidden=true; $('#fbBtn').hidden=false; $('#aiBtn').hidden=false;
   ava.innerHTML=''; if(u.photoURL){ const im=el('img'); im.src=u.photoURL; im.alt=''; im.referrerPolicy='no-referrer'; ava.appendChild(im); } else ava.textContent=(u.displayName||u.email||'?').trim()[0].toUpperCase();
