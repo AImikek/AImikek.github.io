@@ -850,6 +850,9 @@
   <label class="flabel">DUPR Rating</label>
   <input class="finput" id="editDupr" type="number" inputmode="decimal" step="0.01" min="1" max="8" placeholder="e.g. 3.75 (leave blank if none)">
 
+  <label class="flabel">📅 My Availability</label>
+  <div id="myAvailEditor" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;"></div>
+
   <label class="flabel">✈️🤕 Away · Traveling or Injured</label>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;">
     <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
@@ -1459,6 +1462,8 @@
     <input class="finput" id="apPhone" type="tel">
     <label class="flabel">DUPR Rating</label>
     <input class="finput" id="apDupr" type="number" step="0.01" min="1" max="8">
+    <label class="flabel" id="apAvailLbl">📅 Availability</label>
+    <div id="apAvailEditor" style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px;scroll-margin-top:20px;"></div>
     <div style="display:flex;gap:10px;margin-top:6px;">
       <button onclick="document.getElementById('adPlayerModal').classList.add('hidden')" style="flex:1;padding:13px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Cancel</button>
       <button onclick="adSavePlayer()" style="flex:1;padding:13px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">💾 Save</button>
@@ -1479,6 +1484,17 @@
     </div>
     <!-- needs attention: contacts to add + account issues (same components as the profile panel) -->
     <div id="adContactsCard" class="adsec-card" style="display:none;"></div>
+    <div class="adsec-card" id="adAvailCard">
+      <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;margin-bottom:6px;">📅 Log someone's availability</div>
+      <div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:8px;line-height:1.5;">Someone texted you when they can play? Put it on their account. No account yet → one gets created for them and merges in when they register with that number.</div>
+      <input class="finput" id="adAvName" list="adAvNames" placeholder="Name (e.g. Natalia Liss-Schull)" autocomplete="off" style="margin-bottom:6px;"><datalist id="adAvNames"></datalist>
+      <div style="display:flex;gap:6px;">
+        <input class="finput" id="adAvPhone" type="tel" placeholder="Phone (optional)" style="flex:1.4;margin-bottom:0;">
+        <input class="finput" id="adAvLevel" type="number" inputmode="decimal" step="0.01" min="1" max="8" placeholder="Level" style="flex:0.8;margin-bottom:0;">
+        <button onclick="adLogAvail()" style="flex-shrink:0;padding:10px 12px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:10px;font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Open</button>
+      </div>
+      <div id="adAvMsg" style="font-size:11px;color:var(--yellow);font-weight:700;margin-top:6px;min-height:0;"></div>
+    </div>
     <div id="adIssues" style="display:none;"></div>
     <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;"></div>
     <div id="adActiveNames" style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;margin:-2px 0 14px;"></div>
@@ -1906,7 +1922,7 @@ window.healMyDirectory = async function() {
     const samePhone = myPhone && window.normPhone(d.phone) === myPhone;
     const sameName = String(d.name || '').trim().toLowerCase() === nm;
     if (!samePhone && !sameName) continue;
-    ['dupr', 'city', 'email', 'avatar', 'homeCourt', 'instagram'].forEach(k => { if (d[k] && !userProfile[k] && !profUpd[k]) { profUpd[k] = d[k]; if (!upd[k] && !mine[k]) upd[k] = d[k]; } });
+    ['dupr', 'city', 'email', 'avatar', 'homeCourt', 'instagram', 'avail'].forEach(k => { if (d[k] && !userProfile[k] && !profUpd[k]) { profUpd[k] = d[k]; if (!upd[k] && !mine[k]) upd[k] = d[k]; } });
     if (d.joinedAt && (!(upd.joinedAt || mine.joinedAt) || d.joinedAt < (upd.joinedAt || mine.joinedAt))) upd.joinedAt = d.joinedAt;
     try { await set(ref(db, 'directory/' + u), null); claimed++; } catch (e) { /* rules may not allow yet — admin audit retires it */ }
   }
@@ -3635,7 +3651,7 @@ window.consolidateUids = async function(hits, opts) {
     let prof = {}; try { prof = (await get(ref(db, 'users/' + u + '/profile'))).val() || {}; } catch (e) {}
     const src = Object.assign({}, d, prof);
     const dirUpd = {}, profUpd = {};
-    ['phone', 'email', 'city', 'dupr', 'avatar', 'homeCourt', 'instagram', 'dob', 'gender', 'awayCity', 'awayUntil'].forEach(k => {
+    ['phone', 'email', 'city', 'dupr', 'avatar', 'homeCourt', 'instagram', 'dob', 'gender', 'awayCity', 'awayUntil', 'avail'].forEach(k => {
       const cur = keepProf[k] != null && keepProf[k] !== '' ? keepProf[k] : (keepDir[k] != null && keepDir[k] !== '' ? keepDir[k] : null);
       let v = src[k]; if (v == null || v === '') return;
       if (k === 'phone') { v = window.normPhone(v); if (cur && window.normPhone(cur) === v) return; }
@@ -5181,7 +5197,8 @@ window.aiRunTool = async function(name, a) {
     const invited = [], noAccount = [], already = [], away = [];
     const today = new Date().toISOString().slice(0, 10);
     for (const t of targets) { if (!t.uid) { noAccount.push(t.name); continue; } if (t.uid === me) continue; if (onRoster.has(t.uid)) { already.push(t.name); continue; }
-      try { const pv = (await get(ref(db, 'users/' + t.uid + '/profile'))).val() || {}; if (pv.awayUntil && pv.awayUntil >= today) { away.push(t.name + (pv.awayKind === 'injured' ? ' (injured/sick)' : ' (traveling)')); continue; } } catch (e) {}
+      try { const pv = (await get(ref(db, 'users/' + t.uid + '/profile'))).val() || {}; if (pv.awayUntil && pv.awayUntil >= today) { away.push(t.name + (pv.awayKind === 'injured' ? ' (injured/sick)' : ' (traveling)')); continue; }
+        if (s.date && window.availAwayOn(pv.avail, s.date)) { const blk = window.availUpcoming(pv.avail, s.date).find(r => r.from <= s.date && s.date <= r.to); away.push(t.name + ' (away' + (blk && blk.why ? ': ' + blk.why : '') + ')'); continue; } } catch (e) {}
       await window.pushNotif(t.uid, { type: 'invite', text: title, sid: a.sid }); invited.push(t.name); }
     return { result: { invited, invitedCount: invited.length, alreadyIn: already, skippedAway: away, noAccount, noAccountCount: noAccount.length, note: noAccount.length ? noAccount.length + ' players at this level have played in tournaments but never created an account, so they cannot receive in-app invites. Share the invite link with them instead.' : undefined }, label: '🎟 Invited ' + invited.length + (noAccount.length ? ' · ' + noAccount.length + ' not on the app' : '') };
   }
@@ -5578,6 +5595,7 @@ window.renderPdHeader = async function(name) {
   const chip = (t, c) => '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;font-size:11.5px;font-weight:700;color:' + (c || 'var(--white)') + ';">' + t + '</span>';
   let chips = '';
   if (away) chips += chip(prof.awayKind === 'injured' ? '🤕 Out injured / sick' : '✈️ Traveling' + (prof.awayShare !== false && v('awayCity') ? ' · ' + escInfo(v('awayCity')) : '') + ' · back ' + new Date(v('awayUntil') + 'T12:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), 'var(--yellow)');
+  { const _a = window.availClean(v('avail')); if (_a) { if (_a.general) chips += chip('📅 ' + escInfo(_a.general), 'var(--aqua)'); window.availUpcoming(_a).slice(0, 4).forEach(r => { chips += chip('✈️ Away ' + window.availFmtRange(r) + (r.why ? ' · ' + escInfo(r.why) : ''), 'var(--yellow)'); }); } }
   if (v('city')) chips += chip('📍 ' + escInfo(v('city')));
   if (v('dupr')) chips += chip('🏆 DUPR ' + escInfo(String(v('dupr'))), 'var(--yellow)');
   if (v('homeCourt')) chips += chip('🏟 ' + escInfo(v('homeCourt')));
@@ -5594,7 +5612,7 @@ window.renderPdHeader = async function(name) {
   if (isAdmin() && realHits.length > 1) hd += '<div style="padding:8px 12px;background:rgba(255,79,107,0.08);border:1px solid rgba(255,79,107,0.4);border-radius:10px;margin-bottom:12px;font-size:12px;font-weight:700;color:var(--white);line-height:1.5;">⚠️ ' + realHits.length + ' different logins are named "' + escInfo(name) + '" (' + realHits.map(hh => escInfo(hh[1].phone || 'no phone')).join(' · ') + '), so their games are mixed into one history. <span onclick="openSplit(\'' + escInfo(name).replace(/'/g, "\\'") + '\')" style="color:var(--cyan);text-decoration:underline;cursor:pointer;">✂️ Split into separate people</span></div>';
   if (isAdmin() && (v('phone') || v('email'))) hd += '<div style="padding:8px 12px;background:rgba(255,224,0,0.06);border:1px solid rgba(255,224,0,0.3);border-radius:10px;margin-bottom:12px;font-size:13px;font-weight:700;display:flex;flex-wrap:wrap;gap:12px;align-items:center;"><span style="font-size:9px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;">🔒 admin</span>'
     + (v('phone') ? '<a href="tel:' + escInfo(v('phone')) + '" style="color:var(--cyan);text-decoration:none;">📞 ' + escInfo(v('phone')) + '</a>' : '') + (v('email') ? '<a href="mailto:' + escInfo(v('email')) + '" style="color:var(--cyan);text-decoration:none;">✉️ ' + escInfo(v('email')) + '</a>' : '')
-    + (uid ? '<span onclick="addToContacts(\'' + uid + '\')" style="margin-left:auto;color:var(--aqua);cursor:pointer;font-size:11px;">📇 Contacts</span>' : '') + '</div>';
+    + (uid ? '<span onclick="addToContacts(\'' + uid + '\')" style="margin-left:auto;color:var(--aqua);cursor:pointer;font-size:11px;">📇 Contacts</span><span onclick="window._apFocusAvail=true;adEditPlayer(\'' + uid + '\')" style="color:var(--aqua);cursor:pointer;font-size:11px;">📅 Availability</span>' : '') + '</div>';
   if (uid === (currentUser && currentUser.uid)) hd += '<div onclick="openProfile()" style="text-align:center;padding:9px;margin-bottom:12px;border:1px solid rgba(0,240,255,0.3);border-radius:10px;color:var(--cyan);font-weight:800;font-size:11.5px;cursor:pointer;">✏️ Edit my profile</div>';
   try { hd += await playerPhotosHtml(name); } catch (e) {}
   host.innerHTML = hd;
@@ -6539,6 +6557,7 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
       +'<span style="font-size:16px;">'+icon+'</span>'
       +'<span style="font-size:14px;font-weight:700;color:'+(style||'var(--white)')+';">'+val+'</span></div>' : '';
     if (isAway) h += row(prof.awayKind === 'injured' ? '🤕' : '✈️', (prof.awayKind === 'injured' ? 'Out injured / sick' : 'Traveling' + (prof.awayShare !== false && prof.awayCity ? ' in ' + escInfo(prof.awayCity) : '')) + ' · back ' + new Date(prof.awayUntil + 'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}), 'var(--yellow)');
+    { const _a = window.availClean(prof.avail); if (_a) { if (_a.general) h += row('📅', escInfo(_a.general), 'var(--aqua)'); window.availUpcoming(_a).slice(0, 3).forEach(r => { h += row('✈️', 'Away ' + window.availFmtRange(r) + (r.why ? ' · ' + escInfo(r.why) : ''), 'var(--yellow)'); }); } }
     if (prof.city)       h += row('📍', escInfo(prof.city));
     if (prof.dupr)       h += row('🏆', 'DUPR ' + escInfo(String(prof.dupr)), 'var(--yellow)');
     if (prof.homeCourt)  h += row('🏟', escInfo(prof.homeCourt));
@@ -7082,6 +7101,7 @@ window.openAdminDash = async function() {
   if (window.resetBars) resetBars();
   if (!isAdmin()) return;
   document.getElementById('adminDash').classList.remove('hidden');
+  try { window.adAvailNamesFill(); } catch (e) {}
   document.getElementById('adStats').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-weight:600;padding:20px;">Loading...</div>';
   const safeGet = async (p) => { try { return (await get(ref(db, p))).val() || {}; } catch(e) { return {}; } };
   const [dir, tours, fb, courtSubs] = await Promise.all([safeGet('directory'), safeGet('tournaments'), safeGet('feedback'), safeGet('courtSubmissions')]);
@@ -7288,6 +7308,109 @@ window.histRenameLocal = async function(tid) {
     copiedToast('✓ Fixed in this tournament only');
   } catch(e) { alert('Rename failed: ' + (e.message||e)); }
 };
+// ── Availability ───────────────────────────────────────────────────────────────────────────
+// Lives on directory/{uid}.avail (everyone can read it, so invites and the assistant can respect it) and is
+// mirrored into users/{uid}/profile.avail for real logins. Shape: { general: 'Most weekends free',
+// away: [{ from:'2026-10-31', to:'2026-11-01', why:'Nations Cup, Dallas' }], updatedAt, by: 'self'|'admin' }.
+// Members set their own in Edit Profile; the admin can log it for anyone (someone texts "I'm free after the 8th").
+window.availClean = function(a) {
+  if (!a || typeof a !== 'object') return null;
+  const general = String(a.general || '').trim().slice(0, 200);
+  const away = (Array.isArray(a.away) ? a.away : Object.values(a.away || {})).map(r => ({ from: String(r.from || '').slice(0, 10), to: String(r.to || r.from || '').slice(0, 10), why: String(r.why || '').trim().slice(0, 80) }))
+    .filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.from)).map(r => ({ ...r, to: /^\d{4}-\d{2}-\d{2}$/.test(r.to) && r.to >= r.from ? r.to : r.from })).sort((x, y) => x.from.localeCompare(y.from));
+  if (!general && !away.length) return null;
+  return { general: general || null, away, updatedAt: a.updatedAt || Date.now(), by: a.by || 'self' };
+};
+window.availFmtRange = function(r) {
+  const f = s => new Date(s + 'T12:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (r.from === r.to) return f(r.from);
+  return f(r.from) + '–' + (r.from.slice(0, 7) === r.to.slice(0, 7) ? String(parseInt(r.to.slice(8), 10)) : f(r.to));
+};
+// Upcoming away blocks (today or later), oldest first — the past ones are dropped from display but kept in data.
+window.availUpcoming = function(a, today) {
+  const t = today || new Date().toISOString().slice(0, 10); const c = window.availClean(a);
+  return c ? c.away.filter(r => r.to >= t) : [];
+};
+// Is this member marked away on a given date? (session invites + the assistant use this)
+window.availAwayOn = function(a, date) { return window.availUpcoming(a, date).some(r => r.from <= date && date <= r.to); };
+// One-line summary for chips / assistant answers.
+window.availSummary = function(a) {
+  const c = window.availClean(a); if (!c) return '';
+  const up = window.availUpcoming(c);
+  return [c.general, ...up.map(r => 'away ' + window.availFmtRange(r) + (r.why ? ' (' + r.why + ')' : ''))].filter(Boolean).join(' · ');
+};
+// Shared editor: a "usually free" line plus away/busy date blocks. prefix keeps the two editors (my / ap) apart.
+window.availEditorRender = function(hostId, prefix, a) {
+  const host = document.getElementById(hostId); if (!host) return;
+  const c = window.availClean(a) || { general: '', away: [] };
+  window['_avRows_' + prefix] = c.away.length ? c.away.slice() : [];
+  host.innerHTML = '<div style="font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:3px;">Usually free</div>'
+    + '<input class="finput" id="' + prefix + 'AvGeneral" maxlength="200" placeholder="e.g. Most weekends · weekday evenings after 6" value="' + escInfo(c.general || '') + '" onchange="window._availChanged(\'' + prefix + '\')" style="margin-bottom:10px;">'
+    + '<div style="font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:800;margin-bottom:5px;">Away / busy dates</div>'
+    + '<div id="' + prefix + 'AvRows"></div>'
+    + '<button type="button" onclick="availAddRow(\'' + prefix + '\')" class="rtbtn" style="width:100%;margin-top:4px;">+ Add dates</button>'
+    + (c.updatedAt && a ? '<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-top:8px;">Last updated ' + new Date(c.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + (c.by === 'admin' ? ' by Mike' : '') + '</div>' : '');
+  window.availRowsRender(prefix);
+};
+window.availRowsRender = function(prefix) {
+  const el = document.getElementById(prefix + 'AvRows'); if (!el) return;
+  const rows = window['_avRows_' + prefix] || [];
+  el.innerHTML = rows.length ? rows.map((r, i) => '<div style="display:flex;gap:5px;align-items:center;margin-bottom:6px;">'
+    + '<input class="finput" type="date" value="' + escInfo(r.from || '') + '" onchange="availRowSet(\'' + prefix + '\',' + i + ',\'from\',this.value)" style="flex:1;margin-bottom:0;color-scheme:dark;padding:9px 6px;font-size:12px;">'
+    + '<span style="color:var(--muted);font-size:11px;">→</span>'
+    + '<input class="finput" type="date" value="' + escInfo(r.to || '') + '" onchange="availRowSet(\'' + prefix + '\',' + i + ',\'to\',this.value)" style="flex:1;margin-bottom:0;color-scheme:dark;padding:9px 6px;font-size:12px;">'
+    + '<span onclick="availRowDel(\'' + prefix + '\',' + i + ')" style="color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px;">✕</span></div>'
+    + '<input class="finput" maxlength="80" placeholder="Why (optional) — e.g. Nations Cup, Dallas" value="' + escInfo(r.why || '') + '" oninput="availRowSet(\'' + prefix + '\',' + i + ',\'why\',this.value)" style="margin-bottom:10px;font-size:12.5px;">').join('')
+    : '<div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:4px;">No dates blocked.</div>';
+};
+window._availChanged = function(prefix) { if (prefix !== 'my' || !window.saveProfileEdits) return; clearTimeout(window._availSaveT); window._availSaveT = setTimeout(() => window.saveProfileEdits(true), 600); };
+window.availAddRow = function(prefix) { const rows = window['_avRows_' + prefix] = window['_avRows_' + prefix] || []; const last = rows[rows.length - 1]; const base = last && last.to ? new Date(last.to + 'T12:00') : new Date(); const d = new Date(base.getTime() + (last ? 6 : 0) * 86400000).toISOString().slice(0, 10); rows.push({ from: d, to: d, why: '' }); window.availRowsRender(prefix); window._availChanged(prefix); };
+window.availRowSet = function(prefix, i, k, v) { const rows = window['_avRows_' + prefix] || []; if (!rows[i]) return; rows[i][k] = v; if (k === 'from' && (!rows[i].to || rows[i].to < v)) { rows[i].to = v; window.availRowsRender(prefix); } window._availChanged(prefix); };
+window.availRowDel = function(prefix, i) { const rows = window['_avRows_' + prefix] || []; rows.splice(i, 1); window.availRowsRender(prefix); window._availChanged(prefix); };
+window.availEditorRead = function(prefix, by) {
+  const g = document.getElementById(prefix + 'AvGeneral'); if (!g) return undefined;   // editor not on screen → leave as is
+  return window.availClean({ general: g.value, away: window['_avRows_' + prefix] || [], updatedAt: Date.now(), by: by || 'self' });
+};
+// Admin: write availability for any member (directory + their profile when they have a login)
+window.adSaveAvail = async function(uid, avail, hasLogin) {
+  if (!isAdmin() || !uid) return;
+  const a = avail ? { ...avail, by: 'admin', updatedAt: Date.now() } : null;
+  try { await set(ref(db, 'directory/' + uid + '/avail'), a); } catch (e) {}
+  if (hasLogin && !/^n_/.test(uid)) { try { await set(ref(db, 'users/' + uid + '/profile/avail'), a); } catch (e) {} }
+  chatDirCache = null;
+};
+// Admin quick-log: find the member by phone, then by name; otherwise create an unclaimed card they'll inherit on sign-up.
+window.adLogAvail = async function() {
+  if (!isAdmin()) return;
+  const nm = (document.getElementById('adAvName').value || '').trim(); const ph = window.normPhone(document.getElementById('adAvPhone').value || ''); const lv = parseFloat(document.getElementById('adAvLevel').value || '');
+  const msg = document.getElementById('adAvMsg'); msg.textContent = '';
+  if (!nm && !ph) { msg.textContent = 'Type a name or a phone number.'; return; }
+  const dir = (await get(ref(db, 'directory'))).val() || {};
+  let hit = null;
+  if (ph) hit = Object.entries(dir).filter(([u, d]) => d && window.normPhone(d.phone) === ph).sort((a, b) => ((a[1].unclaimed ? 1 : 0) - (b[1].unclaimed ? 1 : 0)) || ((b[1].lastActive || 0) - (a[1].lastActive || 0)))[0] || null;
+  if (!hit && nm) hit = Object.entries(dir).filter(([u, d]) => d && String(d.name || '').trim().toLowerCase() === nm.toLowerCase()).sort((a, b) => ((a[1].unclaimed ? 1 : 0) - (b[1].unclaimed ? 1 : 0)) || ((b[1].lastActive || 0) - (a[1].lastActive || 0)))[0] || null;
+  let uid, created = false;
+  if (hit) {
+    uid = hit[0];
+    const upd = {}; if (ph && !hit[1].phone) upd.phone = ph; if (lv && !hit[1].dupr) upd.dupr = lv; if (nm && hit[1].unclaimed && hit[1].name !== nm) upd.name = nm;
+    if (Object.keys(upd).length) { try { await update(ref(db, 'directory/' + uid), upd); } catch (e) {} }
+  } else {
+    if (!nm) { msg.textContent = 'No member has that number — add their name so I can create a profile.'; return; }
+    if (nm.split(/\s+/).filter(p => /[a-z0-9]/i.test(p)).length < 2) { msg.textContent = 'Add a last name (or initial) — every account needs a full name.'; return; }
+    uid = 'n_' + nm.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const card = { name: nm, unclaimed: true, joinedAt: Date.now(), createdBy: 'admin' }; if (ph) card.phone = ph; if (lv) card.dupr = lv;
+    try { await set(ref(db, 'directory/' + uid), card); created = true; } catch (e) { msg.textContent = 'Could not create the profile: ' + (e.message || e); return; }
+    chatDirCache = null;
+  }
+  window._apFocusAvail = true;
+  await window.adEditPlayer(uid);
+  if (created) copiedToast('✓ Profile created for ' + nm + (ph ? ' · merges in when they register with ' + ph : ''));
+  else if (hit && hit[1].unclaimed) copiedToast('Unclaimed profile — merges in when they register');
+  document.getElementById('adAvName').value = ''; document.getElementById('adAvPhone').value = ''; document.getElementById('adAvLevel').value = '';
+};
+window.adAvailNamesFill = async function() {
+  try { const dl = document.getElementById('adAvNames'); if (!dl) return; const dir = await loadChatDir(); dl.innerHTML = Object.values(dir).filter(d => d && d.name).map(d => d.name).sort((a, b) => a.localeCompare(b)).map(n => '<option value="' + escInfo(n) + '">').join(''); } catch (e) {}
+};
 // Admin: give any player name an unclaimed profile so contact info / DUPR can live on it
 // before they ever sign up. Same shape the importer creates; editable like any account.
 window.adCreateProfile = async function(name) {
@@ -7312,7 +7435,9 @@ window.adEditPlayer = async function(uid) {
     document.getElementById('apEmail').value = p.email || '';
     document.getElementById('apPhone').value = p.phone || '';
     document.getElementById('apDupr').value  = p.dupr || '';
+    window.availEditorRender('apAvailEditor', 'ap', p.avail || null);
     document.getElementById('adPlayerModal').classList.remove('hidden');
+    if (window._apFocusAvail) { window._apFocusAvail = false; setTimeout(() => { try { document.getElementById('apAvailLbl').scrollIntoView({ block: 'start', behavior: 'smooth' }); const g = document.getElementById('apAvGeneral'); if (g && !g.value && !(window._avRows_ap || []).length) g.focus(); } catch (e) {} }, 120); }
   } catch(e) { alert('Could not load player: ' + (e.message||e)); }
 };
 
@@ -7330,6 +7455,7 @@ window.adSavePlayer = async function() {
       phone: document.getElementById('apPhone').value.trim() || null,
       dupr:  d ? parseFloat(d) : null
     });
+    const _av = window.availEditorRead('ap', 'admin'); if (_av !== undefined) await window.adSaveAvail(window._apUid, _av, !p.unclaimed);
     // keep the account's own profile name in sync, so their app shows the fixed name too
     const _nn = document.getElementById('apName').value.trim();
     if (_nn && _nn !== (p.name || '')) { try { await set(ref(db, 'users/' + window._apUid + '/profile/name'), _nn); } catch(e) {} }
@@ -7421,6 +7547,7 @@ async function saveDirectoryEntry() {
       dupr: userProfile.dupr || null,
       avatar: userProfile.avatar || null,
       awayCity: userProfile.awayCity || null, awayUntil: userProfile.awayUntil || null, awayShare: userProfile.awayShare === false ? false : null,
+      avail: window.availClean(userProfile.avail) || null,
       joinedAt, lastActive: Date.now()
     });
     // First-time signup → send welcome email (if template configured)
@@ -8838,6 +8965,7 @@ window.openProfile = function() {
   if (av0) { if (userProfile.avatar) { av0.style.backgroundImage = 'url(' + userProfile.avatar + ')'; av0.textContent = ''; } else { av0.style.backgroundImage = ''; } }
   const al = document.getElementById('avatarLbl'); if (al) al.textContent = userProfile.avatar ? 'Change photo' : 'Add a photo of your face';
   const ar = document.getElementById('avatarRemove'); if (ar) ar.style.display = userProfile.avatar ? 'inline' : 'none';
+  window.availEditorRender('myAvailEditor', 'my', userProfile.avail || null);
   // away
   const awayActive = !!(userProfile.awayUntil && userProfile.awayUntil >= new Date().toISOString().slice(0,10));
   document.getElementById('awayOn').checked = awayActive;
@@ -8976,6 +9104,7 @@ window.saveProfileEdits = async function(silent) {
     awayUntil: awayOn ? (document.getElementById('awayUntil').value || null) : null,
     awayShare: awayOn ? !!document.getElementById('awayShare')?.checked : null,
     awayKind: awayOn ? (window._awayKind || 'travel') : null };
+  { const _av = window.availEditorRead('my', 'self'); if (_av !== undefined) userProfile.avail = _av; }
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
   if (_renamed) window.applyMyRename(_old, name);
@@ -9726,6 +9855,10 @@ function adDeletePlayer(u,n) { if(window.adDeletePlayer) window.adDeletePlayer(u
 function adOpenTournament(t) { if(window.adOpenTournament) window.adOpenTournament(t); }
 function adEditPlayer(u)     { if(window.adEditPlayer) window.adEditPlayer(u); }
 function adCreateProfile(n)  { if(window.adCreateProfile) window.adCreateProfile(n); }
+function adLogAvail()        { if(window.adLogAvail) window.adLogAvail(); }
+function availAddRow(p)      { if(window.availAddRow) window.availAddRow(p); }
+function availRowSet(p,i,k,v){ if(window.availRowSet) window.availRowSet(p,i,k,v); }
+function availRowDel(p,i)    { if(window.availRowDel) window.availRowDel(p,i); }
 function adSavePlayer()      { if(window.adSavePlayer) window.adSavePlayer(); }
 function histRenameLocal(t)  { if(window.histRenameLocal) window.histRenameLocal(t); }
 function adEditPlayerByName(n){ if(window.adEditPlayerByName) window.adEditPlayerByName(n); }
@@ -9758,7 +9891,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-23.1';
+window.BUILD_TAG = 'v2026-10-25.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
