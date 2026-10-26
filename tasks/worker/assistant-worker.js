@@ -8,7 +8,7 @@ const DEFAULT_MODEL = 'claude-haiku-5-5';
 
 const PLAN_TOOL = {
   name: 'plan',
-  description: 'The concrete changes to make to the user\'s tasks, or a question if the request is ambiguous.',
+  description: 'The concrete changes to make to the user\'s tasks.',
   input_schema: {
     type: 'object',
     properties: {
@@ -28,8 +28,7 @@ const PLAN_TOOL = {
           }
         }
       },
-      answer: { type: 'string', description: 'For questions (what\'s left tomorrow?): the answer, as short lines.' },
-      question: { type: 'string', description: 'Only when the request is truly ambiguous: one short clarifying question. Leave changes empty.' }
+      answer: { type: 'string', description: 'For questions (what\'s left tomorrow?): the answer, as short lines.' }
     },
     required: ['summary', 'changes']
   }
@@ -50,7 +49,8 @@ Rules of thumb:
 - Recurring: "Medicine every Tuesday and Friday" creates ONE task titled exactly "Medicine" with repeat [2,5] due on the next matching day (today counts). Strip words like "set recurring task:", quotes, and trailing instructions from the title.
 - Never delete unless the user clearly asks to delete/remove/clear. "delete completed" = only done tasks.
 - Never invent tasks that aren't in the list. Use ids exactly as given.
-- If nothing matches, return an empty changes list and explain in summary. Only ask a question when you truly cannot decide.
+- If nothing matches, return an empty changes list and explain in summary.
+- Do NOT ask clarifying questions. The user always sees a preview and must confirm before anything is applied, so make the most reasonable choice and state your assumption briefly in the summary ("Took 'this weekend' as Sat 24 and Sun 25").
 - Keep summary short and human: "Move 11 unfinished tasks from Sat and Sun to Monday."`;
 }
 
