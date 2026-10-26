@@ -9,3 +9,6 @@ window.TASKS_FIREBASE_CONFIG = {
   messagingSenderId: "948487107546",
   appId: "1:948487107546:web:516d85e028c74460b586e3"
 };
+
+// Assistant brain (Cloudflare Worker in tasks/worker/). Leave empty to use the built-in rules only.
+window.TASKS_AI_ENDPOINT = '';

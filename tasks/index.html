@@ -583,7 +583,8 @@ window.__fb={
   signup:(e,p)=>createUserWithEmailAndPassword(auth,e,p),
   reset:e=>sendPasswordResetEmail(auth,e),
   signOut:()=>signOut(auth),
-  current:()=>auth.currentUser
+  current:()=>auth.currentUser,
+  token:()=>auth.currentUser?auth.currentUser.getIdToken():Promise.resolve(null)
 };
 try{ await getRedirectResult(auth); }catch(e){ console.warn(e); }
 document.dispatchEvent(new Event('fb-ready'));
@@ -1480,11 +1481,50 @@ aiText.addEventListener('input',()=>{ if(aiPlan){ aiPlan=null; aiGo.textContent=
 document.addEventListener('keydown',e=>{ const tag=(e.target.tagName||'').toLowerCase(); if((e.key==='k'&&(e.metaKey||e.ctrlKey))){ e.preventDefault(); if(user) openAi(); } });
 aiGo.addEventListener('click',runAi);
 
-function runAi(){
+async function runAi(){
   if(aiPlan && aiPlan.changes.length){ applyPlan(aiPlan); return; }
   const q=aiText.value.trim(); if(!q) return;
+  // Real model first (when configured and online); the built-in rules are the offline fallback.
+  const endpoint=window.TASKS_AI_ENDPOINT;
+  if(endpoint && navigator.onLine && FB && FB.token){
+    aiGo.disabled=true; aiGo.textContent='Thinking…'; aiOut.hidden=true;
+    try{ aiPlan=await remotePlan(endpoint,q); showPlan(aiPlan); return; }
+    catch(e){ console.warn('assistant fallback',e); }
+    finally{ aiGo.disabled=false; if(aiGo.textContent==='Thinking…') aiGo.textContent='Preview'; }
+  }
   try{ aiPlan=interpret(q); }catch(e){ console.warn(e); aiPlan={error:'Something went wrong reading that.'}; }
   showPlan(aiPlan);
+}
+async function remotePlan(endpoint,q){
+  const token=await FB.token(); if(!token) throw new Error('no token');
+  const t=todayStr();
+  const payload={instruction:q,today:t,tz:Intl.DateTimeFormat().resolvedOptions().timeZone,weekday:DOWL[parseYmd(t).getDay()],
+    tasks:[...tasks.values()].map(x=>({id:x.id,title:x.title,due:x.due||null,done:!!x.done,project:x.project?(projects.get(x.project)||{}).name||null:null,repeat:x.repeat&&x.repeat.dow||null})),
+    projects:[...projects.values()].map(p=>({id:p.name,name:p.name}))};
+  const ctl=new AbortController(); const timer=setTimeout(()=>ctl.abort(),25000);
+  let r; try{ r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload),signal:ctl.signal}); } finally{ clearTimeout(timer); }
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.plan) throw new Error(j.error||('HTTP '+r.status));
+  return planFromModel(j.plan);
+}
+// Turn the model's plan into the app's plan shape (and double-check every id really exists).
+function planFromModel(m){
+  const changes=[], lines=[];
+  for(const c of (m.changes||[])){
+    if(c.create){ const title=String(c.title||'').trim(); if(!title) continue; const due=c.due||null; const dow=Array.isArray(c.repeat)&&c.repeat.length?[...new Set(c.repeat.map(Number))].sort():null;
+      changes.push({create:{title,due,repeat:dow?{dow}:null,pinned:!!dow}}); lines.push({title:title,note:(due?'→ '+fmtDue(due):'')+(dow?' ↻ '+dow.map(d=>DOW[d]).join(' · '):'')}); continue; }
+    const tk=tasks.get(c.id); if(!tk) continue;
+    if(c.del){ changes.push({id:tk.id,del:true}); lines.push({title:tk.title,note:'delete'}); continue; }
+    const patch={}; const notes=[];
+    if('due' in c && c.due!==undefined && c.due!==tk.due){ patch.due=c.due||null; notes.push((tk.due?fmtDue(tk.due):'no date')+' → '+(c.due?fmtDue(c.due):'no date')); }
+    if(typeof c.done==='boolean' && c.done!==!!tk.done){ patch.done=c.done; notes.push(c.done?'mark done':'reopen'); }
+    if(c.title && c.title!==tk.title){ patch.title=c.title; notes.push('rename → '+c.title); }
+    if('repeat' in c && c.repeat!==undefined){ const dow=Array.isArray(c.repeat)&&c.repeat.length?[...new Set(c.repeat.map(Number))].sort():null; const cur=tk.repeat&&tk.repeat.dow||null; if(JSON.stringify(dow)!==JSON.stringify(cur)){ patch.repeat=dow?{dow}:null; patch.pinned=!!dow; notes.push(dow?'↻ '+dow.map(d=>DOW[d]).join(' · '):'stop repeating'); } }
+    if(Object.keys(patch).length){ changes.push({id:tk.id,patch}); lines.push({title:tk.title,note:notes.join(' · ')}); }
+  }
+  if(m.question && !changes.length) return {summary:m.question,lines:[],changes:[],ask:true};
+  const answerLines=m.answer?String(m.answer).split(/\n+/).filter(Boolean):[];
+  return {summary:m.summary||(changes.length?'Apply '+changes.length+' change'+(changes.length===1?'':'s')+'.':'Nothing to change.'),lines:lines.length?lines:answerLines,changes,done:changes.length?'Done · '+changes.length+' change'+(changes.length===1?'':'s'):'Done'};
 }
 function showPlan(p){
   aiOut.hidden=false; aiOut.className='aiout'+(p.error?' err':''); aiOut.innerHTML='';
@@ -1677,7 +1717,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-26.0315';
+const APP_VERSION='v2026-10-26.0336';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
