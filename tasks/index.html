@@ -1488,11 +1488,13 @@ async function runAi(){
   const endpoint=window.TASKS_AI_ENDPOINT;
   if(endpoint && navigator.onLine && FB && FB.token){
     aiGo.disabled=true; aiGo.textContent='Thinking…'; aiOut.hidden=true;
-    try{ aiPlan=await remotePlan(endpoint,q);
-      // Model came back empty on a command the rules understand? Trust the rules (they only act when they're sure).
-      if(!aiPlan.changes.length && !/^(what|which|how many|show|list|do i|is there|are there)\b/.test(q.toLowerCase())){ try{ const rp=interpret(q); if(rp && !rp.error && rp.changes && rp.changes.length){ aiPlan=rp; } }catch(e){} }
-      showPlan(aiPlan); return; }
-    catch(e){ console.warn('assistant fallback',e); }
+    try{ aiPlan=await remotePlan(endpoint,q); showPlan(aiPlan); return; }
+    catch(e){ console.warn('assistant',e);
+      // Only fall back to the built-in rules when the brain can't be reached at all (offline, timeout).
+      // If it answered with an error, say so rather than guessing with the simpler rules.
+      const unreachable=!navigator.onLine || e.name==='AbortError' || /Failed to fetch|NetworkError|Load failed/i.test(String(e.message));
+      if(!unreachable){ aiPlan={error:'The assistant hit a snag ('+String(e.message).slice(0,80)+'). Try again in a moment.'}; showPlan(aiPlan); return; }
+    }
     finally{ aiGo.disabled=false; if(aiGo.textContent==='Thinking…') aiGo.textContent='Preview'; }
   }
   try{ aiPlan=interpret(q); }catch(e){ console.warn(e); aiPlan={error:'Something went wrong reading that.'}; }
@@ -1720,7 +1722,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-26.0413';
+const APP_VERSION='v2026-10-26.0415';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';

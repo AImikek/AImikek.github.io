@@ -36,6 +36,7 @@ const PLAN_TOOL = {
 
 function systemPrompt(today, tz, weekday) {
   return `You are the assistant inside "Tasks", a personal to-do app. You turn a plain-English instruction into concrete changes.
+ALWAYS respond by calling the "plan" tool exactly once. Never reply with plain text.
 
 Today is ${weekday} ${today} (time zone ${tz}). Dates are YYYY-MM-DD. Weeks run Sunday to Saturday.
 
@@ -118,7 +119,7 @@ export default {
         max_tokens: 4000,
         system: systemPrompt(today, tz || 'America/New_York', weekday || ''),
         tools: [PLAN_TOOL],
-        tool_choice: { type: 'tool', name: 'plan' },
+        tool_choice: { type: 'auto' },
         messages: [{ role: 'user', content: userMsg }]
       })
     });
