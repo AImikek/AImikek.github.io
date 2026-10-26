@@ -1532,8 +1532,14 @@ function daysFromWords(q){
   return [...new Set(out)];
 }
 function weekRange(){ const t=todayStr(); const d=parseYmd(t); const start=addDays(t,-d.getDay()); return [start, addDays(start,6)]; }
+const AI_VOCAB=['shift','move','push','bump','postpone','delay','reschedule','spread','distribute','disperse','divide','split','balance','delete','remove','clear','mark','check','complete','finish','unfinished','finished','completed','done','open','remaining','tasks','task','everything','overdue','today','tomorrow','yesterday','tonight','monday','tuesday','wednesday','thursday','friday','saturday','sunday','weekend','week','next','this','from','forward','backward','back','recurring','repeating','repeat','every','across','evenly','what','left','month','days','day','later','earlier','ahead'];
+function fixTypos(q){
+  const dist=(a,b)=>{ if(Math.abs(a.length-b.length)>1) return 9; const m=[]; for(let i=0;i<=a.length;i++){ m[i]=[i]; for(let j=1;j<=b.length;j++) m[i][j]=i?Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1)):j; } return m[a.length][b.length]; };
+  const swap=(a,b)=>{ if(a.length!==b.length) return false; let d=[]; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) d.push(i); return d.length===2&&d[1]===d[0]+1&&a[d[0]]===b[d[1]]&&a[d[1]]===b[d[0]]; };
+  return q.replace(/[a-z]{4,}/g,w=>{ if(AI_VOCAB.includes(w)) return w; const hit=AI_VOCAB.find(v=>v.length>=4&&(dist(w,v)<=1||swap(w,v))); return hit||w; });
+}
 function interpret(raw){
-  const q=raw.toLowerCase().replace(/[’']/g,"'");
+  const q=fixTypos(raw.toLowerCase().replace(/[’']/g,"'"));
   const t=todayStr(); const all=[...tasks.values()];
   const open=x=>!x.done; const hasDue=x=>!!x.due;
   const wantsDone=/\b(done|finished|completed|checked)\b/.test(q) && !/\b(unfinished|not done|incomplete|undone|open|remaining|left)\b/.test(q);
@@ -1546,7 +1552,13 @@ function interpret(raw){
   else if(/\bnext week\b/.test(sq)){ const [a]=weekRange(); const s=addDays(a,7); scope=all.filter(x=>hasDue(x)&&x.due>=s&&x.due<=addDays(s,6)); scopeName='next week'; }
   else if(/\bbacklog\b/.test(sq)){ const p=[...projects.values()].find(p=>/backlog/i.test(p.name)); scope=p?all.filter(x=>x.project===p.id):[]; scopeName='backlog'; }
   else if(/\b(everything|all tasks|all my tasks|all completed|all done)\b/.test(sq) && !daysFromWords(sq).length){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='all tasks'; }
-  else { const srcDays=daysFromWords(sq.replace(/^.*?\bfrom\b/,'')); if(srcDays.length){ const set=new Set(srcDays); scope=all.filter(x=>set.has(x.due)); scopeName=srcDays.length>1?srcDays.map(fmtDue).join(' and '):fmtDue(srcDays[0]); } else { explicit=false; scope=all.filter(x=>x.due===t); scopeName='today'; } }
+  else { let srcDays=daysFromWords(sq.replace(/^.*?\bfrom\b/,''));
+    // A source day named by weekday means the most recent one when that's today or very recent and still has open
+    // tasks (“from sat and sun” said on Sunday night = yesterday + today), otherwise the upcoming one.
+    const hasOpen=k=>all.some(x=>x.due===k&&!x.done);
+    srcDays=srcDays.map(k=>{ const recent=addDays(k,-7); if(k>t && recent>=addDays(t,-3) && (hasOpen(recent)||!hasOpen(k))) return recent; return k; });
+    srcDays=[...new Set(srcDays)];
+    if(srcDays.length){ const set=new Set(srcDays); scope=all.filter(x=>set.has(x.due)); scopeName=srcDays.length>1?srcDays.map(fmtDue).join(' and '):fmtDue(srcDays[0]); } else { explicit=false; scope=all.filter(x=>x.due===t); scopeName='today'; } }
   // deleting with no scope means everywhere
   if(!explicit && /\b(delete|remove|clear|trash)\b/.test(q)){ scope=all.filter(x=>!x.project||hasDue(x)); scopeName='everywhere'; }
   // default to unfinished unless they said done
@@ -1651,7 +1663,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-25.2255';
+const APP_VERSION='v2026-10-26.0310';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
