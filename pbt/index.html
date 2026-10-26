@@ -762,39 +762,36 @@
         <div class="gender-icon">👩</div><div class="gender-label">Female</div>
       </div>
     </div>
-    <label class="flabel">📱 Game texts</label>
+    <label class="flabel">💬 Text you when new games pop up?</label>
     <div class="gender-row sms-row" style="margin-bottom:6px;">
-      <div class="gender-card sms-card" id="pSmsYes" onclick="pickSms('p', true)"><div class="gender-icon">💬</div><div class="gender-label">Yes, text me</div><div class="sms-sub">spot alerts · reminders</div></div>
-      <div class="gender-card sms-card" id="pSmsNo" onclick="pickSms('p', false)"><div class="gender-icon">🔕</div><div class="gender-label">No thanks</div><div class="sms-sub">app only</div></div>
+      <div class="gender-card sms-card" id="pSmsYes" onclick="pickSms('p', true)"><div class="gender-icon">🏓</div><div class="gender-label">Yes please</div><div class="sms-sub">new games · events</div></div>
+      <div class="gender-card sms-card" id="pSmsNo" onclick="pickSms('p', false)"><div class="gender-icon">🔕</div><div class="gender-label">No thanks</div><div class="sms-sub">app alerts only</div></div>
     </div>
     <input type="checkbox" id="pSms" style="display:none;">
-    <div id="pSmsHint" style="font-size:11px;color:var(--muted);font-weight:600;text-align:center;margin:0 0 12px;line-height:1.4;">Only about games you're in. Reply STOP anytime, or switch it off in Profile.</div>
+    <div id="pSmsHint" style="font-size:10.5px;color:var(--muted);font-weight:600;text-align:center;margin:0 0 12px;line-height:1.4;">A few texts a month, optional — not needed to use the app. Msg &amp; data rates may apply. Reply STOP anytime.</div>
     <button onclick="saveProfile()"
       style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
       color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;
       font-size:18px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;
       box-shadow:0 4px 20px rgba(255,45,120,0.4);">Let's Play 🏓</button>
     <div style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5;">
-      By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> &amp; <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy Policy</a>. You can update this anytime in your profile.
+      By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> &amp; <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy Policy</a>, and to texts about games you join (reminders, spot alerts · reply STOP anytime). Change it anytime in Profile.
     </div>
   </div>
 </div>
 
-<!-- SMS + TERMS notice for existing accounts (once per terms version) — one line, one checkbox, one tap -->
+<!-- Existing members, once: one tap decides new-game texts (game reminders are part of the account; manage both in Profile) -->
 <div id="consentOverlay" class="hidden" style="position:fixed;inset:0;z-index:955;background:rgba(4,6,15,0.75);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:0;">
   <div style="width:100%;max-width:440px;background:var(--card);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:18px 20px 24px;">
     <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;"></div>
-    <div style="font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">📱 Game texts?</div>
-    <div class="gender-row sms-row" style="margin-bottom:6px;">
-      <div class="gender-card sms-card" id="cSmsYes" onclick="pickSms('c', true)"><div class="gender-icon">💬</div><div class="gender-label">Yes, text me</div><div class="sms-sub">spot alerts · reminders</div></div>
-      <div class="gender-card sms-card" id="cSmsNo" onclick="pickSms('c', false)"><div class="gender-icon">🔕</div><div class="gender-label">No thanks</div><div class="sms-sub">app only</div></div>
+    <div style="font-family:'Russo One',sans-serif;font-size:15px;color:var(--white);margin-bottom:4px;">Quick one 👋</div>
+    <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:12px;line-height:1.45;">Want a text when new games and events pop up?</div>
+    <div class="gender-row sms-row" style="margin-bottom:8px;">
+      <div class="gender-card sms-card" id="cSmsYes" onclick="consentPick(true)"><div class="gender-icon">🏓</div><div class="gender-label">Yes please</div><div class="sms-sub">new games · events</div></div>
+      <div class="gender-card sms-card" id="cSmsNo" onclick="consentPick(false)"><div class="gender-icon">🔕</div><div class="gender-label">No thanks</div><div class="sms-sub">app alerts only</div></div>
     </div>
     <input type="checkbox" id="cSms" style="display:none;">
-    <div style="font-size:11px;color:var(--muted);font-weight:600;text-align:center;margin:0 0 12px;line-height:1.4;">Only about games you're in. Reply STOP anytime.</div>
-    <button onclick="acceptConsent()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Continue</button>
-    <div style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center;line-height:1.4;">
-      By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> &amp; <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy Policy</a>.
-    </div>
+    <div style="font-size:10.5px;color:var(--muted);font-weight:600;text-align:center;line-height:1.45;">A few a month, optional. Reminders for games you join stay on. Msg &amp; data rates may apply · reply STOP anytime · <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy</a></div>
   </div>
 </div>
 
@@ -888,10 +885,14 @@
   <label class="flabel">📱 Text messages</label>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;">
     <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-      <span style="font-size:13.5px;font-weight:700;color:var(--white);">Text me about my sessions</span>
-      <input type="checkbox" id="smsToggle" style="width:22px;height:22px;accent-color:var(--cyan);" onchange="setSmsConsent(this.checked)">
+      <span><span style="font-size:13.5px;font-weight:700;color:var(--white);">Games I'm in</span><div style="font-size:11px;color:var(--muted);font-weight:600;">reminders · spot opened · results</div></span>
+      <input type="checkbox" id="smsToggle" style="width:22px;height:22px;accent-color:var(--cyan);" onchange="setSmsPref('service', this.checked)">
     </label>
-    <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:6px;">Confirmations, waitlist &amp; spot-open alerts, reminders, results. Msg &amp; data rates may apply. Reply STOP to opt out. <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy</a></div>
+    <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-top:12px;">
+      <span><span style="font-size:13.5px;font-weight:700;color:var(--white);">New games &amp; events</span><div style="font-size:11px;color:var(--muted);font-weight:600;">a few a month</div></span>
+      <input type="checkbox" id="smsMktToggle" style="width:22px;height:22px;accent-color:var(--cyan);" onchange="setSmsPref('marketing', this.checked)">
+    </label>
+    <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Msg &amp; data rates may apply. Reply STOP to any text to stop them all. <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> · <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy</a></div>
   </div>
   <button onclick="saveProfileEdits()"
     style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
@@ -2131,7 +2132,7 @@ async function bootApp() {
     if (userProfile.name && (userProfile.tosVersion || 0) < TOS_VERSION) {
       const co = document.getElementById('consentOverlay');
       if (co && co.classList.contains('hidden')) {
-        const cs = document.getElementById('cSms'); if (cs) { cs.checked = !!userProfile.smsConsent; if (userProfile.smsConsent) window.pickSms('c', true); }
+        if (userProfile.smsMarketing === true) window.pickSms('c', true); else if (userProfile.smsMarketing === false) window.pickSms('c', false);
         co.classList.remove('hidden');
       }
     }
@@ -8738,28 +8739,39 @@ window.selectGender = function(g) {
   document.getElementById('gFemale').classList.toggle('active', g==='F');
 };
 
-const TOS_VERSION = 1;
-// One line, one optional checkbox, one tap — agreement to Terms/Privacy is implied by tapping Continue
-// (the same clickwrap pattern Instagram/Facebook use), same as the linked line under "Let's Play" for new users.
-window.acceptConsent = async function() {
-  const sms = !!document.getElementById('cSms')?.checked;
-  const now = Date.now();
-  const upd = { tosVersion: TOS_VERSION, tosAcceptedAt: now, smsConsent: sms };
-  if (sms) upd.smsConsentAt = now; else upd.smsOptOutAt = now;
-  if (currentUser?.phoneNumber) upd.smsNumber = currentUser.phoneNumber;
+const TOS_VERSION = 2;
+// Two kinds of texts, stored separately so a future SMS provider knows exactly who may get what:
+//  • smsService   — games you're in (reminders, spot opened, results). Part of having an account; disclosed in the
+//                   Terms line under "Let's Play". Opt-out anytime (Profile or STOP).
+//  • smsMarketing — new games & events. Needs an explicit Yes (TCPA "prior express written consent"); never
+//                   pre-selected and never required to use the app.
+window.smsRecord = function(kind, on) {
+  const now = Date.now(), u = {};
+  if (kind === 'service') { u.smsService = !!on; u[on ? 'smsServiceAt' : 'smsServiceOptOutAt'] = now; }
+  else { u.smsMarketing = !!on; u[on ? 'smsMarketingAt' : 'smsMarketingOptOutAt'] = now; }
+  if (on && currentUser?.phoneNumber) u.smsNumber = currentUser.phoneNumber;
+  return u;
+};
+// Existing member's one-tap sheet: either card answers, saves, closes.
+window.consentPick = async function(on) {
+  window.pickSms('c', on);
+  const upd = { tosVersion: TOS_VERSION, tosAcceptedAt: Date.now(), ...window.smsRecord('marketing', on) };
+  if (userProfile.smsService === undefined) Object.assign(upd, window.smsRecord('service', true));
   try { await update(ref(db, 'users/' + currentUser.uid + '/profile'), upd); } catch(e) {}
   userProfile = Object.assign({}, userProfile, upd);
   document.getElementById('consentOverlay').classList.add('hidden');
+  copiedToast(on ? '🏓 You\'ll hear about new games' : '👍 App alerts only');
 };
-window.setSmsConsent = async function(on) {
-  const now = Date.now();
-  const upd = on ? { smsConsent: true, smsConsentAt: now } : { smsConsent: false, smsOptOutAt: now };
-  if (on && currentUser?.phoneNumber) upd.smsNumber = currentUser.phoneNumber;
+window.acceptConsent = function() { window.consentPick(!!document.getElementById('cSms')?.checked); };
+window.setSmsPref = async function(kind, on) {
+  const upd = window.smsRecord(kind, on);
   try { await update(ref(db, 'users/' + currentUser.uid + '/profile'), upd); } catch(e) {}
   userProfile = Object.assign({}, userProfile, upd);
-  const t = document.getElementById('smsToggle'); if (t) t.checked = !!on;
+  const t = document.getElementById(kind === 'service' ? 'smsToggle' : 'smsMktToggle'); if (t) t.checked = !!on;
   copiedToast(on ? '📱 Texts on' : '📵 Texts off');
 };
+window.setSmsConsent = function(on) { return window.setSmsPref('service', on); };
+
 window.plSendCode = async function() {
   const raw = (document.getElementById('plPhoneInput').value || '').trim();
   const errEl = document.getElementById('plError'); errEl.style.display = 'none';
@@ -8837,20 +8849,11 @@ window.saveProfile = async function() {
   const oldName = (userProfile?.name || '').trim();
   const isFirstSave = !oldName;
   const smsBox = document.getElementById('pSms');
-  // one gentle nudge to actually pick Yes/No (an explicit tap is what counts as consent); second tap proceeds either way
-  if (isFirstSave && smsBox && !window._smsPicked_p && !window._smsNudged) {
-    window._smsNudged = true;
-    const hint = document.getElementById('pSmsHint'); if (hint) { hint.textContent = '👆 Texts on or off? Tap one (you can change it later).'; hint.style.color = 'var(--yellow)'; }
-    try { document.getElementById('pSmsYes').scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
-    return;
-  }
-  const smsOn = isFirstSave && smsBox ? !!smsBox.checked : (userProfile?.smsConsent || false);
   userProfile = { ...userProfile, name, gender: selectedGender || userProfile.gender || null };
   if (isFirstSave) {
-    const now = Date.now();
-    userProfile.tosVersion = TOS_VERSION; userProfile.tosAcceptedAt = now;
-    userProfile.smsConsent = smsOn; userProfile[smsOn ? 'smsConsentAt' : 'smsOptOutAt'] = now;
-    if (smsOn && currentUser?.phoneNumber) userProfile.smsNumber = currentUser.phoneNumber;
+    userProfile.tosVersion = TOS_VERSION; userProfile.tosAcceptedAt = Date.now();
+    Object.assign(userProfile, window.smsRecord('service', true));                                   // games you join — part of the account (Terms line)
+    if (window._smsPicked_p && smsBox) Object.assign(userProfile, window.smsRecord('marketing', !!smsBox.checked));   // new games — only what they actually tapped
   }
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
@@ -9002,7 +9005,8 @@ window.openProfile = function() {
   window.renderAdminIssues();
   if (isAdmin() && !window._adminAudit) window.adminAudit({ fix: false }).catch(() => {});
   // sms
-  const st = document.getElementById('smsToggle'); if (st) st.checked = !!userProfile.smsConsent;
+  const st = document.getElementById('smsToggle'); if (st) st.checked = userProfile.smsService !== false;
+  const sm = document.getElementById('smsMktToggle'); if (sm) sm.checked = userProfile.smsMarketing === true;
   if (window._wireProfileAutosave) window._wireProfileAutosave();
   wireProfileAutoSave();
   editSelectedGender = userProfile.gender || null;
@@ -9917,7 +9921,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-26.1';
+window.BUILD_TAG = 'v2026-10-26.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -10000,6 +10004,8 @@ function setRankRule(r)      { if(window.setRankRule) window.setRankRule(r); }
 function undoStartTournament(s){ if(window.undoStartTournament) window.undoStartTournament(s); }
 function acceptConsent()     { if(window.acceptConsent) window.acceptConsent(); }
 function setSmsConsent(v)    { if(window.setSmsConsent) window.setSmsConsent(v); }
+function setSmsPref(k,v)     { if(window.setSmsPref) window.setSmsPref(k,v); }
+function consentPick(v)      { if(window.consentPick) window.consentPick(v); }
 function uploadAvatar(i)     { if(window.uploadAvatar) window.uploadAvatar(i); }
 function removeAvatar()      { if(window.removeAvatar) window.removeAvatar(); }
 function toggleAwayFields()  { if(window.toggleAwayFields) window.toggleAwayFields(); }
