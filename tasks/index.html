@@ -1547,7 +1547,19 @@ function interpret(raw){
   // ----- scope (look only at the part before any destination phrase)
   let scope, scopeName, explicit=true;
   const sq=q.replace(/\b(across|over|onto|into|to|until|till|by)\b.*$/,'');
-  if(/\boverdue\b|\bpast due\b|\blate\b/.test(sq)){ scope=all.filter(x=>hasDue(x)&&x.due<t); scopeName='overdue'; }
+  // relations: "before monday", "after friday", "between sat and tue", "up to / through wednesday", "from sat onward"
+  const relText=q.replace(/\b(to|onto|into)\s+(the\s+)?(today|tomorrow|tonight|next week|yesterday|[a-z]{3,9}day|sun|mon|tue|wed|thu|fri|sat|\d{1,2}\/\d{1,2}|(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(st|nd|rd|th)?|the\s+\d{1,2}(st|nd|rd|th))\s*$/,'');
+  const hasOpenOn=k=>all.some(x=>x.due===k&&!x.done);
+  const recentify=k=>{ const r=addDays(k,-7); return (k>t && r>=addDays(t,-3) && (hasOpenOn(r)||!hasOpenOn(k)))?r:k; };
+  const explicitDate=txt=>/\d/.test(txt)||/\b(today|tomorrow|yesterday|tonight)\b/.test(txt);
+  const one=txt=>{ const d=daysFromWords(txt); return d.length===1?(explicitDate(txt)?d[0]:recentify(d[0])):null; };
+  let relM;
+  if((relM=relText.match(/\b(before|earlier than|prior to|ahead of)\s+(.{3,30}?)\s*$/)) && one(relM[2])){ const d=one(relM[2]); scope=all.filter(x=>hasDue(x)&&x.due<d); scopeName='before '+fmtDue(d); }
+  else if((relM=relText.match(/\b(up to|through|thru|on or before|until|till|by)\s+(.{3,30}?)\s*$/)) && one(relM[2])){ const d=one(relM[2]); scope=all.filter(x=>hasDue(x)&&x.due<=d); scopeName='through '+fmtDue(d); }
+  else if((relM=relText.match(/\b(after|later than|past|beyond)\s+(.{3,30}?)\s*$/)) && one(relM[2])){ const d=one(relM[2]); scope=all.filter(x=>hasDue(x)&&x.due>d); scopeName='after '+fmtDue(d); }
+  else if((relM=relText.match(/\b(?:(between)\s+(.{3,40}?)\s+(and)|(from)\s+(.{3,40}?)\s+(through|thru|until|till|-|–))\s+(.{3,30}?)\s*$/)) && one(relM[2]||relM[5]) && one(relM[7]) && one(relM[2]||relM[5])<=one(relM[7])){ const a=one(relM[2]||relM[5]), b=one(relM[7]); scope=all.filter(x=>hasDue(x)&&x.due>=a&&x.due<=b); scopeName=fmtDue(a)+' through '+fmtDue(b); }
+  else if((relM=relText.match(/\b(from|starting)\s+(.{3,30}?)\s+(on|onward|onwards|forward|and later|and after)\s*$/)) && one(relM[2])){ const d=one(relM[2]); scope=all.filter(x=>hasDue(x)&&x.due>=d); scopeName='from '+fmtDue(d)+' on'; }
+  else if(/\boverdue\b|\bpast due\b|\blate\b/.test(sq)){ scope=all.filter(x=>hasDue(x)&&x.due<t); scopeName='overdue'; }
   else if(/\bthis week\b|\bthe week\b|\bweek\b/.test(sq)){ const [a,b]=weekRange(); scope=all.filter(x=>hasDue(x)&&x.due>=a&&x.due<=b); scopeName='this week'; }
   else if(/\bnext week\b/.test(sq)){ const [a]=weekRange(); const s=addDays(a,7); scope=all.filter(x=>hasDue(x)&&x.due>=s&&x.due<=addDays(s,6)); scopeName='next week'; }
   else if(/\bbacklog\b/.test(sq)){ const p=[...projects.values()].find(p=>/backlog/i.test(p.name)); scope=p?all.filter(x=>x.project===p.id):[]; scopeName='backlog'; }
@@ -1555,8 +1567,7 @@ function interpret(raw){
   else { let srcDays=daysFromWords(sq.replace(/^.*?\bfrom\b/,''));
     // A source day named by weekday means the most recent one when that's today or very recent and still has open
     // tasks (“from sat and sun” said on Sunday night = yesterday + today), otherwise the upcoming one.
-    const hasOpen=k=>all.some(x=>x.due===k&&!x.done);
-    srcDays=srcDays.map(k=>{ const recent=addDays(k,-7); if(k>t && recent>=addDays(t,-3) && (hasOpen(recent)||!hasOpen(k))) return recent; return k; });
+    if(!explicitDate(sq)) srcDays=srcDays.map(recentify);
     srcDays=[...new Set(srcDays)];
     if(srcDays.length){ const set=new Set(srcDays); scope=all.filter(x=>set.has(x.due)); scopeName=srcDays.length>1?srcDays.map(fmtDue).join(' and '):fmtDue(srcDays[0]); } else { explicit=false; scope=all.filter(x=>x.due===t); scopeName='today'; } }
   // deleting with no scope means everywhere
@@ -1632,8 +1643,11 @@ function interpret(raw){
     else if(/\bto today\b|\bto tomorrow\b/.test(q)){ const d=/tomorrow/.test(q)?addDays(t,1):t; changes=items.map(x=>({id:x.id,patch:{due:d}})); how='to '+fmtDue(d); }
     else { const words={a:1,an:1,one:1,two:2,three:3,four:4,five:5,six:6,seven:7}; let n=nM?(words[nM[1]]||Number(nM[1])):1; if(nM&&/week/.test(nM[2])) n*=7; if(back) n=-n;
       changes=items.map(x=>({id:x.id,patch:{due:addDays(x.due||t,n)}})); how=(n<0?'back ':'forward ')+Math.abs(n)+' day'+(Math.abs(n)===1?'':'s'); }
+    const same=changes.filter(c=>tasks.get(c.id)&&tasks.get(c.id).due===c.patch.due).length;
+    if(same){ const keep=new Set(changes.filter(c=>tasks.get(c.id).due!==c.patch.due).map(c=>c.id)); changes=changes.filter(c=>keep.has(c.id)); items=items.filter(x=>keep.has(x.id)); }
+    if(!items.length) return {summary:'Those '+same+' task'+(same===1?' is':'s are')+' already '+how+'. Nothing to move.',lines:[],changes:[]};
     const byId=new Map(changes.map(c=>[c.id,c.patch.due]));
-    return {summary:'Move '+items.length+' '+label+' '+how+(skipped?' (leaving '+skipped+' recurring where they are)':'')+'.',lines:items.sort(daySort).map(x=>({title:x.title,note:(x.due?fmtDue(x.due):'no date')+' → '+fmtDue(byId.get(x.id))})),changes,done:'Moved '+items.length+' tasks'};
+    return {summary:'Move '+items.length+' '+label+' '+how+(same?' ('+same+' already there)':'')+(skipped?' (leaving '+skipped+' recurring where they are)':'')+'.',lines:items.sort(daySort).map(x=>({title:x.title,note:(x.due?fmtDue(x.due):'no date')+' → '+fmtDue(byId.get(x.id))})),changes,done:'Moved '+items.length+' tasks'};
   }
   return {error:"I didn't catch that. Try: \"shift unfinished tasks this week forward one day\", \"move overdue to today\", \"recurring task: Medicine every Tuesday and Friday\", \"mark today done\", or \"what's left tomorrow\"."};
 }
@@ -1663,7 +1677,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-26.0310';
+const APP_VERSION='v2026-10-26.0315';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
