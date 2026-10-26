@@ -1717,7 +1717,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-26.0336';
+const APP_VERSION='v2026-10-26.0407';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';

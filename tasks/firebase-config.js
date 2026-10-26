@@ -11,4 +11,4 @@ window.TASKS_FIREBASE_CONFIG = {
 };
 
 // Assistant brain (Cloudflare Worker in tasks/worker/). Leave empty to use the built-in rules only.
-window.TASKS_AI_ENDPOINT = '';
+window.TASKS_AI_ENDPOINT = 'https://tasks-assistant.michaelkrilivsky.workers.dev/';
