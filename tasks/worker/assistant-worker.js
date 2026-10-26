@@ -18,7 +18,7 @@ const PLAN_TOOL = {
         items: {
           type: 'object',
           properties: {
-            id: { type: 'string', description: 'Existing task id (omit when creating)' },
+            n: { type: 'integer', description: 'The task number from the list (the #number). Omit when creating.' },
             due: { type: ['string', 'null'], description: 'New due date YYYY-MM-DD, or null to clear the date' },
             done: { type: 'boolean' },
             del: { type: 'boolean', description: 'Delete this task' },
@@ -48,7 +48,7 @@ Rules of thumb:
 - "shift forward one day" means each task moves to its own date + 1. "back" means earlier.
 - Recurring: "Medicine every Tuesday and Friday" creates ONE task titled exactly "Medicine" with repeat [2,5] due on the next matching day (today counts). Strip words like "set recurring task:", quotes, and trailing instructions from the title.
 - Never delete unless the user clearly asks to delete/remove/clear. "delete completed" = only done tasks.
-- Never invent tasks that aren't in the list. Use ids exactly as given.
+- Never invent tasks that aren't in the list. Refer to tasks by their #number only.
 - If nothing matches, return an empty changes list and explain in summary.
 - Do NOT ask clarifying questions. The user always sees a preview and must confirm before anything is applied, so make the most reasonable choice and state your assumption briefly in the summary ("Took 'this weekend' as Sat 24 and Sun 25").
 - Keep summary short and human: "Move 11 unfinished tasks from Sat and Sun to Monday."`;
@@ -99,12 +99,14 @@ export default {
     if (!instruction || !today) return new Response(JSON.stringify({ error: 'missing fields' }), { status: 400, headers: cors });
 
     // Compact task list so the request stays small even with a few hundred tasks.
-    const lines = tasks.slice(0, 600).map(t =>
-      `${t.id} | ${t.due || 'no date'} | ${t.done ? 'done' : 'open'}${t.repeat && t.repeat.length ? ' | repeats ' + t.repeat.join(',') : ''}${t.project ? ' | project ' + t.project : ''} | ${String(t.title || '').slice(0, 90)}`
+    // Numbered, not by id: short numbers are far harder for the model to mistype than random ids.
+    const list = tasks.slice(0, 600);
+    const lines = list.map((t, i) =>
+      `#${i + 1} | ${t.due || 'no date'} | ${t.done ? 'done' : 'open'}${t.repeat && t.repeat.length ? ' | repeats ' + t.repeat.join(',') : ''}${t.project ? ' | project ' + t.project : ''} | ${String(t.title || '').slice(0, 90)}`
     ).join('\n');
     const projLines = projects.map(p => `${p.id}: ${p.name}`).join('\n');
 
-    const userMsg = `TASKS (id | due | status | title):\n${lines || '(none)'}\n\nPROJECTS:\n${projLines || '(none)'}\n\nINSTRUCTION: ${instruction}`;
+    const userMsg = `TASKS (#number | due | status | title):\n${lines || '(none)'}\n\nPROJECTS:\n${projLines || '(none)'}\n\nINSTRUCTION: ${instruction}`;
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -125,6 +127,13 @@ export default {
     const data = await res.json();
     const tool = (data.content || []).find(c => c.type === 'tool_use');
     if (!tool) return new Response(JSON.stringify({ error: 'no plan returned' }), { status: 502, headers: cors });
-    return new Response(JSON.stringify({ plan: tool.input, usage: data.usage }), { headers: cors });
+    const plan = tool.input || {};
+    plan.changes = (plan.changes || []).map(c => {
+      if (c.create) return c;
+      const t = list[Number(c.n) - 1];
+      if (!t) return null;
+      const { n, ...rest } = c; return { ...rest, id: t.id };
+    }).filter(Boolean);
+    return new Response(JSON.stringify({ plan, usage: data.usage }), { headers: cors });
   }
 };
