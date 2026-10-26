@@ -1488,7 +1488,10 @@ async function runAi(){
   const endpoint=window.TASKS_AI_ENDPOINT;
   if(endpoint && navigator.onLine && FB && FB.token){
     aiGo.disabled=true; aiGo.textContent='Thinking…'; aiOut.hidden=true;
-    try{ aiPlan=await remotePlan(endpoint,q); showPlan(aiPlan); return; }
+    try{ aiPlan=await remotePlan(endpoint,q);
+      // Model came back empty on a command the rules understand? Trust the rules (they only act when they're sure).
+      if(!aiPlan.changes.length && !/^(what|which|how many|show|list|do i|is there|are there)\b/.test(q.toLowerCase())){ try{ const rp=interpret(q); if(rp && !rp.error && rp.changes && rp.changes.length){ aiPlan=rp; } }catch(e){} }
+      showPlan(aiPlan); return; }
     catch(e){ console.warn('assistant fallback',e); }
     finally{ aiGo.disabled=false; if(aiGo.textContent==='Thinking…') aiGo.textContent='Preview'; }
   }
@@ -1523,7 +1526,7 @@ function planFromModel(m){
     if(Object.keys(patch).length){ changes.push({id:tk.id,patch}); lines.push({title:tk.title,note:notes.join(' · ')}); }
   }
   if(m.question && !changes.length) return {summary:m.question,lines:[],changes:[],ask:true};
-  const answerLines=m.answer?String(m.answer).split(/\n+/).filter(Boolean):[];
+  const answerLines=m.answer?String(m.answer).split(/\n+/).map(l=>l.replace(/^\s*#\d+\s*/,'').trim()).filter(l=>l&&!/\bwait\b|recount/i.test(l)):[];
   return {summary:m.summary||(changes.length?'Apply '+changes.length+' change'+(changes.length===1?'':'s')+'.':'Nothing to change.'),lines:lines.length?lines:answerLines,changes,done:changes.length?'Done · '+changes.length+' change'+(changes.length===1?'':'s'):'Done'};
 }
 function showPlan(p){
@@ -1717,7 +1720,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-26.0407';
+const APP_VERSION='v2026-10-26.0413';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';

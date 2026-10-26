@@ -51,7 +51,9 @@ Rules of thumb:
 - Never invent tasks that aren't in the list. Refer to tasks by their #number only.
 - If nothing matches, return an empty changes list and explain in summary.
 - Do NOT ask clarifying questions. The user always sees a preview and must confirm before anything is applied, so make the most reasonable choice and state your assumption briefly in the summary ("Took 'this weekend' as Sat 24 and Sun 25").
-- Keep summary short and human: "Move 11 unfinished tasks from Sat and Sun to Monday."`;
+- Keep summary short and human: "Move 11 unfinished tasks from Sat and Sun to Monday."
+- In "answer" text, refer to tasks by title only (never by #number) and never think out loud; just the clean answer, one task per line.
+- Before answering "nothing to move", re-check the list: tasks are listed with their exact due dates.`;
 }
 
 async function verifyFirebaseToken(idToken) {
