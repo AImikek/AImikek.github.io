@@ -293,6 +293,9 @@
     padding:18px 10px; cursor:pointer; transition:all 0.2s; text-align:center; }
   .gender-card.active { border-color:var(--pink); background:rgba(255,45,120,0.08); }
   .gender-icon { font-size:32px; margin-bottom:6px; }
+  .sms-card { padding:14px 8px 12px; min-height:96px; } .sms-card .gender-icon { font-size:26px; margin-bottom:4px; } .sms-card .gender-label { font-size:12px; letter-spacing:1.5px; }
+  .sms-sub { font-size:10.5px; color:var(--muted); font-weight:600; margin-top:3px; }
+  .sms-card.active { border-color:var(--aqua); background:rgba(0,245,196,0.10); box-shadow:0 0 0 3px rgba(0,245,196,0.15); }
   .gender-label { font-family:'Russo One',sans-serif; font-size:13px; letter-spacing:2px;
     color:var(--white); text-transform:uppercase; }
 
@@ -759,10 +762,13 @@
         <div class="gender-icon">👩</div><div class="gender-label">Female</div>
       </div>
     </div>
-    <label style="display:flex;gap:8px;align-items:flex-start;margin:14px 0 4px;cursor:pointer;">
-      <input type="checkbox" id="pSms" style="width:18px;height:18px;margin-top:1px;accent-color:var(--cyan);flex-shrink:0;">
-      <span style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.4;">📱 Text me about my sessions (spot alerts, reminders). Optional, reply STOP anytime.</span>
-    </label>
+    <label class="flabel">📱 Game texts</label>
+    <div class="gender-row sms-row" style="margin-bottom:6px;">
+      <div class="gender-card sms-card" id="pSmsYes" onclick="pickSms('p', true)"><div class="gender-icon">💬</div><div class="gender-label">Yes, text me</div><div class="sms-sub">spot alerts · reminders</div></div>
+      <div class="gender-card sms-card" id="pSmsNo" onclick="pickSms('p', false)"><div class="gender-icon">🔕</div><div class="gender-label">No thanks</div><div class="sms-sub">app only</div></div>
+    </div>
+    <input type="checkbox" id="pSms" style="display:none;">
+    <div id="pSmsHint" style="font-size:11px;color:var(--muted);font-weight:600;text-align:center;margin:0 0 12px;line-height:1.4;">Only about games you're in. Reply STOP anytime, or switch it off in Profile.</div>
     <button onclick="saveProfile()"
       style="width:100%;padding:16px;background:linear-gradient(135deg,var(--pink),var(--purple));
       color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;
@@ -778,10 +784,13 @@
 <div id="consentOverlay" class="hidden" style="position:fixed;inset:0;z-index:955;background:rgba(4,6,15,0.75);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:0;">
   <div style="width:100%;max-width:440px;background:var(--card);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:18px 20px 24px;">
     <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;"></div>
-    <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:14px;cursor:pointer;">
-      <input type="checkbox" id="cSms" style="width:18px;height:18px;margin-top:1px;accent-color:var(--cyan);flex-shrink:0;">
-      <span style="font-size:12.5px;color:var(--white);font-weight:600;line-height:1.45;">📱 Text me about my sessions (spot alerts, reminders). Optional, reply STOP anytime.</span>
-    </label>
+    <div style="font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;">📱 Game texts?</div>
+    <div class="gender-row sms-row" style="margin-bottom:6px;">
+      <div class="gender-card sms-card" id="cSmsYes" onclick="pickSms('c', true)"><div class="gender-icon">💬</div><div class="gender-label">Yes, text me</div><div class="sms-sub">spot alerts · reminders</div></div>
+      <div class="gender-card sms-card" id="cSmsNo" onclick="pickSms('c', false)"><div class="gender-icon">🔕</div><div class="gender-label">No thanks</div><div class="sms-sub">app only</div></div>
+    </div>
+    <input type="checkbox" id="cSms" style="display:none;">
+    <div style="font-size:11px;color:var(--muted);font-weight:600;text-align:center;margin:0 0 12px;line-height:1.4;">Only about games you're in. Reply STOP anytime.</div>
     <button onclick="acceptConsent()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Continue</button>
     <div style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center;line-height:1.4;">
       By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener" style="color:var(--cyan);">Terms</a> &amp; <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--cyan);">Privacy Policy</a>.
@@ -2122,7 +2131,7 @@ async function bootApp() {
     if (userProfile.name && (userProfile.tosVersion || 0) < TOS_VERSION) {
       const co = document.getElementById('consentOverlay');
       if (co && co.classList.contains('hidden')) {
-        const cs = document.getElementById('cSms'); if (cs) cs.checked = !!userProfile.smsConsent;
+        const cs = document.getElementById('cSms'); if (cs) { cs.checked = !!userProfile.smsConsent; if (userProfile.smsConsent) window.pickSms('c', true); }
         co.classList.remove('hidden');
       }
     }
@@ -8715,6 +8724,14 @@ function updateProfileDisplay() {
 }
 
 // ── PROFILE FUNCTIONS ──
+// Text opt-in: two big cards instead of a tiny checkbox. Nothing is pre-selected on purpose — carriers and the
+// TCPA want an affirmative tap for marketing/reminder texts, so a pre-ticked box wouldn't count as consent.
+window.pickSms = function(which, on) {
+  const box = document.getElementById(which + 'Sms'); if (box) box.checked = !!on;
+  const y = document.getElementById(which + 'SmsYes'), n = document.getElementById(which + 'SmsNo');
+  if (y) y.classList.toggle('active', !!on); if (n) n.classList.toggle('active', !on);
+  window['_smsPicked_' + which] = true;
+};
 window.selectGender = function(g) {
   selectedGender = g;
   document.getElementById('gMale').classList.toggle('active', g==='M');
@@ -8820,6 +8837,13 @@ window.saveProfile = async function() {
   const oldName = (userProfile?.name || '').trim();
   const isFirstSave = !oldName;
   const smsBox = document.getElementById('pSms');
+  // one gentle nudge to actually pick Yes/No (an explicit tap is what counts as consent); second tap proceeds either way
+  if (isFirstSave && smsBox && !window._smsPicked_p && !window._smsNudged) {
+    window._smsNudged = true;
+    const hint = document.getElementById('pSmsHint'); if (hint) { hint.textContent = '👆 Texts on or off? Tap one (you can change it later).'; hint.style.color = 'var(--yellow)'; }
+    try { document.getElementById('pSmsYes').scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+    return;
+  }
   const smsOn = isFirstSave && smsBox ? !!smsBox.checked : (userProfile?.smsConsent || false);
   userProfile = { ...userProfile, name, gender: selectedGender || userProfile.gender || null };
   if (isFirstSave) {
@@ -9241,6 +9265,7 @@ window.saveHistGame = async function(tid, key) {
 window.viewHistoryDetail = function(tid) {
   const t = window._historyData?.[tid];
   if (!t) return;
+  window._pushNav('historyDetail');   // list → game is a step of its own; Back lands on the list, not the Games page
   window._histDetailTid = tid;
   const tCfg = t.cfg;
   tCfg.schedule = (Array.isArray(tCfg.schedule)?tCfg.schedule:Object.values(tCfg.schedule||{})).map(g=>({...g,
@@ -9856,6 +9881,7 @@ function adOpenTournament(t) { if(window.adOpenTournament) window.adOpenTourname
 function adEditPlayer(u)     { if(window.adEditPlayer) window.adEditPlayer(u); }
 function adCreateProfile(n)  { if(window.adCreateProfile) window.adCreateProfile(n); }
 function adLogAvail()        { if(window.adLogAvail) window.adLogAvail(); }
+function pickSms(w,on)       { if(window.pickSms) window.pickSms(w,on); }
 function availAddRow(p)      { if(window.availAddRow) window.availAddRow(p); }
 function availRowSet(p,i,k,v){ if(window.availRowSet) window.availRowSet(p,i,k,v); }
 function availRowDel(p,i)    { if(window.availRowDel) window.availRowDel(p,i); }
@@ -9891,7 +9917,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-25.1';
+window.BUILD_TAG = 'v2026-10-26.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
