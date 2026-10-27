@@ -5025,6 +5025,7 @@ function renderNotifs() {
   Object.entries(myNotifs).forEach(([nid, n]) => { if (!n) return;
     if (n.type === 'follow') items.push({ at: n.at, unread: !n.read, icon: '➕', title: escInfo(n.fromName || 'Someone'), text: 'started following you', go: "openPlayerDetail('" + escInfo(n.fromName || '').replace(/'/g, "\\'") + "')" });
     else if (n.type === 'invite') items.push({ at: n.at, unread: !n.read, icon: '🎟', title: escInfo(n.fromName || 'Someone') + ' invited you', text: escInfo(n.text || 'to play'), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
+    else if (n.type === 'sessUpdate') items.push({ at: n.at, unread: !n.read, icon: '📝', title: escInfo(n.fromName || 'Organizer') + ' changed a game', text: escInfo(n.text || ''), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
     else items.push({ at: n.at, unread: !n.read, icon: n.go === 'profile' ? '🛠' : n.go === 'admin' ? '📇' : '🔔', title: escInfo(n.fromName || ''), text: escInfo(n.text || ''), go: n.go === 'profile' ? "openProfile()" : n.go === 'admin' ? "openAdminDash()" : "openChat()" }); });
   items.sort((a, b) => (b.at || 0) - (a.at || 0));
   if (!items.length) { el.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--muted);font-weight:600;line-height:1.6;">Nothing yet.<br>Messages, group chat, new followers and game invites show up here.</div>'; return; }
@@ -5167,6 +5168,135 @@ const _addDays = (iso, n) => { const d = new Date(iso + 'T12:00'); d.setDate(d.g
 async function _upcoming() { const all = (await get(ref(db, 'sessions'))).val() || {}; const today = new Date(); today.setHours(0, 0, 0, 0);
   return Object.entries(all).filter(([sid, s]) => s && s.date && new Date(s.date + 'T23:59') >= today && (s.visibility === 'public' || s.ownerUid === currentUser.uid)).map(([sid, s]) => _sessSummary(sid, s)).sort((a, b) => (a.date || '').localeCompare(b.date || '')); }
 async function _attachFor(sid) { const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s) return null; const roster = s.roster ? (Array.isArray(s.roster) ? s.roster : Object.values(s.roster)) : []; return { sid, title: s.title || 'Session', date: s.date || '', when: sessWhen(s), location: s.location || '', spots: s.spots || 4, taken: roster.length, level: s.level || '' }; }
+// ── editing a session from the assistant: same rules as the Edit screen, plus the follow-through a person would do
+const _arr = v => v ? (Array.isArray(v) ? v.filter(Boolean) : Object.values(v).filter(Boolean)) : [];
+const _hhmm = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '').trim()); if (!m) return null; const hh = +m[1], mm = +m[2]; return hh < 24 && mm < 60 ? String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') : null; };
+const _mins = t => { const [hh, mm] = t.split(':').map(Number); return hh * 60 + mm; };
+const _fromMins = m => String(Math.floor(((m % 1440) + 1440) % 1440 / 60)).padStart(2, '0') + ':' + String(((m % 60) + 60) % 60).padStart(2, '0');
+async function _canEdit(sid) { const s = (await get(ref(db, 'sessions/' + sid))).val(); if (!s) throw new Error('session not found'); if (s.ownerUid !== currentUser.uid && !isAdmin()) throw new Error('only the organizer (' + (s.ownerName || 'someone else') + ') or an admin can change this session'); return s; }
+// my chat posts carry a snapshot of the game card — refresh them so nobody reads the old time/place
+async function _refreshSessCards(sid) {
+  const me = currentUser.uid; const card = await _attachFor(sid); if (!card) return 0; let n = 0;
+  for (const g of CHAT_GROUPS) { try { const msgs = (await get(ref(db, 'chats/' + g.id + '/msgs'))).val() || {};
+    for (const [mid, m] of Object.entries(msgs)) if (m && m.uid === me && m.sess && m.sess.sid === sid) { await set(ref(db, 'chats/' + g.id + '/msgs/' + mid + '/sess'), card); n++; } } catch (e) {} }
+  try { const idx = (await get(ref(db, 'dmIndex/' + me))).val() || {};
+    for (const other of Object.keys(idx)) { const pair = dmPair(me, other); let msgs = {}; try { msgs = (await get(ref(db, 'dms/' + pair + '/msgs'))).val() || {}; } catch (e) {}
+      for (const [mid, m] of Object.entries(msgs)) if (m && m.uid === me && m.sess && m.sess.sid === sid) { await set(ref(db, 'dms/' + pair + '/msgs/' + mid + '/sess'), card); n++; } } } catch (e) {}
+  return n;
+}
+window.aiUpdateSession = async function(a) {
+  const sid = a.sid; const s = await _canEdit(sid);
+  const upd = {}, changed = [];
+  const set1 = (k, v, label) => { if (v === undefined) return; const old = s[k] == null ? null : s[k]; if (String(old) === String(v)) return; upd[k] = v; changed.push(label || k); };
+  if (a.title != null) set1('title', String(a.title).trim() || s.title, 'title');
+  if (a.location != null) set1('location', String(a.location).trim(), 'location');
+  if (a.date != null) { if (!/^\d{4}-\d{2}-\d{2}$/.test(a.date)) throw new Error('date must be YYYY-MM-DD'); set1('date', a.date, 'date'); }
+  let st = a.startTime != null ? _hhmm(a.startTime) : null, et = a.endTime != null ? _hhmm(a.endTime) : null;
+  if (a.startTime != null && !st) throw new Error('startTime must be HH:MM (24h)');
+  if (a.endTime != null && !et) throw new Error('endTime must be HH:MM (24h)');
+  if (st && !et && s.startTime && s.endTime) { const dur = _mins(s.endTime) - _mins(s.startTime); et = _fromMins(_mins(st) + (dur > 0 ? dur : 120)); }   // moving the start keeps the length
+  if (st) set1('startTime', st, 'start time'); if (et) set1('endTime', et, 'end time');
+  if (a.level !== undefined) set1('level', a.level ? String(a.level).trim() : null, 'level');
+  if (a.note !== undefined) set1('note', a.note ? String(a.note).trim() : null, 'note');
+  if (a.visibility) set1('visibility', a.visibility === 'private' ? 'private' : 'public', 'visibility');
+  if (a.info !== undefined) set1('info', a.info ? String(a.info) : null, 'full details');
+  let roster = _arr(s.roster), wait = _arr(s.waitlist); const promoted = [], bumped = [];
+  if (a.spots != null) {
+    const sp = Math.max(2, Math.min(24, parseInt(a.spots) || s.spots || 8));
+    if (sp !== s.spots) { upd.spots = sp; changed.push('spots'); }
+    while (roster.length < sp && wait.length) { const p = wait.shift(); roster.push(p); promoted.push(p); }
+    // fewer spots than players: the most recent sign-ups (never the organizer) go to the front of the waitlist, in order
+    while (roster.length > sp) { let i = roster.length - 1; while (i >= 0 && roster[i].uid === s.ownerUid) i--; if (i < 0) break; const p = roster.splice(i, 1)[0]; wait.unshift(p); bumped.push(p); }
+    if (promoted.length || bumped.length) { upd.roster = roster; upd.waitlist = wait.length ? wait : null; }
+  }
+  if (!changed.length) return { result: { changed: [], note: 'nothing was different from what is already saved', session: _sessSummary(sid, s) }, label: 'No changes needed' };
+  await update(ref(db, 'sessions/' + sid), upd);
+  const ns = Object.assign({}, s, upd);
+  promoted.forEach(p => { try { sendWaitlistPromotionEmail(p, ns, sid, false); } catch (e) {} window.pushNotif(p.uid, { type: 'sessUpdate', sid, text: '🎉 You\'re in: ' + (ns.title || 'the game') + ' · ' + sessWhen(ns) }); });
+  bumped.forEach(p => window.pushNotif(p.uid, { type: 'sessUpdate', sid, text: (ns.title || 'The game') + ' now has ' + ns.spots + ' spots — you\'re #1 on the waitlist' }));
+  const big = changed.some(c => ['date', 'start time', 'end time', 'location'].includes(c));
+  const notify = a.notifyPlayers != null ? !!a.notifyPlayers : big;
+  let notified = 0;
+  if (notify) {
+    const what = [changed.includes('date') || changed.includes('start time') ? sessWhen(ns) + (ns.endTime ? '–' + fmtSessTime(ns.endTime) : '') : null, changed.includes('location') ? '📍 ' + ns.location : null].filter(Boolean).join(' · ');
+    const msg = (ns.title || 'Your game') + ' changed' + (what ? ': ' + what : ' (' + changed.join(', ') + ')') + (a.message ? ' — ' + a.message : '');
+    for (const p of roster.concat(wait)) { if (!p || !p.uid || p.uid === currentUser.uid || promoted.includes(p) || bumped.includes(p)) continue; await window.pushNotif(p.uid, { type: 'sessUpdate', sid, text: msg }); notified++; }
+  }
+  const cards = await _refreshSessCards(sid);
+  try { if (typeof sdCurrent !== 'undefined' && sdCurrent === sid) openSessionDetail(sid); } catch (e) {}
+  return { result: { changed, session: _sessSummary(sid, ns), playersNotified: notified, promotedFromWaitlist: promoted.map(p => p.name), movedToWaitlist: bumped.map(p => p.name), chatCardsRefreshed: cards },
+    label: '✎ Updated ' + changed.join(', ') + (notified ? ' · told ' + notified + ' player' + (notified === 1 ? '' : 's') : ''), html: sessCardHtml(await _attachFor(sid)) };
+};
+window.aiRosterChange = async function(a) {
+  const sid = a.sid; const s = await _canEdit(sid);
+  let roster = _arr(s.roster), wait = _arr(s.waitlist);
+  const nm = String(a.name || '').trim(); if (!nm) throw new Error('name required');
+  const match = r => r && String(r.name || '').trim().toLowerCase() === nm.toLowerCase();
+  if (a.action === 'remove') {
+    const inR = roster.find(match), inW = wait.find(match);
+    if (!inR && !inW) throw new Error(nm + ' is not on this session (players: ' + roster.map(r => r.name).join(', ') + ')');
+    if (inR && inR.paid) throw new Error(nm + ' paid for this spot — remove them from the session page so the refund goes through');
+    roster = roster.filter(r => !match(r)); wait = wait.filter(r => !match(r));
+    const promoted = []; while (roster.length < (s.spots || 4) && wait.length) { const p = wait.shift(); roster.push(p); promoted.push(p); }
+    await set(ref(db, 'sessions/' + sid + '/roster'), roster); await set(ref(db, 'sessions/' + sid + '/waitlist'), wait.length ? wait : null);
+    promoted.forEach(p => { try { sendWaitlistPromotionEmail(p, s, sid, false); } catch (e) {} window.pushNotif(p.uid, { type: 'sessUpdate', sid, text: '🎉 You\'re in: ' + (s.title || 'the game') + ' · ' + sessWhen(s) }); });
+    if (a.notifyPlayer && (inR || inW).uid) await window.pushNotif((inR || inW).uid, { type: 'sessUpdate', sid, text: 'You were taken off ' + (s.title || 'a game') + ' · ' + sessWhen(s) + (a.message ? ' — ' + a.message : '') });
+    const open = Math.max(0, (s.spots || 4) - roster.length);
+    if (!promoted.length && inR) { try { notifyRosterOfDrop(sid, s, inR.name, roster, open); } catch (e) {} }
+    return { result: { removed: nm, from: inR ? 'roster' : 'waitlist', promoted: promoted.map(p => p.name), openSpots: open }, label: '➖ Removed ' + nm + (promoted.length ? ' · ' + promoted.map(p => p.name).join(', ') + ' moved up' : '') };
+  }
+  if (a.action === 'add') {
+    if (roster.find(match) || wait.find(match)) throw new Error(nm + ' is already on this session');
+    const uid = await window.chatUidForName(nm);
+    if (!uid) throw new Error(nm + ' has no app account (check the spelling with find_players)');
+    const dn = (await loadChatDir())[uid]; const entry = { name: (dn && dn.name) || nm, uid, comment: '', at: Date.now(), addedBy: currentUser.uid };
+    const full = roster.length >= (s.spots || 4);
+    if (full && !a.waitlistIfFull) return { result: { full: true, spots: s.spots, players: roster.map(r => r.name) }, label: '⚠ Session is full' };
+    if (full) wait.push(entry); else roster.push(entry);
+    await set(ref(db, 'sessions/' + sid + '/roster'), roster); await set(ref(db, 'sessions/' + sid + '/waitlist'), wait.length ? wait : null);
+    if (a.notifyPlayer !== false) await window.pushNotif(uid, { type: 'sessUpdate', sid, text: (full ? 'Added to the waitlist for ' : 'You\'re in: ') + (s.title || 'a game') + ' · ' + sessWhen(s) });
+    return { result: { added: entry.name, to: full ? 'waitlist' : 'roster', openSpots: Math.max(0, (s.spots || 4) - roster.length) }, label: '➕ Added ' + entry.name + (full ? ' to the waitlist' : '') };
+  }
+  throw new Error('action must be add or remove');
+};
+window.aiGetSession = async function(a) {
+  const s = (await get(ref(db, 'sessions/' + a.sid))).val(); if (!s) throw new Error('session not found');
+  if (s.visibility === 'private' && s.ownerUid !== currentUser.uid && !isAdmin() && !_arr(s.roster).some(r => r.uid === currentUser.uid)) throw new Error('that session is private');
+  return { result: Object.assign(_sessSummary(a.sid, s), { fullDetails: s.info || null, note: s.note || null, waitlist: _arr(s.waitlist).map(r => r.name), canEdit: s.ownerUid === currentUser.uid || isAdmin() }), label: '🔎 Read "' + (s.title || 'session') + '"' };
+};
+// availability from the assistant: anyone can set their own; the admin can set anyone's (and create a profile for a non-member)
+window.aiAvailability = async function(a) {
+  const dir = (await get(ref(db, 'directory'))).val() || {};
+  const byName = n => Object.entries(dir).filter(([u, d]) => d && String(d.name || '').trim().toLowerCase() === String(n || '').trim().toLowerCase()).sort((x, y) => ((x[1].unclaimed ? 1 : 0) - (y[1].unclaimed ? 1 : 0)))[0] || null;
+  const byPhone = p => { const np = window.normPhone(p); return np ? Object.entries(dir).filter(([u, d]) => d && window.normPhone(d.phone) === np).sort((x, y) => ((x[1].unclaimed ? 1 : 0) - (y[1].unclaimed ? 1 : 0)))[0] || null : null; };
+  if (a.action === 'who_is_free') {
+    const date = a.date; if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) throw new Error('date (YYYY-MM-DD) required');
+    const away = [], withNotes = [];
+    for (const [u, d] of Object.entries(dir)) { if (!d || !d.name) continue; const av = d.avail; if (!av) continue;
+      if (window.availAwayOn(av, date)) { const b = window.availUpcoming(av, date).find(r => r.from <= date && date <= r.to); away.push(d.name + (b && b.why ? ' (' + b.why + ')' : '')); }
+      else if (window.availClean(av) && window.availClean(av).general) withNotes.push(d.name + ': ' + window.availClean(av).general); }
+    return { result: { date, away, generalAvailability: withNotes.slice(0, 40), note: 'Only members who logged availability are listed; everyone else has not said.' }, label: '📅 Availability for ' + date + ' · ' + away.length + ' away' };
+  }
+  let hit = a.phone ? byPhone(a.phone) : null; if (!hit && a.name) hit = byName(a.name);
+  if (!hit && !a.name && !a.phone) hit = [currentUser.uid, dir[currentUser.uid] || {}];
+  if (a.action === 'get') { if (!hit) throw new Error('no member found for ' + (a.name || a.phone)); return { result: { name: hit[1].name, availability: window.availClean(hit[1].avail), summary: window.availSummary(hit[1].avail) || 'nothing logged' }, label: '📅 ' + (hit[1].name || 'Member') + "'s availability" }; }
+  if (a.action !== 'set') throw new Error('action must be set, get or who_is_free');
+  const self = hit && hit[0] === currentUser.uid;
+  if (!self && !isAdmin()) throw new Error('you can only set your own availability');
+  let uid = hit && hit[0], created = false;
+  if (!uid) {
+    const nm = String(a.name || '').trim(); if (nm.split(/\s+/).length < 2) throw new Error('no member matches; give a full name (first + last) to create a profile');
+    uid = 'n_' + nm.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const card = { name: nm, unclaimed: true, joinedAt: Date.now(), createdBy: 'admin' }; if (a.phone) card.phone = window.normPhone(a.phone); if (a.level) card.dupr = +a.level;
+    await set(ref(db, 'directory/' + uid), card); dir[uid] = card; created = true; chatDirCache = null;
+  }
+  const prev = window.availClean(dir[uid] && dir[uid].avail) || { general: null, away: [] };
+  const away = a.replace ? (a.away || []) : prev.away.concat(a.away || []);
+  const av = window.availClean({ general: a.general !== undefined ? a.general : prev.general, away, updatedAt: Date.now(), by: self ? 'self' : 'admin' });
+  if (self) { userProfile = Object.assign({}, userProfile, { avail: av }); try { await set(ref(db, 'users/' + uid + '/profile/avail'), av); } catch (e) {} try { await set(ref(db, 'directory/' + uid + '/avail'), av); } catch (e) {} }
+  else await window.adSaveAvail(uid, av, !(dir[uid] || {}).unclaimed);
+  return { result: { name: (dir[uid] || {}).name, profileCreated: created, availability: av, summary: window.availSummary(av) }, label: '📅 Saved availability' + (dir[uid] && dir[uid].name ? ' for ' + dir[uid].name : '') + (created ? ' · new profile' : '') };
+};
 window.aiRunTool = async function(name, a) {
   const me = currentUser.uid;
   if (name === 'list_upcoming_sessions') { const up = await _upcoming(); return { result: up, label: '📅 Found ' + up.length + ' upcoming session' + (up.length === 1 ? '' : 's') }; }
@@ -5300,6 +5430,10 @@ window.aiRunTool = async function(name, a) {
     lbData = null;
     return { result: { deleted: true, name: nm, scoredGames: scored }, label: '🗑 Deleted tournament "' + nm + '"' };
   }
+  if (name === 'update_session') return await window.aiUpdateSession(a);
+  if (name === 'update_roster') return await window.aiRosterChange(a);
+  if (name === 'get_session') return await window.aiGetSession(a);
+  if (name === 'availability') return await window.aiAvailability(a);
   if (name === 'open_screen') {
     const s = a.screen; setTimeout(() => { try {
       if (s === 'sessions') openSessions(); else if (s === 'session' && a.sid) openSessionDetail(a.sid); else if (s === 'leaderboard') openLeaderboard(); else if (s === 'chat') openChat('groups'); else if (s === 'group' && a.group) openGroupChat(a.group); else if (s === 'profile' && a.name) openPlayerDetail(a.name); else if (s === 'notifications') openNotifs(); else if (s === 'history') openHistory(); } catch (e) {} }, 600);
@@ -9921,7 +10055,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCour
 function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
 function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
 function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-26.2';
+window.BUILD_TAG = 'v2026-10-27.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
