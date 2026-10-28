@@ -265,12 +265,18 @@ function render(filter = "") {
   $("filters").innerHTML = filters.map(([v, label]) => `<button class="${decisionFilter === v ? "active" : ""}" data-filter="${v}">${label}</button>`).join("");
   document.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { decisionFilter = b.dataset.filter; render($("search").value); });
   $("count").textContent = list.length ? `${list.length} of ${lawyers.length} attorneys` : "";
-  // AT-A-GLANCE SUMMARY: always ALL attorneys, regardless of search/filter, so nothing is hidden.
-  // Compact dense grid: name + decision chip (+ firm, truncated). Passed entries are muted via .pass.
-  $("jumpIndex").innerHTML = lawyers.map(l =>
-    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("");
+  // AT-A-GLANCE SUMMARY: follows the selected decision filter (All / Vetting /
+  // Hold / Pass / Hire), so tapping a filter changes the summary tabs too.
+  // Search does not hide summary tiles; the filter does.
+  const summaryList = decisionFilter === "all" ? lawyers : lawyers.filter(l => (l.decision || "") === decisionFilter);
+  $("jumpIndex").innerHTML = summaryList.length ? summaryList.map(l =>
+    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
+    : `<p class="muted">No attorneys with decision “${esc(decisionFilter)}” yet.</p>`;
   document.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
-    decisionFilter = "all"; collapsed.delete(b.dataset.jump); render($("search").value);
+    // Keep the current filter — the tapped lawyer is in it — just expand and scroll to their card.
+    collapsed.delete(b.dataset.jump);
+    if ($("search").value) { $("search").value = ""; }
+    render("");
     const el = document.getElementById("lawyer-" + b.dataset.jump);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   });
