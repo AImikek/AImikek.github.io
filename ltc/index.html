@@ -189,6 +189,17 @@
 
     <!-- AT-A-GLANCE SUMMARY: all attorneys, compact dense grid, directly under search/filters, above the cards -->
     <div class="summary-head"><h3>All attorneys at a glance</h3><span id="count" class="muted"></span></div>
+    <label style="margin-bottom:10px">Sort
+      <select id="sortSelect">
+        <option value="order">Tracker order (1–27)</option>
+        <option value="vetting">Vetting first</option>
+        <option value="nodecision">No decision first</option>
+        <option value="hold">Hold first</option>
+        <option value="recent">Most recently updated</option>
+        <option value="oldest">Least recently updated</option>
+        <option value="name">Name A–Z</option>
+      </select>
+    </label>
     <div id="jumpIndex" class="summary-grid"></div>
 
     <div class="row">
@@ -258,7 +269,7 @@ const VERIFIED_LINKEDIN = {
 const $ = id => document.getElementById(id);
 if (!CONFIGURED) $("setupBanner").classList.remove("hidden");
 
-let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all";
+let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all", sortMode = "order";
 if (CONFIGURED) {
   try { const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
   catch (e) { $("loginError").textContent = "Firebase setup error: " + e.message; }
@@ -303,6 +314,18 @@ function render(filter = "") {
   const q = filter.toLowerCase();
   let list = lawyers.filter(l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision].join(" ").toLowerCase().includes(q));
   if (decisionFilter !== "all") list = list.filter(l => (l.decision || "") === decisionFilter);
+  const updatedMs = l => { if (!l.updatedAt) return 0; if (typeof l.updatedAt.toMillis === "function") return l.updatedAt.toMillis(); if (l.updatedAt.seconds) return l.updatedAt.seconds * 1000; return Date.parse(l.updatedAt) || 0; };
+  const decisionRank = (l, first) => { const d = l.decision || ""; if (d === first) return 0; const order = ["hire", "vetting", "", "hold", "pass"]; return 1 + order.indexOf(d); };
+  const sortList = arr => { const a = [...arr]; const byOrder = (x, y) => (x.order || 99) - (y.order || 99);
+    if (sortMode === "vetting") a.sort((x, y) => decisionRank(x, "vetting") - decisionRank(y, "vetting") || byOrder(x, y));
+    else if (sortMode === "nodecision") a.sort((x, y) => decisionRank(x, "") - decisionRank(y, "") || byOrder(x, y));
+    else if (sortMode === "hold") a.sort((x, y) => decisionRank(x, "hold") - decisionRank(y, "hold") || byOrder(x, y));
+    else if (sortMode === "recent") a.sort((x, y) => updatedMs(y) - updatedMs(x) || byOrder(x, y));
+    else if (sortMode === "oldest") a.sort((x, y) => updatedMs(x) - updatedMs(y) || byOrder(x, y));
+    else if (sortMode === "name") a.sort((x, y) => (x.name || "").localeCompare(y.name || "") || byOrder(x, y));
+    else a.sort(byOrder);
+    return a; };
+  list = sortList(list);
   const vetting = lawyers.filter(l => l.decision === "vetting").length;
   const passed = lawyers.filter(l => l.decision === "pass").length;
   $("stats").innerHTML = `<div class="stat"><b>${lawyers.length}</b><span>Attorneys</span></div><div class="stat"><b>${vetting}</b><span>Vetting</span></div><div class="stat"><b>${passed}</b><span>Passed</span></div>`;
@@ -313,7 +336,7 @@ function render(filter = "") {
   // AT-A-GLANCE SUMMARY: follows the selected decision filter (All / Vetting /
   // Hold / Pass / Hire), so tapping a filter changes the summary tabs too.
   // Search does not hide summary tiles; the filter does.
-  const summaryList = decisionFilter === "all" ? lawyers : lawyers.filter(l => (l.decision || "") === decisionFilter);
+  const summaryList = sortList(decisionFilter === "all" ? lawyers : lawyers.filter(l => (l.decision || "") === decisionFilter));
   $("jumpIndex").innerHTML = summaryList.length ? summaryList.map(l =>
     `<button class="summary-item ${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
     : `<p class="muted">No attorneys with decision “${esc(decisionFilter)}” yet.</p>`;
@@ -360,6 +383,8 @@ function render(filter = "") {
       <div class="row" style="margin-top:12px"><button data-save="${esc(l.id)}">Save this card</button><span class="saved" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
     </article>`; }).join("") : "<p class='muted'>No lawyers match that search or filter, or the tracker has not been seeded yet.</p>";
 
+  const _sortSel = document.getElementById("sortSelect");
+  if (_sortSel) _sortSel.onchange = () => { sortMode = _sortSel.value; render($("search").value); };
   document.querySelectorAll("[data-toggle]").forEach(b => b.onclick = () => {
     if (collapsed.has(b.dataset.toggle)) collapsed.delete(b.dataset.toggle); else collapsed.add(b.dataset.toggle);
     render($("search").value);
