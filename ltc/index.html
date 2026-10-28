@@ -450,14 +450,19 @@ function refreshEmailOptions(){
 }
 $("emailLawyer").addEventListener("change", () => { $("emailPreview").value = emailText(); });
 
-$("mailtoBtn").onclick = () => {
+$("mailtoBtn").onclick = async () => {
   const sel = $("emailLawyer");
   const lawyer = lawyers.find(l => l.id === sel.value);
   if (!lawyer || !lawyer.email) { $("copyStatus").textContent = "Choose a lawyer with an email address first."; return; }
   const subject = "Urgent: PH4910 lease dispute — 15 minute call today, October 28";
   const body = emailText();
-  window.location.href = `mailto:${encodeURIComponent(lawyer.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  $("copyStatus").textContent = "Opened in your email app — send from there. Remember to tick “Email sent” on that lawyer's card after it goes out.";
+  // mailto: bodies are unreliable — many mail apps drop a long body or open a blank compose.
+  // So copy the full email first, then open a compose with To + Subject only, and let the user paste the body.
+  try { await navigator.clipboard.writeText(body); } catch (e) { /* clipboard may be blocked; Copy email button is the fallback */ }
+  const a = document.createElement("a");
+  a.href = `mailto:${encodeURIComponent(lawyer.email)}?subject=${encodeURIComponent(subject)}`;
+  a.style.display = "none"; document.body.appendChild(a); a.click(); a.remove();
+  $("copyStatus").textContent = "Full email copied to clipboard, and your email app should have opened addressed to " + lawyer.name + " with the subject filled in. Paste (Cmd+V / Ctrl+V) into the body, then send. If nothing opened, tap Copy email instead and paste into Superhuman / Gmail manually. Remember to tick “Email sent” on that lawyer's card after it goes out.";
 };
 $("markSentBtn").onclick = async () => {
   const sel = $("emailLawyer");
