@@ -93,6 +93,8 @@
 .qa-details summary{cursor:pointer;font-weight:750}
 .qa-details textarea{width:100%;min-height:44px;margin:4px 0 10px}
 .qa-q{font-weight:650;margin-top:8px}
+
+.stamp{font-size:11px;font-weight:300;color:#94a3b8;margin-top:6px}
 </style>
 <!--
   LTC — shared edition for Mike + Lorena.
@@ -310,6 +312,10 @@ function esc(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", 
 function chip(d){ return `<span class="chip ${esc(d || "none")}">${esc(d || "no decision")}</span>`; }
 function initials(name){ return (name || "?").split(" ").filter(w => w[0] && w[0].match(/[A-Za-z]/)).slice(0,2).map(w => w[0].toUpperCase()).join(""); }
 
+
+function initialsFor(email){ const e = (email || "").toLowerCase(); if (e === "michaelkrilivsky@gmail.com") return "MK"; if (e === "lorer284@yahoo.com") return "LR"; const local = e.split("@")[0] || "?"; return local.replace(/[^a-z]/g, "").slice(0, 2).toUpperCase() || "?"; }
+function stampFor(l){ if (!l.updatedAt) return ""; let d = null; if (typeof l.updatedAt.toDate === "function") d = l.updatedAt.toDate(); else if (l.updatedAt.seconds) d = new Date(l.updatedAt.seconds * 1000); else d = new Date(l.updatedAt); if (!d || isNaN(d)) return ""; const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); return `Last updated ${date}, ${time} · ${initialsFor(l.updatedBy)}`; }
+
 function render(filter = "") {
   const q = filter.toLowerCase();
   let list = lawyers.filter(l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision].join(" ").toLowerCase().includes(q));
@@ -380,6 +386,7 @@ function render(filter = "") {
         <p class="muted" style="margin:6px 0">Ask these on the call, then type the answers here and tap Save this card. Focus: tenant background, suing landlords, money recovered, and stopping / reversing eviction.</p>
         ${CALL_QUESTIONS.map((q, i) => `<div class="qa-q">${i + 1}. ${esc(q)}</div><textarea data-qa-index="${i}" data-id="${esc(l.id)}" placeholder="Answer…">${esc((l.callAnswers && l.callAnswers[i]) || (l.callAnswers && l.callAnswers[String(i)]) || "")}</textarea>`).join("")}
       </details>
+      ${stampFor(l) ? `<div class="stamp">${esc(stampFor(l))}</div>` : ""}
       <div class="row" style="margin-top:12px"><button data-save="${esc(l.id)}">Save this card</button><span class="saved" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
     </article>`; }).join("") : "<p class='muted'>No lawyers match that search or filter, or the tracker has not been seeded yet.</p>";
 
