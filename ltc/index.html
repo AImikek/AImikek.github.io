@@ -88,6 +88,11 @@
   .login-hero h2{font-size:26px;line-height:1.15;margin:6px 0 8px}
   .login-hero p{color:var(--ink2)}
   #loginBtn{width:100%;padding:14px;font-size:16px}
+
+.qa-details{margin-top:14px;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px;background:rgba(255,255,255,.04)}
+.qa-details summary{cursor:pointer;font-weight:750}
+.qa-details textarea{width:100%;min-height:44px;margin:4px 0 10px}
+.qa-q{font-weight:650;margin-top:8px}
 </style>
 <!--
   LTC — shared edition for Mike + Lorena.
@@ -213,6 +218,25 @@ const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE_");
 const ALLOWED = ["michaelkrilivsky@gmail.com", "lorer284@yahoo.com"];
 // Verified LinkedIn links only (researched Oct 27, 2026 — no guessed URLs).
 // Carlson is a verified firm page; all other personal profiles were NOT FOUND in public search.
+
+// Call questions — focused on tenant background: suing landlords, making money for tenants, preventing/reversing eviction.
+const CALL_QUESTIONS = [
+  "How many tenants have you represented in the last 3 years — and how many landlords in the same period?",
+  "Have you personally sued a landlord? What happened — verdict, settlement, or loss, and how much?",
+  "Have you sued a landlord's broker/agent or an escrow holder? What were the outcomes?",
+  "What is the largest damages amount you have recovered for a tenant, and in what kind of case?",
+  "Do you take tenant cases on contingency or hybrid? Exact percentage / fee — and what do I pay if we lose?",
+  "Have you stopped or reversed an eviction? How — what motion, defense, or negotiation worked?",
+  "Have you defended a 3-day pay-or-vacate notice where the tenant had already paid or escrowed the money? Result?",
+  "Have you handled a Ch. 83 habitability / failure-to-maintain case (toilets, doors, AC/mold)? What did the tenant get?",
+  "Have you handled a security-deposit or escrow dispute? What did the tenant recover?",
+  "Have you handled an occupancy / sublease / advertising dispute where the landlord tried to block occupants? Result?",
+  "Who in your firm will actually handle and try my case — and have they tried a Ch. 83 / lease case to verdict?",
+  "What is your damages theory for my case beyond the $59,500 escrow — and what part is fee-shifting vs. out-of-pocket risk for me?",
+  "Any conflict with Mendola Corp, Garlatti, Douglas Elliman (Belmonte / Fernandez), Roca Gonzalez PA, LoKation, or The Closing Team?",
+  "Can you act this week, before the Oct 28 / Oct 30 deadlines — and what is your first move?"
+];
+
 const VERIFIED_LINKEDIN = {
   carlson: "https://www.linkedin.com/company/lscarlsonlaw/",
   salcines: "https://www.linkedin.com/company/law-offices-of-jacqueline-a-salcines-pa"
@@ -315,6 +339,10 @@ function render(filter = "") {
           ${["", "vetting", "hold", "pass", "hire"].map(v => `<option value="${v}" ${l.decision === v ? "selected" : ""}>${v || "No decision yet"}</option>`).join("")}
         </select>
       </label>
+      <details class="qa-details"><summary>📞 Call questions & answers${l.callAnswers ? " (" + Object.values(l.callAnswers).filter(v => v && String(v).trim()).length + " answered)" : ""} — tap to expand</summary>
+        <p class="muted" style="margin:6px 0">Ask these on the call, then type the answers here and tap Save this card. Focus: tenant background, suing landlords, money recovered, and stopping / reversing eviction.</p>
+        ${CALL_QUESTIONS.map((q, i) => `<div class="qa-q">${i + 1}. ${esc(q)}</div><textarea data-qa-index="${i}" data-id="${esc(l.id)}" placeholder="Answer…">${esc((l.callAnswers && l.callAnswers[i]) || (l.callAnswers && l.callAnswers[String(i)]) || "")}</textarea>`).join("")}
+      </details>
       <div class="row" style="margin-top:12px"><button data-save="${esc(l.id)}">Save this card</button><span class="saved" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
     </article>`; }).join("") : "<p class='muted'>No lawyers match that search or filter, or the tracker has not been seeded yet.</p>";
 
@@ -324,7 +352,12 @@ function render(filter = "") {
   });
   document.querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
     const id = b.dataset.save; const patch = { updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email };
-    document.querySelectorAll(`[data-id="${id}"]`).forEach(inp => { patch[inp.dataset.field] = inp.type === "checkbox" ? inp.checked : inp.value; });
+    const qa = {};
+    document.querySelectorAll(`[data-id="${id}"]`).forEach(inp => {
+      if (inp.dataset.qaIndex !== undefined) { qa[inp.dataset.qaIndex] = inp.value; }
+      else if (inp.dataset.field) { patch[inp.dataset.field] = inp.type === "checkbox" ? inp.checked : inp.value; }
+    });
+    patch.callAnswers = qa;
     if (patch.emailSent) { patch.emailSentBy = auth.currentUser.email; patch.emailSentAt = new Date().toISOString().slice(0, 10); }
     try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); document.querySelector(`[data-saved="${id}"]`).textContent = "Saved."; }
     catch (e) { document.querySelector(`[data-saved="${id}"]`).textContent = "Save failed: " + e.message; }
