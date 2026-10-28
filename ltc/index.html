@@ -107,30 +107,6 @@
   "firebase-auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
   "firebase-firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 } }
-
-// Add attorney: basics in, full card out (summary tile + card with Call questions section).
-const _addBtn = document.getElementById("addAttorneyBtn");
-if (_addBtn) _addBtn.onclick = () => { document.getElementById("addAttorneyForm").classList.remove("hidden"); document.getElementById("newName").focus(); };
-const _cancelBtn = document.getElementById("cancelAttorneyBtn");
-if (_cancelBtn) _cancelBtn.onclick = () => { document.getElementById("addAttorneyForm").classList.add("hidden"); };
-const _createBtn = document.getElementById("createAttorneyBtn");
-if (_createBtn) _createBtn.onclick = async () => {
-  const status = document.getElementById("addAttorneyStatus");
-  const name = document.getElementById("newName").value.trim();
-  if (!name) { status.textContent = "Full name is required."; return; }
-  const existing = lawyers.find(l => (l.name || "").toLowerCase() === name.toLowerCase());
-  if (existing) { status.textContent = `“${name}” is already in the tracker — jumping to their card instead of creating a duplicate.`; collapsed.delete(existing.id); render(""); const el = document.getElementById("lawyer-" + existing.id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
-  let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "lawyer";
-  let id = slug, n = 2; while (lawyers.some(l => l.id === id)) { id = slug + "-" + n++; }
-  const order = Math.max(0, ...lawyers.map(l => l.order || 0)) + 1;
-  try {
-    await setDoc(doc(db, "lawyers", id), { order, name, firm: document.getElementById("newFirm").value.trim(), phone: document.getElementById("newPhone").value.trim(), email: document.getElementById("newEmail").value.trim(), website: document.getElementById("newWebsite").value.trim(), city: document.getElementById("newCity").value.trim(), fit: document.getElementById("newFit").value.trim(), decision: "", nextStep: "", additionalNotes: "", spokeTo: "", feeRetainer: "", emailSent: false, callAnswers: {}, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true });
-    ["newName","newFirm","newPhone","newEmail","newWebsite","newCity","newFit"].forEach(f => document.getElementById(f).value = "");
-    document.getElementById("addAttorneyForm").classList.add("hidden");
-    collapsed.delete(id); render("");
-    setTimeout(() => { const el = document.getElementById("lawyer-" + id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 300);
-  } catch (e) { status.textContent = "Could not create attorney: " + e.message; }
-};
 </script>
 </head>
 <body>
@@ -479,6 +455,30 @@ if (_applyBtn) _applyBtn.onclick = async () => {
     status.textContent = `Applied updates to ${n} lawyers.`;
   } catch (e) { status.textContent = "Apply failed: " + e.message; }
 };
+// Add attorney: basics in, full card out (summary tile + card with Call questions section).
+const _addBtn = document.getElementById("addAttorneyBtn");
+if (_addBtn) _addBtn.onclick = () => { document.getElementById("addAttorneyForm").classList.remove("hidden"); document.getElementById("newName").focus(); };
+const _cancelBtn = document.getElementById("cancelAttorneyBtn");
+if (_cancelBtn) _cancelBtn.onclick = () => { document.getElementById("addAttorneyForm").classList.add("hidden"); };
+const _createBtn = document.getElementById("createAttorneyBtn");
+if (_createBtn) _createBtn.onclick = async () => {
+  const status = document.getElementById("addAttorneyStatus");
+  const name = document.getElementById("newName").value.trim();
+  if (!name) { status.textContent = "Full name is required."; return; }
+  const existing = lawyers.find(l => (l.name || "").toLowerCase() === name.toLowerCase());
+  if (existing) { status.textContent = `“${name}” is already in the tracker — jumping to their card instead of creating a duplicate.`; collapsed.delete(existing.id); render(""); const el = document.getElementById("lawyer-" + existing.id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "lawyer";
+  let id = slug, n = 2; while (lawyers.some(l => l.id === id)) { id = slug + "-" + n++; }
+  const order = Math.max(0, ...lawyers.map(l => l.order || 0)) + 1;
+  try {
+    await setDoc(doc(db, "lawyers", id), { order, name, firm: document.getElementById("newFirm").value.trim(), phone: document.getElementById("newPhone").value.trim(), email: document.getElementById("newEmail").value.trim(), website: document.getElementById("newWebsite").value.trim(), city: document.getElementById("newCity").value.trim(), fit: document.getElementById("newFit").value.trim(), decision: "", nextStep: "", additionalNotes: "", spokeTo: "", feeRetainer: "", emailSent: false, callAnswers: {}, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true });
+    ["newName","newFirm","newPhone","newEmail","newWebsite","newCity","newFit"].forEach(f => document.getElementById(f).value = "");
+    document.getElementById("addAttorneyForm").classList.add("hidden");
+    collapsed.delete(id); render("");
+    setTimeout(() => { const el = document.getElementById("lawyer-" + id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 300);
+  } catch (e) { status.textContent = "Could not create attorney: " + e.message; }
+};
+
 </script>
 </body>
 </html>
