@@ -69,6 +69,14 @@
     </div>
     <p id="status" class="muted"></p>
 
+    <div id="importSection" class="card hidden">
+      <h2>Import starter tracker (Mike only, one time)</h2>
+      <p class="muted">Choose the seed-data.json file Mike was given. It is read in your browser only, written straight to Firestore, and never uploaded to GitHub. Use it once, then this section can be removed.</p>
+      <input id="seedFile" type="file" accept=".json,application/json">
+      <button id="importBtn">Import 25 lawyers into Firestore</button>
+      <p id="importStatus" class="muted"></p>
+    </div>
+
     <div class="banner">
       <strong>Deadlines:</strong> Oct 28 — three-day pay-or-vacate deadline &nbsp;|&nbsp; Oct 30 — seven-day cure deadline (deposit + alleged subleasing/advertising) &nbsp;|&nbsp; Nov 6 — $15,000 copyright demand, practical deadline.
       <br><strong>Escrow:</strong> $59,500 full release authorized Oct 23 — confirm landing / landlord confirmation before telling any firm it is settled.
@@ -155,6 +163,7 @@ if (auth) onAuthStateChanged(auth, user => {
     return;
   }
   $("status").textContent = "Live — edits save to the shared tracker for both of you.";
+  $("importSection").classList.toggle("hidden", (user.email || "").toLowerCase() !== "michaelkrilivsky@gmail.com");
   unsub = onSnapshot(collection(db, "lawyers"), snap => {
     lawyers = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 99) - (b.order || 99));
     render();
@@ -209,6 +218,24 @@ function render(filter = "") {
   });
 }
 $("search").addEventListener("input", e => render(e.target.value));
+
+// One-time seed import (Mike only). Reads a local JSON file in the browser,
+// writes each lawyer as a Firestore document. The file itself never goes to GitHub.
+$("importBtn").onclick = async () => {
+  const file = $("seedFile").files[0];
+  if (!file) { $("importStatus").textContent = "Choose the seed-data.json file first."; return; }
+  try {
+    const data = JSON.parse(await file.text());
+    const list = data.lawyers || [];
+    let n = 0;
+    for (const l of list) {
+      const { id, ...fields } = l;
+      await setDoc(doc(db, "lawyers", id), { ...fields, updatedBy: auth.currentUser.email, updatedAt: serverTimestamp() });
+      n++;
+    }
+    $("importStatus").textContent = `Imported ${n} lawyers. Refresh the list above — they should all appear now.`;
+  } catch (e) { $("importStatus").textContent = "Import failed: " + e.message; }
+};
 </script>
 </body>
 </html>
