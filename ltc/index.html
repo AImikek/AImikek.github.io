@@ -107,6 +107,30 @@
   "firebase-auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
   "firebase-firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 } }
+
+// Add attorney: basics in, full card out (summary tile + card with Call questions section).
+const _addBtn = document.getElementById("addAttorneyBtn");
+if (_addBtn) _addBtn.onclick = () => { document.getElementById("addAttorneyForm").classList.remove("hidden"); document.getElementById("newName").focus(); };
+const _cancelBtn = document.getElementById("cancelAttorneyBtn");
+if (_cancelBtn) _cancelBtn.onclick = () => { document.getElementById("addAttorneyForm").classList.add("hidden"); };
+const _createBtn = document.getElementById("createAttorneyBtn");
+if (_createBtn) _createBtn.onclick = async () => {
+  const status = document.getElementById("addAttorneyStatus");
+  const name = document.getElementById("newName").value.trim();
+  if (!name) { status.textContent = "Full name is required."; return; }
+  const existing = lawyers.find(l => (l.name || "").toLowerCase() === name.toLowerCase());
+  if (existing) { status.textContent = `“${name}” is already in the tracker — jumping to their card instead of creating a duplicate.`; collapsed.delete(existing.id); render(""); const el = document.getElementById("lawyer-" + existing.id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "lawyer";
+  let id = slug, n = 2; while (lawyers.some(l => l.id === id)) { id = slug + "-" + n++; }
+  const order = Math.max(0, ...lawyers.map(l => l.order || 0)) + 1;
+  try {
+    await setDoc(doc(db, "lawyers", id), { order, name, firm: document.getElementById("newFirm").value.trim(), phone: document.getElementById("newPhone").value.trim(), email: document.getElementById("newEmail").value.trim(), website: document.getElementById("newWebsite").value.trim(), city: document.getElementById("newCity").value.trim(), fit: document.getElementById("newFit").value.trim(), decision: "", nextStep: "", additionalNotes: "", spokeTo: "", feeRetainer: "", emailSent: false, callAnswers: {}, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true });
+    ["newName","newFirm","newPhone","newEmail","newWebsite","newCity","newFit"].forEach(f => document.getElementById(f).value = "");
+    document.getElementById("addAttorneyForm").classList.add("hidden");
+    collapsed.delete(id); render("");
+    setTimeout(() => { const el = document.getElementById("lawyer-" + id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 300);
+  } catch (e) { status.textContent = "Could not create attorney: " + e.message; }
+};
 </script>
 </head>
 <body>
@@ -194,6 +218,20 @@
     <div class="row">
       <button id="expandAll" class="secondary">Expand all</button>
       <button id="collapseAll" class="secondary">Collapse all</button>
+      <button id="addAttorneyBtn">＋ Add attorney</button>
+    </div>
+    <div id="addAttorneyForm" class="card hidden" style="margin-top:12px">
+      <h2>Add an attorney</h2>
+      <p class="muted">Enter the basics — this creates the summary tile at the top <em>and</em> the full card below, with Next step, Notes, Contact, Decision, and the Call questions &amp; answers section already on it.</p>
+      <label>Full name * <input id="newName" placeholder="e.g. Christopher G. Berga"></label>
+      <label>Firm <input id="newFirm" placeholder="e.g. BergaLaw, P.A."></label>
+      <label>Phone <input id="newPhone" placeholder="e.g. (305) 990-2185"></label>
+      <label>Email <input id="newEmail" placeholder="e.g. name@firm.com"></label>
+      <label>Website <input id="newWebsite" placeholder="https://…"></label>
+      <label>City <input id="newCity" placeholder="e.g. Coral Gables"></label>
+      <label>Why this one / fit <textarea id="newFit" placeholder="Tenant-side fit, practice area, anything known so far…"></textarea></label>
+      <div class="row"><button id="createAttorneyBtn">Create attorney</button><button id="cancelAttorneyBtn" class="secondary">Cancel</button></div>
+      <p id="addAttorneyStatus" class="muted"></p>
     </div>
     <div id="cards"></div>
     <p class="muted">Passed lawyers start collapsed so they don't take up space. Tap any name in the summary above to jump to and expand that card.</p>
