@@ -130,29 +130,19 @@
   <section id="appSection" class="hidden">
     <div class="topbar">
       <span class="small">Signed in as <strong id="who"></strong></span>
-      <button id="logoutBtn" class="secondary">Sign out</button>
+      
     </div>
     <p id="status" class="muted"></p>
 
-    <div id="importSection" class="card hidden">
-      <h2>Import starter tracker <span class="muted" style="font-weight:400">(Mike only, one time)</span></h2>
-      <p class="muted">Choose the seed-data.json file. It is read in your browser only, written straight to Firestore, and never uploaded to GitHub.</p>
-      <input id="seedFile" type="file" accept=".json,application/json">
-      <button id="importBtn">Import 25 lawyers into Firestore</button>
-      <p id="importStatus" class="muted"></p>
-    </div>
 
     <div id="stats" class="stats"></div>
 
     <details class="card" open>
       <summary>✉️ Reference email for Lorena — for sending from tomorrow morning</summary>
       <div style="margin-top:12px">
-        <p class="small">Pick a lawyer, enter the 4910 password you already have once (it stays only in this browser, it is never saved to GitHub), then Copy email. The copied email includes the full brief link <strong>and</strong> the password, so a firm can check the details right away.</p>
+        <p class="small">Pick a lawyer, then Copy email. The copied email already includes the full brief link <strong>and</strong> the password, so a firm can check the details right away.</p>
         <label>Send to
           <select id="emailLawyer"><option value="">— Choose a lawyer —</option></select>
-        </label>
-        <label>4910 password (you already have this)
-          <input id="emailPassword" type="password" autocomplete="off" placeholder="Enter the mikek.ai/4910 password">
         </label>
         <label>Email preview — copy this
           <textarea id="emailPreview" rows="14" readonly style="min-height:300px"></textarea>
@@ -192,6 +182,7 @@
     </div>
     <div id="cards"></div>
     <p class="muted">Passed lawyers start collapsed so they don't take up space. Tap any name in the summary above to jump to and expand that card.</p>
+      <p style="text-align:center;margin-top:28px"><a href="#" id="logoutBtn" style="color:#64748b;font-size:12px;text-decoration:underline">Sign out</a></p>
   </section>
 </main>
 
@@ -240,7 +231,6 @@ if (auth) onAuthStateChanged(auth, user => {
   $("appSection").classList.toggle("hidden", !signedIn);
   if (!signedIn) { if (unsub) unsub(); return; }
   $("who").textContent = user.email || "";
-  $("importSection").classList.toggle("hidden", (user.email || "").toLowerCase() !== "michaelkrilivsky@gmail.com");
   if (!ALLOWED.includes((user.email || "").toLowerCase())) { $("status").textContent = "This account is not authorized for this tracker."; return; }
   $("status").textContent = "Live — edits save to the shared tracker for both of you.";
   unsub = onSnapshot(collection(db, "lawyers"), snap => {
@@ -323,15 +313,15 @@ function render(filter = "") {
 $("search").addEventListener("input", e => render(e.target.value));
 $("expandAll").onclick = () => { collapsed.clear(); render($("search").value); };
 $("collapseAll").onclick = () => { lawyers.forEach(l => collapsed.add(l.id)); render($("search").value); };
-// Reference email for Lorena. The password is never hardcoded in this file
-// (the repo is public) — it is entered once here, kept only in this browser,
-// and included in the copied email so firms can open the full brief at once.
+// Reference email for Lorena. Per Mike's explicit instruction Oct 27, the 4910
+// password is included directly in the copied email so Lorena has no extra step.
+// Note: this file lives in a PUBLIC repo, so anyone viewing its source can see it.
 function firstName(full){ const p = (full || "").trim().split(/\s+/); return p[0] || "[Name]"; }
 function emailText(){
   const sel = $("emailLawyer");
   const lawyer = lawyers.find(l => l.id === sel.value);
   const name = lawyer ? firstName(lawyer.name) : "[Name]";
-  const pw = $("emailPassword").value || "[password]";
+  const pw = "Velvet-Escrow-4910";
   return `Hi ${name},
 
 I'm looking for counsel to bring damages claims against my landlord, its agents and the escrow company, and to protect my tenancy at 1300 S Miami Ave.
@@ -352,11 +342,7 @@ function refreshEmailOptions(){
   $("emailPreview").value = emailText();
 }
 $("emailLawyer").addEventListener("change", () => { $("emailPreview").value = emailText(); });
-$("emailPassword").addEventListener("input", e => {
-  try { localStorage.setItem("ltc4910pw", e.target.value); } catch (err) {}
-  $("emailPreview").value = emailText();
-});
-try { const savedPw = localStorage.getItem("ltc4910pw"); if (savedPw) $("emailPassword").value = savedPw; } catch (err) {}
+
 $("copyEmailBtn").onclick = async () => {
   $("emailPreview").value = emailText();
   try { await navigator.clipboard.writeText($("emailPreview").value); $("copyStatus").textContent = "✓ Copied — paste into your email."; }
@@ -366,20 +352,6 @@ $("copyEmailBtn").onclick = async () => {
 const _origRender = render;
 render = function(filter = "") { _origRender(filter); refreshEmailOptions(); };
 
-$("importBtn").onclick = async () => {
-  const file = $("seedFile").files[0];
-  if (!file) { $("importStatus").textContent = "Choose the seed-data.json file first."; return; }
-  try {
-    const data = JSON.parse(await file.text());
-    const list = data.lawyers || []; let n = 0;
-    for (const l of list) {
-      const { id, ...fields } = l;
-      await setDoc(doc(db, "lawyers", id), { ...fields, updatedBy: auth.currentUser.email, updatedAt: serverTimestamp() });
-      n++;
-    }
-    $("importStatus").textContent = `Imported ${n} lawyers. They should all appear below now.`;
-  } catch (e) { $("importStatus").textContent = "Import failed: " + e.message; }
-};
 </script>
 </body>
 </html>
