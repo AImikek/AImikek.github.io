@@ -6,35 +6,55 @@
 <title>PH4910 Lawyer Call Tracker — mikek.ai/ltc</title>
 <meta name="description" content="Shared lawyer call tracker for Mike and Lorena. One version, both edit.">
 <style>
-  :root{--ink:#101828;--muted:#667085;--line:#e4e7ec;--bg:#f9fafb;--card:#fff;--navy:#0f2a3d;--teal:#0f766e;--blue:#175cd3}
+  :root{
+    --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f1f5f9; --card:#ffffff;
+    --navy:#0b2239; --navy2:#14365e; --gold:#c9a96a; --teal:#0f766e; --blue:#1d4ed8;
+    --radius:18px; --shadow:0 4px 20px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.04);
+  }
   *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
-  header{background:var(--navy);color:#fff;padding:18px 16px 14px} header h1{margin:0;font-size:21px;letter-spacing:-.2px} header p{margin:6px 0 0;color:#cfe3ef;font-size:13.5px}
-  main{max-width:760px;margin:0 auto;padding:10px 12px 32px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin:10px 0;box-shadow:0 1px 2px rgba(16,24,40,.05)}
-  .card h2{margin:0 0 4px;font-size:17px;letter-spacing:-.2px} .card h3{margin:12px 0 4px;font-size:14px}
-  .muted{color:var(--muted);font-size:13px} .small{font-size:13px}
-  input,select,textarea{width:100%;padding:9px 10px;border:1px solid #d0d5dd;border-radius:9px;font-size:15px;margin:5px 0;background:#fff;color:var(--ink)}
-  textarea{min-height:78px;resize:vertical} label{font-size:13px;font-weight:600;color:#344054;display:block;margin-top:8px}
-  button{background:var(--navy);color:#fff;border:0;border-radius:9px;padding:10px 14px;font-size:14.5px;font-weight:600;cursor:pointer}
-  button.secondary{background:#f2f4f7;color:var(--ink);border:1px solid var(--line)} button:active{transform:scale(.98)}
-  .search{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0}
-  .search input{font-size:16px;padding:11px 12px;border-radius:11px;box-shadow:0 1px 3px rgba(16,24,40,.06)}
-  .index{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
-  .index button{background:#fff;color:var(--ink);border:1px solid var(--line);padding:6px 9px;font-size:12.5px;font-weight:600;border-radius:20px}
-  .index button.pass{color:#98a2b3}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+  header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);color:#fff;padding:26px 18px 20px}
+  header .wrap, main{max-width:780px;margin:0 auto}
+  header h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:27px;font-weight:600;letter-spacing:-.3px;line-height:1.15}
+  header h1 span{color:var(--gold)}
+  header p{margin:8px 0 0;color:#cbd5e1;font-size:14px;max-width:560px}
+  header .rule{height:3px;width:56px;background:var(--gold);border-radius:3px;margin-top:14px}
+  main{padding:14px 14px 40px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin:12px 0}
+  .card h2{margin:0 0 4px;font-size:18px;letter-spacing:-.2px} .card h3{margin:14px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  .muted{color:var(--muted);font-size:13.5px} .small{font-size:13.5px}
+  input,select,textarea{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:12px;font-size:15px;margin:5px 0;background:#fff;color:var(--ink);outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--navy2);box-shadow:0 0 0 3px rgba(20,54,94,.12)}
+  textarea{min-height:82px;resize:vertical} label{font-size:12.5px;font-weight:700;color:#334155;display:block;margin-top:10px;letter-spacing:.2px}
+  button{background:var(--navy);color:#fff;border:0;border-radius:11px;padding:11px 16px;font-size:14.5px;font-weight:700;cursor:pointer}
+  button.secondary{background:#f8fafc;color:var(--ink);border:1px solid var(--line)} button:active{transform:scale(.98)}
+  .search{position:sticky;top:0;z-index:10;background:rgba(241,245,249,.92);backdrop-filter:blur(10px);padding:10px 0 8px;margin:0 -2px}
+  .search input{font-size:16px;padding:13px 14px;border-radius:14px;box-shadow:var(--shadow)}
+  .index{display:flex;gap:7px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none} .index::-webkit-scrollbar{display:none}
+  .index button{flex:0 0 auto;background:#fff;color:var(--ink);border:1px solid var(--line);padding:7px 11px;font-size:12.5px;font-weight:700;border-radius:999px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+  .index button.pass{color:#94a3b8}
+  .filters{display:flex;gap:7px;flex-wrap:wrap;margin:2px 0 4px}
+  .filters button{padding:8px 12px;font-size:13px;border-radius:999px}
+  .filters button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .filters button:not(.active){background:#fff;color:var(--ink);border:1px solid var(--line)}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase}
-  .hire{background:#d1fae5;color:#027a48}.vetting{background:#ccfbf1;color:#0f766e}.hold{background:#fef3c7;color:#b54708}.pass{background:#fee2e2;color:#b42318}.none{background:#f2f4f7;color:#667085}
-  .phone{font-size:21px;font-weight:800;letter-spacing:-.2px;margin-top:6px} .phone a{color:var(--navy);text-decoration:none}
-  .email a{color:var(--blue);text-decoration:none;font-weight:600}
-  .banner{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:11px 13px;margin:10px 0;font-size:13.5px}
-  .banner strong{color:#7c2d12}
-  details summary{cursor:pointer;font-weight:700;font-size:14px;list-style:none} details summary::-webkit-details-marker{display:none}
+  .chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+  .hire{background:#dcfce7;color:#166534}.vetting{background:#ccfbf1;color:#0f766e}.hold{background:#fef3c7;color:#92400e}.pass{background:#fee2e2;color:#991b1b}.none{background:#f1f5f9;color:#64748b}
+  .avatar{width:46px;height:46px;flex:0 0 46px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;letter-spacing:.3px}
+  .lawyer{border-left:5px solid #e2e8f0} .lawyer.vetting{border-left-color:#14b8a6} .lawyer.hold{border-left-color:#f59e0b} .lawyer.pass{border-left-color:#e2e8f0;opacity:.88} .lawyer.hire{border-left-color:#22c55e}
+  .lawyer h2{font-size:18px} .firm{color:var(--muted);font-size:13.5px;margin-top:1px}
+  .notes-box{background:#f0fdfa;border:1px solid #ccfbf1;border-radius:12px;padding:2px 12px 10px;margin-top:10px}
+  .next-box{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:2px 12px 10px;margin-top:10px}
+  .call-btn{display:inline-block;background:#0f766e;color:#fff !important;text-decoration:none;font-weight:800;padding:11px 18px;border-radius:12px;font-size:16px}
+  .pill-btn{display:inline-block;background:#f8fafc;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:700;padding:9px 13px;border-radius:999px;font-size:13.5px}
+  .banner{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px 14px;margin:12px 0;font-size:13.5px}
+  details summary{cursor:pointer;font-weight:800;font-size:14.5px;list-style:none} details summary::-webkit-details-marker{display:none}
   .hidden{display:none} .topbar{display:flex;justify-content:space-between;gap:8px;align-items:center}
-  #status{font-size:13px;margin:6px 0}
-  .saved{color:#027a48;font-size:13px;font-weight:600}
-  .count{font-size:13px;color:var(--muted);margin:4px 0}
+  #status{font-size:13px;margin:6px 0} .saved{color:#15803d;font-size:13px;font-weight:700}
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 12px;box-shadow:var(--shadow)}
+  .stat b{font-size:22px;display:block;line-height:1.1} .stat span{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .chev{font-size:18px;line-height:1}
 </style>
 <!--
   LTC — shared edition for Mike + Lorena.
@@ -53,20 +73,23 @@
 </head>
 <body>
 <header>
-  <h1>PH4910 Lawyer Tracker</h1>
-  <p>One shared version for Mike and Lorena. Sign in, call, log what each firm said.</p>
+  <div class="wrap">
+    <h1>PH4910 <span>Lawyer Tracker</span></h1>
+    <p>One shared version for Mike and Lorena. Sign in, call, log what each firm said — your edits save for both of you, live.</p>
+    <div class="rule"></div>
+  </div>
 </header>
 <main>
-  <div id="setupBanner" class="banner hidden"><strong>Setup needed:</strong> Firebase is not configured yet. Once connected, this page becomes the login + tracker.</div>
+  <div id="setupBanner" class="banner hidden"><strong>Setup needed:</strong> Firebase is not configured yet.</div>
 
   <section id="loginSection" class="card">
-    <h2>Sign in</h2>
-    <p class="muted">Use your own email and password. Mike: michaelkrilivsky@gmail.com. Lorena: Lorer284@yahoo.com.</p>
+    <h2>Welcome back</h2>
+    <p class="muted">Sign in with your own email and password.<br>Mike: michaelkrilivsky@gmail.com · Lorena: Lorer284@yahoo.com</p>
     <label>Email <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
     <label>Password <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Your password"></label>
-    <div class="row"><button id="loginBtn">Sign in</button><button id="forgotBtn" class="secondary">Forgot password</button></div>
+    <div class="row"><button id="loginBtn">Sign in →</button><button id="forgotBtn" class="secondary">Forgot password</button></div>
     <p id="loginError" class="muted"></p>
-    <p class="muted">New here? Your account must be created first, then use Forgot password to set your own password if you were given a temporary one. Never share your password in chat or email.</p>
+    <p class="muted">Never share your password in chat or email. Use Forgot password if you were given a temporary one.</p>
   </section>
 
   <section id="appSection" class="hidden">
@@ -77,22 +100,24 @@
     <p id="status" class="muted"></p>
 
     <div id="importSection" class="card hidden">
-      <h2>Import starter tracker (Mike only, one time)</h2>
-      <p class="muted">Choose the seed-data.json file Mike was given. It is read in your browser only, written straight to Firestore, and never uploaded to GitHub. Use it once, then this section can be removed.</p>
+      <h2>Import starter tracker <span class="muted" style="font-weight:400">(Mike only, one time)</span></h2>
+      <p class="muted">Choose the seed-data.json file. It is read in your browser only, written straight to Firestore, and never uploaded to GitHub.</p>
       <input id="seedFile" type="file" accept=".json,application/json">
       <button id="importBtn">Import 25 lawyers into Firestore</button>
       <p id="importStatus" class="muted"></p>
     </div>
 
+    <div id="stats" class="stats"></div>
+
     <details class="card" open>
-      <summary>Case snapshot &amp; deadlines — tap to collapse</summary>
-      <p class="small" style="margin-top:8px"><strong>Oct 28</strong> — three-day pay-or-vacate deadline &nbsp;·&nbsp; <strong>Oct 30</strong> — seven-day cure deadline (deposit + alleged subleasing/advertising) &nbsp;·&nbsp; <strong>Nov 6</strong> — $15,000 copyright demand, practical deadline.<br>
+      <summary>Case snapshot &amp; deadlines</summary>
+      <p class="small" style="margin-top:10px"><strong>Oct 28</strong> — three-day pay-or-vacate deadline &nbsp;·&nbsp; <strong>Oct 30</strong> — seven-day cure deadline (deposit + alleged subleasing/advertising) &nbsp;·&nbsp; <strong>Nov 6</strong> — $15,000 copyright demand, practical deadline.<br>
       <strong>Escrow:</strong> $59,500 full release authorized Oct 23 — confirm landing / landlord confirmation before telling any firm it is settled.</p>
     </details>
 
     <details class="card">
       <summary>How to call — opener, conflict check &amp; questions</summary>
-      <div class="small" style="margin-top:8px">
+      <div class="small" style="margin-top:10px">
         <p><strong>30-second opener:</strong> “Hi, I'm calling about an urgent Miami-Dade tenant dispute in a Brickell condo. We have an Oct 28 deadline and need counsel now. Can I do a quick conflict check, then tell you the facts in two minutes?”</p>
         <p><strong>Conflict-check parties first:</strong> Landlord Stefania Garlatti / MENDOLA CORP c/o ROCA GONZALEZ PA. Listing side: Carlos Fernandez and Pietro Belmonte (Douglas Elliman). Mike's agent: Sarina Nayebmohammadi (LoKation). Escrow: Ana Menta, The Closing Team / Closing Team FL.</p>
         <p><strong>Ask every firm:</strong> (1) Miami-Dade residential eviction defense for tenants? Any conflict? (2) Can you act before Oct 28? First step and timing? (3) Retainer / fee, refundable?, who handles it personally? (4) What do you need from us today?</p>
@@ -101,12 +126,13 @@
       </div>
     </details>
 
-    <div class="search"><input id="search" type="search" placeholder="Search lawyers, firms, phones, emails, decisions…"></div>
+    <div class="search"><input id="search" type="search" placeholder="🔍  Search lawyers, firms, phones, emails, decisions…"></div>
+    <div class="filters" id="filters"></div>
     <div id="jumpIndex" class="index"></div>
     <div class="row">
       <button id="expandAll" class="secondary">Expand all</button>
       <button id="collapseAll" class="secondary">Collapse all</button>
-      <span id="count" class="count"></span>
+      <span id="count" class="muted"></span>
     </div>
     <div id="cards"></div>
     <p class="muted">Passed lawyers start collapsed so they don't take up space. Tap any name in the index to jump to and expand that card.</p>
@@ -131,12 +157,11 @@ const ALLOWED = ["michaelkrilivsky@gmail.com", "lorer284@yahoo.com"];
 const $ = id => document.getElementById(id);
 if (!CONFIGURED) $("setupBanner").classList.remove("hidden");
 
-let auth, db, lawyers = [], unsub = null, collapsed = new Set();
+let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all";
 if (CONFIGURED) {
   try { const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
   catch (e) { $("loginError").textContent = "Firebase setup error: " + e.message; }
 }
-
 $("loginBtn").onclick = async () => {
   if (!CONFIGURED) { $("loginError").textContent = "Firebase is not configured yet."; return; }
   $("loginError").textContent = "";
@@ -160,10 +185,7 @@ if (auth) onAuthStateChanged(auth, user => {
   if (!signedIn) { if (unsub) unsub(); return; }
   $("who").textContent = user.email || "";
   $("importSection").classList.toggle("hidden", (user.email || "").toLowerCase() !== "michaelkrilivsky@gmail.com");
-  if (!ALLOWED.includes((user.email || "").toLowerCase())) {
-    $("status").textContent = "This account is not authorized for this tracker.";
-    return;
-  }
+  if (!ALLOWED.includes((user.email || "").toLowerCase())) { $("status").textContent = "This account is not authorized for this tracker."; return; }
   $("status").textContent = "Live — edits save to the shared tracker for both of you.";
   unsub = onSnapshot(collection(db, "lawyers"), snap => {
     lawyers = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 99) - (b.order || 99));
@@ -174,30 +196,45 @@ if (auth) onAuthStateChanged(auth, user => {
 
 function esc(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c])); }
 function chip(d){ return `<span class="chip ${esc(d || "none")}">${esc(d || "no decision")}</span>`; }
+function initials(name){ return (name || "?").split(" ").filter(w => w[0] && w[0].match(/[A-Za-z]/)).slice(0,2).map(w => w[0].toUpperCase()).join(""); }
 
 function render(filter = "") {
   const q = filter.toLowerCase();
-  const list = lawyers.filter(l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision].join(" ").toLowerCase().includes(q));
+  let list = lawyers.filter(l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision].join(" ").toLowerCase().includes(q));
+  if (decisionFilter !== "all") list = list.filter(l => (l.decision || "") === decisionFilter);
+  const vetting = lawyers.filter(l => l.decision === "vetting").length;
+  const passed = lawyers.filter(l => l.decision === "pass").length;
+  $("stats").innerHTML = `<div class="stat"><b>${lawyers.length}</b><span>Attorneys</span></div><div class="stat"><b>${vetting}</b><span>Vetting</span></div><div class="stat"><b>${passed}</b><span>Passed</span></div>`;
+  const filters = [["all","All"],["vetting","Vetting"],["hold","Hold"],["pass","Pass"],["hire","Hire"]];
+  $("filters").innerHTML = filters.map(([v, label]) => `<button class="${decisionFilter === v ? "active" : ""}" data-filter="${v}">${label}</button>`).join("");
+  document.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { decisionFilter = b.dataset.filter; render($("search").value); });
   $("count").textContent = list.length ? `${list.length} of ${lawyers.length} attorneys` : "";
   $("jumpIndex").innerHTML = lawyers.map(l =>
     `<button class="${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}">${esc(l.order)} ${esc(l.name)}${l.decision ? " · " + esc(l.decision) : ""}</button>`).join("");
   document.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
+    decisionFilter = "all"; collapsed.delete(b.dataset.jump); render($("search").value);
     const el = document.getElementById("lawyer-" + b.dataset.jump);
-    if (el) { collapsed.delete(b.dataset.jump); render($("search").value); el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("cards").innerHTML = list.length ? list.map(l => {
     const isCollapsed = collapsed.has(l.id) && !q;
-    return `<article class="card" id="lawyer-${esc(l.id)}">
-      <div class="topbar"><h2>${esc(l.order)}. ${esc(l.name)}</h2><button class="secondary" data-toggle="${esc(l.id)}">${isCollapsed ? "Expand" : "Collapse"}</button></div>
-      <div style="margin-top:2px">${chip(l.decision)} <span class="muted">${esc(l.firm || "")}${l.city ? " · " + esc(l.city) : ""}</span></div>
+    return `<article class="card lawyer ${esc(l.decision || "")}" id="lawyer-${esc(l.id)}">
+      <div class="row" style="justify-content:space-between">
+        <div class="row" style="gap:11px"><div class="avatar">${esc(initials(l.name))}</div>
+        <div><h2 style="margin:0">${esc(l.order)}. ${esc(l.name)}</h2><div class="firm">${esc(l.firm || "")}${l.city ? " · " + esc(l.city) : ""}</div></div></div>
+        <button class="secondary" data-toggle="${esc(l.id)}"><span class="chev">${isCollapsed ? "▾" : "▴"}</span></button>
+      </div>
+      <div style="margin-top:8px">${chip(l.decision)}</div>
       ${isCollapsed ? "" : `
-      <label>Next step <textarea data-field="nextStep" data-id="${esc(l.id)}">${esc(l.nextStep || "")}</textarea></label>
-      <label>Notes / call outcome <textarea data-field="additionalNotes" data-id="${esc(l.id)}">${esc(l.additionalNotes || "")}</textarea></label>
+      <div class="next-box"><label>Next step</label><textarea data-field="nextStep" data-id="${esc(l.id)}">${esc(l.nextStep || "")}</textarea></div>
+      <div class="notes-box"><label>Notes / call outcome</label><textarea data-field="additionalNotes" data-id="${esc(l.id)}">${esc(l.additionalNotes || "")}</textarea></div>
       <h3>Contact</h3>
-      ${l.phone ? `<div class="phone"><a href="tel:${esc(l.phone.replace(/[^0-9+]/g, ""))}">${esc(l.phone)}</a></div>` : ""}
-      ${l.email ? `<div class="email"><a href="mailto:${esc(l.email)}">${esc(l.email)}</a></div>` : `<div class="muted">No published email</div>`}
-      ${l.website ? `<div class="small"><a href="${esc(l.website)}" target="_blank" rel="noopener">Website</a></div>` : ""}
-      ${l.fit ? `<p class="small">${esc(l.fit)}</p>` : ""}
+      <div class="row">
+        ${l.phone ? `<a class="call-btn" href="tel:${esc(l.phone.replace(/[^0-9+]/g, ""))}">📞 ${esc(l.phone)}</a>` : ""}
+        ${l.email ? `<a class="pill-btn" href="mailto:${esc(l.email)}">✉️ Email</a>` : `<span class="muted">No published email</span>`}
+        ${l.website ? `<a class="pill-btn" href="${esc(l.website)}" target="_blank" rel="noopener">↗ Website</a>` : ""}
+      </div>
+      ${l.fit ? `<p class="small" style="margin-top:10px">${esc(l.fit)}</p>` : ""}
       <label>Spoke to <input data-field="spokeTo" data-id="${esc(l.id)}" value="${esc(l.spokeTo || "")}"></label>
       <label>Fee / retainer <input data-field="feeRetainer" data-id="${esc(l.id)}" value="${esc(l.feeRetainer || "")}"></label>
       <label>Decision
@@ -205,8 +242,8 @@ function render(filter = "") {
           ${["", "vetting", "hold", "pass", "hire"].map(v => `<option value="${v}" ${l.decision === v ? "selected" : ""}>${v || "No decision yet"}</option>`).join("")}
         </select>
       </label>
-      <div class="row"><button data-save="${esc(l.id)}">Save this card</button><span class="saved" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
-    </article>`; }).join("") : "<p class='muted'>No lawyers match that search, or the tracker has not been seeded yet.</p>";
+      <div class="row" style="margin-top:12px"><button data-save="${esc(l.id)}">✓ Save this card</button><span class="saved" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
+    </article>`; }).join("") : "<p class='muted'>No lawyers match that search or filter, or the tracker has not been seeded yet.</p>";
 
   document.querySelectorAll("[data-toggle]").forEach(b => b.onclick = () => {
     if (collapsed.has(b.dataset.toggle)) collapsed.delete(b.dataset.toggle); else collapsed.add(b.dataset.toggle);
@@ -215,14 +252,13 @@ function render(filter = "") {
   document.querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
     const id = b.dataset.save; const patch = { updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email };
     document.querySelectorAll(`[data-id="${id}"]`).forEach(inp => patch[inp.dataset.field] = inp.value);
-    try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); document.querySelector(`[data-saved="${id}"]`).textContent = "Saved."; }
+    try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); document.querySelector(`[data-saved="${id}"]`).textContent = "✓ Saved."; }
     catch (e) { document.querySelector(`[data-saved="${id}"]`).textContent = "Save failed: " + e.message; }
   });
 }
 $("search").addEventListener("input", e => render(e.target.value));
 $("expandAll").onclick = () => { collapsed.clear(); render($("search").value); };
 $("collapseAll").onclick = () => { lawyers.forEach(l => collapsed.add(l.id)); render($("search").value); };
-
 $("importBtn").onclick = async () => {
   const file = $("seedFile").files[0];
   if (!file) { $("importStatus").textContent = "Choose the seed-data.json file first."; return; }
