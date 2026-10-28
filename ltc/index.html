@@ -163,6 +163,10 @@
         <label>Send to
           <select id="emailLawyer"><option value="">— Choose a lawyer —</option></select>
         </label>
+        <label>Email address — copy this
+          <input id="emailAddressDisplay" readonly placeholder="Pick a lawyer above">
+        </label>
+        <div class="row"><button id="copyEmailAddressBtn" class="secondary">Copy email address</button></div>
         <label>Subject line — copy this
           <input id="emailSubject" readonly value="Urgent: PH4910 lease dispute — 15 minute call today, October 28">
         </label>
@@ -450,9 +454,17 @@ function refreshEmailOptions(){
   const sel = $("emailLawyer"); if (!sel) return;
   const current = sel.value;
   sel.innerHTML = `<option value="">— Choose a lawyer —</option>` + lawyers.map(l => `<option value="${esc(l.id)}" ${l.id === current ? "selected" : ""}>${esc(l.order)}. ${esc(l.name)}</option>`).join("");
+  const _lawyer = lawyers.find(l => l.id === sel.value);
+  $("emailAddressDisplay").value = _lawyer ? (_lawyer.email || "") : "";
   $("emailPreview").value = emailText();
 }
-$("emailLawyer").addEventListener("change", () => { $("emailPreview").value = emailText(); });
+$("emailLawyer").addEventListener("change", () => { const _l = lawyers.find(l => l.id === $("emailLawyer").value); $("emailAddressDisplay").value = _l ? (_l.email || "") : ""; $("emailPreview").value = emailText(); });
+$("copyEmailAddressBtn").onclick = async () => {
+  const addr = $("emailAddressDisplay").value;
+  if (!addr) { $("copyStatus").textContent = "Choose a lawyer with an email address first."; return; }
+  try { await navigator.clipboard.writeText(addr); $("copyStatus").textContent = "Email address copied: " + addr; }
+  catch (e) { $("emailAddressDisplay").select(); $("copyStatus").textContent = "Copy failed — select the email address above and copy manually."; }
+};
 
 $("mailtoBtn").onclick = async () => {
   const sel = $("emailLawyer");
