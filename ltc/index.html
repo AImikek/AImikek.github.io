@@ -203,6 +203,11 @@ const firebaseConfig = {
 };
 const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE_");
 const ALLOWED = ["michaelkrilivsky@gmail.com", "lorer284@yahoo.com"];
+// Verified LinkedIn links only (researched Oct 27, 2026 — no guessed URLs).
+// Carlson is a verified firm page; all other personal profiles were NOT FOUND in public search.
+const VERIFIED_LINKEDIN = {
+  carlson: "https://www.linkedin.com/company/lscarlsonlaw/"
+};
 const $ = id => document.getElementById(id);
 if (!CONFIGURED) $("setupBanner").classList.remove("hidden");
 
@@ -289,11 +294,11 @@ function render(filter = "") {
         ${l.phone ? `<a class="call-btn" href="tel:${esc(l.phone.replace(/[^0-9+]/g, ""))}">Call ${esc(l.phone)}</a>` : ""}
         ${l.email ? `<a class="pill-btn" href="mailto:${esc(l.email)}">Email</a>` : `<span class="muted">No published email</span>`}
         ${l.website ? `<a class="pill-btn" href="${esc(l.website)}" target="_blank" rel="noopener">Website ↗</a>` : ""}
+        ${(l.linkedin || VERIFIED_LINKEDIN[l.id]) ? `<a class="pill-btn" href="${esc(l.linkedin || VERIFIED_LINKEDIN[l.id])}" target="_blank" rel="noopener">in LinkedIn</a>` : ""}
       </div>
       ${l.fit ? `<p class="small" style="margin-top:10px">${esc(l.fit)}</p>` : ""}
       <label>Spoke to <input data-field="spokeTo" data-id="${esc(l.id)}" value="${esc(l.spokeTo || "")}"></label>
       <label>Fee / retainer <input data-field="feeRetainer" data-id="${esc(l.id)}" value="${esc(l.feeRetainer || "")}"></label>
-      <label>LinkedIn profile URL <input data-field="linkedin" data-id="${esc(l.id)}" value="${esc(l.linkedin || "")}" placeholder="https://www.linkedin.com/in/... — paste if known, leave blank if not"></label>
       <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-field="emailSent" data-id="${esc(l.id)}" ${l.emailSent ? "checked" : ""} style="width:auto;margin:0"> Email sent to this lawyer</label>
       <label>Decision
         <select data-field="decision" data-id="${esc(l.id)}">
