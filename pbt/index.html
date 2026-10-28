@@ -1717,6 +1717,28 @@ if (window.emailjs && window.EMAILJS_CONFIG.publicKey !== "YOUR_PUBLIC_KEY") {
 if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
   location.replace('https://' + location.host + location.pathname + location.search + location.hash);
 }
+// ── The app's main code is a module that loads AFTER these plain scripts (and pulls Firebase from Google's CDN).
+// Until it's ready, buttons would call a bridge whose real function doesn't exist yet. Queue those taps and replay
+// them when it is; if it never arrives (dead connection, blocked CDN, in-app browser), offer a retry instead of a dead screen.
+window.__pbtQ = [];
+window.__pbtWait = function(fn, args) {
+  if (window.__pbtReady) return;   // ready but the function genuinely doesn't exist: do nothing (never loop)
+  if (window.__pbtQ.length < 20) window.__pbtQ.push([fn, Array.prototype.slice.call(args || [])]);
+  try { var t = document.getElementById('pbtLoadToast'); if (!t) { t = document.createElement('div'); t.id = 'pbtLoadToast'; t.style.cssText = 'position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99999;background:rgba(4,6,15,0.92);border:1px solid rgba(0,240,255,0.45);color:#fff;font:700 13px DM Sans,system-ui,sans-serif;padding:10px 16px;border-radius:99px;'; t.textContent = 'Loading… one sec'; document.body.appendChild(t); } } catch (e) {}
+};
+window.__pbtOnReady = function() {
+  if (window.__pbtReady) return; window.__pbtReady = true;
+  try { var t = document.getElementById('pbtLoadToast'); if (t) t.remove(); var b = document.getElementById('pbtLoadFail'); if (b) b.remove(); } catch (e) {}
+  var q = window.__pbtQ.splice(0); if (q.length) { var last = q[q.length - 1]; try { last[0].apply(null, last[1]); } catch (e) {} }   // replay only the latest tap
+};
+setTimeout(function() {
+  if (window.__pbtReady) return;
+  try { var t = document.getElementById('pbtLoadToast'); if (t) t.remove();
+    var b = document.createElement('div'); b.id = 'pbtLoadFail';
+    b.style.cssText = 'position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:99999;background:#1a1030;border:1px solid #ff2d78;color:#fff;font:600 14px DM Sans,system-ui,sans-serif;padding:14px 16px;border-radius:14px;line-height:1.45;box-shadow:0 8px 30px rgba(0,0,0,0.5);';
+    b.innerHTML = '<b>Still loading…</b> The connection is slow or this browser is blocking part of the app.<br><span style="opacity:.8;font-size:12.5px;">If you opened this from a text, try opening <b>mikek.ai/pbt</b> in Safari or Chrome.</span><div style="display:flex;gap:8px;margin-top:10px;"><button onclick="location.reload()" style="flex:1;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff2d78,#a855f7);color:#fff;font-weight:800;font-size:14px;">Tap to retry</button><button onclick="this.parentNode.parentNode.remove()" style="padding:11px 14px;border:1px solid rgba(255,255,255,0.25);border-radius:10px;background:transparent;color:#fff;font-weight:700;">Wait</button></div>';
+    document.body.appendChild(b); } catch (e) {}
+}, 12000);
 window.addEventListener('error' , function(ev) {
   // "Script error." with no file/line is the browser hiding an error from code that isn't ours: the iOS Share sheet,
   // Safari extensions, an in-app browser. Our own code never throws it, so don't pop an alert over the app for it.
@@ -9728,6 +9750,9 @@ window._doSignOut = async function() {
   cfg=null; scores={};
   await signOut(auth);
 };
+
+// everything above is defined → replay any taps that came in while loading
+try { window.__pbtOnReady(); } catch (e) {}
 </script>
 
 <script>
@@ -9750,11 +9775,11 @@ window._doSignOut = async function() {
 // Settings + Sound — plain script so onclick works from HTML
 function openSettings()  { document.getElementById('settingsMenu').classList.remove('hidden'); }
 function closeSettings() { document.getElementById('settingsMenu').classList.add('hidden'); }
-function openSetup()     { if(window._openSetup) window._openSetup(); }
-function showPage(p)     { if(window._showPage) window._showPage(p); }
-function selMode(m)      { if(window._selMode) window._selMode(m); }
-function chooseFormat(m) { if(window.chooseFormat) window.chooseFormat(m); }
-function setupBack()     { if(window.setupBack) window.setupBack(); }
+function openSetup()     { if(window._openSetup && window._openSetup !== openSetup) { window._openSetup(); return; } __pbtWait(openSetup, arguments); }
+function showPage(p)     { if(window._showPage && window._showPage !== showPage) { window._showPage(p); return; } __pbtWait(showPage, arguments); }
+function selMode(m)      { if(window._selMode && window._selMode !== selMode) { window._selMode(m); return; } __pbtWait(selMode, arguments); }
+function chooseFormat(m) { if(window.chooseFormat && window.chooseFormat !== chooseFormat) { window.chooseFormat(m); return; } __pbtWait(chooseFormat, arguments); }
+function setupBack()     { if(window.setupBack && window.setupBack !== setupBack) { window.setupBack(); return; } __pbtWait(setupBack, arguments); }
 // iOS: after the keyboard closes it often leaves the window scrolled with the
 // fixed overlay's own scroller at its boundary — feels like scrolling is stuck.
 document.addEventListener('focusin', function(e) {
@@ -9838,11 +9863,11 @@ function closeAllOverlaysAndShow(p) {
     }
   }, { passive: true, capture: true });
 })();
-function addPF()         { if(window._addPF) window._addPF(); }
-function updPCnt()       { if(window._updPCnt) window._updPCnt(); }
-function doStart()       { if(window._doStart) window._doStart(); }
-function resetScores()   { if(window._resetScores) window._resetScores(); }
-function newTournament() { if(window._newTournament) window._newTournament(); }
+function addPF()         { if(window._addPF && window._addPF !== addPF) { window._addPF(); return; } __pbtWait(addPF, arguments); }
+function updPCnt()       { if(window._updPCnt && window._updPCnt !== updPCnt) { window._updPCnt(); return; } __pbtWait(updPCnt, arguments); }
+function doStart()       { if(window._doStart && window._doStart !== doStart) { window._doStart(); return; } __pbtWait(doStart, arguments); }
+function resetScores()   { if(window._resetScores && window._resetScores !== resetScores) { window._resetScores(); return; } __pbtWait(resetScores, arguments); }
+function newTournament() { if(window._newTournament && window._newTournament !== newTournament) { window._newTournament(); return; } __pbtWait(newTournament, arguments); }
 window.scoreTyped = function(k) {
   var a = document.getElementById('s1_'+k), b = document.getElementById('s2_'+k);
   var btn = document.getElementById('save_'+k);
@@ -9860,202 +9885,202 @@ window.scoreTyped = function(k) {
 };
 function saveScore(k)    {
   if (window._editingScores) window._editingScores.delete(k); if(window._saveScore) window._saveScore(k); }
-function editScore(k)    { if(window._editScore) window._editScore(k); }
-function addDecider(m)   { if(window._addDecider) window._addDecider(m); }
-function doSignIn()    { if(window._doSignIn) window._doSignIn(); }
-function doSignOut()   { if(window._doSignOut) window._doSignOut(); }
-function sendCode()    { if(window._sendCode) window._sendCode(); }
-function verifyCode()  { if(window._verifyCode) window._verifyCode(); }
-function editPhone()   { if(window._editPhone) window._editPhone(); }
-function signInGoogle() { if(window._signInGoogle) window._signInGoogle(); }
-function selectGender(g)    { if(window.selectGender) window.selectGender(g); }
-function editSelectGender(g){ if(window.editSelectGender) window.editSelectGender(g); }
-function saveProfile()      { if(window.saveProfile) window.saveProfile(); }
-function plSendCode()       { if(window.plSendCode) window.plSendCode(); }
-function plVerifyCode()     { if(window.plVerifyCode) window.plVerifyCode(); }
-function plEditPhone()      { if(window.plEditPhone) window.plEditPhone(); }
-function plSignOut()        { if(window.plSignOut) window.plSignOut(); }
-function openProfile()      { if(window.openProfile) window.openProfile(); }
-function closeProfile()     { if(window.closeProfile) window.closeProfile(); }
-function saveProfileEdits() { if(window.saveProfileEdits) window.saveProfileEdits(); }
-function setRankMode(m)     { if(window.setRankMode) window.setRankMode(m); }
-function openAddGame()      { if(window.openAddGame) window.openAddGame(); }
-function lgStartGame()      { if(window.lgStartGame) window.lgStartGame(); }
-function agNext()           { if(window.agNext) window.agNext(); }
-function agBack()           { if(window.agBack) window.agBack(); }
-function agScoreLater()     { if(window.agScoreLater) window.agScoreLater(); }
-function toggleAgPlayer(p)  { if(window.toggleAgPlayer) window.toggleAgPlayer(p); }
-function addNewPlayerToGame(){ if(window.addNewPlayerToGame) window.addNewPlayerToGame(); }
-function saveAddedGame()    { if(window.saveAddedGame) window.saveAddedGame(); }
-function deleteGame(k)      { if(window.deleteGame) window.deleteGame(k); }
-function restoreGame(k)     { if(window.restoreGame) window.restoreGame(k); }
-function saveCityEmail()    { if(window.saveCityEmail) window.saveCityEmail(); }
-function skipCityEmail()    { if(window.skipCityEmail) window.skipCityEmail(); }
-function openHistory()      { if(window.openHistory) window.openHistory(); }
-function closeHistory()     { if(window.closeHistory) window.closeHistory(); }
-function viewHistoryDetail(t){ if(window.viewHistoryDetail) window.viewHistoryDetail(t); }
-function sortHistoryDetail(t,m){ if(window.sortHistoryDetail) window.sortHistoryDetail(t,m); }
-function saveHistoryMeta(t)   { if(window.saveHistoryMeta) window.saveHistoryMeta(t); }
-function restoreTournament(t){ if(window.restoreTournament) window.restoreTournament(t); }
-function deleteHistoryTournament(t){ if(window.deleteHistoryTournament) window.deleteHistoryTournament(t); }
-function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
-function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
-function openPlayerDetail(n) { if(window.openPlayerDetail) window.openPlayerDetail(n); }
-function renameLbPlayer(o)   { if(window.renameLbPlayer) window.renameLbPlayer(o); }
-function deleteLbSource(t)   { if(window.deleteLbSource) window.deleteLbSource(t); }
-function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink(); }
-function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
-function copyHistoryJson(t)      { if(window.copyHistoryJson) window.copyHistoryJson(t); }
-function shareTournamentLink(){ if(window.shareTournamentLink) window.shareTournamentLink(); }
-function copyInviteLink()    { if(window.copyInviteLink) window.copyInviteLink(); }
-function showQrCode()        { if(window.showQrCode) window.showQrCode(); }
-function scoreTyped(k)       { if(window.scoreTyped) window.scoreTyped(k); }
-function showTournamentQR()  { if(window.showTournamentQR) window.showTournamentQR(); }
-function joinTournamentPrompt(){ if(window.joinTournamentPrompt) window.joinTournamentPrompt(); }
-function openFeedback()     { if(window.openFeedback) window.openFeedback(); }
-function closeFeedback()    { if(window.closeFeedback) window.closeFeedback(); }
-function setFbAgain(n)      { if(window.setFbAgain) window.setFbAgain(n); }
-function setFbRec(n)        { if(window.setFbRec) window.setFbRec(n); }
-function toggleFbFeature(i) { if(window.toggleFbFeature) window.toggleFbFeature(i); }
-function submitFeedback()   { if(window.submitFeedback) window.submitFeedback(); }
-function fbStepNext()       { if(window.fbStepNext) window.fbStepNext(); }
-function fbSubmitNow()      { if(window.fbSubmitNow) window.fbSubmitNow(); }
-function fbStepBack()       { if(window.fbStepBack) window.fbStepBack(); }
-function openFeedbackInbox(){ if(window.openFeedbackInbox) window.openFeedbackInbox(); }
-function deleteFeedback(id)  { if(window.deleteFeedback) window.deleteFeedback(id); }
-function openImport()        { if(window.openImport) window.openImport(); }
-function openLeaderboard()   { if(window.openLeaderboard) window.openLeaderboard(); }
-function closeLeaderboard()  { if(window.closeLeaderboard) window.closeLeaderboard(); }
-function setLbTime(t)        { if(window.setLbTime) window.setLbTime(t); }
-function setLbSort(s)        { if(window.setLbSort) window.setLbSort(s); }
-function setLbType(t)        { if(window.setLbType) window.setLbType(t); }
-function setPlayType(t)      { if(window.setPlayType) window.setPlayType(t); }
-function renderLeaderboard() { if(window.renderLeaderboard) window.renderLeaderboard(); }
-function saveHistoryDate(t)      { if(window.saveHistoryDate) window.saveHistoryDate(t); }
-function shareHistoryTournament(t){ if(window.shareHistoryTournament) window.shareHistoryTournament(t); }
-function openPlayerDetail(n) { if(window.openPlayerDetail) window.openPlayerDetail(n); }
-function renameLbPlayer(o)   { if(window.renameLbPlayer) window.renameLbPlayer(o); }
-function deleteLbSource(t)   { if(window.deleteLbSource) window.deleteLbSource(t); }
-function shareStatsLink()    { if(window.shareStatsLink) window.shareStatsLink(); }
-function saveStatsImage()    { if(window.saveStatsImage) window.saveStatsImage(); }
-function runImport()         { if(window.runImport) window.runImport(); }
-function syncHistoryToGlobal(){ if(window.syncHistoryToGlobal) window.syncHistoryToGlobal(); }
-function openAdminDash()     { if(window.openAdminDash) window.openAdminDash(); }
-function openGuide()         { if(window.openGuide) window.openGuide(); }
-function installApp()        { if(window.installApp) window.installApp(); }
-function pickRounds(r)       { if(window.pickRounds) window.pickRounds(r); }
-function openChat(t)         { if(window.openChat) window.openChat(t); }
-function chatSetTab(t)       { if(window.chatSetTab) window.chatSetTab(t); }
-function openGroupChat(g)    { if(window.openGroupChat) window.openGroupChat(g); }
-function openDm(u,n)         { if(window.openDm) window.openDm(u,n); }
-function sendChatMsg()       { if(window.sendChatMsg) window.sendChatMsg(); }
-function deleteChatMsg(m)    { if(window.deleteChatMsg) window.deleteChatMsg(m); }
-function toggleFollow(u,n)   { if(window.toggleFollow) window.toggleFollow(u,n); }
-function chatDmSearch(q)     { if(window.chatDmSearch) window.chatDmSearch(q); }
-function ctOpenProfile()     { if(window.ctOpenProfile) window.ctOpenProfile(); }
-function sharePhoto(t,p)     { if(window.sharePhoto) window.sharePhoto(t,p); }
-function openNotifs()        { if(window.openNotifs) window.openNotifs(); }
-function showGroupMembers(g) { if(window.showGroupMembers) window.showGroupMembers(g); }
-function inviteFriends(s)    { if(window.inviteFriends) window.inviteFriends(s); }
-function sendInvite(s,u,t)   { if(window.sendInvite) window.sendInvite(s,u,t); }
-function openAttachGame()    { if(window.openAttachGame) window.openAttachGame(); }
-function pickAttachGame(s)   { if(window.pickAttachGame) window.pickAttachGame(s); }
-function clearChatAttach()   { if(window.clearChatAttach) window.clearChatAttach(); }
-function growChatInput(t)    { if(window.growChatInput) window.growChatInput(t); }
-function postSessionToChat(s){ if(window.postSessionToChat) window.postSessionToChat(s); }
-function groupTextSession(s) { if(window.groupTextSession) window.groupTextSession(s); }
-function openGroupTextApp()  { if(window.openGroupTextApp) window.openGroupTextApp(); }
-function newGroupChat()      { if(window.newGroupChat) window.newGroupChat(); }
-function openCreateChooser() { if(window.openCreateChooser) window.openCreateChooser(); }
-function addToContacts(u)    { if(window.addToContacts) window.addToContacts(u); }
-function shareRanking(n,t)   { if(window.shareRanking) window.shareRanking(n,t); }
-function combineAccounts(n)  { if(window.combineAccounts) window.combineAccounts(n); }
-function adminFixAll()       { if(window.adminFixAll) window.adminFixAll(); }
-function adminFixOne(k,v)    { if(window.adminFixOne) window.adminFixOne(k,v); }
-function adminAudit(o)       { if(window.adminAudit) window.adminAudit(o); }
-function openSplit(n)        { if(window.openSplit) window.openSplit(n); }
-function doSplit()           { if(window.doSplit) window.doSplit(); }
-function saveLastName()      { if(window.saveLastName) window.saveLastName(); }
-function splitPickAccount()  { if(window.splitPickAccount) window.splitPickAccount(); }
-function scTogglePaid()      { if(window.scTogglePaid) window.scTogglePaid(); }
-function scSetPriceMode(m)   { if(window.scSetPriceMode) window.scSetPriceMode(m); }
-function scPricePreview()    { if(window.scPricePreview) window.scPricePreview(); }
-function startCheckout(s)    { if(window.startCheckout) window.startCheckout(s); }
-function h2hNextGame()       { if(window.h2hNextGame) window.h2hNextGame(); }
-function showSinglesMulti()  { if(window.showSinglesMulti) window.showSinglesMulti(); }
-function syncNewContacts(r)  { if(window.syncNewContacts) window.syncNewContacts(r); }
-function resetContactSync()  { if(window.resetContactSync) window.resetContactSync(); }
-function csTickAll(o)        { if(window.csTickAll) window.csTickAll(o); }
-function csTickRecent()      { if(window.csTickRecent) window.csTickRecent(); }
-function csMarkRestSaved()   { if(window.csMarkRestSaved) window.csMarkRestSaved(); }
-function csAddSelected()     { if(window.csAddSelected) window.csAddSelected(); }
-function csUnmarkRecent()    { if(window.csUnmarkRecent) window.csUnmarkRecent(); }
-function csQueueOpen()       { if(window.csQueueOpen) window.csQueueOpen(); }
-function csQueueDone()       { if(window.csQueueDone) window.csQueueDone(); }
-function csQueueSkip()       { if(window.csQueueSkip) window.csQueueSkip(); }
-function csQueueStop()       { if(window.csQueueStop) window.csQueueStop(); }
-function pfSuggest(i)        { if(window.pfSuggest) window.pfSuggest(i); }
-function pfHideSuggest(i)    { if(window.pfHideSuggest) window.pfHideSuggest(i); }
-function pfPick(e)           { if(window.pfPick) window.pfPick(e); }
-function pfKey(ev,i)         { if(window.pfKey) window.pfKey(ev,i); }
-function refundPlayer(s,u,n) { if(window.refundPlayer) window.refundPlayer(s,u,n); }
-function adminIgnoreIssue(k,v){ if(window.adminIgnoreIssue) window.adminIgnoreIssue(k,v); }
-function setAwayKind(k)      { if(window.setAwayKind) window.setAwayKind(k); }
-function ngToggle(u)         { if(window.ngToggle) window.ngToggle(u); }
-function createGroupChat()   { if(window.createGroupChat) window.createGroupChat(); }
-function addToGroupChat(g)   { if(window.addToGroupChat) window.addToGroupChat(g); }
-function confirmAddToGroup(g){ if(window.confirmAddToGroup) window.confirmAddToGroup(g); }
-function leaveGroupChat(g)   { if(window.leaveGroupChat) window.leaveGroupChat(g); }
-function aiAsk(t)            { if(window.aiAsk) window.aiAsk(t); }
-function aiReset()           { if(window.aiReset) window.aiReset(); }
-function saveAssistantUrl()  { if(window.saveAssistantUrl) window.saveAssistantUrl(); }
-function cancelRounds()      { if(window.cancelRounds) window.cancelRounds(); }
-function dismissInstallBar() { if(window.dismissInstallBar) window.dismissInstallBar(); }
-function shareAppLink()      { if(window.shareAppLink) window.shareAppLink(); }
-function adDeleteTournament(t){ if(window.adDeleteTournament) window.adDeleteTournament(t); }
-function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments) window.adDeleteEmptyTournaments(); }
-function adDeletePlayer(u,n) { if(window.adDeletePlayer) window.adDeletePlayer(u,n); }
-function adOpenTournament(t) { if(window.adOpenTournament) window.adOpenTournament(t); }
-function adEditPlayer(u)     { if(window.adEditPlayer) window.adEditPlayer(u); }
-function adCreateProfile(n)  { if(window.adCreateProfile) window.adCreateProfile(n); }
-function adLogAvail()        { if(window.adLogAvail) window.adLogAvail(); }
-function pickSms(w,on)       { if(window.pickSms) window.pickSms(w,on); }
-function availAddRow(p)      { if(window.availAddRow) window.availAddRow(p); }
-function availRowSet(p,i,k,v){ if(window.availRowSet) window.availRowSet(p,i,k,v); }
-function availRowDel(p,i)    { if(window.availRowDel) window.availRowDel(p,i); }
-function adSavePlayer()      { if(window.adSavePlayer) window.adSavePlayer(); }
-function histRenameLocal(t)  { if(window.histRenameLocal) window.histRenameLocal(t); }
-function adEditPlayerByName(n){ if(window.adEditPlayerByName) window.adEditPlayerByName(n); }
-function openSessions()      { if(window.openSessions) window.openSessions(); }
-function openSessionCreate() { if(window.openSessionCreate) window.openSessionCreate(); }
-function createSession()     { if(window.createSession) window.createSession(); }
-function editSession(s)      { if(window.editSession) window.editSession(s); }
-function saveEditSession()   { if(window.saveEditSession) window.saveEditSession(); }
-function openSessionDetail(s){ if(window.openSessionDetail) window.openSessionDetail(s); }
-function closeSessionDetail(){ if(window.closeSessionDetail) window.closeSessionDetail(); }
-function claimSpot(s)        { if(window.claimSpot) window.claimSpot(s); }
-function releaseSpot(s)      { if(window.releaseSpot) window.releaseSpot(s); }
-function removeRosterEntry(s,u,n) { if(window.removeRosterEntry) window.removeRosterEntry(s,u,n); }
-function jumpToInfo(s)       { if(window.jumpToInfo) window.jumpToInfo(s); }
-function addPlayerToTournament() { if(window.addPlayerToTournament) window.addPlayerToTournament(); }
-function addFinals()         { if(window.addFinals) window.addFinals(); }
-function joinLiveTournament(t) { if(window.joinLiveTournament) window.joinLiveTournament(t); }
-function shareSession(s)     { if(window.shareSession) window.shareSession(s); }
-function copySessionRoster(s){ if(window.copySessionRoster) window.copySessionRoster(s); }
-function startFromSession(s) { if(window.startFromSession) window.startFromSession(s); }
-function scheduleNextWeek(s) { if(window.scheduleNextWeek) window.scheduleNextWeek(s); }
-function deleteSession(s)    { if(window.deleteSession) window.deleteSession(s); }
-function scSetVis(v)         { if(window.scSetVis) window.scSetVis(v); }
-function scSetRec(r)         { if(window.scSetRec) window.scSetRec(r); }
-function goBack()            { if(window.goBack) window.goBack(); }
-function openQuickStart()    { if(window.openQuickStart) window.openQuickStart(); }
-function submitTip()         { if(window.submitTip) window.submitTip(); }
-function openCourts()        { if(window.openCourts) window.openCourts(); }
-function enableCourtLocation(){ if(window.enableCourtLocation) window.enableCourtLocation(); }
-function openCourtSubmit()   { if(window.openCourtSubmit) window.openCourtSubmit(); }
-function submitCourt()       { if(window.submitCourt) window.submitCourt(); }
-function sharePage(k)        { if(window.sharePage) window.sharePage(k); }
-window.BUILD_TAG = 'v2026-10-27.1';
+function editScore(k)    { if(window._editScore && window._editScore !== editScore) { window._editScore(k); return; } __pbtWait(editScore, arguments); }
+function addDecider(m)   { if(window._addDecider && window._addDecider !== addDecider) { window._addDecider(m); return; } __pbtWait(addDecider, arguments); }
+function doSignIn()    { if(window._doSignIn && window._doSignIn !== doSignIn) { window._doSignIn(); return; } __pbtWait(doSignIn, arguments); }
+function doSignOut()   { if(window._doSignOut && window._doSignOut !== doSignOut) { window._doSignOut(); return; } __pbtWait(doSignOut, arguments); }
+function sendCode()    { if(window._sendCode && window._sendCode !== sendCode) { window._sendCode(); return; } __pbtWait(sendCode, arguments); }
+function verifyCode()  { if(window._verifyCode && window._verifyCode !== verifyCode) { window._verifyCode(); return; } __pbtWait(verifyCode, arguments); }
+function editPhone()   { if(window._editPhone && window._editPhone !== editPhone) { window._editPhone(); return; } __pbtWait(editPhone, arguments); }
+function signInGoogle() { if(window._signInGoogle && window._signInGoogle !== signInGoogle) { window._signInGoogle(); return; } __pbtWait(signInGoogle, arguments); }
+function selectGender(g)    { if(window.selectGender && window.selectGender !== selectGender) { window.selectGender(g); return; } __pbtWait(selectGender, arguments); }
+function editSelectGender(g){ if(window.editSelectGender && window.editSelectGender !== editSelectGender) { window.editSelectGender(g); return; } __pbtWait(editSelectGender, arguments); }
+function saveProfile()      { if(window.saveProfile && window.saveProfile !== saveProfile) { window.saveProfile(); return; } __pbtWait(saveProfile, arguments); }
+function plSendCode()       { if(window.plSendCode && window.plSendCode !== plSendCode) { window.plSendCode(); return; } __pbtWait(plSendCode, arguments); }
+function plVerifyCode()     { if(window.plVerifyCode && window.plVerifyCode !== plVerifyCode) { window.plVerifyCode(); return; } __pbtWait(plVerifyCode, arguments); }
+function plEditPhone()      { if(window.plEditPhone && window.plEditPhone !== plEditPhone) { window.plEditPhone(); return; } __pbtWait(plEditPhone, arguments); }
+function plSignOut()        { if(window.plSignOut && window.plSignOut !== plSignOut) { window.plSignOut(); return; } __pbtWait(plSignOut, arguments); }
+function openProfile()      { if(window.openProfile && window.openProfile !== openProfile) { window.openProfile(); return; } __pbtWait(openProfile, arguments); }
+function closeProfile()     { if(window.closeProfile && window.closeProfile !== closeProfile) { window.closeProfile(); return; } __pbtWait(closeProfile, arguments); }
+function saveProfileEdits() { if(window.saveProfileEdits && window.saveProfileEdits !== saveProfileEdits) { window.saveProfileEdits(); return; } __pbtWait(saveProfileEdits, arguments); }
+function setRankMode(m)     { if(window.setRankMode && window.setRankMode !== setRankMode) { window.setRankMode(m); return; } __pbtWait(setRankMode, arguments); }
+function openAddGame()      { if(window.openAddGame && window.openAddGame !== openAddGame) { window.openAddGame(); return; } __pbtWait(openAddGame, arguments); }
+function lgStartGame()      { if(window.lgStartGame && window.lgStartGame !== lgStartGame) { window.lgStartGame(); return; } __pbtWait(lgStartGame, arguments); }
+function agNext()           { if(window.agNext && window.agNext !== agNext) { window.agNext(); return; } __pbtWait(agNext, arguments); }
+function agBack()           { if(window.agBack && window.agBack !== agBack) { window.agBack(); return; } __pbtWait(agBack, arguments); }
+function agScoreLater()     { if(window.agScoreLater && window.agScoreLater !== agScoreLater) { window.agScoreLater(); return; } __pbtWait(agScoreLater, arguments); }
+function toggleAgPlayer(p)  { if(window.toggleAgPlayer && window.toggleAgPlayer !== toggleAgPlayer) { window.toggleAgPlayer(p); return; } __pbtWait(toggleAgPlayer, arguments); }
+function addNewPlayerToGame(){ if(window.addNewPlayerToGame && window.addNewPlayerToGame !== addNewPlayerToGame) { window.addNewPlayerToGame(); return; } __pbtWait(addNewPlayerToGame, arguments); }
+function saveAddedGame()    { if(window.saveAddedGame && window.saveAddedGame !== saveAddedGame) { window.saveAddedGame(); return; } __pbtWait(saveAddedGame, arguments); }
+function deleteGame(k)      { if(window.deleteGame && window.deleteGame !== deleteGame) { window.deleteGame(k); return; } __pbtWait(deleteGame, arguments); }
+function restoreGame(k)     { if(window.restoreGame && window.restoreGame !== restoreGame) { window.restoreGame(k); return; } __pbtWait(restoreGame, arguments); }
+function saveCityEmail()    { if(window.saveCityEmail && window.saveCityEmail !== saveCityEmail) { window.saveCityEmail(); return; } __pbtWait(saveCityEmail, arguments); }
+function skipCityEmail()    { if(window.skipCityEmail && window.skipCityEmail !== skipCityEmail) { window.skipCityEmail(); return; } __pbtWait(skipCityEmail, arguments); }
+function openHistory()      { if(window.openHistory && window.openHistory !== openHistory) { window.openHistory(); return; } __pbtWait(openHistory, arguments); }
+function closeHistory()     { if(window.closeHistory && window.closeHistory !== closeHistory) { window.closeHistory(); return; } __pbtWait(closeHistory, arguments); }
+function viewHistoryDetail(t){ if(window.viewHistoryDetail && window.viewHistoryDetail !== viewHistoryDetail) { window.viewHistoryDetail(t); return; } __pbtWait(viewHistoryDetail, arguments); }
+function sortHistoryDetail(t,m){ if(window.sortHistoryDetail && window.sortHistoryDetail !== sortHistoryDetail) { window.sortHistoryDetail(t,m); return; } __pbtWait(sortHistoryDetail, arguments); }
+function saveHistoryMeta(t)   { if(window.saveHistoryMeta && window.saveHistoryMeta !== saveHistoryMeta) { window.saveHistoryMeta(t); return; } __pbtWait(saveHistoryMeta, arguments); }
+function restoreTournament(t){ if(window.restoreTournament && window.restoreTournament !== restoreTournament) { window.restoreTournament(t); return; } __pbtWait(restoreTournament, arguments); }
+function deleteHistoryTournament(t){ if(window.deleteHistoryTournament && window.deleteHistoryTournament !== deleteHistoryTournament) { window.deleteHistoryTournament(t); return; } __pbtWait(deleteHistoryTournament, arguments); }
+function saveHistoryDate(t)      { if(window.saveHistoryDate && window.saveHistoryDate !== saveHistoryDate) { window.saveHistoryDate(t); return; } __pbtWait(saveHistoryDate, arguments); }
+function shareHistoryTournament(t){ if(window.shareHistoryTournament && window.shareHistoryTournament !== shareHistoryTournament) { window.shareHistoryTournament(t); return; } __pbtWait(shareHistoryTournament, arguments); }
+function openPlayerDetail(n) { if(window.openPlayerDetail && window.openPlayerDetail !== openPlayerDetail) { window.openPlayerDetail(n); return; } __pbtWait(openPlayerDetail, arguments); }
+function renameLbPlayer(o)   { if(window.renameLbPlayer && window.renameLbPlayer !== renameLbPlayer) { window.renameLbPlayer(o); return; } __pbtWait(renameLbPlayer, arguments); }
+function deleteLbSource(t)   { if(window.deleteLbSource && window.deleteLbSource !== deleteLbSource) { window.deleteLbSource(t); return; } __pbtWait(deleteLbSource, arguments); }
+function shareStatsLink()    { if(window.shareStatsLink && window.shareStatsLink !== shareStatsLink) { window.shareStatsLink(); return; } __pbtWait(shareStatsLink, arguments); }
+function saveStatsImage()    { if(window.saveStatsImage && window.saveStatsImage !== saveStatsImage) { window.saveStatsImage(); return; } __pbtWait(saveStatsImage, arguments); }
+function copyHistoryJson(t)      { if(window.copyHistoryJson && window.copyHistoryJson !== copyHistoryJson) { window.copyHistoryJson(t); return; } __pbtWait(copyHistoryJson, arguments); }
+function shareTournamentLink(){ if(window.shareTournamentLink && window.shareTournamentLink !== shareTournamentLink) { window.shareTournamentLink(); return; } __pbtWait(shareTournamentLink, arguments); }
+function copyInviteLink()    { if(window.copyInviteLink && window.copyInviteLink !== copyInviteLink) { window.copyInviteLink(); return; } __pbtWait(copyInviteLink, arguments); }
+function showQrCode()        { if(window.showQrCode && window.showQrCode !== showQrCode) { window.showQrCode(); return; } __pbtWait(showQrCode, arguments); }
+function scoreTyped(k)       { if(window.scoreTyped && window.scoreTyped !== scoreTyped) { window.scoreTyped(k); return; } __pbtWait(scoreTyped, arguments); }
+function showTournamentQR()  { if(window.showTournamentQR && window.showTournamentQR !== showTournamentQR) { window.showTournamentQR(); return; } __pbtWait(showTournamentQR, arguments); }
+function joinTournamentPrompt(){ if(window.joinTournamentPrompt && window.joinTournamentPrompt !== joinTournamentPrompt) { window.joinTournamentPrompt(); return; } __pbtWait(joinTournamentPrompt, arguments); }
+function openFeedback()     { if(window.openFeedback && window.openFeedback !== openFeedback) { window.openFeedback(); return; } __pbtWait(openFeedback, arguments); }
+function closeFeedback()    { if(window.closeFeedback && window.closeFeedback !== closeFeedback) { window.closeFeedback(); return; } __pbtWait(closeFeedback, arguments); }
+function setFbAgain(n)      { if(window.setFbAgain && window.setFbAgain !== setFbAgain) { window.setFbAgain(n); return; } __pbtWait(setFbAgain, arguments); }
+function setFbRec(n)        { if(window.setFbRec && window.setFbRec !== setFbRec) { window.setFbRec(n); return; } __pbtWait(setFbRec, arguments); }
+function toggleFbFeature(i) { if(window.toggleFbFeature && window.toggleFbFeature !== toggleFbFeature) { window.toggleFbFeature(i); return; } __pbtWait(toggleFbFeature, arguments); }
+function submitFeedback()   { if(window.submitFeedback && window.submitFeedback !== submitFeedback) { window.submitFeedback(); return; } __pbtWait(submitFeedback, arguments); }
+function fbStepNext()       { if(window.fbStepNext && window.fbStepNext !== fbStepNext) { window.fbStepNext(); return; } __pbtWait(fbStepNext, arguments); }
+function fbSubmitNow()      { if(window.fbSubmitNow && window.fbSubmitNow !== fbSubmitNow) { window.fbSubmitNow(); return; } __pbtWait(fbSubmitNow, arguments); }
+function fbStepBack()       { if(window.fbStepBack && window.fbStepBack !== fbStepBack) { window.fbStepBack(); return; } __pbtWait(fbStepBack, arguments); }
+function openFeedbackInbox(){ if(window.openFeedbackInbox && window.openFeedbackInbox !== openFeedbackInbox) { window.openFeedbackInbox(); return; } __pbtWait(openFeedbackInbox, arguments); }
+function deleteFeedback(id)  { if(window.deleteFeedback && window.deleteFeedback !== deleteFeedback) { window.deleteFeedback(id); return; } __pbtWait(deleteFeedback, arguments); }
+function openImport()        { if(window.openImport && window.openImport !== openImport) { window.openImport(); return; } __pbtWait(openImport, arguments); }
+function openLeaderboard()   { if(window.openLeaderboard && window.openLeaderboard !== openLeaderboard) { window.openLeaderboard(); return; } __pbtWait(openLeaderboard, arguments); }
+function closeLeaderboard()  { if(window.closeLeaderboard && window.closeLeaderboard !== closeLeaderboard) { window.closeLeaderboard(); return; } __pbtWait(closeLeaderboard, arguments); }
+function setLbTime(t)        { if(window.setLbTime && window.setLbTime !== setLbTime) { window.setLbTime(t); return; } __pbtWait(setLbTime, arguments); }
+function setLbSort(s)        { if(window.setLbSort && window.setLbSort !== setLbSort) { window.setLbSort(s); return; } __pbtWait(setLbSort, arguments); }
+function setLbType(t)        { if(window.setLbType && window.setLbType !== setLbType) { window.setLbType(t); return; } __pbtWait(setLbType, arguments); }
+function setPlayType(t)      { if(window.setPlayType && window.setPlayType !== setPlayType) { window.setPlayType(t); return; } __pbtWait(setPlayType, arguments); }
+function renderLeaderboard() { if(window.renderLeaderboard && window.renderLeaderboard !== renderLeaderboard) { window.renderLeaderboard(); return; } __pbtWait(renderLeaderboard, arguments); }
+function saveHistoryDate(t)      { if(window.saveHistoryDate && window.saveHistoryDate !== saveHistoryDate) { window.saveHistoryDate(t); return; } __pbtWait(saveHistoryDate, arguments); }
+function shareHistoryTournament(t){ if(window.shareHistoryTournament && window.shareHistoryTournament !== shareHistoryTournament) { window.shareHistoryTournament(t); return; } __pbtWait(shareHistoryTournament, arguments); }
+function openPlayerDetail(n) { if(window.openPlayerDetail && window.openPlayerDetail !== openPlayerDetail) { window.openPlayerDetail(n); return; } __pbtWait(openPlayerDetail, arguments); }
+function renameLbPlayer(o)   { if(window.renameLbPlayer && window.renameLbPlayer !== renameLbPlayer) { window.renameLbPlayer(o); return; } __pbtWait(renameLbPlayer, arguments); }
+function deleteLbSource(t)   { if(window.deleteLbSource && window.deleteLbSource !== deleteLbSource) { window.deleteLbSource(t); return; } __pbtWait(deleteLbSource, arguments); }
+function shareStatsLink()    { if(window.shareStatsLink && window.shareStatsLink !== shareStatsLink) { window.shareStatsLink(); return; } __pbtWait(shareStatsLink, arguments); }
+function saveStatsImage()    { if(window.saveStatsImage && window.saveStatsImage !== saveStatsImage) { window.saveStatsImage(); return; } __pbtWait(saveStatsImage, arguments); }
+function runImport()         { if(window.runImport && window.runImport !== runImport) { window.runImport(); return; } __pbtWait(runImport, arguments); }
+function syncHistoryToGlobal(){ if(window.syncHistoryToGlobal && window.syncHistoryToGlobal !== syncHistoryToGlobal) { window.syncHistoryToGlobal(); return; } __pbtWait(syncHistoryToGlobal, arguments); }
+function openAdminDash()     { if(window.openAdminDash && window.openAdminDash !== openAdminDash) { window.openAdminDash(); return; } __pbtWait(openAdminDash, arguments); }
+function openGuide()         { if(window.openGuide && window.openGuide !== openGuide) { window.openGuide(); return; } __pbtWait(openGuide, arguments); }
+function installApp()        { if(window.installApp && window.installApp !== installApp) { window.installApp(); return; } __pbtWait(installApp, arguments); }
+function pickRounds(r)       { if(window.pickRounds && window.pickRounds !== pickRounds) { window.pickRounds(r); return; } __pbtWait(pickRounds, arguments); }
+function openChat(t)         { if(window.openChat && window.openChat !== openChat) { window.openChat(t); return; } __pbtWait(openChat, arguments); }
+function chatSetTab(t)       { if(window.chatSetTab && window.chatSetTab !== chatSetTab) { window.chatSetTab(t); return; } __pbtWait(chatSetTab, arguments); }
+function openGroupChat(g)    { if(window.openGroupChat && window.openGroupChat !== openGroupChat) { window.openGroupChat(g); return; } __pbtWait(openGroupChat, arguments); }
+function openDm(u,n)         { if(window.openDm && window.openDm !== openDm) { window.openDm(u,n); return; } __pbtWait(openDm, arguments); }
+function sendChatMsg()       { if(window.sendChatMsg && window.sendChatMsg !== sendChatMsg) { window.sendChatMsg(); return; } __pbtWait(sendChatMsg, arguments); }
+function deleteChatMsg(m)    { if(window.deleteChatMsg && window.deleteChatMsg !== deleteChatMsg) { window.deleteChatMsg(m); return; } __pbtWait(deleteChatMsg, arguments); }
+function toggleFollow(u,n)   { if(window.toggleFollow && window.toggleFollow !== toggleFollow) { window.toggleFollow(u,n); return; } __pbtWait(toggleFollow, arguments); }
+function chatDmSearch(q)     { if(window.chatDmSearch && window.chatDmSearch !== chatDmSearch) { window.chatDmSearch(q); return; } __pbtWait(chatDmSearch, arguments); }
+function ctOpenProfile()     { if(window.ctOpenProfile && window.ctOpenProfile !== ctOpenProfile) { window.ctOpenProfile(); return; } __pbtWait(ctOpenProfile, arguments); }
+function sharePhoto(t,p)     { if(window.sharePhoto && window.sharePhoto !== sharePhoto) { window.sharePhoto(t,p); return; } __pbtWait(sharePhoto, arguments); }
+function openNotifs()        { if(window.openNotifs && window.openNotifs !== openNotifs) { window.openNotifs(); return; } __pbtWait(openNotifs, arguments); }
+function showGroupMembers(g) { if(window.showGroupMembers && window.showGroupMembers !== showGroupMembers) { window.showGroupMembers(g); return; } __pbtWait(showGroupMembers, arguments); }
+function inviteFriends(s)    { if(window.inviteFriends && window.inviteFriends !== inviteFriends) { window.inviteFriends(s); return; } __pbtWait(inviteFriends, arguments); }
+function sendInvite(s,u,t)   { if(window.sendInvite && window.sendInvite !== sendInvite) { window.sendInvite(s,u,t); return; } __pbtWait(sendInvite, arguments); }
+function openAttachGame()    { if(window.openAttachGame && window.openAttachGame !== openAttachGame) { window.openAttachGame(); return; } __pbtWait(openAttachGame, arguments); }
+function pickAttachGame(s)   { if(window.pickAttachGame && window.pickAttachGame !== pickAttachGame) { window.pickAttachGame(s); return; } __pbtWait(pickAttachGame, arguments); }
+function clearChatAttach()   { if(window.clearChatAttach && window.clearChatAttach !== clearChatAttach) { window.clearChatAttach(); return; } __pbtWait(clearChatAttach, arguments); }
+function growChatInput(t)    { if(window.growChatInput && window.growChatInput !== growChatInput) { window.growChatInput(t); return; } __pbtWait(growChatInput, arguments); }
+function postSessionToChat(s){ if(window.postSessionToChat && window.postSessionToChat !== postSessionToChat) { window.postSessionToChat(s); return; } __pbtWait(postSessionToChat, arguments); }
+function groupTextSession(s) { if(window.groupTextSession && window.groupTextSession !== groupTextSession) { window.groupTextSession(s); return; } __pbtWait(groupTextSession, arguments); }
+function openGroupTextApp()  { if(window.openGroupTextApp && window.openGroupTextApp !== openGroupTextApp) { window.openGroupTextApp(); return; } __pbtWait(openGroupTextApp, arguments); }
+function newGroupChat()      { if(window.newGroupChat && window.newGroupChat !== newGroupChat) { window.newGroupChat(); return; } __pbtWait(newGroupChat, arguments); }
+function openCreateChooser() { if(window.openCreateChooser && window.openCreateChooser !== openCreateChooser) { window.openCreateChooser(); return; } __pbtWait(openCreateChooser, arguments); }
+function addToContacts(u)    { if(window.addToContacts && window.addToContacts !== addToContacts) { window.addToContacts(u); return; } __pbtWait(addToContacts, arguments); }
+function shareRanking(n,t)   { if(window.shareRanking && window.shareRanking !== shareRanking) { window.shareRanking(n,t); return; } __pbtWait(shareRanking, arguments); }
+function combineAccounts(n)  { if(window.combineAccounts && window.combineAccounts !== combineAccounts) { window.combineAccounts(n); return; } __pbtWait(combineAccounts, arguments); }
+function adminFixAll()       { if(window.adminFixAll && window.adminFixAll !== adminFixAll) { window.adminFixAll(); return; } __pbtWait(adminFixAll, arguments); }
+function adminFixOne(k,v)    { if(window.adminFixOne && window.adminFixOne !== adminFixOne) { window.adminFixOne(k,v); return; } __pbtWait(adminFixOne, arguments); }
+function adminAudit(o)       { if(window.adminAudit && window.adminAudit !== adminAudit) { window.adminAudit(o); return; } __pbtWait(adminAudit, arguments); }
+function openSplit(n)        { if(window.openSplit && window.openSplit !== openSplit) { window.openSplit(n); return; } __pbtWait(openSplit, arguments); }
+function doSplit()           { if(window.doSplit && window.doSplit !== doSplit) { window.doSplit(); return; } __pbtWait(doSplit, arguments); }
+function saveLastName()      { if(window.saveLastName && window.saveLastName !== saveLastName) { window.saveLastName(); return; } __pbtWait(saveLastName, arguments); }
+function splitPickAccount()  { if(window.splitPickAccount && window.splitPickAccount !== splitPickAccount) { window.splitPickAccount(); return; } __pbtWait(splitPickAccount, arguments); }
+function scTogglePaid()      { if(window.scTogglePaid && window.scTogglePaid !== scTogglePaid) { window.scTogglePaid(); return; } __pbtWait(scTogglePaid, arguments); }
+function scSetPriceMode(m)   { if(window.scSetPriceMode && window.scSetPriceMode !== scSetPriceMode) { window.scSetPriceMode(m); return; } __pbtWait(scSetPriceMode, arguments); }
+function scPricePreview()    { if(window.scPricePreview && window.scPricePreview !== scPricePreview) { window.scPricePreview(); return; } __pbtWait(scPricePreview, arguments); }
+function startCheckout(s)    { if(window.startCheckout && window.startCheckout !== startCheckout) { window.startCheckout(s); return; } __pbtWait(startCheckout, arguments); }
+function h2hNextGame()       { if(window.h2hNextGame && window.h2hNextGame !== h2hNextGame) { window.h2hNextGame(); return; } __pbtWait(h2hNextGame, arguments); }
+function showSinglesMulti()  { if(window.showSinglesMulti && window.showSinglesMulti !== showSinglesMulti) { window.showSinglesMulti(); return; } __pbtWait(showSinglesMulti, arguments); }
+function syncNewContacts(r)  { if(window.syncNewContacts && window.syncNewContacts !== syncNewContacts) { window.syncNewContacts(r); return; } __pbtWait(syncNewContacts, arguments); }
+function resetContactSync()  { if(window.resetContactSync && window.resetContactSync !== resetContactSync) { window.resetContactSync(); return; } __pbtWait(resetContactSync, arguments); }
+function csTickAll(o)        { if(window.csTickAll && window.csTickAll !== csTickAll) { window.csTickAll(o); return; } __pbtWait(csTickAll, arguments); }
+function csTickRecent()      { if(window.csTickRecent && window.csTickRecent !== csTickRecent) { window.csTickRecent(); return; } __pbtWait(csTickRecent, arguments); }
+function csMarkRestSaved()   { if(window.csMarkRestSaved && window.csMarkRestSaved !== csMarkRestSaved) { window.csMarkRestSaved(); return; } __pbtWait(csMarkRestSaved, arguments); }
+function csAddSelected()     { if(window.csAddSelected && window.csAddSelected !== csAddSelected) { window.csAddSelected(); return; } __pbtWait(csAddSelected, arguments); }
+function csUnmarkRecent()    { if(window.csUnmarkRecent && window.csUnmarkRecent !== csUnmarkRecent) { window.csUnmarkRecent(); return; } __pbtWait(csUnmarkRecent, arguments); }
+function csQueueOpen()       { if(window.csQueueOpen && window.csQueueOpen !== csQueueOpen) { window.csQueueOpen(); return; } __pbtWait(csQueueOpen, arguments); }
+function csQueueDone()       { if(window.csQueueDone && window.csQueueDone !== csQueueDone) { window.csQueueDone(); return; } __pbtWait(csQueueDone, arguments); }
+function csQueueSkip()       { if(window.csQueueSkip && window.csQueueSkip !== csQueueSkip) { window.csQueueSkip(); return; } __pbtWait(csQueueSkip, arguments); }
+function csQueueStop()       { if(window.csQueueStop && window.csQueueStop !== csQueueStop) { window.csQueueStop(); return; } __pbtWait(csQueueStop, arguments); }
+function pfSuggest(i)        { if(window.pfSuggest && window.pfSuggest !== pfSuggest) { window.pfSuggest(i); return; } __pbtWait(pfSuggest, arguments); }
+function pfHideSuggest(i)    { if(window.pfHideSuggest && window.pfHideSuggest !== pfHideSuggest) { window.pfHideSuggest(i); return; } __pbtWait(pfHideSuggest, arguments); }
+function pfPick(e)           { if(window.pfPick && window.pfPick !== pfPick) { window.pfPick(e); return; } __pbtWait(pfPick, arguments); }
+function pfKey(ev,i)         { if(window.pfKey && window.pfKey !== pfKey) { window.pfKey(ev,i); return; } __pbtWait(pfKey, arguments); }
+function refundPlayer(s,u,n) { if(window.refundPlayer && window.refundPlayer !== refundPlayer) { window.refundPlayer(s,u,n); return; } __pbtWait(refundPlayer, arguments); }
+function adminIgnoreIssue(k,v){ if(window.adminIgnoreIssue && window.adminIgnoreIssue !== adminIgnoreIssue) { window.adminIgnoreIssue(k,v); return; } __pbtWait(adminIgnoreIssue, arguments); }
+function setAwayKind(k)      { if(window.setAwayKind && window.setAwayKind !== setAwayKind) { window.setAwayKind(k); return; } __pbtWait(setAwayKind, arguments); }
+function ngToggle(u)         { if(window.ngToggle && window.ngToggle !== ngToggle) { window.ngToggle(u); return; } __pbtWait(ngToggle, arguments); }
+function createGroupChat()   { if(window.createGroupChat && window.createGroupChat !== createGroupChat) { window.createGroupChat(); return; } __pbtWait(createGroupChat, arguments); }
+function addToGroupChat(g)   { if(window.addToGroupChat && window.addToGroupChat !== addToGroupChat) { window.addToGroupChat(g); return; } __pbtWait(addToGroupChat, arguments); }
+function confirmAddToGroup(g){ if(window.confirmAddToGroup && window.confirmAddToGroup !== confirmAddToGroup) { window.confirmAddToGroup(g); return; } __pbtWait(confirmAddToGroup, arguments); }
+function leaveGroupChat(g)   { if(window.leaveGroupChat && window.leaveGroupChat !== leaveGroupChat) { window.leaveGroupChat(g); return; } __pbtWait(leaveGroupChat, arguments); }
+function aiAsk(t)            { if(window.aiAsk && window.aiAsk !== aiAsk) { window.aiAsk(t); return; } __pbtWait(aiAsk, arguments); }
+function aiReset()           { if(window.aiReset && window.aiReset !== aiReset) { window.aiReset(); return; } __pbtWait(aiReset, arguments); }
+function saveAssistantUrl()  { if(window.saveAssistantUrl && window.saveAssistantUrl !== saveAssistantUrl) { window.saveAssistantUrl(); return; } __pbtWait(saveAssistantUrl, arguments); }
+function cancelRounds()      { if(window.cancelRounds && window.cancelRounds !== cancelRounds) { window.cancelRounds(); return; } __pbtWait(cancelRounds, arguments); }
+function dismissInstallBar() { if(window.dismissInstallBar && window.dismissInstallBar !== dismissInstallBar) { window.dismissInstallBar(); return; } __pbtWait(dismissInstallBar, arguments); }
+function shareAppLink()      { if(window.shareAppLink && window.shareAppLink !== shareAppLink) { window.shareAppLink(); return; } __pbtWait(shareAppLink, arguments); }
+function adDeleteTournament(t){ if(window.adDeleteTournament && window.adDeleteTournament !== adDeleteTournament) { window.adDeleteTournament(t); return; } __pbtWait(adDeleteTournament, arguments); }
+function adDeleteEmptyTournaments(){ if(window.adDeleteEmptyTournaments && window.adDeleteEmptyTournaments !== adDeleteEmptyTournaments) { window.adDeleteEmptyTournaments(); return; } __pbtWait(adDeleteEmptyTournaments, arguments); }
+function adDeletePlayer(u,n) { if(window.adDeletePlayer && window.adDeletePlayer !== adDeletePlayer) { window.adDeletePlayer(u,n); return; } __pbtWait(adDeletePlayer, arguments); }
+function adOpenTournament(t) { if(window.adOpenTournament && window.adOpenTournament !== adOpenTournament) { window.adOpenTournament(t); return; } __pbtWait(adOpenTournament, arguments); }
+function adEditPlayer(u)     { if(window.adEditPlayer && window.adEditPlayer !== adEditPlayer) { window.adEditPlayer(u); return; } __pbtWait(adEditPlayer, arguments); }
+function adCreateProfile(n)  { if(window.adCreateProfile && window.adCreateProfile !== adCreateProfile) { window.adCreateProfile(n); return; } __pbtWait(adCreateProfile, arguments); }
+function adLogAvail()        { if(window.adLogAvail && window.adLogAvail !== adLogAvail) { window.adLogAvail(); return; } __pbtWait(adLogAvail, arguments); }
+function pickSms(w,on)       { if(window.pickSms && window.pickSms !== pickSms) { window.pickSms(w,on); return; } __pbtWait(pickSms, arguments); }
+function availAddRow(p)      { if(window.availAddRow && window.availAddRow !== availAddRow) { window.availAddRow(p); return; } __pbtWait(availAddRow, arguments); }
+function availRowSet(p,i,k,v){ if(window.availRowSet && window.availRowSet !== availRowSet) { window.availRowSet(p,i,k,v); return; } __pbtWait(availRowSet, arguments); }
+function availRowDel(p,i)    { if(window.availRowDel && window.availRowDel !== availRowDel) { window.availRowDel(p,i); return; } __pbtWait(availRowDel, arguments); }
+function adSavePlayer()      { if(window.adSavePlayer && window.adSavePlayer !== adSavePlayer) { window.adSavePlayer(); return; } __pbtWait(adSavePlayer, arguments); }
+function histRenameLocal(t)  { if(window.histRenameLocal && window.histRenameLocal !== histRenameLocal) { window.histRenameLocal(t); return; } __pbtWait(histRenameLocal, arguments); }
+function adEditPlayerByName(n){ if(window.adEditPlayerByName && window.adEditPlayerByName !== adEditPlayerByName) { window.adEditPlayerByName(n); return; } __pbtWait(adEditPlayerByName, arguments); }
+function openSessions()      { if(window.openSessions && window.openSessions !== openSessions) { window.openSessions(); return; } __pbtWait(openSessions, arguments); }
+function openSessionCreate() { if(window.openSessionCreate && window.openSessionCreate !== openSessionCreate) { window.openSessionCreate(); return; } __pbtWait(openSessionCreate, arguments); }
+function createSession()     { if(window.createSession && window.createSession !== createSession) { window.createSession(); return; } __pbtWait(createSession, arguments); }
+function editSession(s)      { if(window.editSession && window.editSession !== editSession) { window.editSession(s); return; } __pbtWait(editSession, arguments); }
+function saveEditSession()   { if(window.saveEditSession && window.saveEditSession !== saveEditSession) { window.saveEditSession(); return; } __pbtWait(saveEditSession, arguments); }
+function openSessionDetail(s){ if(window.openSessionDetail && window.openSessionDetail !== openSessionDetail) { window.openSessionDetail(s); return; } __pbtWait(openSessionDetail, arguments); }
+function closeSessionDetail(){ if(window.closeSessionDetail && window.closeSessionDetail !== closeSessionDetail) { window.closeSessionDetail(); return; } __pbtWait(closeSessionDetail, arguments); }
+function claimSpot(s)        { if(window.claimSpot && window.claimSpot !== claimSpot) { window.claimSpot(s); return; } __pbtWait(claimSpot, arguments); }
+function releaseSpot(s)      { if(window.releaseSpot && window.releaseSpot !== releaseSpot) { window.releaseSpot(s); return; } __pbtWait(releaseSpot, arguments); }
+function removeRosterEntry(s,u,n) { if(window.removeRosterEntry && window.removeRosterEntry !== removeRosterEntry) { window.removeRosterEntry(s,u,n); return; } __pbtWait(removeRosterEntry, arguments); }
+function jumpToInfo(s)       { if(window.jumpToInfo && window.jumpToInfo !== jumpToInfo) { window.jumpToInfo(s); return; } __pbtWait(jumpToInfo, arguments); }
+function addPlayerToTournament() { if(window.addPlayerToTournament && window.addPlayerToTournament !== addPlayerToTournament) { window.addPlayerToTournament(); return; } __pbtWait(addPlayerToTournament, arguments); }
+function addFinals()         { if(window.addFinals && window.addFinals !== addFinals) { window.addFinals(); return; } __pbtWait(addFinals, arguments); }
+function joinLiveTournament(t) { if(window.joinLiveTournament && window.joinLiveTournament !== joinLiveTournament) { window.joinLiveTournament(t); return; } __pbtWait(joinLiveTournament, arguments); }
+function shareSession(s)     { if(window.shareSession && window.shareSession !== shareSession) { window.shareSession(s); return; } __pbtWait(shareSession, arguments); }
+function copySessionRoster(s){ if(window.copySessionRoster && window.copySessionRoster !== copySessionRoster) { window.copySessionRoster(s); return; } __pbtWait(copySessionRoster, arguments); }
+function startFromSession(s) { if(window.startFromSession && window.startFromSession !== startFromSession) { window.startFromSession(s); return; } __pbtWait(startFromSession, arguments); }
+function scheduleNextWeek(s) { if(window.scheduleNextWeek && window.scheduleNextWeek !== scheduleNextWeek) { window.scheduleNextWeek(s); return; } __pbtWait(scheduleNextWeek, arguments); }
+function deleteSession(s)    { if(window.deleteSession && window.deleteSession !== deleteSession) { window.deleteSession(s); return; } __pbtWait(deleteSession, arguments); }
+function scSetVis(v)         { if(window.scSetVis && window.scSetVis !== scSetVis) { window.scSetVis(v); return; } __pbtWait(scSetVis, arguments); }
+function scSetRec(r)         { if(window.scSetRec && window.scSetRec !== scSetRec) { window.scSetRec(r); return; } __pbtWait(scSetRec, arguments); }
+function goBack()            { if(window.goBack && window.goBack !== goBack) { window.goBack(); return; } __pbtWait(goBack, arguments); }
+function openQuickStart()    { if(window.openQuickStart && window.openQuickStart !== openQuickStart) { window.openQuickStart(); return; } __pbtWait(openQuickStart, arguments); }
+function submitTip()         { if(window.submitTip && window.submitTip !== submitTip) { window.submitTip(); return; } __pbtWait(submitTip, arguments); }
+function openCourts()        { if(window.openCourts && window.openCourts !== openCourts) { window.openCourts(); return; } __pbtWait(openCourts, arguments); }
+function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCourtLocation !== enableCourtLocation) { window.enableCourtLocation(); return; } __pbtWait(enableCourtLocation, arguments); }
+function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
+function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
+function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
+window.BUILD_TAG = 'v2026-10-28.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
@@ -10124,52 +10149,52 @@ function toggleMenuMore() {
   m.style.display = open ? 'none' : 'block';
   if (b) b.textContent = open ? '⋯ More' : '⋯ Less';
 }
-function scUseMyLocation()   { if(window.scUseMyLocation) window.scUseMyLocation(); }
-function scLocTyped()        { if(window.scLocTyped) window.scLocTyped(); }
-function renderScSuggestions(){ if(window.renderScSuggestions) window.renderScSuggestions(); }
-function editSessionNote(s)  { if(window.editSessionNote) window.editSessionNote(s); }
-function openRosterPlayerSheet(u,n,t) { if(window.openRosterPlayerSheet) window.openRosterPlayerSheet(u,n,t); }
-function closeRosterPlayerSheet()     { if(window.closeRosterPlayerSheet) window.closeRosterPlayerSheet(); }
-function editSessionInfo(s)  { if(window.editSessionInfo) window.editSessionInfo(s); }
-function saveSessionInfo()   { if(window.saveSessionInfo) window.saveSessionInfo(); }
-function insertInfoTemplate(){ if(window.insertInfoTemplate) window.insertInfoTemplate(); }
-function toggleInfoSec(k)    { if(window.toggleInfoSec) window.toggleInfoSec(k); }
-function setRankRule(r)      { if(window.setRankRule) window.setRankRule(r); }
-function undoStartTournament(s){ if(window.undoStartTournament) window.undoStartTournament(s); }
-function acceptConsent()     { if(window.acceptConsent) window.acceptConsent(); }
-function setSmsConsent(v)    { if(window.setSmsConsent) window.setSmsConsent(v); }
-function setSmsPref(k,v)     { if(window.setSmsPref) window.setSmsPref(k,v); }
-function consentPick(v)      { if(window.consentPick) window.consentPick(v); }
-function uploadAvatar(i)     { if(window.uploadAvatar) window.uploadAvatar(i); }
-function removeAvatar()      { if(window.removeAvatar) window.removeAvatar(); }
-function toggleAwayFields()  { if(window.toggleAwayFields) window.toggleAwayFields(); }
-function uploadTournamentPhotos(i){ if(window.uploadTournamentPhotos) window.uploadTournamentPhotos(i); }
-function deleteTournamentPhoto(t,p){ if(window.deleteTournamentPhoto) window.deleteTournamentPhoto(t,p); }
-function viewPhoto(t,p)      { if(window.viewPhoto) window.viewPhoto(t,p); }
-function wlAdd(n)            { if(window.wlAdd) window.wlAdd(n); }
-function mergeLbPlayer(o)    { if(window.mergeLbPlayer) window.mergeLbPlayer(o); }
-function pdMergeTyped()      { if(window.pdMergeTyped) window.pdMergeTyped(); }
-function pdPickMerge(n)      { if(window.pdPickMerge) window.pdPickMerge(n); }
-function histEditGame(t,k)   { if(window.histEditGame) window.histEditGame(t,k); }
-function saveHistGame(t,k)   { if(window.saveHistGame) window.saveHistGame(t,k); }
-function histCancelEdit(t)   { if(window.histCancelEdit) window.histCancelEdit(t); }
-function runItBack()         { if(window.runItBack) window.runItBack(); }
-function dupFromHistory(t)   { if(window.dupFromHistory) window.dupFromHistory(t); }
-function clearPlayersJustMe(){ if(window.clearPlayersJustMe) window.clearPlayersJustMe(); }
-function dupProceed()        { if(window.dupProceed) window.dupProceed(); }
-function guestSignIn(m)      { if(window.guestSignIn) window.guestSignIn(m); }
-function siChip(k,t)         { if(window.siChip) window.siChip(k,t); }
-function siCopyFrom(s)       { if(window.siCopyFrom) window.siCopyFrom(s); }
-function siAutoGrow(el)      { if(window.siAutoGrow) window.siAutoGrow(el); }
-function openVenueSheet(s)   { if(window.openVenueSheet) window.openVenueSheet(s); }
-function editVenueDetails(n) { if(window.editVenueDetails) window.editVenueDetails(n); }
-function saveVenueDetails(n) { if(window.saveVenueDetails) window.saveVenueDetails(n); }
-function downloadIcs(s)      { if(window.downloadIcs) window.downloadIcs(s); }
-function adScrollTo(i)       { if(window.adScrollTo) window.adScrollTo(i); }
-function adApproveCourt(i)   { if(window.adApproveCourt) window.adApproveCourt(i); }
-function adRejectCourt(i)    { if(window.adRejectCourt) window.adRejectCourt(i); }
-function adEditCourt(i)      { if(window.adEditCourt) window.adEditCourt(i); }
-function adSaveCourt(a)      { if(window.adSaveCourt) window.adSaveCourt(a); }
+function scUseMyLocation()   { if(window.scUseMyLocation && window.scUseMyLocation !== scUseMyLocation) { window.scUseMyLocation(); return; } __pbtWait(scUseMyLocation, arguments); }
+function scLocTyped()        { if(window.scLocTyped && window.scLocTyped !== scLocTyped) { window.scLocTyped(); return; } __pbtWait(scLocTyped, arguments); }
+function renderScSuggestions(){ if(window.renderScSuggestions && window.renderScSuggestions !== renderScSuggestions) { window.renderScSuggestions(); return; } __pbtWait(renderScSuggestions, arguments); }
+function editSessionNote(s)  { if(window.editSessionNote && window.editSessionNote !== editSessionNote) { window.editSessionNote(s); return; } __pbtWait(editSessionNote, arguments); }
+function openRosterPlayerSheet(u,n,t) { if(window.openRosterPlayerSheet && window.openRosterPlayerSheet !== openRosterPlayerSheet) { window.openRosterPlayerSheet(u,n,t); return; } __pbtWait(openRosterPlayerSheet, arguments); }
+function closeRosterPlayerSheet()     { if(window.closeRosterPlayerSheet && window.closeRosterPlayerSheet !== closeRosterPlayerSheet) { window.closeRosterPlayerSheet(); return; } __pbtWait(closeRosterPlayerSheet, arguments); }
+function editSessionInfo(s)  { if(window.editSessionInfo && window.editSessionInfo !== editSessionInfo) { window.editSessionInfo(s); return; } __pbtWait(editSessionInfo, arguments); }
+function saveSessionInfo()   { if(window.saveSessionInfo && window.saveSessionInfo !== saveSessionInfo) { window.saveSessionInfo(); return; } __pbtWait(saveSessionInfo, arguments); }
+function insertInfoTemplate(){ if(window.insertInfoTemplate && window.insertInfoTemplate !== insertInfoTemplate) { window.insertInfoTemplate(); return; } __pbtWait(insertInfoTemplate, arguments); }
+function toggleInfoSec(k)    { if(window.toggleInfoSec && window.toggleInfoSec !== toggleInfoSec) { window.toggleInfoSec(k); return; } __pbtWait(toggleInfoSec, arguments); }
+function setRankRule(r)      { if(window.setRankRule && window.setRankRule !== setRankRule) { window.setRankRule(r); return; } __pbtWait(setRankRule, arguments); }
+function undoStartTournament(s){ if(window.undoStartTournament && window.undoStartTournament !== undoStartTournament) { window.undoStartTournament(s); return; } __pbtWait(undoStartTournament, arguments); }
+function acceptConsent()     { if(window.acceptConsent && window.acceptConsent !== acceptConsent) { window.acceptConsent(); return; } __pbtWait(acceptConsent, arguments); }
+function setSmsConsent(v)    { if(window.setSmsConsent && window.setSmsConsent !== setSmsConsent) { window.setSmsConsent(v); return; } __pbtWait(setSmsConsent, arguments); }
+function setSmsPref(k,v)     { if(window.setSmsPref && window.setSmsPref !== setSmsPref) { window.setSmsPref(k,v); return; } __pbtWait(setSmsPref, arguments); }
+function consentPick(v)      { if(window.consentPick && window.consentPick !== consentPick) { window.consentPick(v); return; } __pbtWait(consentPick, arguments); }
+function uploadAvatar(i)     { if(window.uploadAvatar && window.uploadAvatar !== uploadAvatar) { window.uploadAvatar(i); return; } __pbtWait(uploadAvatar, arguments); }
+function removeAvatar()      { if(window.removeAvatar && window.removeAvatar !== removeAvatar) { window.removeAvatar(); return; } __pbtWait(removeAvatar, arguments); }
+function toggleAwayFields()  { if(window.toggleAwayFields && window.toggleAwayFields !== toggleAwayFields) { window.toggleAwayFields(); return; } __pbtWait(toggleAwayFields, arguments); }
+function uploadTournamentPhotos(i){ if(window.uploadTournamentPhotos && window.uploadTournamentPhotos !== uploadTournamentPhotos) { window.uploadTournamentPhotos(i); return; } __pbtWait(uploadTournamentPhotos, arguments); }
+function deleteTournamentPhoto(t,p){ if(window.deleteTournamentPhoto && window.deleteTournamentPhoto !== deleteTournamentPhoto) { window.deleteTournamentPhoto(t,p); return; } __pbtWait(deleteTournamentPhoto, arguments); }
+function viewPhoto(t,p)      { if(window.viewPhoto && window.viewPhoto !== viewPhoto) { window.viewPhoto(t,p); return; } __pbtWait(viewPhoto, arguments); }
+function wlAdd(n)            { if(window.wlAdd && window.wlAdd !== wlAdd) { window.wlAdd(n); return; } __pbtWait(wlAdd, arguments); }
+function mergeLbPlayer(o)    { if(window.mergeLbPlayer && window.mergeLbPlayer !== mergeLbPlayer) { window.mergeLbPlayer(o); return; } __pbtWait(mergeLbPlayer, arguments); }
+function pdMergeTyped()      { if(window.pdMergeTyped && window.pdMergeTyped !== pdMergeTyped) { window.pdMergeTyped(); return; } __pbtWait(pdMergeTyped, arguments); }
+function pdPickMerge(n)      { if(window.pdPickMerge && window.pdPickMerge !== pdPickMerge) { window.pdPickMerge(n); return; } __pbtWait(pdPickMerge, arguments); }
+function histEditGame(t,k)   { if(window.histEditGame && window.histEditGame !== histEditGame) { window.histEditGame(t,k); return; } __pbtWait(histEditGame, arguments); }
+function saveHistGame(t,k)   { if(window.saveHistGame && window.saveHistGame !== saveHistGame) { window.saveHistGame(t,k); return; } __pbtWait(saveHistGame, arguments); }
+function histCancelEdit(t)   { if(window.histCancelEdit && window.histCancelEdit !== histCancelEdit) { window.histCancelEdit(t); return; } __pbtWait(histCancelEdit, arguments); }
+function runItBack()         { if(window.runItBack && window.runItBack !== runItBack) { window.runItBack(); return; } __pbtWait(runItBack, arguments); }
+function dupFromHistory(t)   { if(window.dupFromHistory && window.dupFromHistory !== dupFromHistory) { window.dupFromHistory(t); return; } __pbtWait(dupFromHistory, arguments); }
+function clearPlayersJustMe(){ if(window.clearPlayersJustMe && window.clearPlayersJustMe !== clearPlayersJustMe) { window.clearPlayersJustMe(); return; } __pbtWait(clearPlayersJustMe, arguments); }
+function dupProceed()        { if(window.dupProceed && window.dupProceed !== dupProceed) { window.dupProceed(); return; } __pbtWait(dupProceed, arguments); }
+function guestSignIn(m)      { if(window.guestSignIn && window.guestSignIn !== guestSignIn) { window.guestSignIn(m); return; } __pbtWait(guestSignIn, arguments); }
+function siChip(k,t)         { if(window.siChip && window.siChip !== siChip) { window.siChip(k,t); return; } __pbtWait(siChip, arguments); }
+function siCopyFrom(s)       { if(window.siCopyFrom && window.siCopyFrom !== siCopyFrom) { window.siCopyFrom(s); return; } __pbtWait(siCopyFrom, arguments); }
+function siAutoGrow(el)      { if(window.siAutoGrow && window.siAutoGrow !== siAutoGrow) { window.siAutoGrow(el); return; } __pbtWait(siAutoGrow, arguments); }
+function openVenueSheet(s)   { if(window.openVenueSheet && window.openVenueSheet !== openVenueSheet) { window.openVenueSheet(s); return; } __pbtWait(openVenueSheet, arguments); }
+function editVenueDetails(n) { if(window.editVenueDetails && window.editVenueDetails !== editVenueDetails) { window.editVenueDetails(n); return; } __pbtWait(editVenueDetails, arguments); }
+function saveVenueDetails(n) { if(window.saveVenueDetails && window.saveVenueDetails !== saveVenueDetails) { window.saveVenueDetails(n); return; } __pbtWait(saveVenueDetails, arguments); }
+function downloadIcs(s)      { if(window.downloadIcs && window.downloadIcs !== downloadIcs) { window.downloadIcs(s); return; } __pbtWait(downloadIcs, arguments); }
+function adScrollTo(i)       { if(window.adScrollTo && window.adScrollTo !== adScrollTo) { window.adScrollTo(i); return; } __pbtWait(adScrollTo, arguments); }
+function adApproveCourt(i)   { if(window.adApproveCourt && window.adApproveCourt !== adApproveCourt) { window.adApproveCourt(i); return; } __pbtWait(adApproveCourt, arguments); }
+function adRejectCourt(i)    { if(window.adRejectCourt && window.adRejectCourt !== adRejectCourt) { window.adRejectCourt(i); return; } __pbtWait(adRejectCourt, arguments); }
+function adEditCourt(i)      { if(window.adEditCourt && window.adEditCourt !== adEditCourt) { window.adEditCourt(i); return; } __pbtWait(adEditCourt, arguments); }
+function adSaveCourt(a)      { if(window.adSaveCourt && window.adSaveCourt !== adSaveCourt) { window.adSaveCourt(a); return; } __pbtWait(adSaveCourt, arguments); }
 
 
 </script>
