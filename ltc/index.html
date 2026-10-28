@@ -276,7 +276,7 @@ function render(filter = "") {
     const isCollapsed = collapsed.has(l.id) && !q;
     return `<article class="card lawyer ${esc(l.decision || "")}" id="lawyer-${esc(l.id)}">
       <div class="row" style="justify-content:space-between">
-        <div class="row" style="gap:11px"><div class="avatar">${esc(initials(l.name))}</div>
+        <div>
         <div><h2 style="margin:0">${esc(l.order)}. ${esc(l.name)}</h2><div class="firm">${esc(l.firm || "")}${l.city ? " · " + esc(l.city) : ""}</div></div></div>
         <button class="secondary" data-toggle="${esc(l.id)}"><span class="chev">${isCollapsed ? "▾" : "▴"}</span></button>
       </div>
