@@ -222,7 +222,7 @@ $("forgotBtn").onclick = async () => {
   try { await sendPasswordResetEmail(auth, email); $("loginError").textContent = "Password reset email sent to " + email + "."; }
   catch (e) { $("loginError").textContent = e.message; }
 };
-$("logoutBtn").onclick = () => signOut(auth);
+$("logoutBtn").onclick = (e) => { e.preventDefault(); signOut(auth); };
 $("loginPassword").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
 
 if (auth) onAuthStateChanged(auth, user => {
