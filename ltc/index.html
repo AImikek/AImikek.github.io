@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PH4910 Lawyer Call Tracker — mikek.ai/ltc</title>
+<meta name="description" content="Shared lawyer call tracker for Mike and Lorena. One version, both edit.">
+<style>
+  *{box-sizing:border-box} body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;background:#f4f6f8;color:#111}
+  header{background:#0f2a3d;color:#fff;padding:16px} header h1{margin:0;font-size:20px} header p{margin:6px 0 0;color:#cfe3ef;font-size:14px}
+  main{max-width:820px;margin:0 auto;padding:12px}
+  .card{background:#fff;border:1px solid #ddd;border-radius:12px;padding:14px;margin:12px 0}
+  .card h2{margin:0 0 6px;font-size:18px} .card h3{margin:14px 0 6px;font-size:15px}
+  input,select,textarea{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:15px;margin:6px 0}
+  textarea{min-height:84px} button{background:#0f2a3d;color:#fff;border:0;border-radius:8px;padding:11px 16px;font-size:15px;cursor:pointer}
+  button.secondary{background:#e8eef2;color:#111} button:disabled{opacity:.5}
+  .chip{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;text-transform:uppercase}
+  .hire{background:#d1fae5}.vetting{background:#ccfbf1}.hold{background:#fef3c7}.pass{background:#fee2e2}.none{background:#e5e7eb}
+  .phone{font-size:20px;font-weight:800} .phone a,.email a{color:#0f2a3d;text-decoration:none}
+  .index{display:flex;flex-wrap:wrap;gap:6px} .index button{background:#e8eef2;color:#111;padding:7px 10px;font-size:13px}
+  .banner{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px;margin:12px 0}
+  .muted{color:#555;font-size:13px} .hidden{display:none} .row{display:flex;gap:8px;flex-wrap:wrap}
+  #status{font-size:14px;margin:8px 0}
+</style>
+<!--
+  LTC — Lawyer Call Tracker, shared edition for Mike + Lorena.
+  SECURITY NOTE: This file lives in a PUBLIC GitHub repo (Almikek.github.io).
+  Do NOT put case notes, the mikek.ai/4910 password, or any private data in this file.
+  All tracker data lives ONLY in Firestore, fetched after Firebase login, and
+  Firestore rules allow only michaelkrilivsky@gmail.com and Lorer284@yahoo.com.
+  Firebase config below is a placeholder until the Firebase project is created.
+  See README-SETUP.md in the workspace (not committed to the repo) for setup.
+-->
+<script type="importmap">
+{ "imports": {
+  "firebase-app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+  "firebase-auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+  "firebase-firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+} }
+</script>
+</head>
+<body>
+<header>
+  <h1>PH4910 Lawyer Call Tracker</h1>
+  <p>One shared version for Mike and Lorena. Sign in, call, log what each firm said. Your edits save for both of you, live.</p>
+</header>
+<main>
+  <div id="setupBanner" class="banner hidden">
+    <strong>Setup needed:</strong> Firebase is not configured yet. Once the Firebase project is connected,
+    this page becomes the login + tracker. Until then, nothing here saves. Do not use this page for calls yet.
+  </div>
+
+  <!-- LOGIN -->
+  <section id="loginSection" class="card">
+    <h2>Sign in</h2>
+    <p class="muted">Use your own email and password. Mike: michaelkrilivsky@gmail.com. Lorena: Lorer284@yahoo.com.</p>
+    <label>Email <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
+    <label>Password <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Your password"></label>
+    <div class="row"><button id="loginBtn">Sign in</button><button id="forgotBtn" class="secondary">Forgot password</button></div>
+    <p id="loginError" class="muted"></p>
+    <p class="muted">New here? Your account must be created by Mike first, then use Forgot password to set your own password if you were given a temporary one. Never share your password in chat or email.</p>
+  </section>
+
+  <!-- APP -->
+  <section id="appSection" class="hidden">
+    <div class="row">
+      <span>Signed in as <strong id="who"></strong></span>
+      <button id="logoutBtn" class="secondary">Sign out</button>
+    </div>
+    <p id="status" class="muted"></p>
+
+    <div class="banner">
+      <strong>Deadlines:</strong> Oct 28 — three-day pay-or-vacate deadline &nbsp;|&nbsp; Oct 30 — seven-day cure deadline (deposit + alleged subleasing/advertising) &nbsp;|&nbsp; Nov 6 — $15,000 copyright demand, practical deadline.
+      <br><strong>Escrow:</strong> $59,500 full release authorized Oct 23 — confirm landing / landlord confirmation before telling any firm it is settled.
+    </div>
+
+    <div class="card">
+      <h2>How to call — read this first</h2>
+      <h3>30-second opener</h3>
+      <p>“Hi, I'm calling about an urgent Miami-Dade tenant dispute in a Brickell condo. We have an Oct 28 deadline and need counsel now. Can I do a quick conflict check, then tell you the facts in two minutes?”</p>
+      <h3>Conflict-check parties (say these names first)</h3>
+      <p>Landlord: Stefania Garlatti / MENDOLA CORP c/o ROCA GONZALEZ PA. Listing side: Carlos Fernandez and Pietro Belmonte (Douglas Elliman). Mike's agent: Sarina Nayebmohammadi (LoKation). Escrow: Ana Menta, The Closing Team / Closing Team FL.</p>
+      <h3>Questions to ask every firm</h3>
+      <ol>
+        <li>Do you handle Miami-Dade residential eviction defense for tenants? Any conflict with the parties above?</li>
+        <li>Can you act before Oct 28? What is the first step and timing?</li>
+        <li>What is the retainer / fee, is it refundable, and who handles the case personally?</li>
+        <li>What do you need from us today to start?</li>
+      </ol>
+      <h3>Share the file</h3>
+      <p>Encourage firms to read <strong>https://mikek.ai/4910</strong> and share the password you already have for that page — it has the summary and the full information, including all evidence. Do not post the password anywhere public, and do not email it to a firm until they have passed the conflict check.</p>
+      <h3>What to log after every call</h3>
+      <p>Who you spoke to, date/time, conflict result, fee/retainer, can they act before Oct 28, next step, and decision: Vetting (in active talks, no decision yet), Hold (parked), Pass (closed/declined), or Hire (only when Mike confirms it).</p>
+    </div>
+
+    <input id="search" type="search" placeholder="Search lawyers, firms, phones, emails, cities, decisions…">
+    <div id="jumpIndex" class="index"></div>
+    <div id="cards"></div>
+    <p class="muted">Passed lawyers start collapsed so they don't take up space. Tap any lawyer in the index to jump to and expand their card. Search auto-expands matches.</p>
+  </section>
+</main>
+
+<script type="module">
+import { initializeApp } from "firebase-app";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "firebase-auth";
+import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp } from "firebase-firestore";
+
+// ---- PASTE FIREBASE CONFIG HERE (from Firebase console > Project settings > Your apps > Web) ----
+const firebaseConfig = {
+  apiKey: "AIzaSyBF7M6yz7bpEfXWOai5uKYhkKz3u19bFFs",
+  authDomain: "ph4910-lawyer-tracker.firebaseapp.com",
+  projectId: "ph4910-lawyer-tracker",
+  storageBucket: "ph4910-lawyer-tracker.firebasestorage.app",
+  messagingSenderId: "904928341738",
+  appId: "1:904928341738:web:106824414b7ebc76827193"
+};
+const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE_");
+const ALLOWED = ["michaelkrilivsky@gmail.com", "lorer284@yahoo.com"];
+
+const $ = id => document.getElementById(id);
+if (!CONFIGURED) $("setupBanner").classList.remove("hidden");
+
+let app, auth, db, lawyers = [], unsub = null;
+if (CONFIGURED) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app); db = getFirestore(app);
+  } catch (e) { $("loginError").textContent = "Firebase setup error: " + e.message; }
+}
+
+$("loginBtn").onclick = async () => {
+  if (!CONFIGURED) { $("loginError").textContent = "Firebase is not configured yet. See setup instructions."; return; }
+  $("loginError").textContent = "";
+  try { await signInWithEmailAndPassword(auth, $("loginEmail").value.trim(), $("loginPassword").value); }
+  catch (e) { $("loginError").textContent = e.message; }
+};
+$("forgotBtn").onclick = async () => {
+  if (!CONFIGURED) return;
+  const email = $("loginEmail").value.trim();
+  if (!email) { $("loginError").textContent = "Enter your email first, then tap Forgot password."; return; }
+  try { await sendPasswordResetEmail(auth, email); $("loginError").textContent = "Password reset email sent to " + email + "."; }
+  catch (e) { $("loginError").textContent = e.message; }
+};
+$("logoutBtn").onclick = () => signOut(auth);
+$("loginPassword").addEventListener("keydown", e => { if (e.key === "Enter") $("loginBtn").click(); });
+
+if (auth) onAuthStateChanged(auth, user => {
+  const signedIn = !!user;
+  $("loginSection").classList.toggle("hidden", signedIn);
+  $("appSection").classList.toggle("hidden", !signedIn);
+  if (!signedIn) { if (unsub) unsub(); return; }
+  $("who").textContent = user.email || "";
+  if (!ALLOWED.includes((user.email || "").toLowerCase())) {
+    $("status").textContent = "This account is not authorized for this tracker. Sign out and use an authorized email.";
+    return;
+  }
+  $("status").textContent = "Live — edits save to the shared tracker for both of you.";
+  unsub = onSnapshot(collection(db, "lawyers"), snap => {
+    lawyers = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 99) - (b.order || 99));
+    render();
+  }, err => { $("status").textContent = "Could not load tracker: " + err.message; });
+});
+
+function esc(s){ return String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c])); }
+function chip(d){ return `<span class="chip ${esc(d || "none")}">${esc(d || "no decision")}</span>`; }
+
+function render(filter = "") {
+  const q = filter.toLowerCase();
+  const list = lawyers.filter(l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision].join(" ").toLowerCase().includes(q));
+  $("jumpIndex").innerHTML = lawyers.map(l =>
+    `<button data-jump="${esc(l.id)}">${esc(l.order)} ${esc(l.name)} ${l.decision ? "· " + esc(l.decision) : ""}</button>`).join("");
+  document.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
+    const el = document.getElementById("lawyer-" + b.dataset.jump);
+    if (el) { el.classList.remove("hidden"); el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  });
+  $("cards").innerHTML = list.length ? list.map(l => `
+    <article class="card" id="lawyer-${esc(l.id)}">
+      <h2>${esc(l.order)}. ${esc(l.name)}</h2>
+      <div>${chip(l.decision)} <span class="muted">${esc(l.firm || "")} ${l.city ? "· " + esc(l.city) : ""}</span></div>
+      ${l.phone ? `<div class="phone"><a href="tel:${esc(l.phone.replace(/[^0-9+]/g, ""))}">${esc(l.phone)}</a></div>` : ""}
+      ${l.email ? `<div class="email"><a href="mailto:${esc(l.email)}">${esc(l.email)}</a></div>` : `<div class="muted">No published email</div>`}
+      ${l.website ? `<div><a href="${esc(l.website)}" target="_blank" rel="noopener">Website</a></div>` : ""}
+      ${l.fit ? `<p>${esc(l.fit)}</p>` : ""}
+      <label>Spoke to <input data-field="spokeTo" data-id="${esc(l.id)}" value="${esc(l.spokeTo || "")}"></label>
+      <label>Fee / retainer <input data-field="feeRetainer" data-id="${esc(l.id)}" value="${esc(l.feeRetainer || "")}"></label>
+      <label>Next step <textarea data-field="nextStep" data-id="${esc(l.id)}">${esc(l.nextStep || "")}</textarea></label>
+      <label>Notes / call outcome <textarea data-field="additionalNotes" data-id="${esc(l.id)}">${esc(l.additionalNotes || "")}</textarea></label>
+      <label>Decision
+        <select data-field="decision" data-id="${esc(l.id)}">
+          ${["", "vetting", "hold", "pass", "hire"].map(v => `<option value="${v}" ${l.decision === v ? "selected" : ""}>${v || "No decision yet"}</option>`).join("")}
+        </select>
+      </label>
+      <div class="row"><button data-save="${esc(l.id)}">Save this card</button><span class="muted" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>
+    </article>`).join("") : "<p class='muted'>No lawyers match that search, or the tracker has not been seeded yet.</p>";
+
+  // Passed cards start collapsed (unless searching)
+  if (!q) document.querySelectorAll("#cards article").forEach((el, i) => {
+    if (list[i] && list[i].decision === "pass") { el.querySelectorAll("label, p, div.phone, div.email").forEach(n => n.classList.add("hidden")); el.insertAdjacentHTML("beforeend", `<button class="secondary" data-expand="${list[i].id}">Expand passed card</button>`); }
+  });
+  document.querySelectorAll("[data-expand]").forEach(b => b.onclick = () => {
+    const el = document.getElementById("lawyer-" + b.dataset.expand);
+    el.querySelectorAll(".hidden").forEach(n => n.classList.remove("hidden")); b.remove();
+  });
+  document.querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.save; const patch = { updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email };
+    document.querySelectorAll(`[data-id="${id}"]`).forEach(inp => patch[inp.dataset.field] = inp.value);
+    try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); document.querySelector(`[data-saved="${id}"]`).textContent = "Saved."; }
+    catch (e) { document.querySelector(`[data-saved="${id}"]`).textContent = "Save failed: " + e.message; }
+  });
+}
+$("search").addEventListener("input", e => render(e.target.value));
+</script>
+</body>
+</html>
