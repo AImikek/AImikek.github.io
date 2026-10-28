@@ -145,6 +145,24 @@
     <div id="stats" class="stats"></div>
 
     <details class="card" open>
+      <summary>✉️ Reference email for Lorena — for sending from tomorrow morning</summary>
+      <div style="margin-top:12px">
+        <p class="small">Pick a lawyer, enter the 4910 password you already have once (it stays only in this browser, it is never saved to GitHub), then Copy email. The copied email includes the full brief link <strong>and</strong> the password, so a firm can check the details right away.</p>
+        <label>Send to
+          <select id="emailLawyer"><option value="">— Choose a lawyer —</option></select>
+        </label>
+        <label>4910 password (you already have this)
+          <input id="emailPassword" type="password" autocomplete="off" placeholder="Enter the mikek.ai/4910 password">
+        </label>
+        <label>Email preview — copy this
+          <textarea id="emailPreview" rows="14" readonly style="min-height:300px"></textarea>
+        </label>
+        <div class="row"><button id="copyEmailBtn">Copy email</button><span id="copyStatus" class="saved"></span></div>
+        <p class="muted">Subject: Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 28</p>
+      </div>
+    </details>
+
+    <details class="card" open>
       <summary>Case snapshot &amp; deadlines</summary>
       <p class="small" style="margin-top:10px"><strong>Oct 28</strong> — three-day pay-or-vacate deadline &nbsp;·&nbsp; <strong>Oct 30</strong> — seven-day cure deadline (deposit + alleged subleasing/advertising) &nbsp;·&nbsp; <strong>Nov 6</strong> — $15,000 copyright demand, practical deadline.<br>
       <strong>Escrow:</strong> $59,500 full release authorized Oct 23 — confirm landing / landlord confirmation before telling any firm it is settled.</p>
@@ -299,6 +317,49 @@ function render(filter = "") {
 $("search").addEventListener("input", e => render(e.target.value));
 $("expandAll").onclick = () => { collapsed.clear(); render($("search").value); };
 $("collapseAll").onclick = () => { lawyers.forEach(l => collapsed.add(l.id)); render($("search").value); };
+// Reference email for Lorena. The password is never hardcoded in this file
+// (the repo is public) — it is entered once here, kept only in this browser,
+// and included in the copied email so firms can open the full brief at once.
+function firstName(full){ const p = (full || "").trim().split(/\s+/); return p[0] || "[Name]"; }
+function emailText(){
+  const sel = $("emailLawyer");
+  const lawyer = lawyers.find(l => l.id === sel.value);
+  const name = lawyer ? firstName(lawyer.name) : "[Name]";
+  const pw = $("emailPassword").value || "[password]";
+  return `Hi ${name},
+
+I'm looking for counsel to bring damages claims against my landlord, its agents and the escrow company, and to protect my tenancy at 1300 S Miami Ave.
+
+In short: I paid the full $59,500 my lease required into escrow before move-in and authorized its release. The landlord then served a 3-day notice for that same money, refused it in writing, and the law firm listed as its address in the lease refused $17,000 in money orders in front of a witness. The repairs it signed for are still not done. The lease and Florida law give attorney's fees to the prevailing party, and everything is documented.
+
+Could we do a 15 minute call tomorrow, Wednesday, October 28? The notice deadline is that day. I'd like to hear about your experience with tenant-side cases and claims like these, and whether you'd consider a contingency or hybrid fee.
+
+Please run a conflict check on Mendola Corp, Stefania Garlatti, Douglas Elliman (Pietro Belmonte and Carlos Fernandez), Roca Gonzalez PA, LoKation Real Estate and The Closing Team. The full brief, with all evidence and details, is here for you to check right away: https://mikek.ai/4910 — Password: ${pw}
+
+Mike Krilivsky
+617-633-0544`;
+}
+function refreshEmailOptions(){
+  const sel = $("emailLawyer"); if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = `<option value="">— Choose a lawyer —</option>` + lawyers.map(l => `<option value="${esc(l.id)}" ${l.id === current ? "selected" : ""}>${esc(l.order)}. ${esc(l.name)}</option>`).join("");
+  $("emailPreview").value = emailText();
+}
+$("emailLawyer").addEventListener("change", () => { $("emailPreview").value = emailText(); });
+$("emailPassword").addEventListener("input", e => {
+  try { localStorage.setItem("ltc4910pw", e.target.value); } catch (err) {}
+  $("emailPreview").value = emailText();
+});
+try { const savedPw = localStorage.getItem("ltc4910pw"); if (savedPw) $("emailPassword").value = savedPw; } catch (err) {}
+$("copyEmailBtn").onclick = async () => {
+  $("emailPreview").value = emailText();
+  try { await navigator.clipboard.writeText($("emailPreview").value); $("copyStatus").textContent = "✓ Copied — paste into your email."; }
+  catch (e) { $("emailPreview").select(); $("copyStatus").textContent = "Copy failed — select the text above and copy manually."; }
+};
+// Populate the lawyer picker whenever the lawyer list loads.
+const _origRender = render;
+render = function(filter = "") { _origRender(filter); refreshEmailOptions(); };
+
 $("importBtn").onclick = async () => {
   const file = $("seedFile").files[0];
   if (!file) { $("importStatus").textContent = "Choose the seed-data.json file first."; return; }
