@@ -5,56 +5,89 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PH4910 Lawyer Call Tracker — mikek.ai/ltc</title>
 <meta name="description" content="Shared lawyer call tracker for Mike and Lorena. One version, both edit.">
+<meta name="color-scheme" content="dark">
 <style>
   :root{
-    --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f1f5f9; --card:#ffffff;
-    --navy:#0b2239; --navy2:#14365e; --gold:#c9a96a; --teal:#0f766e; --blue:#1d4ed8;
-    --radius:18px; --shadow:0 4px 20px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.04);
+    --bg0:#0b1220; --bg1:#0f172a;
+    --ink:#f1f5f9; --ink2:#cbd5e1; --muted:#94a3b8; --faint:#7c8aa0;
+    --line:rgba(148,163,184,.18); --line2:rgba(148,163,184,.28);
+    --glass:rgba(255,255,255,.045); --glass2:rgba(255,255,255,.07);
+    --grad:linear-gradient(135deg,#6366f1 0%,#8b5cf6 48%,#14b8a6 100%);
+    --grad-soft:linear-gradient(135deg,rgba(99,102,241,.22),rgba(139,92,246,.18),rgba(20,184,166,.16));
+    --call:linear-gradient(135deg,#14b8a6 0%,#06b6d4 100%);
+    --radius:20px; --shadow:0 12px 32px rgba(0,0,0,.38), 0 2px 8px rgba(0,0,0,.28);
   }
   *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
-  header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);color:#fff;padding:26px 18px 20px}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    margin:0; color:var(--ink); font-size:15.5px; line-height:1.55;
+    background:
+      radial-gradient(720px 380px at 12% -60px, rgba(99,102,241,.34), transparent 62%),
+      radial-gradient(640px 360px at 92% 0, rgba(139,92,246,.26), transparent 60%),
+      radial-gradient(560px 420px at 50% 110%, rgba(20,184,166,.16), transparent 60%),
+      var(--bg0);
+    background-attachment:fixed; min-height:100vh;
+  }
+  header{padding:28px 18px 18px}
   header .wrap, main{max-width:780px;margin:0 auto}
-  header h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:27px;font-weight:600;letter-spacing:-.3px;line-height:1.15}
-  header h1 span{color:var(--gold)}
-  header p{margin:8px 0 0;color:#cbd5e1;font-size:14px;max-width:560px}
-  header .rule{height:3px;width:56px;background:var(--gold);border-radius:3px;margin-top:14px}
-  main{padding:14px 14px 40px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin:12px 0}
-  .card h2{margin:0 0 4px;font-size:18px;letter-spacing:-.2px} .card h3{margin:14px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
-  .muted{color:var(--muted);font-size:13.5px} .small{font-size:13.5px}
-  input,select,textarea{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:12px;font-size:15px;margin:5px 0;background:#fff;color:var(--ink);outline:none}
-  input:focus,select:focus,textarea:focus{border-color:var(--navy2);box-shadow:0 0 0 3px rgba(20,54,94,.12)}
-  textarea{min-height:82px;resize:vertical} label{font-size:12.5px;font-weight:700;color:#334155;display:block;margin-top:10px;letter-spacing:.2px}
-  button{background:var(--navy);color:#fff;border:0;border-radius:11px;padding:11px 16px;font-size:14.5px;font-weight:700;cursor:pointer}
-  button.secondary{background:#f8fafc;color:var(--ink);border:1px solid var(--line)} button:active{transform:scale(.98)}
-  .search{position:sticky;top:0;z-index:10;background:rgba(241,245,249,.92);backdrop-filter:blur(10px);padding:10px 0 8px;margin:0 -2px}
-  .search input{font-size:16px;padding:13px 14px;border-radius:14px;box-shadow:var(--shadow)}
-  .index{display:flex;gap:7px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none} .index::-webkit-scrollbar{display:none}
-  .index button{flex:0 0 auto;background:#fff;color:var(--ink);border:1px solid var(--line);padding:7px 11px;font-size:12.5px;font-weight:700;border-radius:999px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
-  .index button.pass{color:#94a3b8}
-  .filters{display:flex;gap:7px;flex-wrap:wrap;margin:2px 0 4px}
-  .filters button{padding:8px 12px;font-size:13px;border-radius:999px}
-  .filters button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-  .filters button:not(.active){background:#fff;color:var(--ink);border:1px solid var(--line)}
-  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
-  .hire{background:#dcfce7;color:#166534}.vetting{background:#ccfbf1;color:#0f766e}.hold{background:#fef3c7;color:#92400e}.pass{background:#fee2e2;color:#991b1b}.none{background:#f1f5f9;color:#64748b}
-  .avatar{width:46px;height:46px;flex:0 0 46px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;letter-spacing:.3px}
-  .lawyer{border-left:5px solid #e2e8f0} .lawyer.vetting{border-left-color:#14b8a6} .lawyer.hold{border-left-color:#f59e0b} .lawyer.pass{border-left-color:#e2e8f0;opacity:.88} .lawyer.hire{border-left-color:#22c55e}
-  .lawyer h2{font-size:18px} .firm{color:var(--muted);font-size:13.5px;margin-top:1px}
-  .notes-box{background:#f0fdfa;border:1px solid #ccfbf1;border-radius:12px;padding:2px 12px 10px;margin-top:10px}
-  .next-box{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:2px 12px 10px;margin-top:10px}
-  .call-btn{display:inline-block;background:#0f766e;color:#fff !important;text-decoration:none;font-weight:800;padding:11px 18px;border-radius:12px;font-size:16px}
-  .pill-btn{display:inline-block;background:#f8fafc;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:700;padding:9px 13px;border-radius:999px;font-size:13.5px}
-  .banner{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px 14px;margin:12px 0;font-size:13.5px}
-  details summary{cursor:pointer;font-weight:800;font-size:14.5px;list-style:none} details summary::-webkit-details-marker{display:none}
+  header h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.6px;line-height:1.08}
+  header h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  header p{margin:9px 0 0;color:var(--ink2);font-size:14.5px;max-width:580px;line-height:1.55}
+  header .rule{height:4px;width:64px;background:var(--grad);border-radius:4px;margin-top:16px}
+  .live-dot{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#5eead4}
+  .live-dot::before{content:"";width:8px;height:8px;border-radius:50%;background:#2dd4bf;box-shadow:0 0 0 4px rgba(45,212,191,.18)}
+  main{padding:6px 14px 44px}
+  .card{background:var(--glass);border:1px solid var(--line);border-radius:var(--radius);padding:17px;box-shadow:var(--shadow);margin:13px 0;backdrop-filter:blur(8px)}
+  .card h2{margin:0 0 4px;font-size:18.5px;letter-spacing:-.2px} .card h3{margin:14px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+  .muted{color:var(--muted);font-size:13.5px;line-height:1.5} .small{font-size:14px;color:var(--ink2);line-height:1.6}
+  input,select,textarea{width:100%;padding:12px 13px;border:1px solid var(--line2);border-radius:13px;font-size:15.5px;margin:5px 0;background:#0b1220;color:var(--ink);outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.28)}
+  input::placeholder,textarea::placeholder{color:#64748b}
+  textarea{min-height:86px;resize:vertical} label{font-size:12.5px;font-weight:700;color:#e2e8f0;display:block;margin-top:11px;letter-spacing:.3px}
+  button{background:var(--grad);color:#fff;border:0;border-radius:12px;padding:12px 17px;font-size:15px;font-weight:800;cursor:pointer}
+  button.secondary{background:var(--glass2);color:var(--ink);border:1px solid var(--line2)} button:active{transform:scale(.98)}
+  /* Sticky search, intentional */
+  .search{position:sticky;top:0;z-index:20;background:rgba(11,18,32,.88);backdrop-filter:blur(14px);padding:11px 0 9px;margin:0 -2px}
+  .search input{font-size:16.5px;padding:14px 15px;border-radius:15px;background:#111c30;box-shadow:var(--shadow)}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+  .filters button{padding:9px 14px;font-size:13.5px;border-radius:999px;background:var(--glass2);color:var(--ink2);border:1px solid var(--line)}
+  .filters button.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(139,92,246,.35)}
+  /* AT-A-GLANCE SUMMARY — compact dense grid, all attorneys, above the cards */
+  .summary-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:2px 2px 8px}
+  .summary-head h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted)}
+  .summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin:0 0 12px}
+  @media (min-width:640px){.summary-grid{grid-template-columns:repeat(3,1fr)}}
+  .summary-item{display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--glass);border:1px solid var(--line);border-radius:13px;padding:9px 10px;cursor:pointer;color:var(--ink)}
+  .summary-item:hover,.summary-item:active{border-color:rgba(167,139,250,.55);background:var(--glass2)}
+  .summary-item .s-name{font-size:13.5px;font-weight:750;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .summary-item .s-firm{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .summary-item.pass{opacity:.58}
+  .summary-item.pass .s-name{color:#94a3b8}
+  .index{display:none}
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+  .hire{background:rgba(34,197,94,.18);color:#86efac}.vetting{background:rgba(45,212,191,.16);color:#5eead4}.hold{background:rgba(251,191,36,.16);color:#fcd34d}.pass{background:rgba(148,163,184,.16);color:#94a3b8}.none{background:rgba(148,163,184,.14);color:#cbd5e1}
+  .avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;letter-spacing:.3px;box-shadow:0 4px 14px rgba(139,92,246,.35)}
+  .lawyer{border-left:4px solid rgba(148,163,184,.35)} .lawyer.vetting{border-left-color:#2dd4bf} .lawyer.hold{border-left-color:#fbbf24} .lawyer.pass{border-left-color:rgba(148,163,184,.35);opacity:.9} .lawyer.hire{border-left-color:#4ade80}
+  .lawyer h2{font-size:19px} .firm{color:var(--muted);font-size:13.5px;margin-top:1px}
+  .notes-box{background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.18);border-radius:14px;padding:2px 13px 11px;margin-top:11px}
+  .next-box{background:rgba(167,139,250,.09);border:1px solid rgba(167,139,250,.22);border-radius:14px;padding:2px 13px 11px;margin-top:11px}
+  .call-btn{display:inline-flex;align-items:center;gap:8px;background:var(--call);color:#04121a !important;text-decoration:none;font-weight:850;padding:13px 20px;border-radius:14px;font-size:16.5px;box-shadow:0 6px 18px rgba(20,184,166,.32)}
+  .pill-btn{display:inline-block;background:var(--glass2);border:1px solid var(--line2);color:var(--ink);text-decoration:none;font-weight:700;padding:10px 14px;border-radius:999px;font-size:13.5px}
+  .banner{background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.25);border-radius:14px;padding:12px 14px;margin:12px 0;font-size:13.5px;color:var(--ink2)}
+  details summary{cursor:pointer;font-weight:800;font-size:15px;list-style:none} details summary::-webkit-details-marker{display:none}
   .hidden{display:none} .topbar{display:flex;justify-content:space-between;gap:8px;align-items:center}
-  #status{font-size:13px;margin:6px 0} .saved{color:#15803d;font-size:13px;font-weight:700}
-  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0}
-  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 12px;box-shadow:var(--shadow)}
-  .stat b{font-size:22px;display:block;line-height:1.1} .stat span{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  #status{font-size:13px;margin:6px 0} .saved{color:#6ee7b7;font-size:13px;font-weight:700}
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:13px 0}
+  .stat{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:12px 13px;box-shadow:var(--shadow)}
+  .stat b{font-size:23px;display:block;line-height:1.1} .stat span{font-size:11.5px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px}
   .chev{font-size:18px;line-height:1}
+  /* Login, premium not an afterthought */
+  .login-hero{text-align:left}
+  .login-hero .eyebrow{font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#a78bfa}
+  .login-hero h2{font-size:26px;line-height:1.15;margin:6px 0 8px}
+  .login-hero p{color:var(--ink2)}
+  #loginBtn{width:100%;padding:14px;font-size:16px}
 </style>
 <!--
   LTC — shared edition for Mike + Lorena.
@@ -74,7 +107,8 @@
 <body>
 <header>
   <div class="wrap">
-    <h1>PH4910 <span>Lawyer Tracker</span></h1>
+    <div class="live-dot">Shared · Live</div>
+    <h1>PH4910 <span class="grad">Lawyer Tracker</span></h1>
     <p>One shared version for Mike and Lorena. Sign in, call, log what each firm said — your edits save for both of you, live.</p>
     <div class="rule"></div>
   </div>
@@ -82,7 +116,8 @@
 <main>
   <div id="setupBanner" class="banner hidden"><strong>Setup needed:</strong> Firebase is not configured yet.</div>
 
-  <section id="loginSection" class="card">
+  <section id="loginSection" class="card login-hero">
+    <div class="eyebrow">PH4910 · Lawyer Tracker</div>
     <h2>Welcome back</h2>
     <p class="muted">Sign in with your own email and password.<br>Mike: michaelkrilivsky@gmail.com · Lorena: Lorer284@yahoo.com</p>
     <label>Email <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
@@ -126,16 +161,19 @@
       </div>
     </details>
 
-    <div class="search"><input id="search" type="search" placeholder="🔍  Search lawyers, firms, phones, emails, decisions…"></div>
+    <div class="search"><input id="search" type="search" placeholder="Search lawyers, firms, phones, emails, decisions…"></div>
     <div class="filters" id="filters"></div>
-    <div id="jumpIndex" class="index"></div>
+
+    <!-- AT-A-GLANCE SUMMARY: all attorneys, compact dense grid, directly under search/filters, above the cards -->
+    <div class="summary-head"><h3>All attorneys at a glance</h3><span id="count" class="muted"></span></div>
+    <div id="jumpIndex" class="summary-grid"></div>
+
     <div class="row">
       <button id="expandAll" class="secondary">Expand all</button>
       <button id="collapseAll" class="secondary">Collapse all</button>
-      <span id="count" class="muted"></span>
     </div>
     <div id="cards"></div>
-    <p class="muted">Passed lawyers start collapsed so they don't take up space. Tap any name in the index to jump to and expand that card.</p>
+    <p class="muted">Passed lawyers start collapsed so they don't take up space. Tap any name in the summary above to jump to and expand that card.</p>
   </section>
 </main>
 
@@ -209,8 +247,10 @@ function render(filter = "") {
   $("filters").innerHTML = filters.map(([v, label]) => `<button class="${decisionFilter === v ? "active" : ""}" data-filter="${v}">${label}</button>`).join("");
   document.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { decisionFilter = b.dataset.filter; render($("search").value); });
   $("count").textContent = list.length ? `${list.length} of ${lawyers.length} attorneys` : "";
+  // AT-A-GLANCE SUMMARY: always ALL attorneys, regardless of search/filter, so nothing is hidden.
+  // Compact dense grid: name + decision chip (+ firm, truncated). Passed entries are muted via .pass.
   $("jumpIndex").innerHTML = lawyers.map(l =>
-    `<button class="${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}">${esc(l.order)} ${esc(l.name)}${l.decision ? " · " + esc(l.decision) : ""}</button>`).join("");
+    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("");
   document.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
     decisionFilter = "all"; collapsed.delete(b.dataset.jump); render($("search").value);
     const el = document.getElementById("lawyer-" + b.dataset.jump);
@@ -230,9 +270,9 @@ function render(filter = "") {
       <div class="notes-box"><label>Notes / call outcome</label><textarea data-field="additionalNotes" data-id="${esc(l.id)}">${esc(l.additionalNotes || "")}</textarea></div>
       <h3>Contact</h3>
       <div class="row">
-        ${l.phone ? `<a class="call-btn" href="tel:${esc(l.phone.replace(/[^0-9+]/g, ""))}">📞 ${esc(l.phone)}</a>` : ""}
-        ${l.email ? `<a class="pill-btn" href="mailto:${esc(l.email)}">✉️ Email</a>` : `<span class="muted">No published email</span>`}
-        ${l.website ? `<a class="pill-btn" href="${esc(l.website)}" target="_blank" rel="noopener">↗ Website</a>` : ""}
+        ${l.phone ? `<a class="call-btn" href="tel:${esc(l.phone.replace(/[^0-9+]/g, ""))}">Call ${esc(l.phone)}</a>` : ""}
+        ${l.email ? `<a class="pill-btn" href="mailto:${esc(l.email)}">Email</a>` : `<span class="muted">No published email</span>`}
+        ${l.website ? `<a class="pill-btn" href="${esc(l.website)}" target="_blank" rel="noopener">Website ↗</a>` : ""}
       </div>
       ${l.fit ? `<p class="small" style="margin-top:10px">${esc(l.fit)}</p>` : ""}
       <label>Spoke to <input data-field="spokeTo" data-id="${esc(l.id)}" value="${esc(l.spokeTo || "")}"></label>
@@ -242,7 +282,7 @@ function render(filter = "") {
           ${["", "vetting", "hold", "pass", "hire"].map(v => `<option value="${v}" ${l.decision === v ? "selected" : ""}>${v || "No decision yet"}</option>`).join("")}
         </select>
       </label>
-      <div class="row" style="margin-top:12px"><button data-save="${esc(l.id)}">✓ Save this card</button><span class="saved" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
+      <div class="row" style="margin-top:12px"><button data-save="${esc(l.id)}">Save this card</button><span class="saved" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
     </article>`; }).join("") : "<p class='muted'>No lawyers match that search or filter, or the tracker has not been seeded yet.</p>";
 
   document.querySelectorAll("[data-toggle]").forEach(b => b.onclick = () => {
@@ -252,7 +292,7 @@ function render(filter = "") {
   document.querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
     const id = b.dataset.save; const patch = { updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email };
     document.querySelectorAll(`[data-id="${id}"]`).forEach(inp => patch[inp.dataset.field] = inp.value);
-    try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); document.querySelector(`[data-saved="${id}"]`).textContent = "✓ Saved."; }
+    try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); document.querySelector(`[data-saved="${id}"]`).textContent = "Saved."; }
     catch (e) { document.querySelector(`[data-saved="${id}"]`).textContent = "Save failed: " + e.message; }
   });
 }
