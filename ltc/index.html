@@ -95,6 +95,10 @@
 .qa-q{font-weight:650;margin-top:8px}
 
 .stamp{font-size:11px;font-weight:300;color:#94a3b8;margin-top:6px}
+
+.decision-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.decision-btns button{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#e2e8f0;font-weight:650;font-size:13px}
+.decision-btns button.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
 </style>
 <!--
   LTC — shared edition for Mike + Lorena.
@@ -377,11 +381,10 @@ function render(filter = "") {
       <label>Spoke to <input data-field="spokeTo" data-id="${esc(l.id)}" value="${esc(l.spokeTo || "")}"></label>
       <label>Fee / retainer <input data-field="feeRetainer" data-id="${esc(l.id)}" value="${esc(l.feeRetainer || "")}"></label>
       <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-field="emailSent" data-id="${esc(l.id)}" ${l.emailSent ? "checked" : ""} style="width:auto;margin:0"> Email sent to this lawyer</label>
-      <label>Decision
-        <select data-field="decision" data-id="${esc(l.id)}">
-          ${["", "vetting", "hold", "pass", "hire"].map(v => `<option value="${v}" ${l.decision === v ? "selected" : ""}>${v || "No decision yet"}</option>`).join("")}
-        </select>
-      </label>
+      <div><label>Decision</label>
+      <div class="decision-btns">
+        ${[["", "No decision"], ["vetting", "Vetting"], ["hold", "Hold"], ["pass", "Pass"], ["hire", "Hire"]].map(([v, label]) => `<button class="${(l.decision || "") === v ? "active" : ""}" data-decision-btn="${v}" data-id="${esc(l.id)}">${label}</button>`).join("")}
+      </div></div>
       <details class="qa-details"><summary>📞 Call questions & answers${l.callAnswers ? " (" + Object.values(l.callAnswers).filter(v => v && String(v).trim()).length + " answered)" : ""} — tap to expand</summary>
         <p class="muted" style="margin:6px 0">Ask these on the call, then type the answers here and tap Save this card. Focus: tenant background, suing landlords, money recovered, and stopping / reversing eviction.</p>
         ${CALL_QUESTIONS.map((q, i) => `<div class="qa-q">${i + 1}. ${esc(q)}</div><textarea data-qa-index="${i}" data-id="${esc(l.id)}" placeholder="Answer…">${esc((l.callAnswers && l.callAnswers[i]) || (l.callAnswers && l.callAnswers[String(i)]) || "")}</textarea>`).join("")}
@@ -392,6 +395,11 @@ function render(filter = "") {
 
   const _sortSel = document.getElementById("sortSelect");
   if (_sortSel) _sortSel.onchange = () => { sortMode = _sortSel.value; render($("search").value); };
+  document.querySelectorAll("[data-decision-btn]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.id; const v = b.dataset.decisionBtn;
+    try { await setDoc(doc(db, "lawyers", id), { decision: v, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true }); }
+    catch (e) { const s = document.querySelector(`[data-saved="${id}"]`); if (s) s.textContent = "Decision save failed: " + e.message; }
+  });
   document.querySelectorAll("[data-toggle]").forEach(b => b.onclick = () => {
     if (collapsed.has(b.dataset.toggle)) collapsed.delete(b.dataset.toggle); else collapsed.add(b.dataset.toggle);
     render($("search").value);
