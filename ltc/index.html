@@ -147,7 +147,9 @@
         <label>Email preview — copy this
           <textarea id="emailPreview" rows="14" readonly style="min-height:300px"></textarea>
         </label>
-        <div class="row"><button id="copyEmailBtn">Copy email</button><span id="copyStatus" class="saved"></span></div>
+        <div class="row"><button id="copyEmailBtn">Copy email</button><button id="mailtoBtn" class="secondary">Open in email app</button><button id="markSentBtn" class="secondary">✓ Mark email sent for this lawyer</button></div>
+        <p id="copyStatus" class="saved"></p>
+        <p class="small" style="margin-top:8px"><strong>How sending works:</strong> This page itself cannot send Gmail — it has no server. So: <em>Copy email</em> = paste and send from your own email. <em>Open in email app</em> = opens your email app addressed to that lawyer, ready to send (from whoever's email app it opens in — Mike's if Mike taps it, Lorena's if she does). <em>Want it sent as Mike?</em> Tap “Mark email sent” only after it actually goes out, or tell Mike in chat and Muse will send it from michaelkrilivsky@gmail.com after Mike approves — Muse never sends without his go-ahead. The checkbox on each lawyer card is the record that it was sent.</p>
         <p class="muted">Subject: Urgent: PH4910 lease dispute — 15 minute call today, October 28</p>
       </div>
     </details>
@@ -260,7 +262,7 @@ function render(filter = "") {
   // Search does not hide summary tiles; the filter does.
   const summaryList = decisionFilter === "all" ? lawyers : lawyers.filter(l => (l.decision || "") === decisionFilter);
   $("jumpIndex").innerHTML = summaryList.length ? summaryList.map(l =>
-    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
+    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
     : `<p class="muted">No attorneys with decision “${esc(decisionFilter)}” yet.</p>`;
   document.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
     // Keep the current filter — the tapped lawyer is in it — just expand and scroll to their card.
@@ -278,7 +280,7 @@ function render(filter = "") {
         <div><h2 style="margin:0">${esc(l.order)}. ${esc(l.name)}</h2><div class="firm">${esc(l.firm || "")}${l.city ? " · " + esc(l.city) : ""}</div></div></div>
         <button class="secondary" data-toggle="${esc(l.id)}"><span class="chev">${isCollapsed ? "▾" : "▴"}</span></button>
       </div>
-      <div style="margin-top:8px">${chip(l.decision)}</div>
+      <div style="margin-top:8px">${chip(l.decision)} ${l.emailSent ? `<span class="chip hire">✓ Email sent${l.emailSentBy ? " · " + esc(l.emailSentBy) : ""}</span>` : ""}</div>
       ${isCollapsed ? "" : `
       <div class="next-box"><label>Next step</label><textarea data-field="nextStep" data-id="${esc(l.id)}">${esc(l.nextStep || "")}</textarea></div>
       <div class="notes-box"><label>Notes / call outcome</label><textarea data-field="additionalNotes" data-id="${esc(l.id)}">${esc(l.additionalNotes || "")}</textarea></div>
@@ -291,6 +293,8 @@ function render(filter = "") {
       ${l.fit ? `<p class="small" style="margin-top:10px">${esc(l.fit)}</p>` : ""}
       <label>Spoke to <input data-field="spokeTo" data-id="${esc(l.id)}" value="${esc(l.spokeTo || "")}"></label>
       <label>Fee / retainer <input data-field="feeRetainer" data-id="${esc(l.id)}" value="${esc(l.feeRetainer || "")}"></label>
+      <label>LinkedIn profile URL <input data-field="linkedin" data-id="${esc(l.id)}" value="${esc(l.linkedin || "")}" placeholder="https://www.linkedin.com/in/... — paste if known, leave blank if not"></label>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-field="emailSent" data-id="${esc(l.id)}" ${l.emailSent ? "checked" : ""} style="width:auto;margin:0"> Email sent to this lawyer</label>
       <label>Decision
         <select data-field="decision" data-id="${esc(l.id)}">
           ${["", "vetting", "hold", "pass", "hire"].map(v => `<option value="${v}" ${l.decision === v ? "selected" : ""}>${v || "No decision yet"}</option>`).join("")}
@@ -305,7 +309,8 @@ function render(filter = "") {
   });
   document.querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
     const id = b.dataset.save; const patch = { updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email };
-    document.querySelectorAll(`[data-id="${id}"]`).forEach(inp => patch[inp.dataset.field] = inp.value);
+    document.querySelectorAll(`[data-id="${id}"]`).forEach(inp => { patch[inp.dataset.field] = inp.type === "checkbox" ? inp.checked : inp.value; });
+    if (patch.emailSent) { patch.emailSentBy = auth.currentUser.email; patch.emailSentAt = new Date().toISOString().slice(0, 10); }
     try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); document.querySelector(`[data-saved="${id}"]`).textContent = "Saved."; }
     catch (e) { document.querySelector(`[data-saved="${id}"]`).textContent = "Save failed: " + e.message; }
   });
@@ -343,6 +348,24 @@ function refreshEmailOptions(){
 }
 $("emailLawyer").addEventListener("change", () => { $("emailPreview").value = emailText(); });
 
+$("mailtoBtn").onclick = () => {
+  const sel = $("emailLawyer");
+  const lawyer = lawyers.find(l => l.id === sel.value);
+  if (!lawyer || !lawyer.email) { $("copyStatus").textContent = "Choose a lawyer with an email address first."; return; }
+  const subject = "Urgent: PH4910 lease dispute — 15 minute call today, October 28";
+  const body = emailText();
+  window.location.href = `mailto:${encodeURIComponent(lawyer.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  $("copyStatus").textContent = "Opened in your email app — send from there. Remember to tick “Email sent” on that lawyer's card after it goes out.";
+};
+$("markSentBtn").onclick = async () => {
+  const sel = $("emailLawyer");
+  const lawyer = lawyers.find(l => l.id === sel.value);
+  if (!lawyer) { $("copyStatus").textContent = "Choose a lawyer first."; return; }
+  try {
+    await setDoc(doc(db, "lawyers", lawyer.id), { emailSent: true, emailSentBy: auth.currentUser.email, emailSentAt: new Date().toISOString().slice(0, 10), updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true });
+    $("copyStatus").textContent = `✓ Marked email sent for ${lawyer.name}. It now shows ✓ on their card and in the summary.`;
+  } catch (e) { $("copyStatus").textContent = "Could not mark sent: " + e.message; }
+};
 $("copyEmailBtn").onclick = async () => {
   $("emailPreview").value = emailText();
   try { await navigator.clipboard.writeText($("emailPreview").value); $("copyStatus").textContent = "✓ Copied — paste into your email."; }
