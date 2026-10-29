@@ -104,6 +104,9 @@
 .focus-bar{position:sticky;top:58px;z-index:19;display:flex;justify-content:space-between;gap:10px;align-items:center;background:rgba(30,27,75,.96);border:1px solid #a78bfa;border-radius:14px;padding:10px 12px;margin:8px 0;font-size:13.5px}
 .focus-bar button{flex-shrink:0}
 
+.contact-edit{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.contact-edit label{flex:1 1 140px;margin-top:0}
+.contact-edit input{margin:3px 0 0}
 .flag-active{background:#f59e0b !important;color:#111827 !important;border-color:#f59e0b !important}
 /* DESKTOP COMPACT v1: desktop only — phone layout untouched. Shrinks everything
    above the at-a-glance summary so the lawyer overview sits close to the top. */
@@ -143,6 +146,16 @@
   #appSection .top-sections details.card{padding:7px 11px;margin:0}
   #appSection .top-sections details summary{font-size:13px}
   #appSection .top-sections details[open]{grid-column:1 / -1}
+  /* Smaller buttons, more per line on desktop */
+  button{padding:9px 13px;font-size:14px}
+  .filters button{padding:5px 9px;font-size:12px}
+  .decision-btns button{padding:7px 10px;font-size:12.5px}
+  .pill-btn, .call-btn{padding:7px 11px;font-size:13px}
+  /* Search + Sort share one sticky row on desktop, instead of two full-width lines */
+  #appSection .search-sort{position:sticky;top:0;z-index:20;display:flex;gap:8px;align-items:flex-end;background:rgba(11,18,32,.88);backdrop-filter:blur(14px);padding:4px 0 3px;margin:0 -2px}
+  #appSection .search-sort .search{position:static;flex:1;margin:0;padding:0;background:transparent;backdrop-filter:none}
+  #appSection .search-sort label{flex:0 0 240px;margin-top:0}
+  #appSection .search-sort select{margin:3px 0 0}
 }
 @media (min-width:1200px){
   .summary-grid{grid-template-columns:repeat(5,1fr)}
@@ -232,7 +245,7 @@
       </div>
     </details>
 
-    <details class="card" open>
+    <details class="card">
       <summary>Case snapshot &amp; deadlines</summary>
       <p class="small" style="margin-top:10px"><strong>Oct 28</strong> — three-day pay-or-vacate deadline &nbsp;·&nbsp; <strong>Oct 30</strong> — seven-day cure deadline (deposit + alleged subleasing/advertising) &nbsp;·&nbsp; <strong>Nov 6</strong> — $15,000 copyright demand, practical deadline.<br>
       <strong>Escrow:</strong> $59,500 full release authorized Oct 23 — confirm landing / landlord confirmation before telling any firm it is settled.</p>
@@ -250,14 +263,11 @@
     </details>
     </div>
 
+    <div class="search-sort">
     <div class="search"><input id="search" type="search" placeholder="Search lawyers, firms, phones, emails, decisions…"></div>
-    <div class="filters" id="filters"></div>
-
-    <!-- AT-A-GLANCE SUMMARY: all attorneys, compact dense grid, directly under search/filters, above the cards -->
-    <div class="summary-head"><h3>All attorneys at a glance</h3><span id="count" class="muted"></span></div>
-    <label style="margin-bottom:10px">Sort
+    <label>Sort
       <select id="sortSelect">
-        <option value="order">Tracker order (1–27)</option>
+        <option value="order">Tracker order</option>
         <option value="vetting">Vetting first</option>
         <option value="nodecision">No decision first</option>
         <option value="hold">Hold first</option>
@@ -266,6 +276,11 @@
         <option value="name">Name A–Z</option>
       </select>
     </label>
+    </div>
+    <div class="filters" id="filters"></div>
+
+    <!-- AT-A-GLANCE SUMMARY: all attorneys, compact dense grid, directly under search/filters, above the cards -->
+    <div class="summary-head"><h3>All attorneys at a glance</h3><span id="count" class="muted"></span></div>
     <div id="jumpIndex" class="summary-grid"></div>
 
     <div class="row">
@@ -439,7 +454,7 @@ function render(filter = "") {
     + `<span style="margin:0 2px;color:#64748b">|</span>`
     + `<button class="${hasPhoneOnly ? "active" : ""}" data-contact="phone">Has phone</button>`
     + `<button class="${hasEmailOnly ? "active" : ""}" data-contact="email">Has email</button>`;
-    + `<button class="${hasFlaggedOnly ? "active" : ""}" data-contact="flagged">🚩 Flagged for tomorrow</button>`;
+    + `<button class="${hasFlaggedOnly ? "active" : ""}" data-contact="flagged">🚩 Flagged for Mike</button>`;
   document.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { decisionFilter = b.dataset.filter; render($("search").value); });
   document.querySelector("[data-pass-toggle]").onclick = () => { showPass = !showPass; render($("search").value); };
   document.querySelectorAll("[data-contact]").forEach(b => b.onclick = () => { if (b.dataset.contact === "phone") hasPhoneOnly = !hasPhoneOnly; else if (b.dataset.contact === "flagged") hasFlaggedOnly = !hasFlaggedOnly; else hasEmailOnly = !hasEmailOnly; render($("search").value); });
@@ -488,7 +503,7 @@ function render(filter = "") {
         <button class="secondary" data-toggle="${esc(l.id)}"><span class="chev">${isCollapsed ? "▾" : "▴"}</span></button>
       </div>
       <div style="margin-top:8px">${chip(l.decision)} ${l.emailSent ? `<span class="chip hire">✓ Email sent${l.emailSentBy ? " · " + esc(l.emailSentBy) : ""}</span>` : ""}</div>
-      <div class="row" style="margin-top:10px"><button class="${l.flaggedTomorrow ? "flag-active" : "secondary"}" data-flag-btn data-id="${esc(l.id)}">🚩 ${l.flaggedTomorrow ? "Flagged for Mike to call tomorrow morning" : "Flag for Mike to call tomorrow morning"}</button>${l.flaggedTomorrow && l.flaggedBy ? `<span class="muted">Flagged by ${esc(initialsFor(l.flaggedBy))}</span>` : ""}</div>
+      <div class="row" style="margin-top:10px"><button class="${l.flaggedTomorrow ? "flag-active" : "secondary"}" data-flag-btn data-id="${esc(l.id)}">🚩 ${l.flaggedTomorrow ? "Flagged for Mike" : "Flag for Mike"}</button>${l.flaggedTomorrow && l.flaggedBy ? `<span class="muted">Flagged by ${esc(initialsFor(l.flaggedBy))}</span>` : ""}</div>
       ${isCollapsed ? "" : `
       <div class="next-box"><label>Next step</label><textarea data-field="nextStep" data-id="${esc(l.id)}">${esc(l.nextStep || "")}</textarea></div>
       <div class="notes-box"><label>Notes / call outcome</label><textarea data-field="additionalNotes" data-id="${esc(l.id)}">${esc(l.additionalNotes || "")}</textarea></div>
@@ -498,6 +513,11 @@ function render(filter = "") {
         ${l.email ? `<a class="pill-btn" href="mailto:${esc(l.email)}">Email</a>` : `<span class="muted">No published email</span>`}
         ${l.website ? `<a class="pill-btn" href="${esc(l.website)}" target="_blank" rel="noopener">Website ↗</a>` : ""}
         ${(l.linkedin || VERIFIED_LINKEDIN[l.id]) ? `<a class="pill-btn" href="${esc(l.linkedin || VERIFIED_LINKEDIN[l.id])}" target="_blank" rel="noopener">in LinkedIn</a>` : ""}
+      </div>
+      <div class="contact-edit">
+        <label>Phone <input data-field="phone" data-id="${esc(l.id)}" value="${esc(l.phone || "")}" placeholder="(305) 000-0000"></label>
+        <label>Email <input data-field="email" data-id="${esc(l.id)}" value="${esc(l.email || "")}" placeholder="name@firm.com"></label>
+        <label>Website <input data-field="website" data-id="${esc(l.id)}" value="${esc(l.website || "")}" placeholder="https://…"></label>
       </div>
       ${l.fit ? `<p class="small" style="margin-top:10px">${esc(l.fit)}</p>` : ""}
       <label>Spoke to <input data-field="spokeTo" data-id="${esc(l.id)}" value="${esc(l.spokeTo || "")}"></label>
