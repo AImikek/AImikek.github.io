@@ -66,9 +66,9 @@
   .index{display:none}
   .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
   .chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
-  .hire{background:rgba(34,197,94,.18);color:#86efac}.vetting{background:rgba(45,212,191,.16);color:#5eead4}.hold{background:rgba(251,191,36,.16);color:#fcd34d}.pass{background:rgba(148,163,184,.16);color:#94a3b8}.none{background:rgba(148,163,184,.14);color:#cbd5e1}
+  .hire{background:rgba(34,197,94,.18);color:#86efac}.priority{background:rgba(249,115,22,.18);color:#fdba74}.vetting{background:rgba(45,212,191,.16);color:#5eead4}.hold{background:rgba(251,191,36,.16);color:#fcd34d}.pass{background:rgba(148,163,184,.16);color:#94a3b8}.none{background:rgba(148,163,184,.14);color:#cbd5e1}
   .avatar{width:48px;height:48px;flex:0 0 48px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;letter-spacing:.3px;box-shadow:0 4px 14px rgba(139,92,246,.35)}
-  .lawyer{border-left:4px solid rgba(148,163,184,.35)} .lawyer.vetting{border-left-color:#2dd4bf} .lawyer.hold{border-left-color:#fbbf24} .lawyer.pass{border-left-color:rgba(148,163,184,.35);opacity:.9} .lawyer.hire{border-left-color:#4ade80}
+  .lawyer{border-left:4px solid rgba(148,163,184,.35)} .lawyer.vetting{border-left-color:#2dd4bf} .lawyer.hold{border-left-color:#fbbf24} .lawyer.pass{border-left-color:rgba(148,163,184,.35);opacity:.9} .lawyer.hire{border-left-color:#4ade80} .lawyer.priority{border-left-color:#f97316}
   .lawyer h2{font-size:19px} .firm{color:var(--muted);font-size:13.5px;margin-top:1px}
   .notes-box{background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.18);border-radius:14px;padding:2px 13px 11px;margin-top:11px}
   .next-box{background:rgba(167,139,250,.09);border:1px solid rgba(167,139,250,.22);border-radius:14px;padding:2px 13px 11px;margin-top:11px}
@@ -176,11 +176,11 @@
         </label>
         <div class="row"><button id="copyEmailAddressBtn" class="secondary">Copy email address</button></div>
         <label>Subject line — copy this
-          <input id="emailSubject" readonly value="Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29">
+          <input id="emailSubject" value="Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29">
         </label>
         <div class="row"><button id="copySubjectBtn" class="secondary">Copy subject</button></div>
         <label>Email preview — copy this
-          <textarea id="emailPreview" rows="14" readonly style="min-height:300px"></textarea>
+          <textarea id="emailPreview" rows="14" style="min-height:300px"></textarea>
         </label>
         <div class="row"><button id="copyEmailBtn">Copy email</button><button id="mailtoBtn" class="secondary">Open in email app</button><button id="markSentBtn" class="secondary">✓ Mark email sent for this lawyer</button></div>
         <p id="copyStatus" class="saved"></p>
@@ -354,7 +354,7 @@ function render(filter = "") {
   if (hasFlaggedOnly) list = list.filter(l => l.flaggedTomorrow);
   if (!showPass) list = list.filter(l => l.decision !== "pass");
   const updatedMs = l => { if (!l.updatedAt) return 0; if (typeof l.updatedAt.toMillis === "function") return l.updatedAt.toMillis(); if (l.updatedAt.seconds) return l.updatedAt.seconds * 1000; return Date.parse(l.updatedAt) || 0; };
-  const decisionRank = (l, first) => { const d = l.decision || ""; if (d === first) return 0; const order = ["hire", "vetting", "", "hold", "pass"]; return 1 + order.indexOf(d); };
+  const decisionRank = (l, first) => { const d = l.decision || ""; if (d === first) return 0; const order = ["hire", "priority", "vetting", "", "hold", "pass"]; return 1 + order.indexOf(d); };
   const sortList = arr => { const a = [...arr]; const byOrder = (x, y) => (x.order || 99) - (y.order || 99);
     if (sortMode === "vetting") a.sort((x, y) => decisionRank(x, "vetting") - decisionRank(y, "vetting") || byOrder(x, y));
     else if (sortMode === "nodecision") a.sort((x, y) => decisionRank(x, "") - decisionRank(y, "") || byOrder(x, y));
@@ -369,7 +369,7 @@ function render(filter = "") {
   const vetting = lawyers.filter(l => l.decision === "vetting").length;
   const passed = lawyers.filter(l => l.decision === "pass").length;
   $("stats").innerHTML = `<div class="stat"><b>${lawyers.length}</b><span>Attorneys</span></div><div class="stat"><b>${vetting}</b><span>Vetting</span></div><div class="stat"><b>${passed}</b><span>Passed</span></div>`;
-  const filters = [["all","All"],["nodecision","No decision"],["vetting","Vetting"],["hold","Hold"],["hire","Hire"]];
+  const filters = [["all","All"],["hire","Hire"],["priority","Priority"],["vetting","Vetting"],["hold","Hold"],["nodecision","No decision"]];
   $("filters").innerHTML = filters.map(([v, label]) => `<button class="${decisionFilter === v ? "active" : ""}" data-filter="${v}">${label}</button>`).join("")
     + `<button class="${showPass ? "active" : ""}" data-pass-toggle>Pass</button>`
     + `<span style="margin:0 2px;color:#64748b">|</span>`
@@ -441,7 +441,7 @@ function render(filter = "") {
       <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-field="emailSent" data-id="${esc(l.id)}" ${l.emailSent ? "checked" : ""} style="width:auto;margin:0"> Email sent to this lawyer</label>
       <div><label>Decision</label>
       <div class="decision-btns">
-        ${[["", "No decision"], ["vetting", "Vetting"], ["hold", "Hold"], ["pass", "Pass"], ["hire", "Hire"]].map(([v, label]) => `<button class="${(l.decision || "") === v ? "active" : ""}" data-decision-btn="${v}" data-id="${esc(l.id)}">${label}</button>`).join("")}
+        ${[["", "No decision"], ["hire", "Hire"], ["priority", "Priority"], ["vetting", "Vetting"], ["hold", "Hold"], ["pass", "Pass"]].map(([v, label]) => `<button class="${(l.decision || "") === v ? "active" : ""}" data-decision-btn="${v}" data-id="${esc(l.id)}">${label}</button>`).join("")}
       </div></div>
       <details class="qa-details"><summary>📞 Call questions & answers${l.callAnswers ? " (" + Object.values(l.callAnswers).filter(v => v && String(v).trim()).length + " answered)" : ""} — tap to expand</summary>
         <p class="muted" style="margin:6px 0">Ask these on the call, then type the answers here — they autosave. Focus: tenant background, suing landlords, money recovered, and stopping / reversing eviction.</p>
@@ -510,7 +510,7 @@ function emailText(){
   const sel = $("emailLawyer");
   const lawyer = lawyers.find(l => l.id === sel.value);
   const name = lawyer ? firstName(lawyer.name) : "[Name]";
-  const pw = "Velvet-Escrow-4910";
+  const pw = "Beautiful!2";
   return `Hi ${name},
 
 I'm looking for counsel to bring damages claims against my landlord, its agents and the escrow company, and to protect my tenancy at 1300 S Miami Ave.
@@ -524,15 +524,16 @@ Please run a conflict check on Mendola Corp, Stefania Garlatti, Douglas Elliman 
 Mike Krilivsky
 617-633-0544`;
 }
+let lastEmailLawyerId = "";
 function refreshEmailOptions(){
   const sel = $("emailLawyer"); if (!sel) return;
   const current = sel.value;
   sel.innerHTML = `<option value="">— Choose a lawyer —</option>` + lawyers.map(l => `<option value="${esc(l.id)}" ${l.id === current ? "selected" : ""}>${esc(l.order)}. ${esc(l.name)}</option>`).join("");
   const _lawyer = lawyers.find(l => l.id === sel.value);
   $("emailAddressDisplay").value = _lawyer ? (_lawyer.email || "") : "";
-  $("emailPreview").value = emailText();
+  if (sel.value !== lastEmailLawyerId || !$("emailPreview").value) { $("emailPreview").value = emailText(); lastEmailLawyerId = sel.value; }
 }
-$("emailLawyer").addEventListener("change", () => { const _l = lawyers.find(l => l.id === $("emailLawyer").value); $("emailAddressDisplay").value = _l ? (_l.email || "") : ""; $("emailPreview").value = emailText(); });
+$("emailLawyer").addEventListener("change", () => { const _l = lawyers.find(l => l.id === $("emailLawyer").value); $("emailAddressDisplay").value = _l ? (_l.email || "") : ""; $("emailPreview").value = emailText(); lastEmailLawyerId = $("emailLawyer").value; });
 $("copyEmailAddressBtn").onclick = async () => {
   const addr = $("emailAddressDisplay").value;
   if (!addr) { $("copyStatus").textContent = "Choose a lawyer with an email address first."; return; }
@@ -545,7 +546,7 @@ $("mailtoBtn").onclick = async () => {
   const lawyer = lawyers.find(l => l.id === sel.value);
   if (!lawyer || !lawyer.email) { $("copyStatus").textContent = "Choose a lawyer with an email address first."; return; }
   const subject = $("emailSubject").value || "Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29";
-  const body = emailText();
+  const body = $("emailPreview").value || emailText();
   // mailto: bodies are unreliable — many mail apps drop a long body or open a blank compose.
   // So copy the full email first, then open a compose with To + Subject only, and let the user paste the body.
   try { await navigator.clipboard.writeText(body); } catch (e) { /* clipboard may be blocked; Copy email button is the fallback */ }
@@ -569,7 +570,7 @@ $("copySubjectBtn").onclick = async () => {
   catch (e) { $("copyStatus").textContent = "Could not copy subject automatically — select the subject text above and copy it manually."; }
 };
 $("copyEmailBtn").onclick = async () => {
-  $("emailPreview").value = emailText();
+  if (!$("emailPreview").value) $("emailPreview").value = emailText();
   try { await navigator.clipboard.writeText($("emailPreview").value); $("copyStatus").textContent = "✓ Copied — paste into your email."; }
   catch (e) { $("emailPreview").select(); $("copyStatus").textContent = "Copy failed — select the text above and copy manually."; }
 };
