@@ -99,6 +99,10 @@
 .decision-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .decision-btns button{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#e2e8f0;font-weight:650;font-size:13px}
 .decision-btns button.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+
+.summary-item.active{border-color:#a78bfa;background:rgba(139,92,246,.20);box-shadow:0 0 0 2px rgba(167,139,250,.45)}
+.focus-bar{position:sticky;top:58px;z-index:19;display:flex;justify-content:space-between;gap:10px;align-items:center;background:rgba(30,27,75,.96);border:1px solid #a78bfa;border-radius:14px;padding:10px 12px;margin:8px 0;font-size:13.5px}
+.focus-bar button{flex-shrink:0}
 </style>
 <!--
   LTC — shared edition for Mike + Lorena.
@@ -236,8 +240,9 @@
       <div class="row"><button id="createAttorneyBtn">Create attorney</button><button id="cancelAttorneyBtn" class="secondary">Cancel</button></div>
       <p id="addAttorneyStatus" class="muted"></p>
     </div>
+    <div id="focusBar" class="focus-bar hidden"></div>
     <div id="cards"></div>
-    <p class="muted">Passed lawyers start collapsed so they don't take up space. Tap any name in the summary above to jump to and expand that card.</p>
+    <p class="muted">Passed lawyers start collapsed so they don't take up space. Tap any name in the summary above to open just that lawyer's file. Tap their name again, or ✕ Close, to return to the full list.</p>
       <p style="text-align:center;margin-top:28px"><a href="#" id="logoutBtn" style="color:#64748b;font-size:12px;text-decoration:underline">Sign out</a></p>
   </section>
 </main>
@@ -285,7 +290,7 @@ const VERIFIED_LINKEDIN = {
 const $ = id => document.getElementById(id);
 if (!CONFIGURED) $("setupBanner").classList.remove("hidden");
 
-let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all", sortMode = "order", hasPhoneOnly = false, hasEmailOnly = false;
+let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all", sortMode = "order", hasPhoneOnly = false, hasEmailOnly = false, focusId = null;
 if (CONFIGURED) {
   try { const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
   catch (e) { $("loginError").textContent = "Firebase setup error: " + e.message; }
@@ -348,6 +353,7 @@ function render(filter = "") {
     else a.sort(byOrder);
     return a; };
   list = sortList(list);
+  if (focusId) { const _f = lawyers.find(l => l.id === focusId); if (_f) { list = [_f]; collapsed.delete(focusId); } else { focusId = null; } }
   const vetting = lawyers.filter(l => l.decision === "vetting").length;
   const passed = lawyers.filter(l => l.decision === "pass").length;
   $("stats").innerHTML = `<div class="stat"><b>${lawyers.length}</b><span>Attorneys</span></div><div class="stat"><b>${vetting}</b><span>Vetting</span></div><div class="stat"><b>${passed}</b><span>Passed</span></div>`;
@@ -367,18 +373,28 @@ function render(filter = "") {
   if (hasEmailOnly) summaryBase = summaryBase.filter(l => (l.email || "").trim());
   const summaryList = sortList(summaryBase);
   $("jumpIndex").innerHTML = summaryList.length ? summaryList.map(l =>
-    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
+    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""} ${l.id === focusId ? "active" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
     : `<p class="muted">No attorneys match these filters yet.</p>`;
   document.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
-    // Keep the current filter — the tapped lawyer is in it — just expand and scroll to their card.
-    collapsed.delete(b.dataset.jump);
+    // Focus mode: show only this lawyer's file. Tap their bubble again to return to the full list.
+    if (focusId === b.dataset.jump) { focusId = null; }
+    else { focusId = b.dataset.jump; collapsed.delete(focusId); }
     if ($("search").value) { $("search").value = ""; }
     render("");
-    const el = document.getElementById("lawyer-" + b.dataset.jump);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (focusId) { const fb = $("focusBar"); if (fb) fb.scrollIntoView({ behavior: "smooth", block: "start" }); }
   });
+  // Sticky focus bar: the selected lawyer's name stays pinned while you work in their file.
+  const _fb = $("focusBar");
+  if (focusId) {
+    const _f = lawyers.find(l => l.id === focusId);
+    if (_f) {
+      _fb.classList.remove("hidden");
+      _fb.innerHTML = `<span><strong>Viewing: ${esc(_f.order)}. ${esc(_f.name)}</strong> — this file only. Tap ✕ or their name bubble again to return to the full list.</span><button class="secondary" id="focusCloseBtn">✕ Close</button>`;
+      $("focusCloseBtn").onclick = () => { focusId = null; render($("search").value); };
+    } else { _fb.classList.add("hidden"); _fb.innerHTML = ""; }
+  } else { _fb.classList.add("hidden"); _fb.innerHTML = ""; }
   $("cards").innerHTML = list.length ? list.map(l => {
-    const isCollapsed = collapsed.has(l.id) && !q;
+    const isCollapsed = collapsed.has(l.id) && !q && l.id !== focusId;
     return `<article class="card lawyer ${esc(l.decision || "")}" id="lawyer-${esc(l.id)}">
       <div class="row" style="justify-content:space-between">
         <div>
