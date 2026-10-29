@@ -107,6 +107,10 @@
 .contact-edit{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .contact-edit label{flex:1 1 140px;margin-top:0}
 .contact-edit input{margin:3px 0 0}
+/* Search+Sort wrapper: display:contents on phone, so the sticky search still
+   sticks against the full page (a short wrapper would kill stickiness).
+   On desktop it becomes the shared sticky row. */
+.search-sort{display:contents}
 .flag-active{background:#f59e0b !important;color:#111827 !important;border-color:#f59e0b !important}
 /* DESKTOP COMPACT v1: desktop only — phone layout untouched. Shrinks everything
    above the at-a-glance summary so the lawyer overview sits close to the top. */
