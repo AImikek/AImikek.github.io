@@ -137,6 +137,12 @@
   .summary-item .s-firm{font-size:11px}
   #sortSelect{padding:8px 11px;font-size:14px}
   #expandAll, #collapseAll, #addAttorneyBtn{padding:8px 12px;font-size:13px;border-radius:10px}
+  /* Top sections: 2-across on desktop, so 4 bars fit in 2 rows instead of 4.
+     An opened section spans full width, so the email draft is still full-width when you click it. */
+  #appSection .top-sections{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start;margin:2px 0 6px}
+  #appSection .top-sections details.card{padding:7px 11px;margin:0}
+  #appSection .top-sections details summary{font-size:13px}
+  #appSection .top-sections details[open]{grid-column:1 / -1}
 }
 @media (min-width:1200px){
   .summary-grid{grid-template-columns:repeat(5,1fr)}
@@ -190,6 +196,7 @@
 
     <div id="stats" class="stats"></div>
 
+    <div class="top-sections">
     <details id="updateSection" class="card hidden">
       <summary>Apply tracker updates <span class="muted" style="font-weight:400">(Mike only)</span></summary>
       <div style="margin-top:12px">
@@ -200,7 +207,7 @@
       </div>
     </details>
 
-    <details class="card" open>
+    <details class="card">
       <summary>✉️ Email for sending</summary>
       <div style="margin-top:12px">
         <p class="small">Pick a lawyer, then Copy email. The copied email already includes the full brief link <strong>and</strong> the password, so a firm can check the details right away.</p>
@@ -241,6 +248,7 @@
         <p><strong>Log after every call:</strong> Who you spoke to, date/time, conflict result, fee/retainer, can they act before Oct 28, next step, and decision: Vetting (in active talks), Hold (parked), Pass (closed/declined), or Hire (only when Mike confirms it).</p>
       </div>
     </details>
+    </div>
 
     <div class="search"><input id="search" type="search" placeholder="Search lawyers, firms, phones, emails, decisions…"></div>
     <div class="filters" id="filters"></div>
