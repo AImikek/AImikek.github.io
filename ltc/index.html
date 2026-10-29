@@ -103,6 +103,8 @@
 .summary-item.active{border-color:#a78bfa;background:rgba(139,92,246,.20);box-shadow:0 0 0 2px rgba(167,139,250,.45)}
 .focus-bar{position:sticky;top:58px;z-index:19;display:flex;justify-content:space-between;gap:10px;align-items:center;background:rgba(30,27,75,.96);border:1px solid #a78bfa;border-radius:14px;padding:10px 12px;margin:8px 0;font-size:13.5px}
 .focus-bar button{flex-shrink:0}
+
+.flag-active{background:#f59e0b !important;color:#111827 !important;border-color:#f59e0b !important}
 </style>
 <!--
   LTC — shared edition for Mike + Lorena.
@@ -290,7 +292,7 @@ const VERIFIED_LINKEDIN = {
 const $ = id => document.getElementById(id);
 if (!CONFIGURED) $("setupBanner").classList.remove("hidden");
 
-let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all", sortMode = "order", hasPhoneOnly = false, hasEmailOnly = false, focusId = null;
+let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all", sortMode = "order", hasPhoneOnly = false, hasEmailOnly = false, hasFlaggedOnly = false, focusId = null;
 if (CONFIGURED) {
   try { const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
   catch (e) { $("loginError").textContent = "Firebase setup error: " + e.message; }
@@ -349,6 +351,7 @@ function render(filter = "") {
   else if (decisionFilter !== "all") list = list.filter(l => (l.decision || "") === decisionFilter);
   if (hasPhoneOnly) list = list.filter(l => (l.phone || "").trim());
   if (hasEmailOnly) list = list.filter(l => (l.email || "").trim());
+  if (hasFlaggedOnly) list = list.filter(l => l.flaggedTomorrow);
   const updatedMs = l => { if (!l.updatedAt) return 0; if (typeof l.updatedAt.toMillis === "function") return l.updatedAt.toMillis(); if (l.updatedAt.seconds) return l.updatedAt.seconds * 1000; return Date.parse(l.updatedAt) || 0; };
   const decisionRank = (l, first) => { const d = l.decision || ""; if (d === first) return 0; const order = ["hire", "vetting", "", "hold", "pass"]; return 1 + order.indexOf(d); };
   const sortList = arr => { const a = [...arr]; const byOrder = (x, y) => (x.order || 99) - (y.order || 99);
@@ -370,8 +373,9 @@ function render(filter = "") {
     + `<span style="margin:0 2px;color:#64748b">|</span>`
     + `<button class="${hasPhoneOnly ? "active" : ""}" data-contact="phone">Has phone</button>`
     + `<button class="${hasEmailOnly ? "active" : ""}" data-contact="email">Has email</button>`;
+    + `<button class="${hasFlaggedOnly ? "active" : ""}" data-contact="flagged">🚩 Flagged for tomorrow</button>`;
   document.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { decisionFilter = b.dataset.filter; render($("search").value); });
-  document.querySelectorAll("[data-contact]").forEach(b => b.onclick = () => { if (b.dataset.contact === "phone") hasPhoneOnly = !hasPhoneOnly; else hasEmailOnly = !hasEmailOnly; render($("search").value); });
+  document.querySelectorAll("[data-contact]").forEach(b => b.onclick = () => { if (b.dataset.contact === "phone") hasPhoneOnly = !hasPhoneOnly; else if (b.dataset.contact === "flagged") hasFlaggedOnly = !hasFlaggedOnly; else hasEmailOnly = !hasEmailOnly; render($("search").value); });
   $("count").textContent = list.length ? `${list.length} of ${lawyers.length} attorneys` : "";
   // AT-A-GLANCE SUMMARY: follows the selected decision filter (All / Vetting /
   // Hold / Pass / Hire), so tapping a filter changes the summary tabs too.
@@ -379,9 +383,10 @@ function render(filter = "") {
   let summaryBase = decisionFilter === "all" ? lawyers : decisionFilter === "nodecision" ? lawyers.filter(l => (l.decision || "") === "") : lawyers.filter(l => (l.decision || "") === decisionFilter);
   if (hasPhoneOnly) summaryBase = summaryBase.filter(l => (l.phone || "").trim());
   if (hasEmailOnly) summaryBase = summaryBase.filter(l => (l.email || "").trim());
+  if (hasFlaggedOnly) summaryBase = summaryBase.filter(l => l.flaggedTomorrow);
   const summaryList = sortList(summaryBase);
   $("jumpIndex").innerHTML = summaryList.length ? summaryList.map(l =>
-    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""} ${l.id === focusId ? "active" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
+    `<button class="summary-item ${l.decision === "pass" ? "pass" : ""} ${l.id === focusId ? "active" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.flaggedTomorrow ? " 🚩" : ""}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
     : `<p class="muted">No attorneys match these filters yet.</p>`;
   // Delegated bubble taps: one listener on the grid, so a second tap can't get lost when tiles re-render.
   if (!window._jumpDelegated) {
@@ -415,6 +420,7 @@ function render(filter = "") {
         <button class="secondary" data-toggle="${esc(l.id)}"><span class="chev">${isCollapsed ? "▾" : "▴"}</span></button>
       </div>
       <div style="margin-top:8px">${chip(l.decision)} ${l.emailSent ? `<span class="chip hire">✓ Email sent${l.emailSentBy ? " · " + esc(l.emailSentBy) : ""}</span>` : ""}</div>
+      <div class="row" style="margin-top:10px"><button class="${l.flaggedTomorrow ? "flag-active" : "secondary"}" data-flag-btn data-id="${esc(l.id)}">🚩 ${l.flaggedTomorrow ? "Flagged for Mike to call tomorrow morning" : "Flag for Mike to call tomorrow morning"}</button>${l.flaggedTomorrow && l.flaggedBy ? `<span class="muted">Flagged by ${esc(initialsFor(l.flaggedBy))}</span>` : ""}</div>
       ${isCollapsed ? "" : `
       <div class="next-box"><label>Next step</label><textarea data-field="nextStep" data-id="${esc(l.id)}">${esc(l.nextStep || "")}</textarea></div>
       <div class="notes-box"><label>Notes / call outcome</label><textarea data-field="additionalNotes" data-id="${esc(l.id)}">${esc(l.additionalNotes || "")}</textarea></div>
@@ -451,6 +457,12 @@ function render(filter = "") {
     const id = b.dataset.id; const v = b.dataset.decisionBtn;
     try { await setDoc(doc(db, "lawyers", id), { decision: v, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true }); }
     catch (e) { const s = document.querySelector(`[data-saved="${id}"]`); if (s) s.textContent = "Decision save failed: " + e.message; }
+  });
+  document.querySelectorAll("[data-flag-btn]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.id; const cur = lawyers.find(l => l.id === id);
+    const val = !(cur && cur.flaggedTomorrow);
+    try { await setDoc(doc(db, "lawyers", id), { flaggedTomorrow: val, flaggedBy: val ? auth.currentUser.email : null, flaggedAt: val ? new Date().toISOString().slice(0, 10) : null, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true }); }
+    catch (e) { const s = document.querySelector(`[data-saved="${id}"]`); if (s) s.textContent = "Flag save failed: " + e.message; }
   });
   document.querySelectorAll("[data-toggle]").forEach(b => b.onclick = () => {
     if (collapsed.has(b.dataset.toggle)) collapsed.delete(b.dataset.toggle); else collapsed.add(b.dataset.toggle);
