@@ -148,13 +148,15 @@
 
     <div id="stats" class="stats"></div>
 
-    <div id="updateSection" class="card hidden">
-      <h2>Apply tracker updates <span class="muted" style="font-weight:400">(Mike only)</span></h2>
-      <p class="muted">Choose an updates JSON file from Muse. It merges the listed fields into the matching lawyers in Firestore — nothing else changes.</p>
-      <input id="updateFile" type="file" accept=".json,application/json">
-      <button id="applyUpdatesBtn">Apply updates</button>
-      <p id="updateStatus" class="muted"></p>
-    </div>
+    <details id="updateSection" class="card hidden">
+      <summary>Apply tracker updates <span class="muted" style="font-weight:400">(Mike only)</span></summary>
+      <div style="margin-top:12px">
+        <p class="muted">Choose an updates JSON file from Muse. It merges the listed fields into the matching lawyers in Firestore — nothing else changes.</p>
+        <input id="updateFile" type="file" accept=".json,application/json">
+        <button id="applyUpdatesBtn">Apply updates</button>
+        <p id="updateStatus" class="muted"></p>
+      </div>
+    </details>
 
     <details class="card" open>
       <summary>✉️ Reference email for Lorena — for sending in the morning</summary>
@@ -168,7 +170,7 @@
         </label>
         <div class="row"><button id="copyEmailAddressBtn" class="secondary">Copy email address</button></div>
         <label>Subject line — copy this
-          <input id="emailSubject" readonly value="Urgent: PH4910 lease dispute — 15 minute call today, October 28">
+          <input id="emailSubject" readonly value="Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29">
         </label>
         <div class="row"><button id="copySubjectBtn" class="secondary">Copy subject</button></div>
         <label>Email preview — copy this
@@ -177,7 +179,7 @@
         <div class="row"><button id="copyEmailBtn">Copy email</button><button id="mailtoBtn" class="secondary">Open in email app</button><button id="markSentBtn" class="secondary">✓ Mark email sent for this lawyer</button></div>
         <p id="copyStatus" class="saved"></p>
         <p class="small" style="margin-top:8px"><strong>How sending works:</strong> This page itself cannot send Gmail — it has no server. So: <em>Copy email</em> = paste and send from your own email. <em>Open in email app</em> = opens your email app addressed to that lawyer, ready to send (from whoever's email app it opens in — Mike's if Mike taps it, Lorena's if she does). <em>Want it sent as Mike?</em> Tap “Mark email sent” only after it actually goes out, or tell Mike in chat and Muse will send it from michaelkrilivsky@gmail.com after Mike approves — Muse never sends without his go-ahead. The checkbox on each lawyer card is the record that it was sent.</p>
-        <p class="muted">Subject: Urgent: PH4910 lease dispute — 15 minute call today, October 28</p>
+        <p class="muted">Subject: Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29</p>
       </div>
     </details>
 
@@ -452,9 +454,9 @@ I'm looking for counsel to bring damages claims against my landlord, its agents 
 
 In short: I paid the full $59,500 my lease required into escrow before move-in and authorized its release. The landlord then served a 3-day notice for that same money, refused it in writing, and the law firm listed as its address in the lease refused $17,000 in money orders in front of a witness. The repairs it signed for are still not done. The lease and Florida law give attorney's fees to the prevailing party, and everything is documented.
 
-Could we do a 15 minute call today, Wednesday, October 28? The notice deadline is that day. I'd like to hear about your experience with tenant-side cases and claims like these, and whether you'd consider a contingency or hybrid fee.
+Could we do a 15 minute call tomorrow Thursday Oct 29? The notice deadline was yesterday. I'd like to hear about your experience with tenant-side cases and claims like these.
 
-Please run a conflict check on Mendola Corp, Stefania Garlatti, Douglas Elliman (Pietro Belmonte and Carlos Fernandez), Roca Gonzalez PA, LoKation Real Estate and The Closing Team. The full brief, with all evidence and details, is here for you to check right away: https://mikek.ai/4910 — Password: ${pw}
+Please run a conflict check on Mendola Corp, Stefania Garlatti, Douglas Elliman (Pietro Belmonte and Carlos Fernandez), Roca Gonzalez PA, LoKation Real Estate and The Closing Team. A summary brief, with all evidence and details, is here for you to check right away: https://mikek.ai/4910 — Password: ${pw}
 
 Mike Krilivsky
 617-633-0544`;
@@ -479,7 +481,7 @@ $("mailtoBtn").onclick = async () => {
   const sel = $("emailLawyer");
   const lawyer = lawyers.find(l => l.id === sel.value);
   if (!lawyer || !lawyer.email) { $("copyStatus").textContent = "Choose a lawyer with an email address first."; return; }
-  const subject = $("emailSubject").value || "Urgent: PH4910 lease dispute — 15 minute call today, October 28";
+  const subject = $("emailSubject").value || "Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29";
   const body = emailText();
   // mailto: bodies are unreliable — many mail apps drop a long body or open a blank compose.
   // So copy the full email first, then open a compose with To + Subject only, and let the user paste the body.
