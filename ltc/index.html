@@ -323,7 +323,9 @@ if (auth) onAuthStateChanged(auth, user => {
   unsub = onSnapshot(collection(db, "lawyers"), snap => {
     lawyers = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 99) - (b.order || 99));
     lawyers.forEach(l => { if (l.decision === "pass" && !collapsed.has("seen-" + l.id)) collapsed.add(l.id); });
-    render();
+    const ae = document.activeElement;
+    const editingText = ae && ae.closest && ae.closest("#cards") && (ae.tagName === "TEXTAREA" || (ae.tagName === "INPUT" && ae.type !== "checkbox"));
+    if (!editingText) render();
   }, err => { $("status").textContent = "Could not load tracker: " + err.message; });
 });
 
@@ -432,11 +434,11 @@ function render(filter = "") {
         ${[["", "No decision"], ["vetting", "Vetting"], ["hold", "Hold"], ["pass", "Pass"], ["hire", "Hire"]].map(([v, label]) => `<button class="${(l.decision || "") === v ? "active" : ""}" data-decision-btn="${v}" data-id="${esc(l.id)}">${label}</button>`).join("")}
       </div></div>
       <details class="qa-details"><summary>📞 Call questions & answers${l.callAnswers ? " (" + Object.values(l.callAnswers).filter(v => v && String(v).trim()).length + " answered)" : ""} — tap to expand</summary>
-        <p class="muted" style="margin:6px 0">Ask these on the call, then type the answers here and tap Save this card. Focus: tenant background, suing landlords, money recovered, and stopping / reversing eviction.</p>
+        <p class="muted" style="margin:6px 0">Ask these on the call, then type the answers here — they autosave. Focus: tenant background, suing landlords, money recovered, and stopping / reversing eviction.</p>
         ${CALL_QUESTIONS.map((q, i) => `<div class="qa-q">${i + 1}. ${esc(q)}</div><textarea data-qa-index="${i}" data-id="${esc(l.id)}" placeholder="Answer…">${esc((l.callAnswers && l.callAnswers[i]) || (l.callAnswers && l.callAnswers[String(i)]) || "")}</textarea>`).join("")}
       </details>
       ${stampFor(l) ? `<div class="stamp">${esc(stampFor(l))}</div>` : ""}
-      <div class="row" style="margin-top:12px"><button data-save="${esc(l.id)}">Save this card</button><span class="saved" data-saved="${esc(l.id)}">${l.updatedBy ? "Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
+      <div class="row" style="margin-top:12px"><span class="saved" data-saved="${esc(l.id)}">Autosaves as you type${l.updatedBy ? " · Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
     </article>`; }).join("") : "<p class='muted'>No lawyers match that search or filter, or the tracker has not been seeded yet.</p>";
 
   const _sortSel = document.getElementById("sortSelect");
@@ -454,8 +456,11 @@ function render(filter = "") {
     if (collapsed.has(b.dataset.toggle)) collapsed.delete(b.dataset.toggle); else collapsed.add(b.dataset.toggle);
     render($("search").value);
   });
-  document.querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
-    const id = b.dataset.save; const patch = { updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email };
+  // Autosave: no Save button anymore. Typing debounces to a save, leaving a field or
+  // ticking a checkbox saves immediately. The status span shows Saving... / Autosaved.
+  const _autosaveTimers = {};
+  async function autosaveCard(id) {
+    const patch = { updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email };
     const qa = {};
     document.querySelectorAll(`[data-id="${id}"]`).forEach(inp => {
       if (inp.dataset.qaIndex !== undefined) { qa[inp.dataset.qaIndex] = inp.value; }
@@ -463,8 +468,19 @@ function render(filter = "") {
     });
     patch.callAnswers = qa;
     if (patch.emailSent) { patch.emailSentBy = auth.currentUser.email; patch.emailSentAt = new Date().toISOString().slice(0, 10); }
-    try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); document.querySelector(`[data-saved="${id}"]`).textContent = "Saved."; }
-    catch (e) { document.querySelector(`[data-saved="${id}"]`).textContent = "Save failed: " + e.message; }
+    const s = document.querySelector(`[data-saved="${id}"]`);
+    try { await setDoc(doc(db, "lawyers", id), patch, { merge: true }); if (s) s.textContent = "✓ Autosaved"; }
+    catch (e) { if (s) s.textContent = "Autosave failed: " + e.message; }
+  }
+  document.querySelectorAll('[data-id]').forEach(inp => {
+    if (inp.dataset.field === undefined && inp.dataset.qaIndex === undefined) return;
+    const id = inp.dataset.id;
+    inp.addEventListener("input", () => {
+      const s = document.querySelector(`[data-saved="${id}"]`); if (s) s.textContent = "Saving…";
+      clearTimeout(_autosaveTimers[id]); _autosaveTimers[id] = setTimeout(() => autosaveCard(id), 800);
+    });
+    inp.addEventListener("change", () => { clearTimeout(_autosaveTimers[id]); autosaveCard(id); });
+    inp.addEventListener("blur", () => { if (_autosaveTimers[id]) { clearTimeout(_autosaveTimers[id]); autosaveCard(id); } });
   });
 }
 $("search").addEventListener("input", e => render(e.target.value));
