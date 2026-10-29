@@ -105,6 +105,42 @@
 .focus-bar button{flex-shrink:0}
 
 .flag-active{background:#f59e0b !important;color:#111827 !important;border-color:#f59e0b !important}
+/* DESKTOP COMPACT v1: desktop only — phone layout untouched. Shrinks everything
+   above the at-a-glance summary so the lawyer overview sits close to the top. */
+@media (min-width:900px){
+  header{padding:6px 18px 2px}
+  header .wrap, main{max-width:1080px}
+  header h1{font-size:20px}
+  header p{font-size:13px;margin:2px 0 0;line-height:1.35}
+  header .rule{margin-top:4px;height:3px;width:48px}
+  main{padding:0 18px 32px}
+  .topbar{margin-bottom:2px}
+  #status{margin:2px 0}
+  .stats{margin:4px 0;gap:6px}
+  .stat{padding:6px 9px;border-radius:12px}
+  .stat b{font-size:19px}
+  .stat span{font-size:10.5px}
+  #appSection details.card{padding:8px 12px;margin:6px 0}
+  #appSection details summary{font-size:13.5px}
+  #appSection details .small, #appSection details .muted{font-size:13px;line-height:1.45}
+  #appSection details button{padding:8px 12px;font-size:13px;border-radius:10px}
+  #appSection details label{margin-top:7px}
+  #emailPreview{min-height:140px !important;height:150px !important}
+  .search{padding:4px 0 3px}
+  .search input{padding:8px 11px;font-size:15px;border-radius:12px}
+  .filters{gap:6px;margin:2px 0 6px}
+  .filters button{padding:6px 10px;font-size:12.5px}
+  .summary-head{margin:0 2px 4px}
+  .summary-grid{grid-template-columns:repeat(4,1fr);gap:5px;margin:0 0 8px}
+  .summary-item{padding:7px 9px;border-radius:11px;gap:2px}
+  .summary-item .s-name{font-size:13px}
+  .summary-item .s-firm{font-size:11px}
+  #sortSelect{padding:8px 11px;font-size:14px}
+  #expandAll, #collapseAll, #addAttorneyBtn{padding:8px 12px;font-size:13px;border-radius:10px}
+}
+@media (min-width:1200px){
+  .summary-grid{grid-template-columns:repeat(5,1fr)}
+}
 </style>
 <!--
   LTC — shared edition for Mike + Lorena.
