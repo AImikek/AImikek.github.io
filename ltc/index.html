@@ -163,7 +163,7 @@
     </details>
 
     <details class="card" open>
-      <summary>✉️ Reference email for Lorena — for sending in the morning</summary>
+      <summary>✉️ Email for sending</summary>
       <div style="margin-top:12px">
         <p class="small">Pick a lawyer, then Copy email. The copied email already includes the full brief link <strong>and</strong> the password, so a firm can check the details right away.</p>
         <label>Send to
@@ -335,6 +335,11 @@ function initials(name){ return (name || "?").split(" ").filter(w => w[0] && w[0
 function initialsFor(email){ const e = (email || "").toLowerCase(); if (e === "michaelkrilivsky@gmail.com") return "MK"; if (e === "lorer284@yahoo.com") return "LR"; const local = e.split("@")[0] || "?"; return local.replace(/[^a-z]/g, "").slice(0, 2).toUpperCase() || "?"; }
 function stampFor(l){ if (!l.updatedAt) return ""; let d = null; if (typeof l.updatedAt.toDate === "function") d = l.updatedAt.toDate(); else if (l.updatedAt.seconds) d = new Date(l.updatedAt.seconds * 1000); else d = new Date(l.updatedAt); if (!d || isNaN(d)) return ""; const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); return `Last updated ${date}, ${time} · ${initialsFor(l.updatedBy)}`; }
 
+function returnToTile(id) {
+  focusId = null;
+  render($("search").value);
+  setTimeout(() => { const tile = document.querySelector(`[data-jump="${id}"]`); if (tile) tile.scrollIntoView({ behavior: "smooth", block: "center" }); }, 50);
+}
 function render(filter = "") {
   const q = filter.toLowerCase();
   let list = lawyers.filter(l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision].join(" ").toLowerCase().includes(q));
@@ -375,14 +380,19 @@ function render(filter = "") {
   $("jumpIndex").innerHTML = summaryList.length ? summaryList.map(l =>
     `<button class="summary-item ${l.decision === "pass" ? "pass" : ""} ${l.id === focusId ? "active" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
     : `<p class="muted">No attorneys match these filters yet.</p>`;
-  document.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
-    // Focus mode: show only this lawyer's file. Tap their bubble again to return to the full list.
-    if (focusId === b.dataset.jump) { focusId = null; }
-    else { focusId = b.dataset.jump; collapsed.delete(focusId); }
-    if ($("search").value) { $("search").value = ""; }
-    render("");
-    if (focusId) { const fb = $("focusBar"); if (fb) fb.scrollIntoView({ behavior: "smooth", block: "start" }); }
-  });
+  // Delegated bubble taps: one listener on the grid, so a second tap can't get lost when tiles re-render.
+  if (!window._jumpDelegated) {
+    window._jumpDelegated = true;
+    $("jumpIndex").addEventListener("click", e => {
+      const b = e.target.closest("[data-jump]"); if (!b) return;
+      const id = b.dataset.jump;
+      if (focusId === id) { returnToTile(id); return; }
+      focusId = id; collapsed.delete(id);
+      if ($("search").value) { $("search").value = ""; }
+      render("");
+      const fb = $("focusBar"); if (fb) fb.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
   // Sticky focus bar: the selected lawyer's name stays pinned while you work in their file.
   const _fb = $("focusBar");
   if (focusId) {
@@ -390,7 +400,7 @@ function render(filter = "") {
     if (_f) {
       _fb.classList.remove("hidden");
       _fb.innerHTML = `<span><strong>Viewing: ${esc(_f.order)}. ${esc(_f.name)}</strong> — this file only. Tap ✕ or their name bubble again to return to the full list.</span><button class="secondary" id="focusCloseBtn">✕ Close</button>`;
-      $("focusCloseBtn").onclick = () => { focusId = null; render($("search").value); };
+      $("focusCloseBtn").onclick = () => returnToTile(_f.id);
     } else { _fb.classList.add("hidden"); _fb.innerHTML = ""; }
   } else { _fb.classList.add("hidden"); _fb.innerHTML = ""; }
   $("cards").innerHTML = list.length ? list.map(l => {
@@ -430,6 +440,10 @@ function render(filter = "") {
 
   const _sortSel = document.getElementById("sortSelect");
   if (_sortSel) _sortSel.onchange = () => { sortMode = _sortSel.value; render($("search").value); };
+  if (focusId) {
+    $("cards").insertAdjacentHTML("beforeend", `<button class="secondary" data-back-to-list style="margin-top:12px">← Back to all attorneys</button>`);
+    document.querySelector("[data-back-to-list]").onclick = () => returnToTile(focusId);
+  }
   document.querySelectorAll("[data-decision-btn]").forEach(b => b.onclick = async () => {
     const id = b.dataset.id; const v = b.dataset.decisionBtn;
     try { await setDoc(doc(db, "lawyers", id), { decision: v, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true }); }
