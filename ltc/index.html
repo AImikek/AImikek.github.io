@@ -373,6 +373,26 @@ function initials(name){ return (name || "?").split(" ").filter(w => w[0] && w[0
 
 
 function initialsFor(email){ const e = (email || "").toLowerCase(); if (e === "michaelkrilivsky@gmail.com") return "MK"; if (e === "lorer284@yahoo.com") return "LR"; const local = e.split("@")[0] || "?"; return local.replace(/[^a-z]/g, "").slice(0, 2).toUpperCase() || "?"; }
+// NOTE STAMP — CRM history: when anyone leaves a note, the new text gets
+// "Oct 29, 2:58 PM · MK — " inserted right before it. Stamping happens on
+// leaving the field (change/blur), never while typing, so the cursor never jumps.
+// Old notes are NOT rewritten: appending to an old note stamps only the new part.
+function noteStampPrefix(){ const d = new Date(); const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); return `${date}, ${time} · ${initialsFor(auth && auth.currentUser ? auth.currentUser.email : "")} — `; }
+function isNoteField(el){ return el.dataset.field === "nextStep" || el.dataset.field === "additionalNotes" || el.dataset.qaIndex !== undefined; }
+function stampNoteField(el){
+  if (!isNoteField(el)) return false;
+  const cur = el.value; const last = el.dataset.lastNoteValue ?? "";
+  if (!cur.trim() || cur === last) return false;
+  const stamp = noteStampPrefix();
+  if (!last) { el.value = stamp + cur; }
+  else if (last && cur.startsWith(last) && cur.length > last.length) {
+    const added = cur.slice(last.length).replace(/^\n+/, "");
+    if (!added) return false;
+    el.value = last + (last.endsWith("\n") ? "" : "\n") + stamp + added;
+  } else if (!/^\w{3} \d{1,2}, \d{1,2}:\d{2} [AP]M · [A-Z?]{1,2} — /.test(cur)) { el.value = stamp + cur; }
+  else return false;
+  el.dataset.lastNoteValue = el.value; return true;
+}
 function stampFor(l){ if (!l.updatedAt) return ""; let d = null; if (typeof l.updatedAt.toDate === "function") d = l.updatedAt.toDate(); else if (l.updatedAt.seconds) d = new Date(l.updatedAt.seconds * 1000); else d = new Date(l.updatedAt); if (!d || isNaN(d)) return ""; const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }); const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); return `Last updated ${date}, ${time} · ${initialsFor(l.updatedBy)}`; }
 
 function returnToTile(id) {
@@ -527,12 +547,13 @@ function render(filter = "") {
   document.querySelectorAll('[data-id]').forEach(inp => {
     if (inp.dataset.field === undefined && inp.dataset.qaIndex === undefined) return;
     const id = inp.dataset.id;
+    if (isNoteField(inp)) inp.dataset.lastNoteValue = inp.value;
     inp.addEventListener("input", () => {
       const s = document.querySelector(`[data-saved="${id}"]`); if (s) s.textContent = "Saving…";
       clearTimeout(_autosaveTimers[id]); _autosaveTimers[id] = setTimeout(() => autosaveCard(id), 800);
     });
-    inp.addEventListener("change", () => { clearTimeout(_autosaveTimers[id]); autosaveCard(id); });
-    inp.addEventListener("blur", () => { if (_autosaveTimers[id]) { clearTimeout(_autosaveTimers[id]); autosaveCard(id); } });
+    inp.addEventListener("change", () => { stampNoteField(inp); clearTimeout(_autosaveTimers[id]); autosaveCard(id); });
+    inp.addEventListener("blur", () => { const stamped = stampNoteField(inp); if (_autosaveTimers[id]) { clearTimeout(_autosaveTimers[id]); autosaveCard(id); } else if (stamped) { autosaveCard(id); } });
   });
 }
 $("search").addEventListener("input", e => render(e.target.value));
