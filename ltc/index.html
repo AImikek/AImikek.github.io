@@ -288,7 +288,7 @@
 <script type="module">
 import { initializeApp } from "firebase-app";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "firebase-auth";
-import { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp } from "firebase-firestore";
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from "firebase-firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBF7M6yz7bpEfXWOai5uKYhkKz3u19bFFs",
@@ -504,7 +504,7 @@ function render(filter = "") {
         ${CALL_QUESTIONS.map((q, i) => `<div class="qa-q">${i + 1}. ${esc(q)}</div><textarea data-qa-index="${i}" data-id="${esc(l.id)}" placeholder="Answer…">${esc((l.callAnswers && l.callAnswers[i]) || (l.callAnswers && l.callAnswers[String(i)]) || "")}</textarea>`).join("")}
       </details>
       ${stampFor(l) ? `<div class="stamp">${esc(stampFor(l))}</div>` : ""}
-      <div class="row" style="margin-top:12px"><span class="saved" data-saved="${esc(l.id)}">Autosaves as you type${l.updatedBy ? " · Last saved by " + esc(l.updatedBy) : ""}</span></div>`}
+      <div class="row" style="margin-top:12px"><span class="saved" data-saved="${esc(l.id)}">Autosaves as you type${l.updatedBy ? " · Last saved by " + esc(l.updatedBy) : ""}</span><button class="secondary" data-delete-btn data-id="${esc(l.id)}" style="padding:6px 10px;font-size:12px">Delete this lawyer</button></div>`}
     </article>`; }).join("") : "<p class='muted'>No lawyers match that search or filter, or the tracker has not been seeded yet.</p>";
 
   const _sortSel = document.getElementById("sortSelect");
@@ -523,6 +523,12 @@ function render(filter = "") {
     const val = !(cur && cur.flaggedTomorrow);
     try { await setDoc(doc(db, "lawyers", id), { flaggedTomorrow: val, flaggedBy: val ? auth.currentUser.email : null, flaggedAt: val ? new Date().toISOString().slice(0, 10) : null, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true }); }
     catch (e) { const s = document.querySelector(`[data-saved="${id}"]`); if (s) s.textContent = "Flag save failed: " + e.message; }
+  });
+  document.querySelectorAll("[data-delete-btn]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.id; const cur = lawyers.find(l => l.id === id);
+    if (!confirm(`Delete ${cur ? cur.name : "this lawyer"}? This removes the card permanently and cannot be undone.`)) return;
+    try { await deleteDoc(doc(db, "lawyers", id)); }
+    catch (e) { const s = document.querySelector(`[data-saved="${id}"]`); if (s) s.textContent = "Delete failed: " + e.message; }
   });
   document.querySelectorAll("[data-toggle]").forEach(b => b.onclick = () => {
     if (collapsed.has(b.dataset.toggle)) collapsed.delete(b.dataset.toggle); else collapsed.add(b.dataset.toggle);
