@@ -28,16 +28,16 @@
       var(--bg0);
     background-attachment:fixed; min-height:100vh;
   }
-  header{padding:28px 18px 18px}
+  header{padding:10px 18px 6px}
   header .wrap, main{max-width:780px;margin:0 auto}
-  header h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.6px;line-height:1.08}
+  header h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.6px;line-height:1.08}
   header h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-  header p{margin:9px 0 0;color:var(--ink2);font-size:14.5px;max-width:580px;line-height:1.55}
-  header .rule{height:4px;width:64px;background:var(--grad);border-radius:4px;margin-top:16px}
+  header p{margin:4px 0 0;color:var(--ink2);font-size:14px;max-width:580px;line-height:1.4}
+  header .rule{height:4px;width:64px;background:var(--grad);border-radius:4px;margin-top:6px}
   .live-dot{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#5eead4}
   .live-dot::before{content:"";width:8px;height:8px;border-radius:50%;background:#2dd4bf;box-shadow:0 0 0 4px rgba(45,212,191,.18)}
-  main{padding:6px 14px 44px}
-  .card{background:var(--glass);border:1px solid var(--line);border-radius:var(--radius);padding:17px;box-shadow:var(--shadow);margin:13px 0;backdrop-filter:blur(8px)}
+  main{padding:0 14px 32px}
+  .card{background:var(--glass);border:1px solid var(--line);border-radius:var(--radius);padding:13px;box-shadow:var(--shadow);margin:8px 0;backdrop-filter:blur(8px)}
   .card h2{margin:0 0 4px;font-size:18.5px;letter-spacing:-.2px} .card h3{margin:14px 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
   .muted{color:var(--muted);font-size:13.5px;line-height:1.5} .small{font-size:14px;color:var(--ink2);line-height:1.6}
   input,select,textarea{width:100%;padding:12px 13px;border:1px solid var(--line2);border-radius:13px;font-size:15.5px;margin:5px 0;background:#0b1220;color:var(--ink);outline:none}
@@ -47,8 +47,8 @@
   button{background:var(--grad);color:#fff;border:0;border-radius:12px;padding:12px 17px;font-size:15px;font-weight:800;cursor:pointer}
   button.secondary{background:var(--glass2);color:var(--ink);border:1px solid var(--line2)} button:active{transform:scale(.98)}
   /* Sticky search, intentional */
-  .search{position:sticky;top:0;z-index:20;background:rgba(11,18,32,.88);backdrop-filter:blur(14px);padding:11px 0 9px;margin:0 -2px}
-  .search input{font-size:16.5px;padding:14px 15px;border-radius:15px;background:#111c30;box-shadow:var(--shadow)}
+  .search{position:sticky;top:0;z-index:20;background:rgba(11,18,32,.88);backdrop-filter:blur(14px);padding:8px 0 6px;margin:0 -2px}
+  .search input{font-size:16px;padding:11px 13px;border-radius:15px;background:#111c30;box-shadow:var(--shadow)}
   .filters{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
   .filters button{padding:9px 14px;font-size:13.5px;border-radius:999px;background:var(--glass2);color:var(--ink2);border:1px solid var(--line)}
   .filters button.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(139,92,246,.35)}
@@ -74,12 +74,12 @@
   .next-box{background:rgba(167,139,250,.09);border:1px solid rgba(167,139,250,.22);border-radius:14px;padding:2px 13px 11px;margin-top:11px}
   .call-btn{display:inline-flex;align-items:center;gap:7px;background:var(--call);color:#04121a !important;text-decoration:none;font-weight:750;padding:8px 13px;border-radius:10px;font-size:14.5px;box-shadow:0 4px 12px rgba(20,184,166,.25)}
   .pill-btn{display:inline-block;background:var(--glass2);border:1px solid var(--line2);color:var(--ink);text-decoration:none;font-weight:700;padding:10px 14px;border-radius:999px;font-size:13.5px}
-  .banner{background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.25);border-radius:14px;padding:12px 14px;margin:12px 0;font-size:13.5px;color:var(--ink2)}
+  .banner{background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.25);border-radius:14px;padding:10px 12px;margin:8px 0;font-size:13.5px;color:var(--ink2)}
   details summary{cursor:pointer;font-weight:800;font-size:15px;list-style:none} details summary::-webkit-details-marker{display:none}
   .hidden{display:none} .topbar{display:flex;justify-content:space-between;gap:8px;align-items:center}
-  #status{font-size:13px;margin:6px 0} .saved{color:#6ee7b7;font-size:13px;font-weight:700}
-  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:13px 0}
-  .stat{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:12px 13px;box-shadow:var(--shadow)}
+  #status{font-size:13px;margin:3px 0} .saved{color:#6ee7b7;font-size:13px;font-weight:700}
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 0}
+  .stat{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:8px 10px;box-shadow:var(--shadow)}
   .stat b{font-size:23px;display:block;line-height:1.1} .stat span{font-size:11.5px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px}
   .chev{font-size:18px;line-height:1}
   /* Login, premium not an afterthought */
@@ -283,7 +283,7 @@ const VERIFIED_LINKEDIN = {
 const $ = id => document.getElementById(id);
 if (!CONFIGURED) $("setupBanner").classList.remove("hidden");
 
-let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all", sortMode = "order";
+let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all", sortMode = "order", hasPhoneOnly = false, hasEmailOnly = false;
 if (CONFIGURED) {
   try { const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
   catch (e) { $("loginError").textContent = "Firebase setup error: " + e.message; }
@@ -332,6 +332,8 @@ function render(filter = "") {
   const q = filter.toLowerCase();
   let list = lawyers.filter(l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision].join(" ").toLowerCase().includes(q));
   if (decisionFilter !== "all") list = list.filter(l => (l.decision || "") === decisionFilter);
+  if (hasPhoneOnly) list = list.filter(l => (l.phone || "").trim());
+  if (hasEmailOnly) list = list.filter(l => (l.email || "").trim());
   const updatedMs = l => { if (!l.updatedAt) return 0; if (typeof l.updatedAt.toMillis === "function") return l.updatedAt.toMillis(); if (l.updatedAt.seconds) return l.updatedAt.seconds * 1000; return Date.parse(l.updatedAt) || 0; };
   const decisionRank = (l, first) => { const d = l.decision || ""; if (d === first) return 0; const order = ["hire", "vetting", "", "hold", "pass"]; return 1 + order.indexOf(d); };
   const sortList = arr => { const a = [...arr]; const byOrder = (x, y) => (x.order || 99) - (y.order || 99);
@@ -348,16 +350,23 @@ function render(filter = "") {
   const passed = lawyers.filter(l => l.decision === "pass").length;
   $("stats").innerHTML = `<div class="stat"><b>${lawyers.length}</b><span>Attorneys</span></div><div class="stat"><b>${vetting}</b><span>Vetting</span></div><div class="stat"><b>${passed}</b><span>Passed</span></div>`;
   const filters = [["all","All"],["vetting","Vetting"],["hold","Hold"],["pass","Pass"],["hire","Hire"]];
-  $("filters").innerHTML = filters.map(([v, label]) => `<button class="${decisionFilter === v ? "active" : ""}" data-filter="${v}">${label}</button>`).join("");
+  $("filters").innerHTML = filters.map(([v, label]) => `<button class="${decisionFilter === v ? "active" : ""}" data-filter="${v}">${label}</button>`).join("")
+    + `<span style="margin:0 2px;color:#64748b">|</span>`
+    + `<button class="${hasPhoneOnly ? "active" : ""}" data-contact="phone">Has phone</button>`
+    + `<button class="${hasEmailOnly ? "active" : ""}" data-contact="email">Has email</button>`;
   document.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { decisionFilter = b.dataset.filter; render($("search").value); });
+  document.querySelectorAll("[data-contact]").forEach(b => b.onclick = () => { if (b.dataset.contact === "phone") hasPhoneOnly = !hasPhoneOnly; else hasEmailOnly = !hasEmailOnly; render($("search").value); });
   $("count").textContent = list.length ? `${list.length} of ${lawyers.length} attorneys` : "";
   // AT-A-GLANCE SUMMARY: follows the selected decision filter (All / Vetting /
   // Hold / Pass / Hire), so tapping a filter changes the summary tabs too.
   // Search does not hide summary tiles; the filter does.
-  const summaryList = sortList(decisionFilter === "all" ? lawyers : lawyers.filter(l => (l.decision || "") === decisionFilter));
+  let summaryBase = decisionFilter === "all" ? lawyers : lawyers.filter(l => (l.decision || "") === decisionFilter);
+  if (hasPhoneOnly) summaryBase = summaryBase.filter(l => (l.phone || "").trim());
+  if (hasEmailOnly) summaryBase = summaryBase.filter(l => (l.email || "").trim());
+  const summaryList = sortList(summaryBase);
   $("jumpIndex").innerHTML = summaryList.length ? summaryList.map(l =>
     `<button class="summary-item ${l.decision === "pass" ? "pass" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
-    : `<p class="muted">No attorneys with decision “${esc(decisionFilter)}” yet.</p>`;
+    : `<p class="muted">No attorneys match these filters yet.</p>`;
   document.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
     // Keep the current filter — the tapped lawyer is in it — just expand and scroll to their card.
     collapsed.delete(b.dataset.jump);
