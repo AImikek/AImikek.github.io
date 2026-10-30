@@ -428,14 +428,19 @@ function returnToTile(id) {
   setTimeout(() => { const tile = document.querySelector(`[data-jump="${id}"]`); if (tile) tile.scrollIntoView({ behavior: "smooth", block: "center" }); }, 50);
 }
 function render(filter = "") {
-  const q = filter.toLowerCase();
-  let list = lawyers.filter(l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision].join(" ").toLowerCase().includes(q));
-  if (decisionFilter === "nodecision") list = list.filter(l => (l.decision || "") === "");
-  else if (decisionFilter !== "all") list = list.filter(l => (l.decision || "") === decisionFilter);
-  if (hasPhoneOnly) list = list.filter(l => (l.phone || "").trim());
-  if (hasEmailOnly) list = list.filter(l => (l.email || "").trim());
-  if (hasFlaggedOnly) list = list.filter(l => l.flaggedTomorrow);
-  if (!showPass) list = list.filter(l => l.decision !== "pass");
+  const q = (filter || "").toLowerCase().trim();
+  // SEARCH OVERRIDES EVERYTHING: a search matches across the whole tracker,
+  // regardless of decision filter, Pass hidden, Has phone/email/flagged, or a focused card.
+  const matchesSearch = l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision, l.nextStep, l.additionalNotes, l.fit, l.spokeTo].join(" ").toLowerCase().includes(q);
+  let list = lawyers.filter(matchesSearch);
+  if (!q) {
+    if (decisionFilter === "nodecision") list = list.filter(l => (l.decision || "") === "");
+    else if (decisionFilter !== "all") list = list.filter(l => (l.decision || "") === decisionFilter);
+    if (hasPhoneOnly) list = list.filter(l => (l.phone || "").trim());
+    if (hasEmailOnly) list = list.filter(l => (l.email || "").trim());
+    if (hasFlaggedOnly) list = list.filter(l => l.flaggedTomorrow);
+    if (!showPass) list = list.filter(l => l.decision !== "pass");
+  }
   const updatedMs = l => { if (!l.updatedAt) return 0; if (typeof l.updatedAt.toMillis === "function") return l.updatedAt.toMillis(); if (l.updatedAt.seconds) return l.updatedAt.seconds * 1000; return Date.parse(l.updatedAt) || 0; };
   const decisionRank = (l, first) => { const d = l.decision || ""; if (d === first) return 0; const order = ["hire", "priority", "vetting", "", "hold", "pass"]; return 1 + order.indexOf(d); };
   const sortList = arr => { const a = [...arr]; const byOrder = (x, y) => (x.order || 99) - (y.order || 99);
@@ -448,7 +453,7 @@ function render(filter = "") {
     else a.sort(byOrder);
     return a; };
   list = sortList(list);
-  if (focusId) { const _f = lawyers.find(l => l.id === focusId); if (_f) { list = [_f]; collapsed.delete(focusId); } else { focusId = null; } }
+  if (focusId && !q) { const _f = lawyers.find(l => l.id === focusId); if (_f) { list = [_f]; collapsed.delete(focusId); } else { focusId = null; } }
   const vetting = lawyers.filter(l => l.decision === "vetting").length;
   const passed = lawyers.filter(l => l.decision === "pass").length;
   $("stats").innerHTML = `<div class="stat"><b>${lawyers.length}</b><span>Attorneys</span></div><div class="stat"><b>${vetting}</b><span>Vetting</span></div><div class="stat"><b>${passed}</b><span>Passed</span></div>`;
@@ -463,18 +468,21 @@ function render(filter = "") {
   document.querySelector("[data-pass-toggle]").onclick = () => { showPass = !showPass; render($("search").value); };
   document.querySelectorAll("[data-contact]").forEach(b => b.onclick = () => { if (b.dataset.contact === "phone") hasPhoneOnly = !hasPhoneOnly; else if (b.dataset.contact === "flagged") hasFlaggedOnly = !hasFlaggedOnly; else hasEmailOnly = !hasEmailOnly; render($("search").value); });
   $("count").textContent = list.length ? `${list.length} of ${lawyers.length} attorneys` : "";
-  // AT-A-GLANCE SUMMARY: follows the selected decision filter (All / Vetting /
-  // Hold / Pass / Hire), so tapping a filter changes the summary tabs too.
-  // Search does not hide summary tiles; the filter does.
-  let summaryBase = decisionFilter === "all" ? lawyers : decisionFilter === "nodecision" ? lawyers.filter(l => (l.decision || "") === "") : lawyers.filter(l => (l.decision || "") === decisionFilter);
-  if (hasPhoneOnly) summaryBase = summaryBase.filter(l => (l.phone || "").trim());
-  if (hasEmailOnly) summaryBase = summaryBase.filter(l => (l.email || "").trim());
-  if (hasFlaggedOnly) summaryBase = summaryBase.filter(l => l.flaggedTomorrow);
-  if (!showPass) summaryBase = summaryBase.filter(l => l.decision !== "pass");
+  // AT-A-GLANCE SUMMARY: with no search, it follows the selected filters.
+  // With a search, it shows only search matches, ignoring all filters.
+  let summaryBase;
+  if (q) { summaryBase = lawyers.filter(matchesSearch); }
+  else {
+    summaryBase = decisionFilter === "all" ? lawyers : decisionFilter === "nodecision" ? lawyers.filter(l => (l.decision || "") === "") : lawyers.filter(l => (l.decision || "") === decisionFilter);
+    if (hasPhoneOnly) summaryBase = summaryBase.filter(l => (l.phone || "").trim());
+    if (hasEmailOnly) summaryBase = summaryBase.filter(l => (l.email || "").trim());
+    if (hasFlaggedOnly) summaryBase = summaryBase.filter(l => l.flaggedTomorrow);
+    if (!showPass) summaryBase = summaryBase.filter(l => l.decision !== "pass");
+  }
   const summaryList = sortList(summaryBase);
   $("jumpIndex").innerHTML = summaryList.length ? summaryList.map(l =>
     `<button class="summary-item ${l.decision === "pass" ? "pass" : ""} ${l.id === focusId ? "active" : ""}" data-jump="${esc(l.id)}"><span class="s-name">${esc(l.order)}. ${esc(l.name)}${l.flaggedTomorrow ? " 🚩" : ""}${l.emailSent ? " ✓" : ""}</span><span>${chip(l.decision)}</span><span class="s-firm">${esc(l.firm || "")}</span></button>`).join("")
-    : `<p class="muted">No attorneys match these filters yet.</p>`;
+    : `<p class="muted">${q ? "No attorneys match this search." : "No attorneys match these filters yet."}</p>`;
   // Delegated bubble taps: one listener on the grid, so a second tap can't get lost when tiles re-render.
   if (!window._jumpDelegated) {
     window._jumpDelegated = true;
@@ -489,8 +497,9 @@ function render(filter = "") {
     });
   }
   // Sticky focus bar: the selected lawyer's name stays pinned while you work in their file.
+  // A search overrides focus, so the bar hides while you search.
   const _fb = $("focusBar");
-  if (focusId) {
+  if (focusId && !q) {
     const _f = lawyers.find(l => l.id === focusId);
     if (_f) {
       _fb.classList.remove("hidden");
