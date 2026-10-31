@@ -244,6 +244,15 @@
     transition:background .2s;
   }
   .sheet-close:hover{background:rgba(255,255,255,.12)}
+  .sheet-share{
+    position:absolute;top:16px;right:62px;z-index:3;
+    width:38px;height:38px;border-radius:50%;
+    background:rgba(255,255,255,.06);border:1px solid var(--line);
+    color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
+  }
+  .sheet-share:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .sheet-share svg{width:16px;height:16px}
   .sheet-hero{aspect-ratio:16/8;overflow:hidden;background:#0b0b14;display:flex;align-items:center;justify-content:center}
   .sheet-hero img{width:100%;height:100%;object-fit:cover}
   .sheet-hero .mono{font-family:'Space Grotesk';font-weight:800;font-size:4rem;color:rgba(255,255,255,.92)}
@@ -830,6 +839,11 @@ function heroBlock(f){
   return `<div class="sheet-hero" style="background:${tile(f.name)}"><span class="mono">${f.name[0]}</span></div>`;
 }
 
+function wireSheet(f){
+  sheet.querySelector(".sheet-close").onclick = close;
+  const sb = sheet.querySelector(".sheet-share");
+  if(sb) sb.onclick = ()=>doShare(f);
+}
 function open(f){
   lastFocus = document.activeElement;
   if(f.action==="link") return; // link cards are native anchors
@@ -838,10 +852,13 @@ function open(f){
   overlay.classList.add("open");
   document.body.style.overflow="hidden";
   history.replaceState(null,"",`#${slug(f.name)}`);
-  sheet.querySelector(".sheet-close").onclick = close;
+  wireSheet(f);
   sheet.scrollTop = 0;
-  const first = sheet.querySelector("input,select,textarea,button.btn");
-  if(first) setTimeout(()=>first.focus(),120);
+  // autofocus only on desktop — on mobile it scrolls the sheet past the top
+  if(window.matchMedia("(hover:hover) and (pointer:fine)").matches){
+    const first = sheet.querySelector("input,select,textarea,button.btn");
+    if(first) setTimeout(()=>first.focus(),120);
+  }
 }
 function close(){
   overlay.classList.remove("open");
@@ -853,7 +870,9 @@ overlay.querySelector("[data-close]").onclick = close;
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&overlay.classList.contains("open")) close(); });
 
 const closeBtn = `<button class="sheet-close" aria-label="Close">
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>`;
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+<button class="sheet-share" aria-label="Share this offer" title="Share">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.7 6.8-3.9M8.6 13.3l6.8 3.9"/></svg></button>`;
 
 function pageView(f){
   const visit = f.url ? `<div class="btn-row"><a class="btn" href="${f.url}" target="_blank" rel="noopener">Visit ${f.name} ↗</a></div>` : "";
@@ -939,12 +958,12 @@ function wireForm(f){
         await fetch(ENDPOINT,{ method:"POST", body:payload }); // urlencoded → no CORS preflight
       }
       sheet.innerHTML = sentView(f);
-      sheet.querySelector(".sheet-close").onclick = close;
+      wireSheet(f);
     }catch(err){
       // Submission usually still lands; show success but keep a console trail.
       console.warn("Submit note:",err);
       sheet.innerHTML = sentView(f);
-      sheet.querySelector(".sheet-close").onclick = close;
+      wireSheet(f);
     }
   };
 }
@@ -956,6 +975,7 @@ function sentView(f){
         <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></div>
         <h3>You're all set</h3>
         <p>${f.form.success || "Thanks — Mike will be in touch."}</p>
+        <div class="btn-row" style="margin-top:22px"><button class="btn ghost" onclick="doShare(FAVORITES.find(x=>slug(x.name)==='${slug(f.name)}'))">Share this with a friend</button></div>
       </div>
     </div>`;
 }
