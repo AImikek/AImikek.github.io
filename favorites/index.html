@@ -184,6 +184,16 @@
     padding:5px 9px;border-radius:999px;
   }
   .ptag .pdot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+  .sharebtn{position:absolute;top:12px;right:12px;z-index:2;
+    width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.14);cursor:pointer;
+    background:rgba(6,6,10,.66);backdrop-filter:blur(6px);color:#fff;
+    display:flex;align-items:center;justify-content:center;transition:all .18s var(--ease)}
+  .sharebtn:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .sharebtn svg{width:15px;height:15px}
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(16px);z-index:200;
+    background:var(--accent);color:var(--accent-ink);font-family:'Space Grotesk';font-weight:700;font-size:.9rem;
+    padding:11px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s var(--ease)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   .card-body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:9px;flex:1}
   .cat{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
@@ -372,6 +382,8 @@
   </nav>
 </footer>
 
+<div id="toast">Link copied!</div>
+
 <!-- ============== OVERLAY ============== -->
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Favorite detail">
   <div class="scrim" data-close></div>
@@ -462,6 +474,7 @@ const FAVORITES = [
 
   {
     name: "Pups N Chill",
+    shareUrl: "https://mikek.ai/pupsnchilltickets",
     hook: "Pups N Chill - 20% Off Tickets!",
     perk: "20% off admission",
     category: "Events",
@@ -726,6 +739,9 @@ function cardHTML(f){
   const inner = `
       ${thumb}
         <span class="ptag"><span class="pdot"></span>${pathwayLabel[f.action]||""}</span>
+        <button class="sharebtn" data-share="${slug(f.name)}" title="Share ${f.name}" aria-label="Share ${f.name}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.7 6.8-3.9M8.6 13.3l6.8 3.9"/></svg>
+        </button>
       </div>
       <div class="card-body">
         <span class="cat">${f.category}</span>
@@ -756,6 +772,39 @@ function render(){
     const go = ()=>open(f);
     card.onclick = go;
     card.onkeydown = e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+  });
+  wireShares(grid);
+}
+
+// ---- sharing ----
+function shareURL(f){
+  if(f.shareUrl) return f.shareUrl;
+  if(f.pageUrl) return "https://mikek.ai" + f.pageUrl;
+  if(f.action==="link" && /mikek\.ai/.test(f.url)) return f.url;
+  return "https://mikek.ai/favorites#" + slug(f.name);
+}
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+async function doShare(f){
+  const url = shareURL(f);
+  const data = { title: `${f.name} — Mike's Favorites`, text: (f.hook||f.name) + (f.perk?` · Mike's perk: ${f.perk}`:""), url };
+  if(navigator.share){
+    try{ await navigator.share(data); return; }catch(e){ if(e.name==="AbortError") return; }
+  }
+  try{ await navigator.clipboard.writeText(url); toast("Link copied!"); }
+  catch(e){ prompt("Copy this link:", url); }
+}
+function wireShares(scope){
+  scope.querySelectorAll(".sharebtn").forEach(b=>{
+    b.onclick = e=>{
+      e.preventDefault(); e.stopPropagation();
+      const f = FAVORITES.find(x=>slug(x.name)===b.dataset.share);
+      if(f) doShare(f);
+    };
   });
 }
 

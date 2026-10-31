@@ -97,7 +97,7 @@
 <body>
 <header class="nav"><div class="wrap nav-inner">
   <a class="brand" href="/">mikek<span class="dot">.</span>ai</a>
-  <nav class="nav-links"><a href="/favorites">Favorites</a><a href="/">Home</a></nav>
+  <nav class="nav-links"><a href="/favorites">Favorites</a><a href="/">Home</a><button id="sharePage" style="display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line-strong);color:var(--accent);font-family:'Space Grotesk';font-weight:600;font-size:.85rem;padding:7px 14px;border-radius:999px;cursor:pointer"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.7 6.8-3.9M8.6 13.3l6.8 3.9"/></svg>Share</button></nav>
 </div></header>
 
 <div class="wrap hero">
@@ -159,9 +159,21 @@
   <a href="/favorites">More favorites →</a>
 </div></footer>
 
+<div id="toast" style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(16px);z-index:200;background:var(--accent);color:var(--accent-ink);font-family:'Space Grotesk';font-weight:700;font-size:.9rem;padding:11px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s ease">Link copied!</div>
 <script src="/config.js"></script>
 <script>
 const ENDPOINT = (window.MIKEK_ENDPOINT || "");
+// page share
+document.getElementById("sharePage").onclick = async () => {
+  const url = "https://mikek.ai/equinoxguestpass";
+  const data = { title: "How to Get an Equinox Guest Pass in Miami", text: "Want an Equinox guest pass? Get a complimentary $100 guest pass to Equinox Miami locations — Brickell, Aventura, South Beach, Coral Gables. No membership required.", url };
+  if (navigator.share) { try { await navigator.share(data); return; } catch(e){ if(e.name==="AbortError") return; } }
+  try { await navigator.clipboard.writeText(url);
+    const t = document.getElementById("toast");
+    t.style.opacity = 1; t.style.transform = "translateX(-50%)";
+    setTimeout(()=>{ t.style.opacity = 0; t.style.transform = "translateX(-50%) translateY(16px)"; }, 2200);
+  } catch(e){ prompt("Copy this link:", url); }
+};
 const form = document.querySelector("#signup form");
 if (form) {
 // reveal "Other" text box
