@@ -278,6 +278,10 @@
   /* City/Email overlay — display controlled ONLY by CSS class */
   #cityEmailOverlay { display:flex; }
   #cityEmailOverlay.hidden { display:none !important; }
+  #newPlayersSheet.hidden { display:none !important; }
+  .np-row { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .np-row .finput { margin-bottom:6px; padding:10px 12px; font-size:15px; }
+  .np-row .finput.bad { border-color:var(--pink); }
   .team-picker { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
   .player-chip { padding:10px 12px; background:var(--surface2); border:2px solid var(--border);
     border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:700;
@@ -585,6 +589,19 @@
 </div>
 
 <!-- CITY/EMAIL PROMPT (before first tournament) -->
+<!-- NEW PLAYERS: every name in a tournament needs a number (and ideally an email) so the games belong to someone -->
+<div id="newPlayersSheet" class="hidden" style="position:fixed;inset:0;z-index:560;background:rgba(4,6,15,0.95);backdrop-filter:blur(10px);display:flex;align-items:flex-end;justify-content:center;padding:0;overflow-y:auto;">
+  <div style="width:100%;max-width:480px;background:var(--card);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:18px 18px 28px;max-height:92vh;overflow-y:auto;">
+    <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;"></div>
+    <div style="font-family:'Russo One',sans-serif;font-size:15px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;">📱 New players</div>
+    <div id="npSub" style="font-size:12.5px;color:var(--muted);font-weight:600;margin:4px 0 12px;line-height:1.5;">These names aren't on PB Tourney yet. Add a number so their games count for them — they get a link to claim their account.</div>
+    <div id="npList"></div>
+    <div id="npErr" style="font-size:12px;color:var(--yellow);font-weight:700;min-height:16px;margin:4px 0 6px;"></div>
+    <button onclick="npSubmit()" id="npGo" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Create accounts &amp; start</button>
+    <button onclick="npCancel()" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Back to the lineup</button>
+  </div>
+</div>
+
 <div id="cityEmailOverlay" class="hidden" style="position:fixed;inset:0;z-index:550;background:rgba(4,6,15,0.95);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:24px;">
   <div class="modal" style="max-width:400px;">
     <div style="text-align:center;margin-bottom:20px;">
@@ -1547,6 +1564,7 @@
       </div>
       <div id="adAvMsg" style="font-size:11px;color:var(--yellow);font-weight:700;margin-top:6px;min-height:0;"></div>
     </div>
+    <div class="adsec-card" id="adSmsCard" style="display:none;"></div>
     <div id="adIssues" style="display:none;"></div>
     <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;"></div>
     <div id="adActiveNames" style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;margin:-2px 0 14px;"></div>
@@ -2011,7 +2029,9 @@ window.healMyDirectory = async function() {
     if (u === me || !d || !d.unclaimed) continue;
     const samePhone = myPhone && window.normPhone(d.phone) === myPhone;
     const sameName = String(d.name || '').trim().toLowerCase() === nm;
-    if (!samePhone && !sameName) continue;
+    const myEmail = String(userProfile.email || currentUser.email || '').trim().toLowerCase();
+    const sameEmail = myEmail && String(d.email || '').trim().toLowerCase() === myEmail;
+    if (!samePhone && !sameName && !sameEmail) continue;
     ['dupr', 'city', 'email', 'avatar', 'homeCourt', 'instagram', 'avail'].forEach(k => { if (d[k] && !userProfile[k] && !profUpd[k]) { profUpd[k] = d[k]; if (!upd[k] && !mine[k]) upd[k] = d[k]; } });
     if (d.joinedAt && (!(upd.joinedAt || mine.joinedAt) || d.joinedAt < (upd.joinedAt || mine.joinedAt))) upd.joinedAt = d.joinedAt;
     try { await set(ref(db, 'directory/' + u), null); claimed++; } catch (e) { /* rules may not allow yet — admin audit retires it */ }
@@ -2040,12 +2060,14 @@ onAuthStateChanged(auth, user => {
     // GUEST MODE: a session link (?s=) is viewable without an account — roster, waitlist, info, venue.
     // Claiming, dropping, or opening live games asks for a quick sign-in (and the ?s= URL brings them back).
     const gs = new URLSearchParams(window.location.search).get('s');
+    const claim = new URLSearchParams(window.location.search).get('claim');
     if (gs) {
       document.getElementById('loginScreen').style.display = 'none';
       openSessionDetail(gs);
     } else {
       document.getElementById('loginScreen').style.display = 'flex';
       prefillLastPhone();
+      if (claim) window.npShowClaim(claim);
     }
   }
 });
@@ -2564,6 +2586,9 @@ window.doStart = window._doStart = async function() {
   if (playType_ === 'singles' && mode === '4p') mode = 'rr';
   if (mode==='4p' && players.length!==4) mode='rr';
   window._pendingSetup = { name, players, mode };
+  // Everyone in a tournament must be someone: a login, or a profile with a phone. Unknown names stop here.
+  if (!window._npCleared) { const unknown = await window.npUnknown(players); if (unknown.length) { window.npOpen(unknown); return; } }
+  window._npCleared = false;
   // Archive any existing tournament before replacing it
   archiveCurrentTournament().then(() => {
     // We already have contact info if they signed in with Google (email) or phone.
@@ -6514,6 +6539,15 @@ window.closeSessionDetail = function() {
   if (!currentUser) { document.getElementById('loginScreen').style.display = 'flex'; prefillLastPhone(); }
 };
 // Guest tapped an action → show the login screen; the ?s= in the URL brings them straight back after.
+// ?claim=<slug>: tell the invited player what's waiting and which number to sign in with
+window.npShowClaim = async function(slug) {
+  try { const d = (await get(ref(db, 'directory/' + slug))).val(); if (!d || !d.name) return;
+    const sub = document.querySelector('#loginScreen .login-sub'); if (!sub) return;
+    const ph = d.phone ? String(d.phone).replace(/^\+1(\d{3})(\d{3})(\d{4})$/, '($1) $2-$3') : '';
+    sub.innerHTML = '🏓 <b style="color:var(--white);">' + escInfo(d.name) + '</b>, ' + (d.createdByName ? escInfo(d.createdByName) + ' added you to a game. ' : '') + 'Sign in with <b style="color:var(--cyan);">' + escInfo(ph || 'your number') + '</b> and your games and rating are yours.';
+    if (d.phone) { const inp = document.getElementById('phoneInput') || document.querySelector('#loginScreen input[type=tel]'); if (inp && !inp.value) inp.value = String(d.phone).replace(/^\+1/, ''); }
+  } catch (e) {}
+};
 window.guestSignIn = function(msg) {
   document.getElementById('sessionDetail').classList.add('hidden');
   document.getElementById('loginScreen').style.display = 'flex';
@@ -7423,6 +7457,7 @@ window.openAdminDash = async function() {
   if (!isAdmin()) return;
   document.getElementById('adminDash').classList.remove('hidden');
   try { window.adAvailNamesFill(); } catch (e) {}
+  try { window.renderSmsCard(); } catch (e) {}
   document.getElementById('adStats').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-weight:600;padding:20px;">Loading...</div>';
   const safeGet = async (p) => { try { return (await get(ref(db, p))).val() || {}; } catch(e) { return {}; } };
   const [dir, tours, fb, courtSubs] = await Promise.all([safeGet('directory'), safeGet('tournaments'), safeGet('feedback'), safeGet('courtSubmissions')]);
@@ -7997,6 +8032,121 @@ async function saveDirectoryEntry() {
 }
 let _dirLoaded = false;
 window._nameBook = window._nameBook || {};   // lower → { name, sub, claimed, games }
+// ── Registration gate ─────────────────────────────────────────────────────────────────────────
+// A typed name that matches nobody with a login or a phone on file must get a number before the tournament starts.
+// The organizer effectively creates the account; the player claims it by signing in with that number (or the email).
+window.npUnknown = async function(players) {
+  const dir = await loadChatDir(); const me = (userProfile && userProfile.name || '').trim().toLowerCase();
+  const byName = {}; Object.entries(dir).forEach(([u, d]) => { if (!d || !d.name) return; const k = String(d.name).trim().toLowerCase(); const cur = byName[k]; if (!cur || (cur.unclaimed && !d.unclaimed)) byName[k] = Object.assign({ uid: u }, d); });
+  const out = []; const seen = new Set();
+  for (const p of players) { const k = String(p).trim().toLowerCase(); if (!k || k === me || seen.has(k)) continue; seen.add(k);
+    const d = byName[k]; const ok = d && (!d.unclaimed || window.normPhone(d.phone) || d.email);
+    if (!ok) out.push({ name: String(p).trim(), uid: d ? d.uid : null }); }
+  return out;
+};
+window.npOpen = function(unknown) {
+  window._npPending = unknown;
+  const list = document.getElementById('npList');
+  list.innerHTML = unknown.map((u, i) => '<div class="np-row"><div style="font-weight:800;color:var(--white);font-size:14.5px;margin-bottom:6px;">' + escInfo(u.name) + (u.uid ? ' <span style="font-size:10.5px;color:var(--muted);font-weight:600;">· has played before, no number on file</span>' : '') + '</div>'
+    + '<input class="finput" id="npPhone' + i + '" type="tel" inputmode="tel" autocomplete="off" placeholder="Mobile number (required)" oninput="this.classList.remove(\'bad\')">'
+    + '<input class="finput" id="npEmail' + i + '" type="email" inputmode="email" autocomplete="off" autocapitalize="off" placeholder="Email (optional, helps them sign in)" style="margin-bottom:0;"></div>').join('');
+  document.getElementById('npSub').textContent = unknown.length === 1 ? unknown[0].name + ' isn\'t on PB Tourney yet. Add a mobile number so the games count for them — they get a link to claim the account.' : 'These ' + unknown.length + ' names aren\'t on PB Tourney yet. Add a number for each so their games count for them — they get a link to claim their account.';
+  document.getElementById('npErr').textContent = '';
+  document.getElementById('newPlayersSheet').classList.remove('hidden');
+  setTimeout(() => { try { document.getElementById('npPhone0').focus(); } catch (e) {} }, 150);
+};
+window.npCancel = function() { document.getElementById('newPlayersSheet').classList.add('hidden'); window._npPending = null; };
+window.npSubmit = async function() {
+  const pend = window._npPending || []; const err = document.getElementById('npErr'); err.textContent = '';
+  const rows = pend.map((u, i) => ({ u, phone: window.normPhone(document.getElementById('npPhone' + i).value), email: (document.getElementById('npEmail' + i).value || '').trim().toLowerCase(), el: document.getElementById('npPhone' + i) }));
+  const dir = await loadChatDir();
+  const mine = window.normPhone(userProfile && userProfile.phone || (currentUser && currentUser.phoneNumber) || '');
+  for (const r of rows) {
+    if (!/^\+\d{10,15}$/.test(r.phone)) { r.el.classList.add('bad'); err.textContent = 'Enter a real mobile number for ' + r.u.name + '.'; r.el.focus(); return; }
+    if (r.phone === mine) { r.el.classList.add('bad'); err.textContent = 'That\'s your own number — ' + r.u.name + ' needs theirs.'; return; }
+    if (r.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) { err.textContent = 'That email for ' + r.u.name + ' doesn\'t look right.'; return; }
+    const dupe = rows.find(o => o !== r && o.phone === r.phone); if (dupe) { r.el.classList.add('bad'); err.textContent = r.u.name + ' and ' + dupe.u.name + ' can\'t share a number.'; return; }
+  }
+  // a number that already belongs to a member → that's who this is; use their real name instead of creating a twin
+  const renames = {};
+  for (const r of rows) { const hit = Object.entries(dir).find(([u, d]) => d && d.name && window.normPhone(d.phone) === r.phone);
+    if (hit && String(hit[1].name).trim().toLowerCase() !== r.u.name.toLowerCase()) { if (!confirm(r.phone + ' already belongs to ' + hit[1].name + ' on the app. Use "' + hit[1].name + '" instead of "' + r.u.name + '"?')) return; renames[r.u.name.toLowerCase()] = hit[1].name; r.existing = hit[0]; } else if (hit) r.existing = hit[0]; }
+  const btn = document.getElementById('npGo'); btn.disabled = true; btn.textContent = 'Creating…';
+  const created = [];
+  try {
+    for (const r of rows) {
+      if (r.existing) continue;
+      const slug = r.u.uid || ('n_' + r.u.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''));
+      const prev = (dir[slug]) || {};
+      const card = Object.assign({}, prev, { name: prev.name || r.u.name, phone: r.phone, unclaimed: true, joinedAt: prev.joinedAt || Date.now(), createdBy: currentUser.uid, createdByName: chatName(), invitedAt: Date.now() });
+      if (r.email) card.email = r.email;
+      await set(ref(db, 'directory/' + slug), card);
+      created.push({ slug, name: card.name, phone: r.phone, email: r.email });
+    }
+    chatDirCache = null; _dirLoaded = false; window._nameBook = {};
+    // apply renames in the lineup
+    if (Object.keys(renames).length) document.querySelectorAll('.pinput').forEach(i => { const k = i.value.trim().toLowerCase(); if (renames[k]) i.value = renames[k]; });
+    document.getElementById('newPlayersSheet').classList.add('hidden'); window._npPending = null;
+    window._npJustCreated = created;
+    window._npCleared = true;
+    window.doStart();
+    if (created.length) setTimeout(() => window.npSendClaims(created), 1200);
+  } catch (e) { err.textContent = 'Could not save: ' + (e.message || e); }
+  btn.disabled = false; btn.textContent = 'Create accounts & start';
+};
+// The claim link: opens the app, shows who invited them; signing in with the same number (or email) attaches everything.
+window.npClaimUrl = slug => location.origin + location.pathname + '?claim=' + encodeURIComponent(slug);
+window.npClaimText = (c, org) => 'Hey ' + c.name.split(' ')[0] + '! ' + (org || chatName()) + ' added you to a pickleball game on PB Tourney. Your games and rating are waiting — tap to claim them: ' + window.npClaimUrl(c.slug);
+// Send claim links: by text when the worker has Twilio, by email when there is one (EmailJS), and always offer the
+// organizer's own phone as the fallback (sms: link) so nobody is left without a way in.
+window.npSendClaims = async function(created) {
+  const results = [];
+  for (const c of created) {
+    let sent = null;
+    try { const r = await window.sendSms(c.phone, window.npClaimText(c), 'claim'); if (r && r.ok) sent = 'text'; } catch (e) {}
+    if (!sent && c.email && window.emailjs && window.EMAILJS_CONFIG && window.EMAILJS_CONFIG.claimTemplateId) { try { await emailjs.send(window.EMAILJS_CONFIG.serviceId, window.EMAILJS_CONFIG.claimTemplateId, { to_email: c.email, to_name: c.name, name: c.name, organizer: chatName(), link: window.npClaimUrl(c.slug) }); sent = 'email'; } catch (e) {} }
+    try { await update(ref(db, 'directory/' + c.slug), { claimSent: sent || 'manual', claimSentAt: Date.now() }); } catch (e) {}
+    results.push({ c, sent });
+  }
+  const manual = results.filter(r => !r.sent);
+  if (!manual.length) { copiedToast('📨 Sent ' + results.length + ' claim link' + (results.length === 1 ? '' : 's')); return; }
+  // fallback sheet: one tap per player opens Messages with the text ready
+  const el = document.getElementById('gmList'), sh = document.getElementById('groupMembersSheet');
+  document.getElementById('gmTitle').textContent = '📨 Text them their link';
+  document.getElementById('gmSub').textContent = (results.length - manual.length ? (results.length - manual.length) + ' sent automatically · ' : '') + manual.length + ' to send from your phone (one tap each)';
+  el.innerHTML = manual.map(r => '<a href="sms:' + r.c.phone + (/iphone|ipad|ipod/i.test(navigator.userAgent) ? '&' : '?') + 'body=' + encodeURIComponent(window.npClaimText(r.c)) + '" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);margin-bottom:6px;text-decoration:none;"><span><span style="font-weight:800;color:var(--white);font-size:14px;">' + escInfo(r.c.name) + '</span><br><span style="font-size:11px;color:var(--muted);font-weight:600;">' + escInfo(r.c.phone) + '</span></span><span style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;color:var(--aqua);">TEXT →</span></a>').join('')
+    + '<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;line-height:1.5;">Until texting is switched on in the app, this sends from your own Messages. They sign in with that number and their games attach automatically.</div>'
+    + '<button onclick="document.getElementById(\'groupMembersSheet\').classList.add(\'hidden\')" class="rtbtn" style="width:100%;margin-top:10px;">Done</button>';
+  sh.classList.remove('hidden');
+};
+// ── Texting through the worker (Twilio). Resolves {ok} or throws; 'not_configured' is a normal state before setup.
+window.renderSmsCard = async function() {
+  const c = document.getElementById('adSmsCard'); if (!c || !isAdmin()) return;
+  const st = await window.smsStatus();
+  c.style.display = 'block';
+  c.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><div><div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:' + (st.configured ? 'var(--aqua)' : 'var(--yellow)') + ';text-transform:uppercase;">📱 Texting ' + (st.configured ? 'is on' : 'not set up yet') + '</div><div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px;">' + (st.configured ? 'Claim links and game texts go out automatically.' + (st.optOutSync ? ' STOP replies switch members off.' : ' Add FIREBASE_SERVICE_ACCOUNT so STOP replies sync.') : 'Add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM to the worker. Until then claim links send from your own phone.') + '</div></div>'
+    + (st.configured ? '<button onclick="adTestSms()" style="flex-shrink:0;padding:10px 12px;background:transparent;border:1px solid rgba(0,245,196,0.4);color:var(--aqua);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Text me a test</button>' : '') + '</div>';
+};
+window.adTestSms = async function() {
+  const to = window.normPhone(userProfile && userProfile.phone || (currentUser && currentUser.phoneNumber) || '');
+  if (!to) { alert('No phone on your profile.'); return; }
+  try { const r = await window.sendSms(to, 'PB Tourney test: texting works 🏓', 'service'); copiedToast('✓ Sent (' + (r.status || 'queued') + ') to ' + to); }
+  catch (e) { alert('Not sent: ' + (e.message || e)); }
+};
+window.sendSms = async function(to, body, kind) {
+  if (aiUrl === null) { try { aiUrl = (await get(ref(db, 'config/assistantUrl'))).val() || ''; } catch (e) { aiUrl = ''; } }
+  if (!aiUrl) throw new Error('not_configured');
+  const token = await aiToken();
+  const r = await fetch(aiUrl.replace(/\/+$/, '') + '/sms/send', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ to, body, kind: kind || 'service' }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('sms ' + r.status));
+  return j;
+};
+window.smsStatus = async function() {
+  if (aiUrl === null) { try { aiUrl = (await get(ref(db, 'config/assistantUrl'))).val() || ''; } catch (e) { aiUrl = ''; } }
+  if (!aiUrl) return { configured: false };
+  try { return await (await fetch(aiUrl.replace(/\/+$/, '') + '/sms/status')).json(); } catch (e) { return { configured: false }; }
+};
 async function loadPlayerDirectory() {
   if (_dirLoaded) return;
   try {
@@ -10313,6 +10463,9 @@ function adDrill(k,a)         { if(window.adDrill && window.adDrill !== adDrill)
 function adDrillPaint()      { if(window.adDrillPaint && window.adDrillPaint !== adDrillPaint) { window.adDrillPaint(); return; } __pbtWait(adDrillPaint, arguments); }
 function adDrillSortBy(k)    { if(window.adDrillSortBy && window.adDrillSortBy !== adDrillSortBy) { window.adDrillSortBy(k); return; } __pbtWait(adDrillSortBy, arguments); }
 function adOpenPlayer(u)     { if(window.adOpenPlayer && window.adOpenPlayer !== adOpenPlayer) { window.adOpenPlayer(u); return; } __pbtWait(adOpenPlayer, arguments); }
+function npSubmit()          { if(window.npSubmit && window.npSubmit !== npSubmit) { window.npSubmit(); return; } __pbtWait(npSubmit, arguments); }
+function npCancel()          { if(window.npCancel && window.npCancel !== npCancel) { window.npCancel(); return; } __pbtWait(npCancel, arguments); }
+function adTestSms()         { if(window.adTestSms && window.adTestSms !== adTestSms) { window.adTestSms(); return; } __pbtWait(adTestSms, arguments); }
 function adLogAvail()        { if(window.adLogAvail && window.adLogAvail !== adLogAvail) { window.adLogAvail(); return; } __pbtWait(adLogAvail, arguments); }
 function pickSms(w,on)       { if(window.pickSms && window.pickSms !== pickSms) { window.pickSms(w,on); return; } __pbtWait(pickSms, arguments); }
 function availAddRow(p)      { if(window.availAddRow && window.availAddRow !== availAddRow) { window.availAddRow(p); return; } __pbtWait(availAddRow, arguments); }
@@ -10350,7 +10503,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-01.3';
+window.BUILD_TAG = 'v2026-11-01.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
