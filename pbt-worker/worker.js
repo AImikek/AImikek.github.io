@@ -269,6 +269,11 @@ async function handleSms(request, env, H, url) {
     }
     return twiml;
   }
+  if (route === '/sms/run-reminders' && request.method === 'POST') {
+    const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, ''); const user = auth ? await verifyUser(auth) : null;
+    if (!user || user.uid !== ADMIN_UID) return new Response(JSON.stringify({ error: 'admin only' }), { status: 403, headers: H });
+    return new Response(JSON.stringify(await runReminders(env)), { headers: H });
+  }
   if (route === '/sms/send' && request.method === 'POST') {
     if (!smsConfigured(env)) return new Response(JSON.stringify({ error: 'not_configured', message: 'Texting is not set up yet (Twilio secrets missing on the worker).' }), { status: 503, headers: H });
     const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
@@ -286,7 +291,7 @@ async function handleSms(request, env, H, url) {
         if (stopped) return new Response(JSON.stringify({ error: 'opted_out', message: 'This number replied STOP.' }), { status: 409, headers: H });
         if (kind !== 'claim') { const hit = await findUidByPhone(env, to); const prof = hit && !hit.d.unclaimed ? (await fbGet(env, 'users/' + hit.uid + '/profile')) || {} : {};
           if (kind === 'marketing' && prof.smsMarketing !== true) return new Response(JSON.stringify({ error: 'no_consent', message: 'No marketing opt-in on file for this number.' }), { status: 409, headers: H });
-          if (kind === 'service' && prof.smsService === false) return new Response(JSON.stringify({ error: 'no_consent', message: 'Game texts are switched off for this member.' }), { status: 409, headers: H }); }
+          if ((kind === 'service' || kind === 'admin') && prof.smsService === false) return new Response(JSON.stringify({ error: 'no_consent', message: 'Game texts are switched off for this member.' }), { status: 409, headers: H }); }
       } catch (e) { if (e && /opted_out|no_consent/.test(String(e))) throw e; }
     }
     const footer = kind === 'marketing' ? ' Reply STOP to opt out.' : '';
@@ -296,7 +301,46 @@ async function handleSms(request, env, H, url) {
   }
   return new Response(JSON.stringify({ error: 'unknown sms route' }), { status: 404, headers: H });
 }
+// ═══════════════════════════════ REMINDERS (cron, every 10 min) ═══════════════════════════════
+// Needs FIREBASE_SERVICE_ACCOUNT. 1 hour before a game: in-app reminder to everyone on the roster + a TEXT (unless
+// they switched game texts or reminders off). ~6pm Miami time the evening before: in-app only.
+const NY = 'America/New_York';
+function nyParts(d) { const f = new Intl.DateTimeFormat('en-US', { timeZone: NY, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).formatToParts(d); const g = k => f.find(p => p.type === k).value; return { date: g('year') + '-' + g('month') + '-' + g('day'), mins: (parseInt(g('hour')) % 24) * 60 + parseInt(g('minute')) }; }
+function addDay(iso, n) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+const arr = v => v ? (Array.isArray(v) ? v.filter(Boolean) : Object.values(v).filter(Boolean)) : [];
+function fmtT(t) { const [h, m] = String(t || '').split(':').map(Number); if (isNaN(h)) return t || ''; const ap = h >= 12 ? 'pm' : 'am'; return ((h % 12) || 12) + (m ? ':' + String(m).padStart(2, '0') : '') + ap; }
+async function runReminders(env) {
+  if (!env.FIREBASE_SERVICE_ACCOUNT || !env.FIREBASE_DB_URL) return { skipped: 'no service account' };
+  const now = new Date(); const { date: today, mins } = nyParts(now); const tomorrow = addDay(today, 1);
+  const sessions = await fbGet(env, 'sessions') || {}; const dir = await fbGet(env, 'directory') || {};
+  const profCache = {}; const prof = async uid => profCache[uid] || (profCache[uid] = (await fbGet(env, 'users/' + uid + '/profile')) || {});
+  const site = 'https://mikek.ai/pbt/';
+  let hour = 0, eve = 0, texts = 0;
+  for (const [sid, s] of Object.entries(sessions)) {
+    if (!s || !s.date || !s.startTime) continue;
+    const roster = arr(s.roster); if (!roster.length) continue;
+    const [sh, sm] = s.startTime.split(':').map(Number); const startMins = sh * 60 + sm;
+    const line = (s.title || 'Your game') + ' · ' + fmtT(s.startTime) + (s.location ? ' at ' + s.location : '');
+    const post = async (uid, n) => { const nid = 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); await fbPatch(env, 'notifs/' + uid, { [nid]: Object.assign({ from: 'system', fromName: 'PB Tourney', at: Date.now(), read: false }, n) }); };
+    // 1 hour before (window 50–70 min so a 10-minute cron can't miss it)
+    if (s.date === today && !s.remind1hAt && startMins - mins >= 50 && startMins - mins <= 70) {
+      await fbPatch(env, 'sessions/' + sid, { remind1hAt: Date.now() });
+      for (const r of roster) { if (!r.uid) continue; const p = await prof(r.uid); if (p.notif && p.notif.reminders === false) continue;
+        try { await post(r.uid, { type: 'reminder', sid, text: '⏰ In about an hour: ' + line + ' · ' + roster.length + ' of ' + (s.spots || 4) + ' confirmed' }); hour++; } catch (e) {}
+        if (smsConfigured(env) && p.smsService !== false) { const phone = normPhone(p.phone || (dir[r.uid] || {}).phone || ''); if (!phone) continue;
+          try { const stopped = await fbGet(env, 'smsOptOut/' + phone.replace(/\D/g, '')); if (stopped) continue; await twilioSend(env, phone, 'PB Tourney ⏰ ' + line + ' starts in about an hour. ' + roster.length + '/' + (s.spots || 4) + ' confirmed. Details: ' + site + '?s=' + sid); texts++; } catch (e) {} } }
+    }
+    // the evening before, in-app only
+    if (s.date === tomorrow && !s.remindEveAt && mins >= 18 * 60 && mins < 18 * 60 + 15) {
+      await fbPatch(env, 'sessions/' + sid, { remindEveAt: Date.now() });
+      for (const r of roster) { if (!r.uid) continue; const p = await prof(r.uid); if (p.notif && p.notif.reminders === false) continue;
+        try { await post(r.uid, { type: 'reminder', sid, text: '📅 Tomorrow: ' + line + ' · ' + roster.length + ' of ' + (s.spots || 4) + ' confirmed' }); eve++; } catch (e) {} }
+    }
+  }
+  return { today, mins, hour, eve, texts };
+}
 export default {
+  async scheduled(event, env, ctx) { ctx.waitUntil(runReminders(env).catch(() => {})); },
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
     const H = Object.assign({ 'Content-Type': 'application/json' }, cors(origin));

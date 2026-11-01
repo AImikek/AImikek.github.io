@@ -12,3 +12,6 @@ keep_vars = true
 ALLOWED_UIDS = "all"
 MODEL = "claude-sonnet-5-5"
 FIREBASE_DB_URL = "https://pickle-tourney-default-rtdb.firebaseio.com"
+
+[triggers]
+crons = ["*/10 * * * *"]
