@@ -1783,7 +1783,8 @@ window.EMAILJS_CONFIG = {
   publicKey:  "X2dC3mFeqOruG4n4S",
   serviceId:  "service_gumjfq5",
   templateId: "template_0w416an",
-  welcomeTemplateId: "template_zj3a07b"  // Welcome email
+  welcomeTemplateId: "template_0vbuhv9",  // "Welcome - PBT" in EmailJS
+  waitlistTemplateId: "template_zj3a07b"  // "Waitlist - PBT" in EmailJS (roster / promotion emails)
 };
 if (window.emailjs && window.EMAILJS_CONFIG.publicKey !== "YOUR_PUBLIC_KEY") {
   emailjs.init({ publicKey: window.EMAILJS_CONFIG.publicKey });
@@ -7247,7 +7248,7 @@ function sendSessionEmail(person, s, sid, headline) {
 }
 
 // EmailJS template for waitlist promotions - paste the template ID here once created
-const WAITLIST_TEMPLATE_ID = window.WAITLIST_TEMPLATE_ID || 'template_0vbuhv9';
+const WAITLIST_TEMPLATE_ID = window.WAITLIST_TEMPLATE_ID || (window.EMAILJS_CONFIG && window.EMAILJS_CONFIG.waitlistTemplateId) || 'template_zj3a07b';
 
 function sendWaitlistPromotionEmail(person, s, sid, isOrganizer, promotedList) {
   try {
@@ -10503,7 +10504,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-01.4';
+window.BUILD_TAG = 'v2026-11-01.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
