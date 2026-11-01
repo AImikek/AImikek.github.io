@@ -901,6 +901,9 @@
     <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:8px;">Organizers see a ✈️ next to your name until you're back, and won't chase you for sessions.</div>
   </div>
 
+  <label class="flabel">🔔 Notifications</label>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px 14px 6px;margin-bottom:16px;"><div id="notifPrefs"></div><div style="font-size:10.5px;color:var(--muted);font-weight:600;padding:8px 0 4px;">Chatty types are capped at a dozen a day. Only a waitlist spot opening, the 1-hour reminder and organizer messages can also reach you by text.</div></div>
+
   <label class="flabel">📱 Text messages</label>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;">
     <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
@@ -1565,6 +1568,15 @@
       <div id="adAvMsg" style="font-size:11px;color:var(--yellow);font-weight:700;margin-top:6px;min-height:0;"></div>
     </div>
     <div class="adsec-card" id="adSmsCard" style="display:none;"></div>
+    <div class="adsec-card" id="adBroadcastCard">
+      <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;margin-bottom:6px;">📣 Message members</div>
+      <textarea class="finput" id="abText" rows="2" placeholder="e.g. Courts flooded — tonight's 7pm moved to Thursday. Same time, same place." style="margin-bottom:6px;resize:vertical;min-height:58px;"></textarea>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select class="finput" id="abAud" style="flex:1;margin-bottom:0;padding:10px;font-size:13px;color-scheme:dark;"><option value="all">Everyone on the app</option></select>
+        <button onclick="adBroadcast()" style="flex-shrink:0;padding:10px 12px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:10px;font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Send</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;font-size:12px;color:var(--white);font-weight:700;"><input type="checkbox" id="abSms" style="width:18px;height:18px;accent-color:var(--cyan);"> Also send as a text (important only · needs texting on)</label>
+    </div>
     <div id="adIssues" style="display:none;"></div>
     <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;"></div>
     <div id="adActiveNames" style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;margin:-2px 0 14px;"></div>
@@ -2721,6 +2733,7 @@ window.uploadTournamentPhotos = async function(inp) {
   }
   try {
     const cnt = Object.keys((await get(ref(db, 'photos/' + activeTid))).val() || {}).length;
+    try { const uids = []; for (const p of (cfg && cfg.players) || []) { const u = await window.chatUidForName(p); if (u) uids.push(u); } window.notifyMany(uids, { type: 'photos', tid: activeTid, text: 'New photos from ' + ((cfg && cfg.name) || 'your game'), dedupe: 'photos:' + activeTid + ':' + new Date().toISOString().slice(0, 13) }).catch(() => {}); } catch (e) {}
     await set(ref(db, 'photoIdx/' + activeTid), { n: cnt, name: cfg?.name || 'Tournament', players: (cfg?.players||[]).slice(0,40), at: Date.now() });
   } catch(e) {}
   try { inp.value = ''; } catch(e) {}
@@ -2800,6 +2813,7 @@ async function archiveCurrentTournament() {
 window.markDone = async function() {
   await archiveCurrentTournament();
   try { if (activeTid) await update(ref(db, 'tournaments/' + activeTid), { done: true }); } catch (e) {}
+  try { if (activeTid) window.notifyTournamentResults(activeTid).catch(() => {}); } catch (e) {}
   window._celebrate = true;
   showPage('standings');
   try { window.scrollTo(0, 0); } catch(e) {}
@@ -4693,6 +4707,183 @@ window.psSort = function(k) { window._psSort = k; window.psRun(); };
 window.psGender = function(g) { window._psG = g; document.querySelectorAll('#psGenderRow .rtbtn').forEach(b => b.classList.toggle('active', b.getAttribute('data-g') === g)); window.psRun(); };
 window.psToggleMore = function() { const m = document.getElementById('psMore'); const on = m.style.display === 'none'; m.style.display = on ? 'block' : 'none'; document.getElementById('psMoreBtn').textContent = on ? '－ Fewer filters' : '＋ More filters'; };
 window.psOpen = function(i) { const p = (window._psRows || [])[i]; if (p) openPlayerDetail(p.name); };
+// ═══════════ 🔔 NOTIFICATIONS: one door for every alert ═══════════
+// notify(toUid, n, opts) → respects the recipient's per-type switches (Profile → Notifications), a daily cap for the
+// chatty types, and sends a text only for the few kinds Mike chose: a waitlist spot opening, the 1-hour reminder
+// (worker cron), and admin messages. Everything else is in-app only.
+window.NOTIF_TYPES = [
+  ['roster',     '👥', 'Joins & leaves on my games'],
+  ['spot',       '🎉', 'Spot opened / you\'re in (also texts you)'],
+  ['reminders',  '⏰', 'Game reminders (1 hour before texts you)'],
+  ['results',    '🏆', 'Winners of games I played'],
+  ['highlights', '✨', 'My highlights'],
+  ['friends',    '🤝', 'Friends: new games & availability'],
+  ['rivals',     '⚔️', 'Rival alerts'],
+  ['leaderboard','📈', 'Leaderboard moves & weekly recap'],
+  ['photos',     '📸', 'Photos from my games'],
+  ['mentions',   '💬', 'Chat messages that mention me'],
+  ['admin',      '📣', 'Messages from the organizers']
+];
+const NOTIF_PREF = { roster: 'roster', spotOpen: 'spot', reminder: 'reminders', result: 'results', highlight: 'highlights', friendAvail: 'friends', friendGame: 'friends', rival: 'rivals', lbMove: 'leaderboard', recap: 'leaderboard', photos: 'photos', mention: 'mentions', admin: 'admin' };
+const NOTIF_CRITICAL = new Set(['spotOpen', 'reminder', 'admin', 'invite', 'sessUpdate']);
+const NOTIF_DAILY_CAP = 12;
+window._profCache = {};
+async function _profOf(uid) { if (window._profCache[uid] && Date.now() - window._profCache[uid].at < 120000) return window._profCache[uid].p; let p = {}; try { p = (await get(ref(db, 'users/' + uid + '/profile'))).val() || {}; } catch (e) {} window._profCache[uid] = { p, at: Date.now() }; return p; }
+window.notify = async function(toUid, n, opts) {
+  opts = opts || {};
+  if (!toUid || !currentUser || toUid === currentUser.uid || !n || !n.type) return false;
+  if (String(toUid).length < 20 || /^n_/.test(toUid)) return false;   // profiles without a login have no inbox
+  const prof = await _profOf(toUid);
+  const key = NOTIF_PREF[n.type];
+  if (key && prof.notif && prof.notif[key] === false) return false;
+  if (!NOTIF_CRITICAL.has(n.type)) {   // daily cap, best effort (the inbox may not be readable by us)
+    try { const box = (await get(ref(db, 'notifs/' + toUid))).val() || {}; const day0 = new Date(); day0.setHours(0, 0, 0, 0);
+      const today = Object.values(box).filter(x => x && x.at >= day0.getTime() && !NOTIF_CRITICAL.has(x.type)).length; if (today >= NOTIF_DAILY_CAP) return false;
+      if (n.dedupe && Object.values(box).some(x => x && x.dedupe === n.dedupe)) return false; } catch (e) {}
+  }
+  await window.pushNotif(toUid, n);
+  if (opts.sms && prof.smsService !== false) {
+    let phone = window.normPhone(prof.phone || ''); if (!phone) { try { phone = window.normPhone(((await loadChatDir())[toUid] || {}).phone || ''); } catch (e) {} }
+    if (phone) { try { await window.sendSms(phone, opts.sms, opts.smsKind || 'service'); } catch (e) {} }
+  }
+  return true;
+};
+window.notifyMany = async function(uids, n, opts) { let k = 0; for (const u of new Set((uids || []).filter(Boolean))) { try { if (await window.notify(u, n, opts)) k++; } catch (e) {} } return k; };
+const _sessLine = s => (s.title || 'Game') + ' · ' + sessWhen(s) + (s.location ? ' · ' + s.location : '');
+const _sessLink = sid => location.origin + location.pathname + '?s=' + sid;
+window.rosterUids = s => _arr(s.roster).map(r => r && r.uid).filter(Boolean);
+window.followersOf = async function(uid) { try { return Object.keys((await get(ref(db, 'followers/' + uid))).val() || {}); } catch (e) { return []; } };
+// Someone joined / left a game → organizer + everyone on it
+window.notifyRosterChange = async function(sid, s, who, action, extra) {
+  const spots = Math.max(0, (s.spots || 4) - _arr(s.roster).length);
+  const text = who + (action === 'join' ? ' joined' : action === 'wait' ? ' joined the waitlist for' : ' dropped out of') + ' ' + (s.title || 'your game') + (action === 'leave' ? (spots ? ' · ' + spots + ' spot' + (spots === 1 ? '' : 's') + ' open' : '') : (action === 'join' ? (spots ? ' · ' + spots + ' left' : ' · full!') : '')) + (extra ? ' ' + extra : '');
+  const targets = new Set([s.ownerUid].concat(window.rosterUids(s)).filter(Boolean));
+  if (currentUser) targets.delete(currentUser.uid);
+  await window.notifyMany([...targets], { type: 'roster', sid, text, dedupe: 'roster:' + sid + ':' + who + ':' + action + ':' + new Date().toISOString().slice(0, 13) });
+};
+// Promoted off the waitlist → in-app AND a text (this is the one everybody wants instantly)
+window.notifySpotOpen = async function(sid, s, person) {
+  if (!person || !person.uid) return;
+  await window.notify(person.uid, { type: 'spotOpen', sid, text: '🎉 You\'re in! ' + _sessLine(s) }, { sms: 'PB Tourney: a spot opened and you\'re IN 🎉 ' + _sessLine(s) + '. Details: ' + _sessLink(sid) + ' (can\'t make it? tap "I\'m out" there)', smsKind: 'service' });
+};
+// Rival alert: the new joiner has beaten you 3+ times
+window.notifyRivals = async function(sid, s, joinerName, joinerUid) {
+  try { if (!lbData) await loadLeaderboardData(); } catch (e) {} if (!lbData) return;
+  const jn = joinerName.toLowerCase();
+  for (const r of _arr(s.roster)) { if (!r || !r.uid || r.uid === joinerUid || r.uid === currentUser.uid) continue; const me = String(r.name || '').toLowerCase(); if (!me) continue;
+    let w = 0, l = 0; lbData.games.forEach(g => { const a = g.t1.map(x => x.toLowerCase()), b = g.t2.map(x => x.toLowerCase()); const meA = a.includes(me), meB = b.includes(me), jA = a.includes(jn), jB = b.includes(jn); if (!((meA && jB) || (meB && jA))) return; const meWon = meA ? g.s1 > g.s2 : g.s2 > g.s1; if (meWon) w++; else l++; });
+    if (l >= 3 && l > w) await window.notify(r.uid, { type: 'rival', sid, text: '⚔️ ' + joinerName + ' is in ' + (s.title || 'your game') + '. You\'re ' + w + '–' + l + ' against them.', dedupe: 'rival:' + sid + ':' + jn }); }
+};
+// Followers hear about a friend's new game and availability
+window.notifyFriendGame = async function(sid, s) {
+  const fl = await window.followersOf(currentUser.uid); if (!fl.length) return;
+  await window.notifyMany(fl, { type: 'friendGame', sid, text: chatName() + ' is running ' + _sessLine(s) + (s.level ? ' · ' + s.level : '') + ' · ' + Math.max(0, (s.spots || 4) - _arr(s.roster).length) + ' spots', dedupe: 'friendGame:' + sid });
+};
+window.notifyFriendAvail = async function(uid, name, avail) {
+  const sum = window.availSummary(avail); if (!sum) return;
+  const fl = await window.followersOf(uid); if (!fl.length) return;
+  await window.notifyMany(fl, { type: 'friendAvail', name, text: name + ' updated availability: ' + sum, dedupe: 'avail:' + uid + ':' + new Date().toISOString().slice(0, 10) });
+};
+// Tournament finished → winners to everyone who played, plus one highlight each
+window.notifyTournamentResults = async function(tid) {
+  if (!tid || !cfg || !cfg.schedule) return;
+  try { const t = (await get(ref(db, 'tournaments/' + tid + '/resultsNotifiedAt'))).val(); if (t) return; } catch (e) {}
+  const { list } = calcStandings(); if (!list || list.length < 2) return;
+  const scored = Object.values(scores || {}).filter(s => s && s.s1 != null).length; if (scored < 2) return;
+  try { await update(ref(db, 'tournaments/' + tid), { resultsNotifiedAt: Date.now() }); } catch (e) { return; }
+  const tname = cfg.name || 'the tournament';
+  const podium = list.slice(0, 3).map((r, i) => ['🥇', '🥈', '🥉'][i] + ' ' + r.name).join('  ');
+  lbData = null; try { await loadLeaderboardData(); } catch (e) {}
+  for (let i = 0; i < list.length; i++) {
+    const r = list[i]; const uid = await window.chatUidForName(r.name); if (!uid || uid === currentUser.uid) continue;
+    const place = i + 1, suffix = place === 1 ? 'st' : place === 2 ? 'nd' : place === 3 ? 'rd' : 'th';
+    await window.notify(uid, { type: 'result', tid, text: (place === 1 ? '🏆 You won ' : place <= 3 ? '🏅 You finished ' + place + suffix + ' in ' : 'Final: ' + place + suffix + ' of ' + list.length + ' in ') + tname + ' · ' + podium, dedupe: 'result:' + tid + ':' + uid });
+    const hl = window.highlightFor(r.name, tid); if (hl) await window.notify(uid, { type: 'highlight', tid, text: hl, dedupe: 'hl:' + tid + ':' + uid });
+  }
+};
+// The single best thing that happened to a player tonight (priority order)
+window.highlightFor = function(name, tid) {
+  if (!lbData || !lbData.games) return null;
+  const me = name.toLowerCase(); const mine = lbData.games.filter(g => [].concat(g.t1, g.t2).some(x => x.toLowerCase() === me));
+  const tonight = mine.filter(g => g.tid === tid); if (!tonight.length) return null;
+  const won = g => (g.t1.some(x => x.toLowerCase() === me) ? g.s1 > g.s2 : g.s2 > g.s1);
+  const opp = g => (g.t1.some(x => x.toLowerCase() === me) ? g.t2 : g.t1);
+  const w = tonight.filter(won).length;
+  if (w === tonight.length && tonight.length >= 3) return '🔥 Undefeated tonight: ' + w + '–0';
+  // first win over someone who had beaten you at least twice before
+  const before = mine.filter(g => g.tid !== tid && g.when < tonight[0].when);
+  for (const g of tonight) { if (!won(g)) continue; for (const o of opp(g)) { const ol = o.toLowerCase(); const prior = before.filter(x => opp(x).some(y => y.toLowerCase() === ol)); if (prior.length >= 2 && prior.every(x => !won(x))) return '🎯 First-ever win over ' + o + ' (you were 0–' + prior.length + ')'; } }
+  // streak across recent games
+  let streak = 0; for (let i = mine.length - 1; i >= 0; i--) { if (won(mine[i])) streak++; else break; }
+  if (streak >= 4) return '🔥 ' + streak + ' wins in a row';
+  const total = mine.length; if ([25, 50, 100, 150, 200, 300].some(m => total >= m && total - tonight.length < m)) return '🎖 ' + [25, 50, 100, 150, 200, 300].filter(m => total >= m && total - tonight.length < m).pop() + ' games played on PB Tourney';
+  const tight = tonight.find(g => Math.abs(g.s1 - g.s2) <= 1 && won(g)); if (tight) return '😅 Closest game of the night: won ' + Math.max(g1(tight), g2(tight)) + '–' + Math.min(g1(tight), g2(tight));
+  const big = tonight.filter(won).sort((a, b) => Math.abs(b.s1 - b.s2) - Math.abs(a.s1 - a.s2))[0]; if (big && Math.abs(big.s1 - big.s2) >= 8) return '💪 Biggest win of the night: ' + Math.max(big.s1, big.s2) + '–' + Math.min(big.s1, big.s2);
+  return null;
+  function g1(g) { return g.s1; } function g2(g) { return g.s2; }
+};
+// Monday recap + leaderboard moves: the first admin device online each week sends them (one write locks the week)
+window.weeklyDigest = async function(force) {
+  if (!isAdmin()) return;
+  const d = new Date(); const dow = (d.getDay() + 6) % 7; const mon = new Date(d); mon.setDate(d.getDate() - dow); mon.setHours(0, 0, 0, 0);
+  const key = mon.toISOString().slice(0, 10);
+  if (!force) { try { if ((await get(ref(db, 'config/weeklyDigest/' + key))).val()) return; } catch (e) { return; } }
+  try { await set(ref(db, 'config/weeklyDigest/' + key), { at: Date.now(), by: currentUser.uid }); } catch (e) { return; }
+  lbData = null; try { await loadLeaderboardData(); } catch (e) {} if (!lbData) return;
+  const cut = mon.getTime(), prevCut = cut - 7 * 86400000;
+  const now = computePbtRatings(lbData.games, lbData.duprByName || {}), prev = computePbtRatings(lbData.games.filter(g => g.when < cut), lbData.duprByName || {});
+  const rank = m => Object.values(m).filter(r => r.games >= 10).sort((a, b) => b.rating - a.rating).map((r, i) => [r.name.toLowerCase(), i + 1]).reduce((o, [k, v]) => (o[k] = v, o), {});
+  const rNow = rank(now), rPrev = rank(prev);
+  const dir = await loadChatDir(); let sent = 0;
+  for (const [uid, dd] of Object.entries(dir)) { if (!dd || dd.unclaimed || !dd.name || uid.length < 20) continue; const k = dd.name.toLowerCase();
+    const wk = lbData.games.filter(g => g.when >= cut - 7 * 86400000 && g.when < cut && [].concat(g.t1, g.t2).some(x => x.toLowerCase() === k)); if (!wk.length) continue;
+    const w = wk.filter(g => (g.t1.some(x => x.toLowerCase() === k) ? g.s1 > g.s2 : g.s2 > g.s1)).length;
+    const dpr = now[k] ? now[k].rating : null, dprPrev = prev[k] ? prev[k].rating : null;
+    const parts = ['Last week: ' + w + '–' + (wk.length - w) + ' in ' + wk.length + ' game' + (wk.length === 1 ? '' : 's')];
+    if (dpr != null && dprPrev != null && Math.abs(dpr - dprPrev) >= 0.005) parts.push('DPR ' + (dpr > dprPrev ? '↑' : '↓') + ' ' + dprPrev.toFixed(2) + ' → ' + dpr.toFixed(2));
+    if (rNow[k] && rPrev[k] && rNow[k] !== rPrev[k]) parts.push(rNow[k] < rPrev[k] ? '📈 up to #' + rNow[k] + ' on the leaderboard' : '📉 #' + rPrev[k] + ' → #' + rNow[k]); else if (rNow[k]) parts.push('#' + rNow[k] + ' on the leaderboard');
+    if (await window.notify(uid, { type: 'recap', text: parts.join(' · '), dedupe: 'recap:' + key + ':' + uid })) sent++; }
+  return sent;
+};
+// Admin broadcast: in-app to an audience, optionally as a text (service kind — only for things that matter)
+window.adBroadcast = async function() {
+  if (!isAdmin()) return;
+  const text = (document.getElementById('abText').value || '').trim(); const aud = document.getElementById('abAud').value; const asText = document.getElementById('abSms').checked;
+  if (!text) { alert('Write the message first.'); return; }
+  const dir = await loadChatDir(); let uids = [];
+  if (aud === 'all') uids = Object.entries(dir).filter(([u, d]) => d && !d.unclaimed && u.length > 20).map(([u]) => u);
+  else if (/^g\d\d$/.test(aud)) { const g = CHAT_GROUPS.find(x => x.id === aud); const rm = window.pbtRatingsFor('doubles'); uids = Object.entries(dir).filter(([u, d]) => { if (!d || d.unclaimed || u.length < 20 || !d.name) return false; const r = rm[d.name.toLowerCase()]; const lv = r ? r.rating : (parseFloat(d.dupr) || 0); return lv >= g.min - 1e-9; }).map(([u]) => u); }
+  else { const s = (await get(ref(db, 'sessions/' + aud))).val(); if (s) uids = window.rosterUids(s).concat(_arr(s.waitlist).map(r => r.uid)); }
+  uids = [...new Set(uids.filter(u => u && u !== currentUser.uid))];
+  if (!confirm('Send to ' + uids.length + ' member' + (uids.length === 1 ? '' : 's') + (asText ? ' as a TEXT + in-app' : ' in-app') + '?\n\n' + text)) return;
+  let k = 0, t = 0;
+  for (const u of uids) { try { const ok = await window.notify(u, { type: 'admin', text }, asText ? { sms: 'PB Tourney: ' + text, smsKind: 'admin' } : {}); if (ok) k++; } catch (e) {} }
+  document.getElementById('abText').value = '';
+  copiedToast('📣 Sent to ' + k + (asText ? ' (texts where allowed)' : ''));
+};
+window.adBroadcastFill = async function() {
+  try { const sel = document.getElementById('abAud'); if (!sel) return; const up = await _upcoming(); const keep = sel.value;
+    sel.innerHTML = '<option value="all">Everyone on the app</option><option value="g50">5.0+ players</option><option value="g45">4.5+ players</option><option value="g40">4.0+ players</option><option value="g35">3.5+ players</option>' + up.slice(0, 12).map(s => '<option value="' + s.sid + '">Roster: ' + escInfo(s.title) + ' · ' + escInfo(s.date) + '</option>').join(''); if (keep) sel.value = keep; } catch (e) {}
+};
+// Profile → Notifications switches
+window.renderNotifPrefs = function() {
+  const host = document.getElementById('notifPrefs'); if (!host) return; const np = (userProfile && userProfile.notif) || {};
+  host.innerHTML = window.NOTIF_TYPES.map(([k, ic, lbl]) => '<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;"><span style="font-size:13px;font-weight:700;color:var(--white);">' + ic + ' ' + lbl + '</span><input type="checkbox" ' + (np[k] === false ? '' : 'checked') + ' onchange="setNotifPref(\'' + k + '\', this.checked)" style="width:20px;height:20px;accent-color:var(--cyan);flex-shrink:0;"></label>').join('');
+};
+window.setNotifPref = async function(k, on) {
+  const np = Object.assign({}, (userProfile && userProfile.notif) || {}); if (on) delete np[k]; else np[k] = false;
+  userProfile = Object.assign({}, userProfile, { notif: np });
+  try { await set(ref(db, 'users/' + currentUser.uid + '/profile/notif'), Object.keys(np).length ? np : null); } catch (e) {}
+  copiedToast(on ? '🔔 On' : '🔕 Off');
+};
+// Mentions in group chat → the people named
+window.notifyMentions = async function(gid, gname, text) {
+  if (!text) return; const dir = await loadChatDir(); const low = ' ' + text.toLowerCase().replace(/[^a-z0-9@\s]/g, ' ') + ' ';
+  const hits = [];
+  for (const [u, d] of Object.entries(dir)) { if (!d || d.unclaimed || !d.name || u === currentUser.uid || u.length < 20) continue; const full = d.name.toLowerCase().trim(); const first = full.split(/\s+/)[0];
+    if (low.includes(' ' + full + ' ') || low.includes(' @' + full + ' ') || low.includes(' @' + first + ' ') || (first.length >= 4 && low.includes(' ' + first + ' '))) hits.push(u); }
+  await window.notifyMany(hits.slice(0, 10), { type: 'mention', gid, text: chatName() + ' in ' + gname + ': ' + text.slice(0, 120) });
+};
 window.hideAllPages = function() {
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
    'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
@@ -4966,6 +5157,7 @@ window.openGroupChat = async function(gid) {
     await set(ref(db, 'chats/' + gid + '/msgs/' + mid), msg);
     const preview = (att ? '🎟 ' + att.title + (text ? ' · ' : '') : '') + (text || '');
     await update(ref(db, 'chats/' + gid + '/meta'), { lastAt: msg.at, lastText: preview.slice(0, 80), lastName: msg.name, lastUid: msg.uid });
+    try { const gg = CHAT_GROUPS.find(x => x.id === gid); window.notifyMentions(gid, gg ? gg.name : 'chat', text).catch(() => {}); } catch (e) {}
     return true;
   };
   window._ctDelete = async (mid) => { await set(ref(db, 'chats/' + gid + '/msgs/' + mid), null); };
@@ -5229,6 +5421,13 @@ function renderNotifs() {
     if (n.type === 'follow') items.push({ at: n.at, unread: !n.read, icon: '➕', title: escInfo(n.fromName || 'Someone'), text: 'started following you', go: "openPlayerDetail('" + escInfo(n.fromName || '').replace(/'/g, "\\'") + "')" });
     else if (n.type === 'invite') items.push({ at: n.at, unread: !n.read, icon: '🎟', title: escInfo(n.fromName || 'Someone') + ' invited you', text: escInfo(n.text || 'to play'), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
     else if (n.type === 'sessUpdate') items.push({ at: n.at, unread: !n.read, icon: '📝', title: escInfo(n.fromName || 'Organizer') + ' changed a game', text: escInfo(n.text || ''), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
+    else if (['roster', 'spotOpen', 'reminder', 'friendGame', 'rival'].includes(n.type)) items.push({ at: n.at, unread: !n.read, icon: { roster: '👥', spotOpen: '🎉', reminder: '⏰', friendGame: '🤝', rival: '⚔️' }[n.type], title: { roster: 'Roster update', spotOpen: 'You\'re in!', reminder: 'Game reminder', friendGame: escInfo(n.fromName || 'A friend') + ' posted a game', rival: 'Rival alert' }[n.type], text: escInfo(n.text || ''), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
+    else if (n.type === 'result' || n.type === 'highlight') items.push({ at: n.at, unread: !n.read, icon: n.type === 'result' ? '🏆' : '✨', title: n.type === 'result' ? 'Final standings' : 'Your highlight', text: escInfo(n.text || ''), go: "openPlayerDetail('" + escInfo(userProfile && userProfile.name || '').replace(/'/g, "\\'") + "')" });
+    else if (n.type === 'friendAvail') items.push({ at: n.at, unread: !n.read, icon: '📅', title: escInfo(n.name || n.fromName || 'A friend'), text: escInfo(n.text || ''), go: "openPlayerDetail('" + escInfo(n.name || n.fromName || '').replace(/'/g, "\\'") + "')" });
+    else if (n.type === 'recap' || n.type === 'lbMove') items.push({ at: n.at, unread: !n.read, icon: '📈', title: n.type === 'recap' ? 'Your week' : 'Leaderboard', text: escInfo(n.text || ''), go: "openLeaderboard()" });
+    else if (n.type === 'photos') items.push({ at: n.at, unread: !n.read, icon: '📸', title: escInfo(n.fromName || 'Someone') + ' added photos', text: escInfo(n.text || ''), go: "openHistory()" });
+    else if (n.type === 'mention') items.push({ at: n.at, unread: !n.read, icon: '💬', title: 'You were mentioned', text: escInfo(n.text || ''), go: n.gid ? "openGroupChat('" + n.gid + "')" : "openChat()" });
+    else if (n.type === 'admin') items.push({ at: n.at, unread: !n.read, icon: '📣', title: 'From ' + escInfo(n.fromName || 'PB Tourney'), text: escInfo(n.text || ''), go: n.sid ? "openSessionDetail('" + n.sid + "')" : "openSessions()" });
     else items.push({ at: n.at, unread: !n.read, icon: n.go === 'profile' ? '🛠' : n.go === 'admin' ? '📇' : '🔔', title: escInfo(n.fromName || ''), text: escInfo(n.text || ''), go: n.go === 'profile' ? "openProfile()" : n.go === 'admin' ? "openAdminDash()" : "openChat()" }); });
   items.sort((a, b) => (b.at || 0) - (a.at || 0));
   if (!items.length) { el.innerHTML = '<div style="text-align:center;padding:40px 16px;color:var(--muted);font-weight:600;line-height:1.6;">Nothing yet.<br>Messages, group chat, new followers and game invites show up here.</div>'; return; }
@@ -5415,7 +5614,7 @@ window.aiUpdateSession = async function(a) {
   if (!changed.length) return { result: { changed: [], note: 'nothing was different from what is already saved', session: _sessSummary(sid, s) }, label: 'No changes needed' };
   await update(ref(db, 'sessions/' + sid), upd);
   const ns = Object.assign({}, s, upd);
-  promoted.forEach(p => { try { sendWaitlistPromotionEmail(p, ns, sid, false); } catch (e) {} window.pushNotif(p.uid, { type: 'sessUpdate', sid, text: '🎉 You\'re in: ' + (ns.title || 'the game') + ' · ' + sessWhen(ns) }); });
+  promoted.forEach(p => { try { sendWaitlistPromotionEmail(p, ns, sid, false); } catch (e) {} window.notifySpotOpen(sid, ns, p).catch(() => {}); });
   bumped.forEach(p => window.pushNotif(p.uid, { type: 'sessUpdate', sid, text: (ns.title || 'The game') + ' now has ' + ns.spots + ' spots — you\'re #1 on the waitlist' }));
   const big = changed.some(c => ['date', 'start time', 'end time', 'location'].includes(c));
   const notify = a.notifyPlayers != null ? !!a.notifyPlayers : big;
@@ -5442,7 +5641,8 @@ window.aiRosterChange = async function(a) {
     roster = roster.filter(r => !match(r)); wait = wait.filter(r => !match(r));
     const promoted = []; while (roster.length < (s.spots || 4) && wait.length) { const p = wait.shift(); roster.push(p); promoted.push(p); }
     await set(ref(db, 'sessions/' + sid + '/roster'), roster); await set(ref(db, 'sessions/' + sid + '/waitlist'), wait.length ? wait : null);
-    promoted.forEach(p => { try { sendWaitlistPromotionEmail(p, s, sid, false); } catch (e) {} window.pushNotif(p.uid, { type: 'sessUpdate', sid, text: '🎉 You\'re in: ' + (s.title || 'the game') + ' · ' + sessWhen(s) }); });
+    promoted.forEach(p => { try { sendWaitlistPromotionEmail(p, s, sid, false); } catch (e) {} window.notifySpotOpen(sid, Object.assign({}, s, { roster }), p).catch(() => {}); });
+    window.notifyRosterChange(sid, Object.assign({}, s, { roster }), nm, 'leave').catch(() => {});
     if (a.notifyPlayer && (inR || inW).uid) await window.pushNotif((inR || inW).uid, { type: 'sessUpdate', sid, text: 'You were taken off ' + (s.title || 'a game') + ' · ' + sessWhen(s) + (a.message ? ' — ' + a.message : '') });
     const open = Math.max(0, (s.spots || 4) - roster.length);
     if (!promoted.length && inR) { try { notifyRosterOfDrop(sid, s, inR.name, roster, open); } catch (e) {} }
@@ -5458,6 +5658,7 @@ window.aiRosterChange = async function(a) {
     if (full) wait.push(entry); else roster.push(entry);
     await set(ref(db, 'sessions/' + sid + '/roster'), roster); await set(ref(db, 'sessions/' + sid + '/waitlist'), wait.length ? wait : null);
     if (a.notifyPlayer !== false) await window.pushNotif(uid, { type: 'sessUpdate', sid, text: (full ? 'Added to the waitlist for ' : 'You\'re in: ') + (s.title || 'a game') + ' · ' + sessWhen(s) });
+    window.notifyRosterChange(sid, Object.assign({}, s, { roster }), entry.name, full ? 'wait' : 'join').catch(() => {});
     return { result: { added: entry.name, to: full ? 'waitlist' : 'roster', openSpots: Math.max(0, (s.spots || 4) - roster.length) }, label: '➕ Added ' + entry.name + (full ? ' to the waitlist' : '') };
   }
   throw new Error('action must be add or remove');
@@ -5525,6 +5726,7 @@ window.aiRunTool = async function(name, a) {
     let title = (a.title || '').trim(); if (!title) { const wd = new Date(a.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'long' }); const hh = parseInt(a.startTime); title = wd + ' ' + (hh < 12 ? 'Morning' : hh < 17 ? 'Afternoon' : 'Evening') + ' Pickleball'; }
     const s = { title, location: a.location, date: a.date, startTime: a.startTime, endTime: end, spots: Math.max(2, Math.min(24, parseInt(a.spots) || 8)), level: a.level || null, note: a.note || null, visibility: a.visibility === 'private' ? 'private' : 'public', recurring: null, info: null, ownerUid: me, ownerName: chatName(), createdAt: Date.now(), roster: [{ name: chatName(), uid: me, comment: '', at: Date.now() }] };
     await set(ref(db, 'sessions/' + sid), s);
+    window.notifyFriendGame(sid, s).catch(() => {});
     return { result: _sessSummary(sid, s), label: '✓ Created session', html: sessCardHtml(await _attachFor(sid)) };
   }
   if (name === 'invite_to_session') {
@@ -6285,6 +6487,7 @@ window.createSession = async function() {
       roster: [me]
     }, window.scPriceFields()));
     document.getElementById('sessionCreate').classList.add('hidden');
+    try { window.notifyFriendGame(sid, (await get(ref(db, 'sessions/' + sid))).val() || {}).catch(() => {}); } catch (e) {}
     if (window._dupPrefill) {
       // This session was created by Run It Back — the old lineup + settings now belong to it
       window._dupCarry = Object.assign({ forSid: sid }, window._dupPrefill);
@@ -7148,8 +7351,12 @@ window.claimSpot = async function(sid) {
   const entry = { name: nm, uid: currentUser.uid, comment, at: Date.now() };
   if (paidFlag) entry.paid = true;
   try {
-    if (roster.length < (s.spots||4)) await set(ref(db, 'sessions/'+sid+'/roster'), [...roster, entry]);
+    const seated = roster.length < (s.spots||4);
+    if (seated) await set(ref(db, 'sessions/'+sid+'/roster'), [...roster, entry]);
     else await set(ref(db, 'sessions/'+sid+'/waitlist'), [...wait, entry]);
+    const s2 = Object.assign({}, s, { roster: seated ? [...roster, entry] : roster });
+    window.notifyRosterChange(sid, s2, nm, seated ? 'join' : 'wait').catch(() => {});
+    if (seated) window.notifyRivals(sid, s2, nm, currentUser.uid).catch(() => {});
   } catch(e) { alert('Could not claim: ' + (e.message||e)); }
 };
 
@@ -7170,6 +7377,8 @@ window.removeRosterEntry = async function(sid, uid, name) {
     await set(ref(db, 'sessions/'+sid+'/roster'), roster);
     await set(ref(db, 'sessions/'+sid+'/waitlist'), wait.length ? wait : null);
     promoted.forEach(p => sendWaitlistPromotionEmail(p, s, sid, false));
+    promoted.forEach(p => window.notifySpotOpen(sid, Object.assign({}, s, { roster }), p).catch(() => {}));
+    window.notifyRosterChange(sid, Object.assign({}, s, { roster }), name || 'A player', 'leave').catch(() => {});
     if (promoted.length && s.ownerEmail) sendWaitlistPromotionEmail({ name: s.ownerName || 'Organizer', email: s.ownerEmail }, s, sid, true, promoted);
     const openSpots2 = Math.max(0, (s.spots||4) - roster.length);
     if (!promoted.length) notifyRosterOfDrop(sid, s, name, roster, openSpots2);
@@ -7197,12 +7406,14 @@ window.releaseSpot = async function(sid) {
   const promoted = [];
   if (!paidSess) { while (roster.length < (s.spots||4) && wait.length) { const p = wait.shift(); roster.push(p); promoted.push(p); } }
   else if (wait.length && roster.length < (s.spots||4)) { // paid game: nobody is seated unpaid — the next in line gets first dibs with a pay link
-    try { const w0 = wait[0]; if (w0 && w0.uid) await window.pushNotif(w0.uid, { type: 'invite', sid, text: 'A spot opened in ' + (s.title || 'the game') + ' — tap Reserve (' + window.fmtMoney(window.sessPrice(s)) + ') to claim it before someone else does' }); } catch (e) {} }
+    try { const w0 = wait[0]; if (w0 && w0.uid) await window.notify(w0.uid, { type: 'spotOpen', sid, text: 'A spot opened in ' + (s.title || 'the game') + ' — tap Reserve (' + window.fmtMoney(window.sessPrice(s)) + ') to claim it before someone else does' }); } catch (e) {} }
   try {
     await set(ref(db, 'sessions/'+sid+'/roster'), roster);
     await set(ref(db, 'sessions/'+sid+'/waitlist'), wait.length ? wait : null);
     // Auto-notify: promoted players + the organizer get an email
     promoted.forEach(p => sendWaitlistPromotionEmail(p, s, sid, false));
+    promoted.forEach(p => window.notifySpotOpen(sid, Object.assign({}, s, { roster }), p).catch(() => {}));
+    window.notifyRosterChange(sid, Object.assign({}, s, { roster }), (mine && mine.name) || chatName(), 'leave').catch(() => {});
     if (promoted.length && s.ownerEmail) sendWaitlistPromotionEmail({ name: s.ownerName || 'Organizer', email: s.ownerEmail }, s, sid, true, promoted);
     // Nobody to promote → alert the roster that a spot is open
     const openSpots = Math.max(0, (s.spots||4) - roster.length);
@@ -7459,6 +7670,8 @@ window.openAdminDash = async function() {
   document.getElementById('adminDash').classList.remove('hidden');
   try { window.adAvailNamesFill(); } catch (e) {}
   try { window.renderSmsCard(); } catch (e) {}
+  try { window.adBroadcastFill(); } catch (e) {}
+  try { window.weeklyDigest().catch(() => {}); } catch (e) {}
   document.getElementById('adStats').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-weight:600;padding:20px;">Loading...</div>';
   const safeGet = async (p) => { try { return (await get(ref(db, p))).val() || {}; } catch(e) { return {}; } };
   const [dir, tours, fb, courtSubs] = await Promise.all([safeGet('directory'), safeGet('tournaments'), safeGet('feedback'), safeGet('courtSubmissions')]);
@@ -7837,7 +8050,7 @@ window.adSaveAvail = async function(uid, avail, hasLogin) {
   if (!isAdmin() || !uid) return;
   const a = avail ? { ...avail, by: 'admin', updatedAt: Date.now() } : null;
   try { await set(ref(db, 'directory/' + uid + '/avail'), a); } catch (e) {}
-  if (hasLogin && !/^n_/.test(uid)) { try { await set(ref(db, 'users/' + uid + '/profile/avail'), a); } catch (e) {} }
+  if (hasLogin && !/^n_/.test(uid)) { try { await set(ref(db, 'users/' + uid + '/profile/avail'), a); } catch (e) {} try { const nm = ((await loadChatDir())[uid] || {}).name; if (a && nm) window.notifyFriendAvail(uid, nm, a).catch(() => {}); } catch (e) {} }
   chatDirCache = null;
 };
 // Admin quick-log: find the member by phone, then by name; otherwise create an unclaimed card they'll inherit on sign-up.
@@ -9560,6 +9773,7 @@ window.openProfile = function() {
   const al = document.getElementById('avatarLbl'); if (al) al.textContent = userProfile.avatar ? 'Change photo' : 'Add a photo of your face';
   const ar = document.getElementById('avatarRemove'); if (ar) ar.style.display = userProfile.avatar ? 'inline' : 'none';
   window.availEditorRender('myAvailEditor', 'my', userProfile.avail || null);
+  window.renderNotifPrefs();
   // away
   const awayActive = !!(userProfile.awayUntil && userProfile.awayUntil >= new Date().toISOString().slice(0,10));
   document.getElementById('awayOn').checked = awayActive;
@@ -9699,7 +9913,7 @@ window.saveProfileEdits = async function(silent) {
     awayUntil: awayOn ? (document.getElementById('awayUntil').value || null) : null,
     awayShare: awayOn ? !!document.getElementById('awayShare')?.checked : null,
     awayKind: awayOn ? (window._awayKind || 'travel') : null };
-  { const _av = window.availEditorRead('my', 'self'); if (_av !== undefined) userProfile.avail = _av; }
+  { const _av = window.availEditorRead('my', 'self'); if (_av !== undefined) { const changed = JSON.stringify(window.availClean(_av)) !== JSON.stringify(window.availClean(userProfile.avail)); userProfile.avail = _av; if (changed && _av) { clearTimeout(window._availNotifT); window._availNotifT = setTimeout(() => window.notifyFriendAvail(currentUser.uid, userProfile.name, _av).catch(() => {}), 4000); } } }
   await set(ref(db, 'users/' + currentUser.uid + '/profile'), userProfile);
   saveDirectoryEntry();
   if (_renamed) window.applyMyRename(_old, name);
@@ -10467,6 +10681,8 @@ function adOpenPlayer(u)     { if(window.adOpenPlayer && window.adOpenPlayer !==
 function npSubmit()          { if(window.npSubmit && window.npSubmit !== npSubmit) { window.npSubmit(); return; } __pbtWait(npSubmit, arguments); }
 function npCancel()          { if(window.npCancel && window.npCancel !== npCancel) { window.npCancel(); return; } __pbtWait(npCancel, arguments); }
 function adTestSms()         { if(window.adTestSms && window.adTestSms !== adTestSms) { window.adTestSms(); return; } __pbtWait(adTestSms, arguments); }
+function setNotifPref(k,v)   { if(window.setNotifPref && window.setNotifPref !== setNotifPref) { window.setNotifPref(k,v); return; } __pbtWait(setNotifPref, arguments); }
+function adBroadcast()       { if(window.adBroadcast && window.adBroadcast !== adBroadcast) { window.adBroadcast(); return; } __pbtWait(adBroadcast, arguments); }
 function adLogAvail()        { if(window.adLogAvail && window.adLogAvail !== adLogAvail) { window.adLogAvail(); return; } __pbtWait(adLogAvail, arguments); }
 function pickSms(w,on)       { if(window.pickSms && window.pickSms !== pickSms) { window.pickSms(w,on); return; } __pbtWait(pickSms, arguments); }
 function availAddRow(p)      { if(window.availAddRow && window.availAddRow !== availAddRow) { window.availAddRow(p); return; } __pbtWait(availAddRow, arguments); }
@@ -10504,7 +10720,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-01.5';
+window.BUILD_TAG = 'v2026-11-02.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
