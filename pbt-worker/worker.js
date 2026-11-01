@@ -215,6 +215,87 @@ async function handlePay(request, env, H, url) {
   return new Response(JSON.stringify({ error: 'Unknown route' }), { status: 404, headers: H });
 }
 
+// ═══════════════════════════════ TEXTING (Twilio) ═══════════════════════════════
+// Secrets on the worker: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM (your Twilio number, E.164, e.g. +13055550100
+// — or a Messaging Service SID starting with "MG"). Nothing is sent until all three exist.
+// Routes:
+//   POST /sms/send    {to, body, kind}  kind = 'claim' (an organizer inviting a player they just added — anyone signed in),
+//                                        'service' (game texts) or 'marketing' (new games) — admin only; honours smsService / smsMarketing.
+//   POST /sms/inbound  Twilio webhook. STOP/UNSUBSCRIBE/CANCEL/END/QUIT → both text switches off for that number; START/YES → game texts back on.
+//   GET  /sms/status   → { configured }
+const smsConfigured = env => !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM);
+const normPhone = p => { let d = String(p || '').replace(/[^\d+]/g, ''); if (!d) return ''; if (d.startsWith('+')) return d; if (d.length === 10) return '+1' + d; if (d.length === 11 && d.startsWith('1')) return '+' + d; return '+' + d; };
+async function twilioSend(env, to, body) {
+  const params = new URLSearchParams({ To: to, Body: body });
+  if (/^MG/.test(env.TWILIO_FROM)) params.set('MessagingServiceSid', env.TWILIO_FROM); else params.set('From', env.TWILIO_FROM);
+  const r = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + env.TWILIO_ACCOUNT_SID + '/Messages.json', {
+    method: 'POST', headers: { 'Authorization': 'Basic ' + btoa(env.TWILIO_ACCOUNT_SID + ':' + env.TWILIO_AUTH_TOKEN), 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((j && j.message) || ('Twilio error ' + r.status));
+  return { sid: j.sid, status: j.status };
+}
+// Twilio signs every webhook: HMAC-SHA1 of the URL + sorted POST params with the auth token.
+async function twilioValid(env, request, params) {
+  const sig = request.headers.get('X-Twilio-Signature') || ''; if (!sig) return false;
+  const url = new URL(request.url); const full = 'https://' + url.host + url.pathname + url.search;
+  const data = full + [...params.keys()].sort().map(k => k + params.get(k)).join('');
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.TWILIO_AUTH_TOKEN), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  return btoa(String.fromCharCode(...new Uint8Array(mac))) === sig;
+}
+async function findUidByPhone(env, phone) {
+  if (!env.FIREBASE_SERVICE_ACCOUNT) return null;
+  const dir = await fbGet(env, 'directory') || {};
+  let best = null;
+  for (const [uid, d] of Object.entries(dir)) { if (d && normPhone(d.phone) === phone) { if (!d.unclaimed) return { uid, d }; best = best || { uid, d }; } }
+  return best;
+}
+async function handleSms(request, env, H, url) {
+  const route = url.pathname.replace(/\/+$/, '');
+  if (route === '/sms/status') return new Response(JSON.stringify({ configured: smsConfigured(env), optOutSync: !!env.FIREBASE_SERVICE_ACCOUNT }), { headers: H });
+  if (route === '/sms/inbound') {
+    // Twilio posts form data; answer with empty TwiML (Twilio's own Advanced Opt-Out already replies to STOP)
+    const twiml = new Response('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', { headers: { 'Content-Type': 'text/xml' } });
+    if (!smsConfigured(env)) return twiml;
+    const params = new URLSearchParams(await request.text());
+    if (!(await twilioValid(env, request, params))) return new Response('bad signature', { status: 403 });
+    const from = normPhone(params.get('From')), body = String(params.get('Body') || '').trim().toUpperCase();
+    const stop = /^(STOP|STOPALL|UNSUBSCRIBE|CANCEL|END|QUIT)\b/.test(body), start = /^(START|YES|UNSTOP)\b/.test(body);
+    if ((stop || start) && from && env.FIREBASE_SERVICE_ACCOUNT) {
+      try { const hit = await findUidByPhone(env, from); const now = Date.now();
+        if (hit && !hit.d.unclaimed) await fbPatch(env, 'users/' + hit.uid + '/profile', stop ? { smsService: false, smsMarketing: false, smsServiceOptOutAt: now, smsMarketingOptOutAt: now, smsStopVia: 'sms' } : { smsService: true, smsServiceAt: now, smsStopVia: null });
+        await fbPatch(env, 'smsOptOut/' + from.replace(/\D/g, ''), stop ? { at: now, body } : null);
+      } catch (e) {}
+    }
+    return twiml;
+  }
+  if (route === '/sms/send' && request.method === 'POST') {
+    if (!smsConfigured(env)) return new Response(JSON.stringify({ error: 'not_configured', message: 'Texting is not set up yet (Twilio secrets missing on the worker).' }), { status: 503, headers: H });
+    const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+    const user = auth ? await verifyUser(auth) : null;
+    if (!user) return new Response(JSON.stringify({ error: 'Sign in first.' }), { status: 401, headers: H });
+    const b = await request.json().catch(() => ({}));
+    const to = normPhone(b.to), kind = String(b.kind || 'service'), body = String(b.body || '').trim().slice(0, 600);
+    if (!/^\+\d{10,15}$/.test(to) || !body) return new Response(JSON.stringify({ error: 'to (E.164) and body required' }), { status: 400, headers: H });
+    const isAdmin = user.uid === ADMIN_UID;
+    if (kind !== 'claim' && !isAdmin) return new Response(JSON.stringify({ error: 'Only the admin can send ' + kind + ' texts.' }), { status: 403, headers: H });
+    // consent: anyone who replied STOP is never texted; marketing needs an explicit yes; game texts unless switched off
+    if (env.FIREBASE_SERVICE_ACCOUNT) {
+      try {
+        const stopped = await fbGet(env, 'smsOptOut/' + to.replace(/\D/g, ''));
+        if (stopped) return new Response(JSON.stringify({ error: 'opted_out', message: 'This number replied STOP.' }), { status: 409, headers: H });
+        if (kind !== 'claim') { const hit = await findUidByPhone(env, to); const prof = hit && !hit.d.unclaimed ? (await fbGet(env, 'users/' + hit.uid + '/profile')) || {} : {};
+          if (kind === 'marketing' && prof.smsMarketing !== true) return new Response(JSON.stringify({ error: 'no_consent', message: 'No marketing opt-in on file for this number.' }), { status: 409, headers: H });
+          if (kind === 'service' && prof.smsService === false) return new Response(JSON.stringify({ error: 'no_consent', message: 'Game texts are switched off for this member.' }), { status: 409, headers: H }); }
+      } catch (e) { if (e && /opted_out|no_consent/.test(String(e))) throw e; }
+    }
+    const footer = kind === 'marketing' ? ' Reply STOP to opt out.' : '';
+    const res = await twilioSend(env, to, body + footer);
+    if (env.FIREBASE_SERVICE_ACCOUNT) { try { await fbPatch(env, 'smsLog/' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), { to, kind, by: user.uid, at: Date.now(), sid: res.sid, chars: body.length }); } catch (e) {} }
+    return new Response(JSON.stringify({ ok: true, sid: res.sid, status: res.status }), { headers: H });
+  }
+  return new Response(JSON.stringify({ error: 'unknown sms route' }), { status: 404, headers: H });
+}
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
@@ -231,8 +312,9 @@ export default {
         return new Response(txt, { headers: { 'Content-Type': 'text/vcard; charset=utf-8', 'Content-Disposition': 'inline; filename="' + name + '"', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
       } catch (e) { return new Response('bad card', { status: 400 }); }
     }
+    if (url.pathname.startsWith('/sms/')) { try { return await handleSms(request, env, H, url); } catch (e) { return new Response(JSON.stringify({ error: String(e && e.message || e) }), { status: 500, headers: H }); } }
     if (url.pathname.startsWith('/pay/')) { try { return await handlePay(request, env, H, url); } catch (e) { return new Response(JSON.stringify({ error: String(e && e.message || e) }), { status: 500, headers: H }); } }
-    if (request.method !== 'POST') return new Response(JSON.stringify({ ok: true, service: 'pbt-assistant', payments: !!(env.STRIPE_SECRET_KEY && env.FIREBASE_SERVICE_ACCOUNT) }), { headers: H });
+    if (request.method !== 'POST') return new Response(JSON.stringify({ ok: true, service: 'pbt-assistant', payments: !!(env.STRIPE_SECRET_KEY && env.FIREBASE_SERVICE_ACCOUNT), sms: smsConfigured(env) }), { headers: H });
     try {
       const auth = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
       if (!auth) return new Response(JSON.stringify({ error: 'Sign in first.' }), { status: 401, headers: H });
