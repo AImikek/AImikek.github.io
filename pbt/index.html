@@ -1556,6 +1556,20 @@
   </div>
 </div>
 
+<!-- ADMIN DRILL-DOWN: the list behind any number on the dashboard -->
+<div id="adDrill" class="hidden" style="position:fixed;inset:0;z-index:590;background:var(--bg);overflow-y:auto;padding:calc(64px + env(safe-area-inset-top)) 16px 100px;-webkit-overflow-scrolling:touch;">
+  <div style="max-width:600px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div id="adDrillTitle" style="font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:2px;color:var(--white);text-transform:uppercase;"></div>
+    </div>
+    <div id="adDrillSub" style="font-size:12px;color:var(--muted);font-weight:600;margin:-4px 0 10px;"></div>
+    <input class="finput" id="adDrillQ" type="search" autocomplete="off" placeholder="Filter…" oninput="adDrillPaint()" style="margin-bottom:10px;font-size:15px;">
+    <div id="adDrillSort" class="rank-toggle" style="margin-bottom:10px;"></div>
+    <div id="adDrillList"></div>
+  </div>
+</div>
+
 <div id="qrOverlay" class="hidden" style="position:fixed;inset:0;z-index:800;background:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
   <div style="font-family:'Russo One',sans-serif;font-size:16px;letter-spacing:2px;color:#000;text-transform:uppercase;margin-bottom:6px;">🏓 Scan to Join</div>
   <div id="qrTName" style="font-size:14px;color:#333;font-weight:700;margin-bottom:18px;text-align:center;"></div>
@@ -4250,6 +4264,7 @@ window._currentScreen = function() {
   if (vis('sessionDetail')) return { id:'sessionDetail', arg: (typeof sdCurrent !== 'undefined' ? sdCurrent : null) };
   if (vis('sessionCreate')) return { id:'sessionCreate' };
   if (vis('sessionsPage')) return { id:'sessions' };
+  if (vis('adDrill')) return { id:'adDrill', arg: window._adDrillState };
   if (vis('adminDash')) return { id:'admin' };
   if (vis('playerDetail')) return { id:'playerDetail', arg: window._pdName || null };
   if (vis('guidePage')) return { id:'guide' };
@@ -4267,7 +4282,7 @@ window._pushNav = function(targetId) {
   if (window._navBack) { window._navBack = false; return; }
   window._userNavigated = true;
   const cur = window._currentScreen();
-  if (cur.id === targetId) return;
+  if (cur.id === targetId && targetId !== 'adDrill') return;   // drill → drill (list → one tournament) is a real step
   window._navStack.push(cur);
   if (window._navStack.length > 20) window._navStack.shift();
   setTimeout(window._saveScreen, 80);
@@ -4316,6 +4331,7 @@ window.goBack = function() {
     case 'sessionCreate': openSessions(); break;
     case 'sessionDetail': prev.arg ? openSessionDetail(prev.arg) : openSessions(); break;
     case 'admin': openAdminDash(); break;
+    case 'adDrill': if (prev.arg) window.adDrill(prev.arg.kind, prev.arg.arg); else openAdminDash(); break;
     case 'quickstart': openQuickStart(); break;
     case 'courts': openCourts(); break;
     case 'courtSubmit': openCourts(); break;
@@ -4653,7 +4669,7 @@ window.hideAllPages = function() {
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
    'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
    'adPlayerModal','adCourtModal','qrOverlay','quickStartPage','courtsPage','courtSubmit',
-   'sessionInfoEdit','rosterPlayerSheet','venueSheet','chatPage','chatThread','notifPage','groupMembersSheet','playerSearchPage'].forEach(id => {
+   'sessionInfoEdit','rosterPlayerSheet','venueSheet','chatPage','chatThread','notifPage','groupMembersSheet','playerSearchPage','adDrill'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -7429,14 +7445,19 @@ window.openAdminDash = async function() {
   const boxT = (num, lbl, color, target) => '<div onclick="adScrollTo(\''+target+'\')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 8px;text-align:center;">'
     +'<div style="font-family:\'Russo One\',sans-serif;font-size:26px;color:'+(color||'var(--cyan)')+';">'+num+'</div>'
     +'<div style="font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:4px;">'+lbl+'</div></div>';
+  window._adData = { dir, tours, players, tourList, totalGames, activeUsers, at: Date.now() };
+  const boxD = (num, lbl, color, kind) => '<div onclick="adDrill(\''+kind+'\')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 8px;text-align:center;position:relative;">'
+    +'<div style="font-family:\'Russo One\',sans-serif;font-size:26px;color:'+(color||'var(--cyan)')+';">'+num+'</div>'
+    +'<div style="font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-top:4px;">'+lbl+' <span style="color:var(--cyan);">›</span></div></div>';
+  const claimedN = players.filter(p => !p.unclaimed && p.uid.length > 20).length;
   document.getElementById('adStats').innerHTML =
-    boxT(players.length, 'Registered Players', null, 'adSignups') +
-    boxT(tourList.length, 'Tournaments', 'var(--pink)', 'adActivity') +
-    boxT(totalGames, 'Games Played', 'var(--aqua)', 'adActivity') +
-    boxT(activeUsers.length, 'Active Users (7d)', 'var(--yellow)', 'adCharts');
+    boxD(claimedN, 'Registered Players', null, 'players') +
+    boxD(tourList.length, 'Tournaments', 'var(--pink)', 'tournaments') +
+    boxD(totalGames, 'Games Played', 'var(--aqua)', 'games') +
+    boxD(activeUsers.length, 'Active Users (7d)', 'var(--yellow)', 'active');
   const _au = document.getElementById('adActiveNames');
   if (_au) _au.innerHTML = activeUsers.length
-    ? '🟢 On this week: ' + activeUsers.sort((a,b)=>(b.lastActive||0)-(a.lastActive||0)).map(p => '<b>'+escInfo(p.name || p.phone || '?')+'</b>').join(', ')
+    ? '🟢 On this week: ' + activeUsers.sort((a,b)=>(b.lastActive||0)-(a.lastActive||0)).map(p => '<b onclick="adOpenPlayer(\''+p.uid+'\')" style="cursor:pointer;color:var(--white);text-decoration:underline;text-decoration-color:rgba(255,255,255,0.25);">'+escInfo(p.name || p.phone || '?')+'</b>').join(', ')
     : 'Nobody stamped yet — the activity beacon ships with this build, so this fills in as people open the app.';
   try { renderAdCharts(players, tourList); } catch(e) {}
 
@@ -7484,7 +7505,7 @@ window.openAdminDash = async function() {
   window._adTourList = tourList;
   document.getElementById('adActivity').innerHTML = bulkBtn + (tourList.slice(0, 20).map(t => {
     const d = t.when ? new Date(t.when).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
-    return '<div onclick="adOpenTournament(\''+t.tid+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;">'
+    return '<div onclick="adDrill(\'tournament\',\''+t.tid+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;">'
       +'<div><div style="font-weight:700;color:var(--white);font-size:13px;">'+t.name+'</div>'
       +'<div style="font-size:11px;color:var(--muted);font-weight:600;">'+t.players.slice(0,6).join(', ')+'</div></div>'
       +'<div style="text-align:right;display:flex;align-items:center;gap:10px;"><div><div style="font-size:12px;color:'+(t.played?'var(--aqua)':'var(--muted)')+';font-weight:700;">'+t.played+' games</div>'
@@ -7566,6 +7587,105 @@ window.adRejectCourt = async function(id) {
   catch(e) { alert('Error: ' + (e.message||e)); }
 };
 
+// ── Dashboard drill-downs: every number opens the rows behind it ─────────────────────────────
+window._adDrillState = null;
+window.adOpenPlayer = function(uid) { const d = (window._adData && window._adData.dir[uid]) || {}; if (d.name) openPlayerDetail(d.name); };
+async function _adEnsureData() {
+  if (window._adData && Date.now() - window._adData.at < 120000) return window._adData;
+  const safeGet = async (p) => { try { return (await get(ref(db, p))).val() || {}; } catch (e) { return {}; } };
+  const [dir, tours] = await Promise.all([safeGet('directory'), safeGet('tournaments')]);
+  const players = Object.entries(dir).map(([uid, p]) => ({ uid, ...p }));
+  let totalGames = 0; const now = Date.now();
+  const tourList = Object.entries(tours).map(([tid, t]) => { const sched = _arr(t && t.cfg && t.cfg.schedule); const played = sched.filter(g => { const s = t.scores && t.scores[g.key]; return s && s.s1 !== null && s.s1 !== undefined && !g.deleted; }).length; totalGames += played;
+    return { tid, name: (t && t.cfg && t.cfg.name) || 'Tournament', when: t.updatedAt || 0, played, players: _arr(t && t.cfg && t.cfg.players) }; }).sort((a, b) => b.when - a.when);
+  window._adData = { dir, tours, players, tourList, totalGames, activeUsers: players.filter(p => (p.lastActive || 0) > now - 7 * 86400000), at: now };
+  return window._adData;
+}
+window.adDrill = async function(kind, arg) {
+  if (!isAdmin()) return;
+  window._pushNav('adDrill');
+  window._adDrillState = { kind, arg: arg || null };
+  window.hideAllPages(); if (window.resetBars) resetBars();
+  document.getElementById('adDrill').classList.remove('hidden');
+  document.getElementById('adDrill').scrollTop = 0;
+  const qEl = document.getElementById('adDrillQ'); qEl.value = ''; qEl.style.display = kind === 'tournament' ? 'none' : '';
+  window._adDrillSort = { players: 'joined', active: 'recent', tournaments: 'recent', games: 'recent' }[kind] || null;
+  document.getElementById('adDrillList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading…</div>';
+  await _adEnsureData();
+  try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+  window.adDrillPaint();
+};
+window.adDrillSortBy = function(k) { window._adDrillSort = k; window.adDrillPaint(); };
+window.adDrillPaint = function() {
+  const st = window._adDrillState, D = window._adData; if (!st || !D) return;
+  const q = (document.getElementById('adDrillQ').value || '').trim().toLowerCase();
+  const T = document.getElementById('adDrillTitle'), S = document.getElementById('adDrillSub'), L = document.getElementById('adDrillList'), SR = document.getElementById('adDrillSort');
+  const day = ts => ts ? new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: new Date(ts).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined }) : '—';
+  const ago = ts => { if (!ts) return 'never'; const m = Math.round((Date.now() - ts) / 60000); return m < 60 ? m + 'm ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago'; };
+  let rd = {}; try { rd = window.pbtRatingsFor('doubles') || {}; } catch (e) {}
+  const sortRow = opts => { SR.innerHTML = opts.map(([k, l]) => '<button class="rtbtn' + (window._adDrillSort === k ? ' active' : '') + '" onclick="adDrillSortBy(\'' + k + '\')">' + l + '</button>').join(''); SR.style.display = ''; };
+  const row = (onclick, left, sub, right) => '<div onclick="' + onclick + '" class="chat-row" style="cursor:pointer;"><div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14px;color:var(--white);">' + left + '</div><div style="font-size:11.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + sub + '</div></div><div style="text-align:right;font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;">' + right + '</div></div>';
+  const empty = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Nothing matches.</div>';
+  if (st.kind === 'players' || st.kind === 'active') {
+    let ps = D.players.filter(p => p.name || p.phone);
+    if (st.kind === 'players') ps = ps.filter(p => !p.unclaimed && p.uid.length > 20); else ps = ps.filter(p => (p.lastActive || 0) > Date.now() - 7 * 86400000);
+    T.textContent = st.kind === 'players' ? '👥 Registered Players' : '🟢 Active (7 days)';
+    if (q) ps = ps.filter(p => [p.name, p.phone, p.email, p.city].some(v => v && String(v).toLowerCase().includes(q)));
+    sortRow(st.kind === 'players' ? [['joined', 'Newest'], ['recent', 'Last active'], ['dpr', 'DPR'], ['name', 'A–Z']] : [['recent', 'Last active'], ['dpr', 'DPR'], ['name', 'A–Z']]);
+    const dpr = p => { const r = rd[String(p.name || '').trim().toLowerCase()]; return r ? r.rating : -1; };
+    const so = { joined: (a, b) => (b.joinedAt || 0) - (a.joinedAt || 0), recent: (a, b) => (b.lastActive || 0) - (a.lastActive || 0), dpr: (a, b) => dpr(b) - dpr(a), name: (a, b) => String(a.name || '').localeCompare(String(b.name || '')) }[window._adDrillSort];
+    if (so) ps.sort(so);
+    S.textContent = ps.length + (st.kind === 'players' ? ' people with a login' + (D.players.length > ps.length ? ' · ' + (D.players.length - ps.length) + ' more profiles without one (imports / added by you)' : '') : ' opened the app this week');
+    L.innerHTML = ps.length ? ps.map(p => { const r = rd[String(p.name || '').trim().toLowerCase()];
+      return row('adOpenPlayer(\'' + p.uid + '\')', escInfo(p.name || '(no name yet)'), [r ? 'DPR ' + r.rating.toFixed(2) + ' · ' + r.games + ' games' : 'no games yet', p.dupr ? 'DUPR ' + escInfo(String(p.dupr)) : null, p.phone ? escInfo(p.phone) : null, p.city ? escInfo(p.city) : null].filter(Boolean).join(' · '),
+        (window._adDrillSort === 'joined' ? 'joined ' + day(p.joinedAt) : 'active ' + ago(p.lastActive))); }).join('') : empty;
+    return;
+  }
+  if (st.kind === 'tournaments') {
+    T.textContent = '🏆 Tournaments';
+    let ts = D.tourList.slice();
+    if (q) ts = ts.filter(t => t.name.toLowerCase().includes(q) || t.players.some(p => String(p).toLowerCase().includes(q)));
+    sortRow([['recent', 'Newest'], ['games', 'Most games'], ['players', 'Most players']]);
+    const so = { recent: (a, b) => b.when - a.when, games: (a, b) => b.played - a.played, players: (a, b) => b.players.length - a.players.length }[window._adDrillSort]; if (so) ts.sort(so);
+    S.textContent = ts.length + ' tournaments · ' + ts.reduce((n, t) => n + t.played, 0) + ' games scored';
+    L.innerHTML = ts.length ? ts.map(t => { const o = D.tours[t.tid] || {}; const own = o.ownerUid && D.dir[o.ownerUid] ? D.dir[o.ownerUid].name : null;
+      return row('adDrill(\'tournament\',\'' + t.tid + '\')', escInfo(t.name), t.players.length + ' players · ' + t.played + ' games' + (own ? ' · by ' + escInfo(own) : ''), day(t.when)); }).join('') : empty;
+    return;
+  }
+  if (st.kind === 'games') {
+    T.textContent = '🏓 Games Played';
+    let gs = [];
+    for (const t of D.tourList) { const o = D.tours[t.tid] || {}; for (const g of _arr(o.cfg && o.cfg.schedule)) { const s = o.scores && o.scores[g.key]; if (!s || s.s1 == null || g.deleted) continue;
+      gs.push({ tid: t.tid, tname: t.name, when: s.at || t.when, t1: _arr(g.t1), t2: _arr(g.t2), s1: s.s1, s2: s.s2 }); } }
+    if (q) gs = gs.filter(g => g.tname.toLowerCase().includes(q) || g.t1.concat(g.t2).some(p => String(p).toLowerCase().includes(q)));
+    sortRow([['recent', 'Newest'], ['close', 'Closest'], ['blowout', 'Biggest wins']]);
+    const so = { recent: (a, b) => b.when - a.when, close: (a, b) => Math.abs(a.s1 - a.s2) - Math.abs(b.s1 - b.s2), blowout: (a, b) => Math.abs(b.s1 - b.s2) - Math.abs(a.s1 - a.s2) }[window._adDrillSort]; if (so) gs.sort(so);
+    S.textContent = gs.length + ' games' + (q ? ' with "' + q + '"' : '') + (gs.length > 300 ? ' · showing 300' : '');
+    L.innerHTML = gs.length ? gs.slice(0, 300).map(g => { const w1 = g.s1 > g.s2;
+      return row('adDrill(\'tournament\',\'' + g.tid + '\')', '<span style="color:' + (w1 ? 'var(--white)' : 'var(--muted)') + ';">' + escInfo(g.t1.join(' & ')) + '</span> <span style="color:var(--cyan);">' + g.s1 + '–' + g.s2 + '</span> <span style="color:' + (!w1 ? 'var(--white)' : 'var(--muted)') + ';">' + escInfo(g.t2.join(' & ')) + '</span>', escInfo(g.tname), day(g.when)); }).join('') : empty;
+    return;
+  }
+  if (st.kind === 'tournament') {
+    const o = D.tours[st.arg]; SR.style.display = 'none';
+    if (!o) { T.textContent = 'Tournament'; S.textContent = ''; L.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">This tournament was deleted.</div>'; return; }
+    T.textContent = (o.cfg && o.cfg.name) || 'Tournament';
+    const own = o.ownerUid && D.dir[o.ownerUid] ? D.dir[o.ownerUid].name : null;
+    const games = _arr(o.cfg && o.cfg.schedule).filter(g => !g.deleted);
+    const st2 = {};
+    const add = (n, f, a, w) => { const r = st2[n] = st2[n] || { n, w: 0, l: 0, f: 0, a: 0 }; r.f += f; r.a += a; if (w) r.w++; else r.l++; };
+    let scored = 0;
+    games.forEach(g => { const s = o.scores && o.scores[g.key]; if (!s || s.s1 == null) return; scored++; _arr(g.t1).forEach(p => add(p, s.s1, s.s2, s.s1 > s.s2)); _arr(g.t2).forEach(p => add(p, s.s2, s.s1, s.s2 > s.s1)); });
+    S.textContent = day(o.updatedAt) + (own ? ' · by ' + own : '') + ' · ' + scored + ' of ' + games.length + ' games scored';
+    const stand = Object.values(st2).sort((a, b) => (b.w - a.w) || ((b.f - b.a) / Math.max(1, b.w + b.l) - (a.f - a.a) / Math.max(1, a.w + a.l)));
+    const nameBtn = n => '<span onclick="event.stopPropagation();openPlayerDetail(\'' + escInfo(n).replace(/'/g, "\\'") + '\')" style="cursor:pointer;text-decoration:underline;text-decoration-color:rgba(255,255,255,0.25);">' + escInfo(n) + '</span>';
+    L.innerHTML = '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:4px 0 6px;">Standings</div>'
+      + (stand.length ? stand.map((r, i) => '<div class="chat-row"><div style="width:22px;font-family:\'Russo One\',sans-serif;color:' + (i === 0 ? 'var(--yellow)' : 'var(--muted)') + ';">' + (i + 1) + '</div><div style="flex:1;font-weight:800;color:var(--white);font-size:14px;">' + nameBtn(r.n) + '</div><div style="font-size:12px;color:var(--muted);font-weight:700;">' + r.w + '–' + r.l + ' · ' + ((r.f - r.a) / Math.max(1, r.w + r.l) >= 0 ? '+' : '') + ((r.f - r.a) / Math.max(1, r.w + r.l)).toFixed(1) + '</div></div>').join('') : '<div style="color:var(--muted);font-weight:600;padding:8px;">No scores yet.</div>')
+      + '<div style="font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:14px 0 6px;">Games</div>'
+      + games.map((g, i) => { const s = o.scores && o.scores[g.key]; const has = s && s.s1 != null;
+        return '<div class="chat-row"><div style="width:22px;color:var(--muted);font-size:11px;font-weight:700;">' + (i + 1) + '</div><div style="flex:1;font-size:13px;font-weight:700;color:var(--white);line-height:1.5;">' + _arr(g.t1).map(nameBtn).join(' & ') + '<br>' + _arr(g.t2).map(nameBtn).join(' & ') + '</div><div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:' + (has ? 'var(--cyan)' : 'var(--muted)') + ';text-align:right;line-height:1.5;">' + (has ? s.s1 + '<br>' + s.s2 : '–') + '</div></div>'; }).join('')
+      + '<button onclick="adOpenTournament(\'' + st.arg + '\')" class="rtbtn" style="width:100%;margin-top:12px;">Open in Past Games (rename / fix tools)</button>';
+  }
+};
 window.adScrollTo = function(id) {
   const el = document.getElementById(id);
   if (el && el.scrollIntoView) try { el.scrollIntoView({ behavior:'smooth', block:'start' }); } catch(e) {}
@@ -10187,6 +10307,10 @@ function psSort(k)           { if(window.psSort && window.psSort !== psSort) { w
 function psGender(g)         { if(window.psGender && window.psGender !== psGender) { window.psGender(g); return; } __pbtWait(psGender, arguments); }
 function psToggleMore()      { if(window.psToggleMore && window.psToggleMore !== psToggleMore) { window.psToggleMore(); return; } __pbtWait(psToggleMore, arguments); }
 function psOpen(i)           { if(window.psOpen && window.psOpen !== psOpen) { window.psOpen(i); return; } __pbtWait(psOpen, arguments); }
+function adDrill(k,a)         { if(window.adDrill && window.adDrill !== adDrill) { window.adDrill(k,a); return; } __pbtWait(adDrill, arguments); }
+function adDrillPaint()      { if(window.adDrillPaint && window.adDrillPaint !== adDrillPaint) { window.adDrillPaint(); return; } __pbtWait(adDrillPaint, arguments); }
+function adDrillSortBy(k)    { if(window.adDrillSortBy && window.adDrillSortBy !== adDrillSortBy) { window.adDrillSortBy(k); return; } __pbtWait(adDrillSortBy, arguments); }
+function adOpenPlayer(u)     { if(window.adOpenPlayer && window.adOpenPlayer !== adOpenPlayer) { window.adOpenPlayer(u); return; } __pbtWait(adOpenPlayer, arguments); }
 function adLogAvail()        { if(window.adLogAvail && window.adLogAvail !== adLogAvail) { window.adLogAvail(); return; } __pbtWait(adLogAvail, arguments); }
 function pickSms(w,on)       { if(window.pickSms && window.pickSms !== pickSms) { window.pickSms(w,on); return; } __pbtWait(pickSms, arguments); }
 function availAddRow(p)      { if(window.availAddRow && window.availAddRow !== availAddRow) { window.availAddRow(p); return; } __pbtWait(availAddRow, arguments); }
@@ -10224,7 +10348,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-01.1';
+window.BUILD_TAG = 'v2026-11-01.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
