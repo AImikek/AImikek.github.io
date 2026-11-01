@@ -1078,6 +1078,46 @@
   </div>
 </div>
 
+<!-- PLAYER SEARCH -->
+<div id="playerSearchPage" class="hidden" style="position:fixed;inset:0;z-index:340;background:var(--bg);overflow-y:auto;padding:60px 16px 100px;-webkit-overflow-scrolling:touch;">
+  <div style="max-width:560px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-top:4px;">
+      <button onclick="goBack()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">← Back</button>
+      <div style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:2px;color:var(--white);text-transform:uppercase;">🔍 Find Players</div>
+    </div>
+    <input class="finput" id="psQ" type="search" autocomplete="off" autocapitalize="words" placeholder="Search by name" oninput="psRun()" style="font-size:16px;margin-bottom:8px;">
+    <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;">
+      <span style="font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:800;text-transform:uppercase;width:44px;">DPR</span>
+      <input class="finput" id="psDprMin" type="number" inputmode="decimal" step="0.25" min="1" max="8" placeholder="min" oninput="psRun()" style="flex:1;margin-bottom:0;padding:9px 10px;font-size:14px;">
+      <span style="color:var(--muted);">–</span>
+      <input class="finput" id="psDprMax" type="number" inputmode="decimal" step="0.25" min="1" max="8" placeholder="max" oninput="psRun()" style="flex:1;margin-bottom:0;padding:9px 10px;font-size:14px;">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+      <span style="font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:800;text-transform:uppercase;width:44px;">DUPR</span>
+      <input class="finput" id="psDuprMin" type="number" inputmode="decimal" step="0.25" min="1" max="8" placeholder="min" oninput="psRun()" style="flex:1;margin-bottom:0;padding:9px 10px;font-size:14px;">
+      <span style="color:var(--muted);">–</span>
+      <input class="finput" id="psDuprMax" type="number" inputmode="decimal" step="0.25" min="1" max="8" placeholder="max" oninput="psRun()" style="flex:1;margin-bottom:0;padding:9px 10px;font-size:14px;">
+    </div>
+    <div onclick="psToggleMore()" id="psMoreBtn" style="font-size:12px;color:var(--cyan);font-weight:800;cursor:pointer;margin:2px 0 8px;">＋ More filters</div>
+    <div id="psMore" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+      <input class="finput" id="psCity" placeholder="City (e.g. Miami)" oninput="psRun()" style="margin-bottom:8px;padding:9px 10px;font-size:14px;">
+      <div style="display:flex;gap:6px;margin-bottom:8px;" id="psGenderRow">
+        <button class="rtbtn active" data-g="" onclick="psGender('')" style="flex:1;">Anyone</button>
+        <button class="rtbtn" data-g="M" onclick="psGender('M')" style="flex:1;">Men</button>
+        <button class="rtbtn" data-g="F" onclick="psGender('F')" style="flex:1;">Women</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <span style="font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;">Not away on</span>
+        <input class="finput" id="psDate" type="date" onchange="psRun()" style="flex:1;margin-bottom:0;padding:8px 10px;font-size:13px;color-scheme:dark;">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;color:var(--white);font-weight:700;"><input type="checkbox" id="psAppOnly" onchange="psRun()" style="width:18px;height:18px;accent-color:var(--cyan);"> On the app only</label>
+    </div>
+    <div class="rank-toggle" id="psSortRow" style="margin-bottom:10px;"></div>
+    <div id="psCount" style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;"></div>
+    <div id="psList"><div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading players…</div></div>
+  </div>
+</div>
+
 <!-- LEADERBOARD -->
 <div id="leaderboardPage" class="hidden" style="position:fixed;inset:0;z-index:340;background:var(--bg);overflow-y:auto;padding:60px 16px 100px;">
   <div style="max-width:560px;margin:0 auto;">
@@ -1547,6 +1587,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
   <button class="tab tab-settings" id="navSettings" onclick="openSettings()" style="font-size:22px;position:relative;">☰<span id="navChatDot" style="display:none;position:absolute;top:4px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
   <button class="topbar-title" id="topNewGame" onclick="openCreateChooser()" style="background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:99px;padding:8px 16px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 3px 12px rgba(255,45,120,0.35);">➕ New Game</button>
   <span style="display:flex;align-items:center;">
+    <button class="tab" id="tabSearch" onclick="openPlayerSearch()" aria-label="Find players" style="font-size:19px;padding-right:4px;">🔍</button>
     <button class="tab" id="tabNotifs" onclick="openNotifs()" style="font-size:20px;position:relative;padding-right:6px;">❤️<span id="notifDot" style="display:none;position:absolute;top:2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--pink);color:white;font-size:9px;font-weight:800;line-height:16px;text-align:center;font-family:'DM Sans',sans-serif;"></span></button>
     <button class="tab" id="tabLeaderboard" onclick="openLeaderboard()" style="font-size:20px;">🏆</button>
   </span>
@@ -1588,6 +1629,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
   <div class="settings-panel">
     <div class="settings-title">⚙ Options</div>
     <button class="settings-item" onclick="closeSettings();openProfile();">👤 My Profile</button>
+    <button class="settings-item" onclick="closeSettings();openPlayerSearch();">🔍 Find Players</button>
     <button class="settings-item" onclick="closeSettings();openChat();">💬 Chat <span id="menuChatBadge"></span></button>
     <button class="settings-item" onclick="closeSettings();openGuide();">✨ App Guide</button>
     <button class="settings-item" onclick="closeSettings();openSessions();">📅 Games to Join</button>
@@ -1944,7 +1986,7 @@ window.healMyDirectory = async function() {
   if (myPhone && mine.phone !== myPhone) upd.phone = myPhone;
   if (myPhone && userProfile.phone !== myPhone) profUpd.phone = myPhone;
   const em = userProfile.email || currentUser.email || null; if (em && !mine.email) upd.email = em;
-  ['city', 'dupr', 'avatar', 'awayCity', 'awayUntil'].forEach(k => { if (userProfile[k] && mine[k] !== userProfile[k]) upd[k] = userProfile[k]; });
+  ['city', 'dupr', 'avatar', 'awayCity', 'awayUntil', 'gender'].forEach(k => { if (userProfile[k] && mine[k] !== userProfile[k]) upd[k] = userProfile[k]; });
   if (!mine.joinedAt) upd.joinedAt = Date.now();
   if (mine.unclaimed) upd.unclaimed = null;
   // ghosts: unclaimed cards with my phone or my exact name
@@ -4198,6 +4240,7 @@ window._navStack = [];
 window._navBack = false;
 window._currentScreen = function() {
   const vis = id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden') && el.style.display !== 'none'; };
+  if (vis('playerSearchPage')) return { id:'playerSearch' };
   if (vis('notifPage')) return { id:'notifs' };
   if (vis('chatThread')) return { id:'chatThread', arg: window._ctRef || null };
   if (vis('chatPage')) return { id:'chat', arg: window._chatTab || null };
@@ -4245,7 +4288,7 @@ window._restoreScreen = function() {
     sessions: () => openSessions(), sessionCreate: () => openSessions(),
     leaderboard: () => openLeaderboard(), history: () => openHistory(), profile: () => openProfile(),
     guide: () => openGuide(), quickstart: () => openQuickStart(), courts: () => openCourts(), admin: () => openAdminDash(),
-    notifs: () => openNotifs(), chat: () => openChat(saved.arg || 'groups'), chatThread: () => (saved.arg && saved.arg.k === 'g') ? openGroupChat(saved.arg.id) : (saved.arg && saved.arg.k === 'd') ? openDm(saved.arg.id, saved.arg.name) : openChat(),
+    notifs: () => openNotifs(), playerSearch: () => openPlayerSearch(true), chat: () => openChat(saved.arg || 'groups'), chatThread: () => (saved.arg && saved.arg.k === 'g') ? openGroupChat(saved.arg.id) : (saved.arg && saved.arg.k === 'd') ? openDm(saved.arg.id, saved.arg.name) : openChat(),
     playerDetail: () => saved.arg ? openPlayerDetail(saved.arg) : openLeaderboard(),
     standings: () => { if (typeof cfg !== 'undefined' && cfg) closeAllOverlaysAndShow('standings'); },
   }[saved.id];
@@ -4268,6 +4311,7 @@ window.goBack = function() {
     case 'sessions': openSessions(); break;
     case 'chat': openChat(prev.arg || 'groups'); break;
     case 'notifs': openNotifs(); break;
+    case 'playerSearch': openPlayerSearch(true); break;
     case 'chatThread': if (prev.arg && prev.arg.k === 'g') openGroupChat(prev.arg.id); else if (prev.arg && prev.arg.k === 'd') openDm(prev.arg.id, prev.arg.name); else openChat(); break;
     case 'sessionCreate': openSessions(); break;
     case 'sessionDetail': prev.arg ? openSessionDetail(prev.arg) : openSessions(); break;
@@ -4512,11 +4556,104 @@ window.submitCourt = async function() {
 
 
 // Hide every overlay page - lets nav icons work from EVERY screen.
+// ── Player search: everyone the club knows — members (directory) and anyone who has played (ratings) — in one list
+window._psSort = 'match'; window._psG = '';
+window.openPlayerSearch = async function(keep) {
+  window._pushNav('playerSearch');
+  window.hideAllPages();
+  if (window.resetBars) resetBars();
+  document.getElementById('playerSearchPage').classList.remove('hidden');
+  const q = document.getElementById('psQ');
+  q.placeholder = isAdmin() ? 'Search by name or phone' : 'Search by name';
+  if (!keep) setTimeout(() => { try { q.focus(); } catch (e) {} }, 120);
+  await window.psLoad();
+  window.psRun();
+};
+window.psLoad = async function(force) {
+  try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+  const dir = await loadChatDir(force);
+  let rd = {}, rs = {}; try { rd = window.pbtRatingsFor('doubles') || {}; rs = window.pbtRatingsFor('singles') || {}; } catch (e) {}
+  const by = {};
+  const put = (name) => { const k = String(name || '').trim().toLowerCase(); if (!k) return null; return by[k] = by[k] || { name: String(name).trim(), k }; };
+  Object.values(rd).forEach(r => { const p = put(r.name); if (!p) return; p.dpr = r.rating; p.games = r.games; p.rel = r.rel; p.lastAt = r.lastAt || 0; });
+  Object.values(rs).forEach(r => { const p = put(r.name); if (!p) return; p.sdpr = r.rating; p.sgames = r.games; p.lastAt = Math.max(p.lastAt || 0, r.lastAt || 0); });
+  Object.entries(dir).forEach(([uid, d]) => { if (!d || !d.name) return; const p = put(d.name); if (!p) return;
+    if (p.uid && !p.unclaimed && d.unclaimed) return;   // a real login beats an imported card with the same name
+    p.uid = uid; p.unclaimed = !!d.unclaimed; p.onApp = !d.unclaimed && uid.length > 20; p.name = d.name;
+    ['dupr', 'city', 'gender', 'avatar', 'avail', 'phone', 'joinedAt', 'lastActive'].forEach(f => { if (d[f] != null && d[f] !== '') p[f] = d[f]; }); });
+  window._psAll = Object.values(by).filter(p => p.k.length > 1);
+  return window._psAll;
+};
+window.psMatch = function(p, q) {
+  if (!q) return 1;
+  const nm = p.k, toks = nm.split(/[\s\-]+/).filter(Boolean), qq = q.toLowerCase().trim(), qt = qq.split(/\s+/).filter(Boolean);
+  if (nm === qq) return 100;
+  if (nm.startsWith(qq)) return 90;
+  if (qt.every(t => toks.some(w => w.startsWith(t)))) return 75;          // "juan capp", "capp", "j capp"
+  const ini = toks.map(w => w[0]).join('');
+  if (qq.length >= 2 && !/\s/.test(qq) && ini.startsWith(qq)) return 55;   // initials: "jc" → Juan Cappello
+  if (nm.includes(qq)) return 45;
+  const dq = qq.replace(/\D/g, '');
+  if (isAdmin() && dq.length >= 3 && p.phone && String(p.phone).replace(/\D/g, '').includes(dq)) return 70;   // admin: digits find a phone
+  return 0;
+};
+window.psRun = function() {
+  const all = window._psAll; const list = document.getElementById('psList'); if (!list) return;
+  if (!all) { list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-weight:600;">Loading players…</div>'; return; }
+  const v = id => (document.getElementById(id) || {}).value || '';
+  const num = id => { const x = parseFloat(v(id)); return isNaN(x) ? null : x; };
+  const q = v('psQ').trim(), dMin = num('psDprMin'), dMax = num('psDprMax'), uMin = num('psDuprMin'), uMax = num('psDuprMax');
+  const city = v('psCity').trim().toLowerCase(), date = v('psDate'), appOnly = !!(document.getElementById('psAppOnly') || {}).checked, g = window._psG;
+  let rows = all.map(p => ({ p, s: window.psMatch(p, q) })).filter(x => x.s > 0).map(x => { x.p.__s = x.s; return x.p; });
+  rows = rows.filter(p => {
+    if (dMin != null && !(p.dpr >= dMin - 1e-9)) return false;
+    if (dMax != null && !(p.dpr <= dMax + 1e-9)) return false;
+    const du = parseFloat(p.dupr);
+    if (uMin != null && !(du >= uMin - 1e-9)) return false;
+    if (uMax != null && !(du <= uMax + 1e-9)) return false;
+    if (city && !String(p.city || '').toLowerCase().includes(city)) return false;
+    if (g && p.gender !== g) return false;
+    if (date && p.avail && window.availAwayOn(p.avail, date)) return false;
+    if (appOnly && !p.onApp) return false;
+    return true;
+  });
+  const sort = window._psSort === 'match' && !q ? 'dpr' : window._psSort;
+  const num0 = x => (typeof x === 'number' && !isNaN(x)) ? x : -1;
+  const cmp = { match: (a, b) => (b.__s - a.__s) || (num0(b.dpr) - num0(a.dpr)), dpr: (a, b) => (num0(b.dpr) - num0(a.dpr)) || ((b.games || 0) - (a.games || 0)),
+    dupr: (a, b) => (num0(parseFloat(b.dupr)) - num0(parseFloat(a.dupr))) || (num0(b.dpr) - num0(a.dpr)), games: (a, b) => ((b.games || 0) + (b.sgames || 0)) - ((a.games || 0) + (a.sgames || 0)),
+    name: (a, b) => a.name.localeCompare(b.name) }[sort] || ((a, b) => 0);
+  rows.sort(cmp);
+  const sr = document.getElementById('psSortRow');
+  if (sr) sr.innerHTML = [['match', q ? 'Best match' : 'Top'], ['dpr', 'DPR'], ['dupr', 'DUPR'], ['games', 'Games'], ['name', 'A–Z']].map(([k, l]) => '<button class="rtbtn' + (window._psSort === k ? ' active' : '') + '" onclick="psSort(\'' + k + '\')">' + l + '</button>').join('');
+  const anyFilter = q || dMin != null || dMax != null || uMin != null || uMax != null || city || g || date || appOnly;
+  document.getElementById('psCount').textContent = rows.length + ' player' + (rows.length === 1 ? '' : 's') + (anyFilter ? ' match' + (rows.length === 1 ? 'es' : '') : ' · everyone who has played or joined');
+  window._psRows = rows.slice(0, 150);
+  const today0 = new Date().toISOString().slice(0, 10);
+  list.innerHTML = rows.length ? window._psRows.map((p, i) => {
+    const bits = [];
+    if (p.dpr != null) bits.push('<span style="color:var(--cyan);font-weight:800;">DPR ' + p.dpr.toFixed(2) + '</span> · ' + p.games + ' game' + (p.games === 1 ? '' : 's'));
+    else if (p.sdpr != null) bits.push('<span style="color:var(--cyan);font-weight:800;">Singles ' + p.sdpr.toFixed(2) + '</span> · ' + p.sgames + ' games');
+    if (p.dupr) bits.push('<span style="color:var(--yellow);font-weight:800;">DUPR ' + escInfo(String(p.dupr)) + '</span>');
+    if (p.city) bits.push('📍 ' + escInfo(p.city));
+    const away = p.avail && window.availAwayOn(p.avail, today0);
+    const av = p.avatar ? '<div style="width:40px;height:40px;border-radius:50%;background:url(' + p.avatar + ') center/cover;flex-shrink:0;"></div>'
+      : '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:16px;color:#04060F;flex-shrink:0;">' + escInfo((p.name[0] || '?').toUpperCase()) + '</div>';
+    return '<div onclick="psOpen(' + i + ')" class="chat-row" style="cursor:pointer;">' + av
+      + '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14.5px;color:var(--white);">' + escInfo(p.name) + (away ? ' <span style="font-size:11px;color:var(--yellow);">✈️ away</span>' : '') + '</div>'
+      + '<div style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (bits.join(' · ') || 'no games yet') + '</div></div>'
+      + '<div style="font-size:10.5px;font-weight:800;white-space:nowrap;color:' + (p.onApp ? 'var(--aqua)' : 'var(--muted)') + ';">' + (p.onApp ? '✓ on app' : p.unclaimed ? 'profile' : 'guest') + '</div></div>';
+  }).join('') + (rows.length > 150 ? '<div style="text-align:center;color:var(--muted);font-size:12px;font-weight:600;padding:10px;">Showing the first 150 · narrow it down to see more</div>' : '')
+    : '<div style="text-align:center;padding:30px 10px;color:var(--muted);font-weight:600;line-height:1.6;">No one matches.' + (q ? '<br>Try part of a first or last name.' : '') + '</div>';
+};
+window.psSort = function(k) { window._psSort = k; window.psRun(); };
+window.psGender = function(g) { window._psG = g; document.querySelectorAll('#psGenderRow .rtbtn').forEach(b => b.classList.toggle('active', b.getAttribute('data-g') === g)); window.psRun(); };
+window.psToggleMore = function() { const m = document.getElementById('psMore'); const on = m.style.display === 'none'; m.style.display = on ? 'block' : 'none'; document.getElementById('psMoreBtn').textContent = on ? '－ Fewer filters' : '＋ More filters'; };
+window.psOpen = function(i) { const p = (window._psRows || [])[i]; if (p) openPlayerDetail(p.name); };
 window.hideAllPages = function() {
   ['leaderboardPage','pageHistory','playerDetail','feedbackOverlay','feedbackInbox',
    'importOverlay','guidePage','adminDash','sessionsPage','sessionCreate','sessionDetail',
    'adPlayerModal','adCourtModal','qrOverlay','quickStartPage','courtsPage','courtSubmit',
-   'sessionInfoEdit','rosterPlayerSheet','venueSheet','chatPage','chatThread','notifPage','groupMembersSheet'].forEach(id => {
+   'sessionInfoEdit','rosterPlayerSheet','venueSheet','chatPage','chatThread','notifPage','groupMembersSheet','playerSearchPage'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -7714,6 +7851,7 @@ async function saveDirectoryEntry() {
       avatar: userProfile.avatar || null,
       awayCity: userProfile.awayCity || null, awayUntil: userProfile.awayUntil || null, awayShare: userProfile.awayShare === false ? false : null,
       avail: window.availClean(userProfile.avail) || null,
+      gender: userProfile.gender || null,
       joinedAt, lastActive: Date.now()
     });
     // First-time signup → send welcome email (if template configured)
@@ -10043,6 +10181,12 @@ function adDeletePlayer(u,n) { if(window.adDeletePlayer && window.adDeletePlayer
 function adOpenTournament(t) { if(window.adOpenTournament && window.adOpenTournament !== adOpenTournament) { window.adOpenTournament(t); return; } __pbtWait(adOpenTournament, arguments); }
 function adEditPlayer(u)     { if(window.adEditPlayer && window.adEditPlayer !== adEditPlayer) { window.adEditPlayer(u); return; } __pbtWait(adEditPlayer, arguments); }
 function adCreateProfile(n)  { if(window.adCreateProfile && window.adCreateProfile !== adCreateProfile) { window.adCreateProfile(n); return; } __pbtWait(adCreateProfile, arguments); }
+function openPlayerSearch(k) { if(window.openPlayerSearch && window.openPlayerSearch !== openPlayerSearch) { window.openPlayerSearch(k); return; } __pbtWait(openPlayerSearch, arguments); }
+function psRun()             { if(window.psRun && window.psRun !== psRun) { window.psRun(); return; } __pbtWait(psRun, arguments); }
+function psSort(k)           { if(window.psSort && window.psSort !== psSort) { window.psSort(k); return; } __pbtWait(psSort, arguments); }
+function psGender(g)         { if(window.psGender && window.psGender !== psGender) { window.psGender(g); return; } __pbtWait(psGender, arguments); }
+function psToggleMore()      { if(window.psToggleMore && window.psToggleMore !== psToggleMore) { window.psToggleMore(); return; } __pbtWait(psToggleMore, arguments); }
+function psOpen(i)           { if(window.psOpen && window.psOpen !== psOpen) { window.psOpen(i); return; } __pbtWait(psOpen, arguments); }
 function adLogAvail()        { if(window.adLogAvail && window.adLogAvail !== adLogAvail) { window.adLogAvail(); return; } __pbtWait(adLogAvail, arguments); }
 function pickSms(w,on)       { if(window.pickSms && window.pickSms !== pickSms) { window.pickSms(w,on); return; } __pbtWait(pickSms, arguments); }
 function availAddRow(p)      { if(window.availAddRow && window.availAddRow !== availAddRow) { window.availAddRow(p); return; } __pbtWait(availAddRow, arguments); }
@@ -10080,7 +10224,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-10-28.1';
+window.BUILD_TAG = 'v2026-11-01.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
