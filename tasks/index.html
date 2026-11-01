@@ -251,6 +251,17 @@ input,textarea{font:inherit;color:inherit}
 .meta .rep{color:var(--accent)}
 .subnote{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
 .gatenote{margin:10px 0 0;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
+/* search */
+.iconbtn{width:30px;height:30px;border-radius:50%;background:var(--surface);border:1px solid var(--line);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.iconbtn:hover,.iconbtn.on{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.searchbar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:6px 10px 6px 14px;margin:0 0 10px;color:var(--muted)}
+.searchbar[hidden]{display:none}
+.searchbar input{flex:1;min-width:0;border:0;background:none;outline:0;font-size:16px;font-weight:600;padding:8px 0;color:var(--ink)}
+.searchbar .n{font-family:var(--mono);font-size:11px;white-space:nowrap}
+.searchbar .x{width:30px;height:30px;border-radius:50%;background:var(--line);font-size:14px}
+.task .t mark,.srch-where mark{background:rgba(94,234,212,.25);color:inherit;border-radius:3px;padding:0 1px}
+.srch-where{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srch-empty{padding:40px 12px;text-align:center;color:var(--muted)}
 /* help */
 .mcard.help{max-width:620px;gap:10px}
 .helphead{display:flex;align-items:center;justify-content:space-between}
@@ -494,8 +505,14 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
     </div>
     <span class="status" id="status"></span>
     <span id="tools"></span>
-    <div class="me"><button class="ava" id="ava" title="Account">?</button></div>
+    <div class="me"><button class="iconbtn" id="searchBtn" title="Search tasks (⌘F)" aria-label="Search tasks"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button><button class="ava" id="ava" title="Account">?</button></div>
   </header>
+  <div class="searchbar" id="searchbar" hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="searchInput" placeholder="Search tasks, notes, steps, projects…" autocomplete="off" enterkeyhint="search">
+    <span class="n" id="searchCount"></span>
+    <button class="x" id="searchClose" aria-label="Close search">✕</button>
+  </div>
   <div class="installbar" id="updatebar" hidden>🚀 A new version of Tasks is ready <button id="updateNow">Update now</button></div>
   <div class="installbar" id="installbar" hidden>📲 Put Tasks on your home screen <button id="installHow">Show me how</button><button class="x" id="installX">✕</button></div>
 
@@ -824,12 +841,12 @@ function render(){
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', String(b.dataset.view===view)));
   const open=[...tasks.values()].filter(t=>!t.done).length;
   $('#count').textContent = open? open+' open' : '';
-  if(view==='list') renderList(); else if(view==='proj') renderProjects(); else renderCal();
+  if(searchQ) renderSearch(); else if(view==='list') renderList(); else if(view==='proj') renderProjects(); else renderCal();
   mountSwipeBins(content);
   content.scrollTop=sc.content; content.scrollLeft=sc.contentX; const g2=content.querySelector('.grid'); if(g2&&sc.grid!=null){ g2.scrollTop=sc.grid; g2.scrollLeft=sc.gridX; }
   content.querySelectorAll('.cell').forEach((c,i)=>{ if(cells[i]) c.scrollTop=cells[i]; });
   renderPanel(); renderMultiBar();
-  const tools=$('#tools'); tools.innerHTML=''; if(view==='list' || (view==='cal' && window.innerWidth<=760)) tools.appendChild(selectToggle(true));
+  const tools=$('#tools'); tools.innerHTML=''; if(!searchQ && (view==='list' || (view==='cal' && window.innerWidth<=760))) tools.appendChild(selectToggle(true));
   refreshQa();
   const pr=view==='proj'&&curProj?projects.get(curProj):null;
   qi.placeholder = pr ? 'Add to '+pr.name+'…' : 'Add a task… try “call broker tomorrow” or “invoice friday”';
@@ -864,6 +881,46 @@ function taskRow(t){
     if(ev.metaKey||ev.ctrlKey||ev.shiftKey){ if(multi.has(t.id)) multi.delete(t.id); else multi.add(t.id); selectMode=true; render(); return; }
     if(view==='proj' && t.subtasks && t.subtasks.length){ openTask=openTask===t.id?null:t.id; render(); } else { sel=t.id; render(); } });
   return r;
+}
+/* ---------- search ---------- */
+let searchQ='';
+const searchbar=$('#searchbar'), searchInput=$('#searchInput'), searchBtn=$('#searchBtn');
+function openSearch(){ searchbar.hidden=false; searchBtn.classList.add('on'); setTimeout(()=>{ searchInput.focus(); searchInput.select(); },30); }
+function closeSearch(){ searchbar.hidden=true; searchBtn.classList.remove('on'); if(searchQ){ searchQ=''; searchInput.value=''; render(); } }
+searchBtn.addEventListener('click',()=>{ if(searchbar.hidden) openSearch(); else closeSearch(); });
+$('#searchClose').addEventListener('click',closeSearch);
+searchInput.addEventListener('input',()=>{ searchQ=searchInput.value.trim(); render(); });
+searchInput.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); closeSearch(); } });
+document.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey) && !e.shiftKey && e.key.toLowerCase()==='f'){ e.preventDefault(); openSearch(); } });
+function searchWords(q){ return q.toLowerCase().split(/\s+/).filter(Boolean); }
+function matchTask(t, words){
+  const proj=t.project&&projects.get(t.project)?projects.get(t.project).name:'';
+  const hay=[t.title||'', t.notes||'', (t.subtasks||[]).map(s=>s.title).join(' '), proj].join(' \u0000 ').toLowerCase();
+  return words.every(w=>hay.includes(w));
+}
+function highlight(node, words){ // wrap matches inside a text-only element
+  const txt=node.textContent; if(!words.length||!txt) return;
+  const re=new RegExp('('+words.map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','ig');
+  if(!re.test(txt)) return; node.innerHTML=''; txt.split(re).forEach((part,i)=>{ if(!part) return; if(i%2) node.appendChild(el('mark',null,part)); else node.appendChild(document.createTextNode(part)); });
+}
+function renderSearch(){
+  content.innerHTML='';
+  const words=searchWords(searchQ);
+  const hits=[...tasks.values()].filter(t=>matchTask(t,words));
+  $('#searchCount').textContent=hits.length+(hits.length===1?' match':' matches');
+  if(!hits.length){ content.appendChild(el('div','srch-empty','Nothing matches “'+searchQ+'”. Try fewer or different words.')); return; }
+  const open=hits.filter(t=>!t.done).sort((a,b)=>((a.due||'9999')<(b.due||'9999')?-1:(a.due||'9999')>(b.due||'9999')?1:0));
+  const done=hits.filter(t=>t.done).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const group=(name,items)=>{ if(!items.length) return; const g=el('section','group'); const h=el('div','gh'); h.append(el('h2',null,name), el('span','n',String(items.length))); g.appendChild(h);
+    items.forEach(t=>{ const r=taskRow(t); const tt=r.querySelector('.t'); if(tt) highlight(tt,words);
+      // show where the match was found when it's not in the title
+      const where=[]; if(t.notes&&words.some(w=>t.notes.toLowerCase().includes(w))) where.push(t.notes.replace(/\s+/g,' ').slice(0,120));
+      (t.subtasks||[]).forEach(st=>{ if(words.some(w=>st.title.toLowerCase().includes(w))) where.push('step: '+st.title); });
+      const pn=t.project&&projects.get(t.project)?projects.get(t.project).name:''; if(pn&&words.some(w=>pn.toLowerCase().includes(w))) where.push('project: '+pn);
+      if(where.length){ const w=el('div','srch-where',where.join(' · ')); highlight(w,words); const tb=r.querySelector('.tb'); if(tb) tb.appendChild(w); }
+      enableSwipeDelete(r,t.id); g.appendChild(r); });
+    content.appendChild(g); };
+  group('Open',open); group('Completed',done);
 }
 function renderList(){
   content.innerHTML='';
@@ -1343,6 +1400,8 @@ const HELP=[
   <p>On phone, swipe a task left to delete it. You get a few seconds to undo.</p>
   <h3>Undo</h3>
   <p><kbd>Cmd</kbd>+<kbd>Z</kbd> undoes almost anything: a move, a check, a delete, an assistant command. <kbd>Shift</kbd>+<kbd>Cmd</kbd>+<kbd>Z</kbd> redoes.</p>
+  <h3>Find anything</h3>
+  <p>Tap the 🔍 at the top (or press <kbd>⌘F</kbd>) and type any word. It searches titles, descriptions, steps and project names, open and completed, and highlights the match. <kbd>Esc</kbd> clears it.</p>
   <h3>Change a date</h3>
   <p>Click the date on any task (in the list or in the details panel) to pick a new day.</p>`],
  ['Assistant',`
@@ -1722,7 +1781,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-10-26.0415';
+const APP_VERSION='v2026-11-01.1739';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
