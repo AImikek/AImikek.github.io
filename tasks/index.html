@@ -399,7 +399,7 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
   .main{display:block;min-height:0}
   .content{overflow:visible;height:auto}
   body{padding-top:0}
-  .hdr{position:sticky;top:0;z-index:7;background:var(--bg);padding-top:env(safe-area-inset-top,0px);margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:8px;box-shadow:0 8px 20px -14px rgba(0,0,0,.5)}
+  .hdr{position:sticky;top:0;z-index:7;background:var(--bg);padding-top:env(safe-area-inset-top,0px);margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:8px;box-shadow:0 8px 20px -14px rgba(0,0,0,.5);transform:translate3d(0,0,0);will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-font-smoothing:antialiased}
   .top{flex-wrap:nowrap}
   .brand{font-size:16px}
   .tabs{margin-left:auto}
@@ -976,7 +976,7 @@ function renderCal(){
   } else {
     let s=anchor;
     if(calMode==='week') s=addDays(anchor,-parseYmd(anchor).getDay());
-    const n=calMode==='five'?5:7; step=n;
+    const n={five:5,four:4,three:3}[calMode]||7; step=n;
     for(let i=0;i<n;i++) days.push(addDays(s,i));
     const a=parseYmd(days[0]), b=parseYmd(days[n-1]);
     title.textContent = MON[a.getMonth()]+' '+a.getDate()+' – '+(a.getMonth()!==b.getMonth()?MON[b.getMonth()]+' ':'')+b.getDate();
@@ -988,7 +988,8 @@ function renderCal(){
   selBtn.addEventListener('click',()=>{ selectMode=!selectMode; if(!selectMode) multi.clear(); render(); });
   h.append(title, prev, next, tod, selBtn);
   const modes=el('div','tabs modes');
-  [['week','Sun–Sat'],['roll','Next 7'],['five','Next 5'],['month','Month']].forEach(([k,l])=>{ const b=el('button','tab',l); b.setAttribute('aria-selected',String(calMode===k)); b.addEventListener('click',()=>{ calMode=k; LS('calMode',k); if(k!=='month'&&anchor<addDays(today,-60)) anchor=today; render(); }); modes.appendChild(b); });
+  const modeList=mobile?[['week','Sun–Sat'],['roll','Next 7'],['five','Next 5'],['month','Month']]:[['week','Sun–Sat'],['roll','Next 7'],['five','Next 5'],['four','Next 4'],['three','Next 3'],['month','Month']];
+  modeList.forEach(([k,l])=>{ const b=el('button','tab',l); b.setAttribute('aria-selected',String(calMode===k)); b.addEventListener('click',()=>{ calMode=k; LS('calMode',k); if(k!=='month'&&anchor<addDays(today,-60)) anchor=today; render(); }); modes.appendChild(b); });
   h.appendChild(modes);
   wrap.appendChild(h);
 
@@ -1781,7 +1782,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-11-01.1739';
+const APP_VERSION='v2026-11-01.1819';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
