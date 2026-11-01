@@ -400,6 +400,9 @@ body:has(.multibar:not([hidden])) .toast{bottom:calc(76px + env(safe-area-inset-
   .content{overflow:visible;height:auto}
   /* Header is fixed (not sticky) on phones: iOS rasterizes a sticky header at rest at a fractional offset and it looks soft. */
   body{padding-top:var(--hdrH,120px)}
+  .hdr{box-sizing:border-box;overflow:visible}
+  .top{height:54px;padding-top:0;padding-bottom:0}
+  .qa{height:52px;box-sizing:border-box}
   .hdr{position:fixed;top:0;left:0;right:0;z-index:7;background:var(--bg);padding-top:env(safe-area-inset-top,0px);margin:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:8px;box-shadow:0 8px 20px -14px rgba(0,0,0,.5);-webkit-font-smoothing:antialiased}
   .top{flex-wrap:nowrap;gap:6px}
   .me{gap:6px;flex:none}
@@ -1788,7 +1791,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-11-01.1957';
+const APP_VERSION='v2026-11-01.2009';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
@@ -1829,9 +1832,13 @@ function fixViewport(){
 fixViewport(); window.addEventListener('resize',fixViewport); window.addEventListener('orientationchange',()=>setTimeout(fixViewport,300));
 
 /* ---------- keep sticky group headers below the sticky header block ---------- */
-function measureHdr(){ try{ const h=$('#hdr').getBoundingClientRect().height; document.documentElement.style.setProperty('--hdrH', Math.round(h)+'px'); }catch(e){} }
-try{ new ResizeObserver(measureHdr).observe($('#hdr')); }catch(e){ window.addEventListener('resize',measureHdr); }
-measureHdr();
+// The header is pinned on phones, which puts it in its own compositing layer. A layer with a fractional height
+// is rasterized misaligned on iOS and the text looks soft, so we snap the header to a whole number of pixels.
+let hdrMeasuring=false;
+function measureHdr(){ if(hdrMeasuring) return; hdrMeasuring=true; try{ const hd=$('#hdr'); hd.style.height='auto'; const h=hd.getBoundingClientRect().height; const H=Math.ceil(h); hd.style.height=H+'px'; document.documentElement.style.setProperty('--hdrH', H+'px'); }catch(e){} hdrMeasuring=false; }
+try{ const ro=new ResizeObserver(()=>requestAnimationFrame(measureHdr)); [...$('#hdr').children].forEach(c=>ro.observe(c)); new MutationObserver(()=>requestAnimationFrame(measureHdr)).observe($('#hdr'),{attributes:true,subtree:true,attributeFilter:['hidden','class','style']}); }catch(e){}
+window.addEventListener('resize',measureHdr); window.addEventListener('orientationchange',()=>setTimeout(measureHdr,350));
+measureHdr(); setTimeout(measureHdr,300); window.addEventListener('load',measureHdr);
 
 /* ---------- boot ---------- */
 // If this device was signed in last time, skip the sign-in flash: show the cached tasks immediately
