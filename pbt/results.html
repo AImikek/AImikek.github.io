@@ -157,7 +157,6 @@
   /* iOS: 16px inputs prevent focus auto-zoom */
   input, select, textarea { font-size:16px !important; }
 </style>
-<script defer src="https://mikek.ai/assets/analytics/track.js?v=20261022-network" data-site="pickleball" data-page="/pbt/results.html"></script>
 </head>
 <body>
 
@@ -270,14 +269,15 @@ if (!shareId) {
     const list = [...allPlayers].map(p=>{
       const st=stats[p]; const diff=st.ptsFor-st.ptsAgainst;
       return {name:p,...st,diff,avgDiff:st.games>0?diff/st.games:0};
-    }).sort((a,b)=>b.avgDiff-a.avgDiff||b.wins-a.wins||b.ptsFor-a.ptsFor);
+    }).sort((a,b)=>(b.games?b.wins/b.games:0)-(a.games?a.wins/a.games:0)||b.avgDiff-a.avgDiff||b.wins-a.wins||b.ptsFor-a.ptsFor);
     const champ = list[0];
+    const _gc = list.map(p=>p.games).filter(n=>n>0), uneven = _gc.length>1 && Math.max(..._gc)!==Math.min(..._gc);
 
-    let sHtml = '<table class="stbl"><thead><tr><th>Player</th><th>W</th><th>Pts</th><th>Ag</th><th>G</th><th>Avg</th></tr></thead><tbody>';
+    let sHtml = '<table class="stbl"><thead><tr><th>Player</th><th>'+(uneven?'W%':'W')+'</th><th>Pts</th><th>Ag</th><th>G</th><th>Avg</th></tr></thead><tbody>';
     list.forEach((p,i)=>{
       const dc=p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
       sHtml+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname">'+p.name+'</span></td>'
-        +'<td>'+p.wins+'</td><td class="ptsf">'+p.ptsFor+'</td><td>'+p.ptsAgainst+'</td><td style="color:var(--muted);">'+p.games+'</td>'
+        +'<td>'+(uneven?(p.games?Math.round(100*p.wins/p.games):0)+'% <span style="color:var(--muted);font-size:10px;">('+p.wins+'-'+(p.games-p.wins)+')</span>':p.wins)+'</td><td class="ptsf">'+p.ptsFor+'</td><td>'+p.ptsAgainst+'</td><td style="color:var(--muted);">'+p.games+'</td>'
         +'<td class="'+dc+'">'+(p.avgDiff>0?'+':'')+p.avgDiff.toFixed(1)+'</td></tr>';
     });
     sHtml += '</tbody></table>';

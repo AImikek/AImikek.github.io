@@ -1779,7 +1779,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
       <div id="rankRuleWrap" style="margin:14px 0 6px;">
         <label class="flabel">🏆 Ranking rule</label>
         <div style="display:flex;gap:8px;">
-          <button type="button" id="rr_auto" class="rtbtn" onclick="setRankRule('auto')" style="flex:1;">⭐ Smart<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Wins if even games, else Avg Diff</span></button>
+          <button type="button" id="rr_auto" class="rtbtn" onclick="setRankRule('auto')" style="flex:1;">⭐ Smart<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Win % first, Avg Diff breaks ties</span></button>
           <button type="button" id="rr_wins" class="rtbtn" onclick="setRankRule('wins')" style="flex:1;">Wins first<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Avg Diff breaks ties</span></button>
           <button type="button" id="rr_avg" class="rtbtn" onclick="setRankRule('avg')" style="flex:1;">Avg Diff first<br><span style="font-size:9px;letter-spacing:0;text-transform:none;opacity:0.75;">Wins break ties</span></button>
         </div>
@@ -2673,7 +2673,7 @@ async function _finalizeTournament() {
   cfg={name,mode,players,schedule,playType:playType_,fromSession:window._fromSid||null,rankRule:rankRule,rounds:rrRounds}; if (h2h) cfg.h2h = true; scores={};
   window._h2h = false;
   window._fromSid = null; window._sessRoster = null; window._dupPrefill = null; window._dupCarry = null;
-  rankMode = rankRule; _rankModeTouched = false;
+  rankMode = 'wins'; _rankModeTouched = false;
   const tid = makeTid();
   activeTid = tid;
   set(ref(db, 'users/' + currentUser.uid + '/activeTournamentId'), tid);
@@ -9142,7 +9142,7 @@ window.addFinals = function() {
   const reg = cfg.schedule.filter(g => !g.added && !g.deleted);
   const unscored = reg.filter(g => { const s = scores[g.key]; return !s || s.s1 === null || s.s1 === undefined; });
   if (unscored.length && !confirm(unscored.length + ' game(s) still unscored — seed finals from CURRENT standings anyway?')) return;
-  if (!_rankModeTouched && cfg.rankRule) rankMode = cfg.rankRule;
+  if (!_rankModeTouched) rankMode = 'wins';
   const { list } = calcStandings();
   const skipped = list.filter(p => p.lowSample).map(p => p.name);
   const ranked = list.filter(p => p.games > 0 && !p.lowSample).map(p => p.name);
@@ -9384,7 +9384,7 @@ function calcStandings(opts) {
   const gameCounts = Object.values(stats).map(s=>s.games).filter(n=>n>0);
   const uneven = gameCounts.length > 1 && (Math.max(...gameCounts) - Math.min(...gameCounts)) >= 1;
   const autoRule = rankMode === 'auto';
-  const effectiveMode = autoRule ? (uneven ? 'avg' : 'wins') : rankMode;
+  const effectiveMode = autoRule ? 'wins' : rankMode;   // Smart = Win % first (plain wins when everyone played the same), Avg Diff breaks ties
   const maxGames = gameCounts.length ? Math.max(...gameCounts) : 0;
 
   return {
@@ -9417,7 +9417,7 @@ function calcStandings(opts) {
 function renderStandings() {
   const el = document.getElementById('pageStandings');
   if (!cfg?.players) { el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-t">No Tournament Yet</div></div>'; return; }
-  if (!_rankModeTouched) rankMode = ['avg','wins','auto'].includes(cfg.rankRule) ? cfg.rankRule : 'avg'; // tournaments created before the rule existed were played under Avg Diff
+  if (!_rankModeTouched) rankMode = 'wins';   // Stats opens on Win % (tap Avg or Pts to re-sort)
 
   const _hasFinals = cfg.schedule.some(g => g.finals && !g.deleted);
   const { list, uneven, effectiveMode, autoRule, maxGames } = calcStandings({ excludeFinals: _hasFinals });
@@ -10124,7 +10124,7 @@ window.openHistory = function() {
   }, {onlyOnce:true});
 };
 
-let histSort = 'avg';
+let histSort = 'wins';
 window.sortHistoryDetail = function(tid, mode) {
   histSort = mode;
   viewHistoryDetail(tid);
@@ -10176,7 +10176,7 @@ window.viewHistoryDetail = function(tid) {
   });
   const hs = histSort;
   const sortFns = {
-    wins: (a,b)=>b.wins-a.wins||b.avgDiff-a.avgDiff,
+    wins: (a,b)=>(b.games?b.wins/b.games:0)-(a.games?a.wins/a.games:0)||b.avgDiff-a.avgDiff||b.wins-a.wins,
     pts:  (a,b)=>b.ptsFor-a.ptsFor||b.avgDiff-a.avgDiff,
     ag:   (a,b)=>a.ptsAgainst-b.ptsAgainst||b.avgDiff-a.avgDiff,
     g:    (a,b)=>b.games-a.games||b.avgDiff-a.avgDiff,
@@ -10186,18 +10186,19 @@ window.viewHistoryDetail = function(tid) {
     return {name:p,...st,diff,avgDiff:st.games>0?diff/st.games:0};})
     .sort(sortFns[hs] || sortFns.avg);
 
+  const _hGc = list.map(p=>p.games).filter(n=>n>0), _hUneven = _hGc.length>1 && Math.max(..._hGc)!==Math.min(..._hGc);
   let html = '<button onclick="openHistory()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 14px;font-family:\'DM Sans\',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:16px;">← All Tournaments</button>';
   html += '<div style="font-family:\'Russo One\',sans-serif;font-size:22px;letter-spacing:1px;color:var(--white);text-transform:uppercase;margin-bottom:2px;">'+(tCfg.name||'Tournament')+'</div>';
   html += '<div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:18px;">'+date+'</div>';
   const hl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);cursor:pointer;"';
   const nh = 'style="cursor:pointer;"';
   const th = (mode, lbl) => '<th onclick="sortHistoryDetail(\''+tid+'\',\''+mode+'\')" '+(hs===mode?hl:nh)+'>'+lbl+'</th>';
-  html += '<table class="stbl"><thead><tr><th>Player</th>'+th('wins','W')+th('pts','Pts')+th('ag','Ag')+th('g','G')+th('avg','Avg')+'</tr></thead><tbody>';
+  html += '<table class="stbl"><thead><tr><th>Player</th>'+th('wins',_hUneven?'W%':'W')+th('pts','Pts')+th('ag','Ag')+th('g','G')+th('avg','Avg')+'</tr></thead><tbody>';
   const cellHl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
   list.forEach((p,i)=>{
     const dc=p.avgDiff>0?'dpos':p.avgDiff<0?'dneg':'';
     html+='<tr><td><span class="snum'+(i===0?' gold':'')+'">'+( i+1)+'</span><span class="pname" onclick="openPlayerDetail(\''+p.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;border-bottom:1px dotted rgba(0,240,255,0.5);">'+p.name+'</span></td>'
-      +'<td '+(hs==='wins'?cellHl:'')+'>'+p.wins+'</td>'
+      +'<td '+(hs==='wins'?cellHl:'')+'>'+(_hUneven ? (p.games?Math.round(100*p.wins/p.games):0)+'% <span style="color:var(--muted);font-size:10px;">('+p.wins+'-'+(p.games-p.wins)+')</span>' : p.wins)+'</td>'
       +'<td '+(hs==='pts'?cellHl:'')+' class="ptsf">'+p.ptsFor+'</td>'
       +'<td '+(hs==='ag'?cellHl:'')+'>'+p.ptsAgainst+'</td>'
       +'<td '+(hs==='g'?cellHl:'')+' style="color:var(--muted);">'+p.games+'</td>'
@@ -10829,7 +10830,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-02.3';
+window.BUILD_TAG = 'v2026-11-02.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
