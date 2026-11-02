@@ -293,6 +293,9 @@
   .form-note{font-size:.8rem;color:var(--muted-2);margin-top:2px}
 
   /* success state */
+  .id-notice{margin:18px 0;padding:16px 18px;border:2px solid #f5b942;border-radius:12px;background:#fff4d6;color:#402900;text-align:left;font-size:.95rem;line-height:1.55}
+  .id-notice strong{display:block;margin-bottom:6px;font-size:.95rem;font-weight:800;line-height:1.4}
+  .id-notice span{display:block}
   .sent{text-align:center;padding:18px 6px}
   .sent .ok{width:62px;height:62px;border-radius:50%;background:var(--accent-soft);border:1px solid var(--line-strong);
     display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
@@ -886,6 +889,10 @@ function pageView(f){
     </div>`;
 }
 
+function admissionNotice(f){
+  return f.form?.route === "Equinox" ? "<aside class=\"id-notice\"><strong>PHYSICAL ID REQUIRED \u2014 NO ID, NO ENTRY</strong><span>Bring your physical ID to Equinox. You will not be admitted without it. A photo or digital copy does not replace your physical ID.</span></aside>" : "";
+}
+
 function formView(f){
   const fields = f.form.fields.map(fld=>{
     const req = fld.required ? ` <span class="req">*</span>` : "";
@@ -907,6 +914,7 @@ function formView(f){
       <h2>${f.name}</h2>
       ${f.perk?`<p style="margin:0 0 10px"><span class="perk"><b>Mike's Perk</b> ${f.perk}</span></p>`:""}
       <p class="why" style="margin-bottom:6px">${f.blurb}</p>
+      ${admissionNotice(f)}
       <form class="refform" novalidate>
         ${fields}
         <button type="submit" class="btn">${f.form.cta||"Send"}</button>
@@ -975,6 +983,7 @@ function sentView(f){
         <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></div>
         <h3>You're all set</h3>
         <p>${f.form.success || "Thanks — Mike will be in touch."}</p>
+        ${admissionNotice(f)}
         <div class="btn-row" style="margin-top:22px"><button class="btn ghost" onclick="doShare(FAVORITES.find(x=>slug(x.name)==='${slug(f.name)}'))">Share this with a friend</button></div>
       </div>
     </div>`;
