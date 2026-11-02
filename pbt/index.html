@@ -5371,6 +5371,86 @@ window.groupTextSession = async function(sid) {
       + '<div style="margin-top:8px;font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.5;">Heads up: iPhone sometimes opens Messages with only the first person in <b>To</b>. All ' + got.length + ' numbers are copied when you tap Open, so if that happens, long-press the <b>To</b> field → <b>Paste</b> and they all drop in.</div>' : '')
     + '<button onclick="copyTextRobust(' + "'" + got.map(g => g.ph).join(', ').replace(/'/g, '') + "'" + ').then(ok=>copiedToast(ok?\'✓ Numbers copied\':\'Copy failed\'))" style="display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Copy numbers instead</button>';
 };
+// Group text the players of a FINISHED (or in-progress) tournament, with the results link and an editable message
+window._gtNorm = function(raw) { let ph = raw ? String(raw).replace(/[^\d+]/g, '') : ''; if (ph && !ph.startsWith('+')) ph = (ph.length === 10 ? '+1' : '+') + ph; return ph; };
+window._gtPhoneForName = async function(name, dir) {
+  const nm = String(name || '').trim().toLowerCase(); if (!nm) return null;
+  const hits = Object.entries(dir || {}).filter(([u, d]) => d && String(d.name || '').trim().toLowerCase() === nm)
+    .sort((a, b) => (a[1].unclaimed ? 1 : 0) - (b[1].unclaimed ? 1 : 0) || (b[1].lastActive || 0) - (a[1].lastActive || 0));
+  for (const [uid, d] of hits) {
+    let raw = d.phone || '';
+    if (!raw && !d.unclaimed) { try { raw = ((await get(ref(db, 'users/' + uid + '/profile'))).val() || {}).phone || ''; } catch (e) {} }
+    const ph = window._gtNorm(raw); if (ph) return { uid, ph };
+  }
+  return null;
+};
+window._gtDayWord = function(ts) {
+  const d = new Date(ts || Date.now()), n = new Date(); d.setHours(0,0,0,0); n.setHours(0,0,0,0);
+  const diff = Math.round((n - d) / 86400000);
+  if (diff <= 0) return 'today'; if (diff === 1) return 'yesterday';
+  return 'on ' + new Date(ts).toLocaleDateString('en-US', { weekday: 'long' });
+};
+window._gtShareUrl = async function(c, sc, createdAt) {
+  const sched = (Array.isArray(c.schedule) ? c.schedule : Object.values(c.schedule || {})).filter(g => !g.deleted);
+  const shareId = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+  await set(ref(db, 'shares/' + shareId), { cfg: { name: c.name || 'Tournament', mode: c.mode || null, players: c.players || [], schedule: sched }, scores: sc || {}, createdAt: createdAt || Date.now() });
+  return location.origin + location.pathname.replace(/[^\/]*$/, '') + 'results.html?id=' + shareId;
+};
+// src: 'live' = the tournament you have open now, or a history id
+window.groupTextTournament = async function(src) {
+  let c, sc, ts;
+  if (src === 'live' || !src) { c = cfg; sc = scores || {}; ts = Date.now(); }
+  else { const t = window._historyData && window._historyData[src]; if (!t) return; c = t.cfg; sc = t.scores || {}; ts = t.finishedAt || Date.now(); }
+  if (!c) return;
+  const sh = document.getElementById('groupMembersSheet'); sh.classList.remove('hidden');
+  document.getElementById('gmTitle').textContent = '📱 Group text the players';
+  document.getElementById('gmSub').textContent = 'Finding numbers…';
+  document.getElementById('gmList').innerHTML = '<div style="color:var(--muted);font-weight:600;font-size:12px;">Loading…</div>';
+  const names = new Set((Array.isArray(c.players) ? c.players : Object.values(c.players || {})));
+  (Array.isArray(c.schedule) ? c.schedule : Object.values(c.schedule || {})).forEach(g => { if (g.deleted) return; [].concat(Array.isArray(g.t1) ? g.t1 : Object.values(g.t1 || {}), Array.isArray(g.t2) ? g.t2 : Object.values(g.t2 || {})).forEach(p => names.add(p)); });
+  const dir = await loadChatDir(); const me = currentUser && currentUser.uid; const myName = String(chatName() || '').trim().toLowerCase();
+  const got = [], missing = [], seen = new Set();
+  for (const n of names) {
+    if (!n) continue;
+    if (String(n).trim().toLowerCase() === myName) continue;
+    const r = await window._gtPhoneForName(n, dir);
+    if (r && r.uid === me) continue;
+    if (r && !seen.has(r.ph)) { seen.add(r.ph); got.push({ name: n, ph: r.ph }); } else if (!r) missing.push(n);
+  }
+  let link = ''; try { link = await window._gtShareUrl(c, sc, ts); } catch (e) {}
+  const when = window._gtDayWord(ts), first = String((userProfile && userProfile.name) || '').trim().split(/\s+/)[0] || '';
+  const app = location.origin + location.pathname.replace(/[^\/]*$/, '');
+  const scoresLine = link ? 'Here are the scores so you can see how it went: ' + link : '';
+  const tpls = {
+    scores: 'Thanks for the games ' + when + ', that was a blast!' + (link ? ' Here are the scores: ' + link : ''),
+    app: 'Hey everyone' + (first ? ', it\'s ' + first : '') + '! Thank you so much for inviting me to play ' + when + ', I had a great time and it was a blast meeting you all.\n\n'
+      + (scoresLine ? scoresLine + '\n\n' : '')
+      + 'That\'s the app I built. It\'s free, and I made it to make scheduling games easier, keep track of scores from mini tournaments without the DUPR pressure, and help me find more great pickleball players to play with. You can even set up a game just by chatting with the AI assistant in it. Sign up here: ' + app + '\n\n'
+      + 'I\'d love your feedback, especially what would make you actually use it. I\'m also open to bringing a few people on as part of a founding team. I\'ll do all the coding, and you\'d help spread it through the pickleball community, with compensation. If that sounds interesting, let me know!\n\n'
+      + 'And please invite me to your games, I\'ll be inviting you to mine.'
+  };
+  window._gt = { got, tpls };
+  document.getElementById('gmSub').textContent = got.length + ' recipient' + (got.length === 1 ? '' : 's') + ' · opens Messages as one group thread';
+  const chip = (k, l) => '<button onclick="gtPickTpl(\'' + k + '\')" style="flex:1;padding:9px 6px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">' + l + '</button>';
+  document.getElementById('gmList').innerHTML = got.map(g => '<div style="display:flex;justify-content:space-between;padding:8px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;"><span style="font-weight:700;color:var(--white);font-size:13.5px;">' + escInfo(g.name) + '</span><span style="font-size:12px;color:var(--muted);font-weight:600;">' + escInfo(g.ph) + '</span></div>').join('')
+    + (missing.length ? '<div style="margin:8px 0;font-size:12px;color:var(--yellow);font-weight:700;">No number on file: ' + missing.map(escInfo).join(', ') + '</div>' : '')
+    + '<div style="display:flex;gap:8px;margin:12px 0 8px;">' + chip('scores', 'Just the scores') + chip('app', 'Scores + about the app') + '</div>'
+    + '<textarea id="gtMsg" rows="9" style="width:100%;box-sizing:border-box;padding:10px 12px;background:rgba(4,6,15,0.4);border:1px solid var(--border);border-radius:10px;font-size:13px;color:var(--white);font-weight:600;font-family:inherit;line-height:1.45;resize:vertical;">' + escInfo(tpls.scores) + '</textarea>'
+    + (got.length ? '<button onclick="gtOpenTourney()" style="display:block;width:100%;margin-top:8px;padding:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Open Messages · ' + got.length + ' people</button>'
+      + '<div style="margin-top:8px;font-size:11.5px;color:var(--muted);font-weight:600;line-height:1.5;">Edit the message above first if you like. If iPhone shows only the first person in <b>To</b>, long-press <b>To</b> → <b>Paste</b>: all ' + got.length + ' numbers are copied when you tap Open.</div>' : '<div style="margin-top:8px;font-size:12px;color:var(--muted);font-weight:600;">No phone numbers on file for this group yet.</div>')
+    + '<button onclick="copyTextRobust(document.getElementById(\'gtMsg\').value).then(ok=>copiedToast(ok?\'✓ Message copied\':\'Copy failed\'))" style="display:block;width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Copy message only</button>';
+};
+window.gtPickTpl = function(k) { const t = window._gt && window._gt.tpls[k]; const el = document.getElementById('gtMsg'); if (t && el) el.value = t; };
+window.gtOpenTourney = async function() {
+  const g = window._gt; if (!g || !g.got.length) return;
+  const body = (document.getElementById('gtMsg') || {}).value || '';
+  const nums = g.got.map(x => x.ph);
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const href = ios ? 'sms:/open?addresses=' + nums.join(',') + '&body=' + encodeURIComponent(body) : 'sms:' + nums.join(',') + '?body=' + encodeURIComponent(body);
+  try { await copyTextRobust(nums.join(', ')); } catch (e) {}
+  document.getElementById('groupMembersSheet').classList.add('hidden');
+  (window._go || (u => { window.location.href = u; }))(href);
+};
 // From a session page: jump into a group chat with this game already attached
 window.postSessionToChat = async function(sid) {
   const lv = await window.myChatLevel();
@@ -9440,6 +9520,7 @@ function renderStandings() {
   }
   if (done > 0) {
     if (done > 0) html += '<button onclick="shareStatsLink()" style="display:block;width:100%;margin-top:20px;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🔗 Share Results Link</button>';
+    if (done > 0) html += '<button onclick="groupTextTournament(\'live\')" style="display:block;width:100%;margin-top:10px;padding:15px;background:transparent;border:1px solid rgba(0,245,196,0.4);color:var(--aqua);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">📱 Group Text the Players</button>';
     if (done > 0) html += '<button onclick="saveStatsImage()" id="saveStatsBtn" style="display:block;width:100%;margin-top:10px;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(255,45,120,0.3);">📸 Save Image</button>';
   } else {
     html += '<div style="text-align:center;margin-top:20px;padding:14px;color:var(--muted);font-size:13px;font-weight:600;border:1px dashed var(--border);border-radius:12px;">📊 Enter your first score and sharing options appear here</div>';
@@ -10173,6 +10254,7 @@ window.viewHistoryDetail = function(tid) {
 
   html += '<button onclick="shareHistoryTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:18px;padding:15px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,144,255,0.3);">🔗 Share Results Link</button>';
   html += '<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;font-weight:600;">Opens the public results page — screenshot it for an image</div>';
+  html += '<button onclick="groupTextTournament(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(0,245,196,0.4);color:var(--aqua);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">📱 Group Text the Players</button>';
   html += '<button onclick="dupFromHistory(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:14px;background:transparent;border:1px solid rgba(0,240,255,0.4);color:var(--cyan);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">🔁 Duplicate — Set Up Next Week\'s</button>';
 
   // Admin restore + delete
@@ -10638,6 +10720,9 @@ function clearChatAttach()   { if(window.clearChatAttach && window.clearChatAtta
 function growChatInput(t)    { if(window.growChatInput && window.growChatInput !== growChatInput) { window.growChatInput(t); return; } __pbtWait(growChatInput, arguments); }
 function postSessionToChat(s){ if(window.postSessionToChat && window.postSessionToChat !== postSessionToChat) { window.postSessionToChat(s); return; } __pbtWait(postSessionToChat, arguments); }
 function groupTextSession(s) { if(window.groupTextSession && window.groupTextSession !== groupTextSession) { window.groupTextSession(s); return; } __pbtWait(groupTextSession, arguments); }
+function groupTextTournament(s) { if(window.groupTextTournament && window.groupTextTournament !== groupTextTournament) { window.groupTextTournament(s); return; } __pbtWait(groupTextTournament, arguments); }
+function gtPickTpl(k) { if(window.gtPickTpl && window.gtPickTpl !== gtPickTpl) { window.gtPickTpl(k); return; } __pbtWait(gtPickTpl, arguments); }
+function gtOpenTourney() { if(window.gtOpenTourney && window.gtOpenTourney !== gtOpenTourney) { window.gtOpenTourney(); return; } __pbtWait(gtOpenTourney, arguments); }
 function openGroupTextApp()  { if(window.openGroupTextApp && window.openGroupTextApp !== openGroupTextApp) { window.openGroupTextApp(); return; } __pbtWait(openGroupTextApp, arguments); }
 function newGroupChat()      { if(window.newGroupChat && window.newGroupChat !== newGroupChat) { window.newGroupChat(); return; } __pbtWait(newGroupChat, arguments); }
 function openCreateChooser() { if(window.openCreateChooser && window.openCreateChooser !== openCreateChooser) { window.openCreateChooser(); return; } __pbtWait(openCreateChooser, arguments); }
@@ -10744,7 +10829,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-02.2';
+window.BUILD_TAG = 'v2026-11-02.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
