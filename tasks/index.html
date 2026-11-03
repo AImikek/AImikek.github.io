@@ -697,7 +697,10 @@ function restore(entries, dir){ applyingHistory=true; try{
 function undo(){ const e=undoStack.pop(); if(!e){ toast('Nothing to undo'); return; } redoStack.push(e); restore(e,'undo'); toast('Undone'); }
 function redo(){ const e=redoStack.pop(); if(!e){ toast('Nothing to redo'); return; } undoStack.push(e); restore(e,'redo'); toast('Redone'); }
 async function persist(id, data){ recordHistory([{id,before:snap(tasks.get(id)),after:snap(data)}]); tasks.set(id, data); render(); saveLocal(); write(base()+'/tasks/'+id, data); touchActivity(); }
-async function remove(id){ recordHistory([{id,before:snap(tasks.get(id)),after:null}]); tasks.delete(id); if(sel===id) sel=null; render(); saveLocal(); write(base()+'/tasks/'+id, null); }
+async function remove(id){ const rt=tasks.get(id);
+  // deleting the open occurrence of a repeating series ends the series (so self-heal doesn't bring it back)
+  if(rt&&!rt.done&&rt.repeat&&rt.repeat.dow&&rt.repeat.dow.length){ const sid=rt.repeatOf||rt.id; const sib=[...tasks.values()].filter(x=>x.id!==id&&(x.repeatOf||x.id)===sid&&x.repeat); const hist2=[]; sib.forEach(x=>{ const n={...x,repeat:null,pinned:false,updatedAt:Date.now()}; hist2.push({id:x.id,before:snap(x),after:snap(n)}); tasks.set(x.id,n); write(base()+'/tasks/'+x.id,n); }); if(hist2.length) recordHistory(hist2); }
+  recordHistory([{id,before:snap(tasks.get(id)),after:null}]); tasks.delete(id); if(sel===id) sel=null; render(); saveLocal(); write(base()+'/tasks/'+id, null); }
 async function persistProj(p){ projects.set(p.id,p); render(); saveLocal(); write(base()+'/projects/'+p.id, p); }
 async function removeProj(id){ projects.delete(id); if(curProj===id) curProj=null; render(); saveLocal(); write(base()+'/projects/'+id, null); }
 let lastTouch=0; function touchActivity(){ const now=Date.now(); if(now-lastTouch<60000) return; lastTouch=now; write('profiles/'+me+'/lastActive', now); write('profiles/'+me+'/taskCount', tasks.size); }
@@ -708,9 +711,16 @@ function addTask(title, due, project){
   const t={id:uid(), title, due:due||null, project:project||null, notes:'', done:false, subtasks:[], photos:[], createdAt:Date.now(), updatedAt:Date.now()};
   persist(t.id,t); return t;
 }
-function upd(id, patch){ const t=tasks.get(id); if(!t) return; const n={...t,...patch,updatedAt:Date.now()}; persist(id,n); }
+function upd(id, patch){ const t=tasks.get(id); if(!t) return; if(patch&&patch.done===true&&!t.done&&t.repeat&&t.repeat.dow&&t.repeat.dow.length){ updMany([[id,patch]]); return; } const n={...t,...patch,updatedAt:Date.now()}; persist(id,n); }
+// Self-heal: a repeating series with nothing open (e.g. last one was checked off by a route that didn't line up the next) gets its next occurrence back. Fixed id => two devices can't double-create.
+function healRepeats(){ const series={}; for(const t of tasks.values()){ if(t.repeat&&t.repeat.dow&&t.repeat.dow.length){ const sid=t.repeatOf||t.id; const g=series[sid]=series[sid]||{open:false,last:t}; if(!t.done) g.open=true; if((t.due||'')>(g.last.due||'')) g.last=t; } }
+  const today=todayStr(); let n=0;
+  for(const sid in series){ const g=series[sid]; if(g.open) continue; const base0=g.last.due&&g.last.due>today?g.last.due:addDays(today,-1); const next=nextOccurrence(g.last.repeat.dow, base0); if(!next) continue; const id='rp_'+sid+'_'+next; if(tasks.has(id)) continue; const nt={...g.last,id,due:next,done:false,subtasks:(g.last.subtasks||[]).map(x=>({...x,done:false})),photos:[],createdAt:Date.now(),updatedAt:Date.now(),repeatOf:sid,order:null}; tasks.set(id,nt); write(base()+'/tasks/'+id,nt); n++; }
+  return n; }
+// When a repeating task gets checked off by any route, line up its next occurrence so it never drops out of the list
+function nextSpawn(t){ if(!(t.repeat&&t.repeat.dow&&t.repeat.dow.length)) return null; const next=nextOccurrence(t.repeat.dow, t.due||todayStr()); if(!next) return null; const sid=t.repeatOf||t.id; if([...tasks.values()].some(x=>x.id!==t.id&&x.repeatOf===sid&&x.due===next&&!x.done)) return null; return {...t,id:uid(),due:next,done:false,subtasks:(t.subtasks||[]).map(x=>({...x,done:false})),createdAt:Date.now(),updatedAt:Date.now(),repeatOf:sid,order:null}; }
 // Apply several patches with one render (used for reordering)
-function updMany(list){ const now=Date.now(); const hist=[]; for(const [id,patch] of list){ const t=tasks.get(id); if(t){ const n={...t,...patch,updatedAt:now}; hist.push({id,before:snap(t),after:snap(n)}); tasks.set(id,n); } } recordHistory(hist); render(); saveLocal(); for(const [id] of list){ const t=tasks.get(id); if(t) write(base()+'/tasks/'+id, t); } touchActivity(); }
+function updMany(list){ const now=Date.now(); const hist=[]; const spawned=[]; for(const [id,patch] of list){ const t=tasks.get(id); if(t){ const n={...t,...patch,updatedAt:now}; hist.push({id,before:snap(t),after:snap(n)}); tasks.set(id,n); if(patch&&patch.done===true&&!t.done&&!applyingHistory){ const sp=nextSpawn(t); if(sp){ tasks.set(sp.id,sp); spawned.push(sp); hist.push({id:sp.id,before:null,after:snap(sp)}); } } } } recordHistory(hist); spawned.forEach(sp=>write(base()+'/tasks/'+sp.id,sp)); render(); saveLocal(); for(const [id] of list){ const t=tasks.get(id); if(t) write(base()+'/tasks/'+id, t); } touchActivity(); }
 // Drop task `id` into day `key`, before task `beforeId` (or at the end when null), renumbering that day's order
 function placeInDay(ids, key, beforeId){
   ids=(Array.isArray(ids)?ids:String(ids).split(',')).filter(id=>tasks.get(id));
@@ -1791,7 +1801,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-11-01.2009';
+const APP_VERSION='v2026-11-03.2359';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';
@@ -1888,7 +1898,7 @@ FB.onUser(async u=>{
     for(const id of [...projects.keys()]) if(!seenP.has(id)&&!pending.has(id)) projects.delete(id);
     // tasks may have lost array fields (RTDB drops empty arrays)
     for(const v of tasks.values()){ if(!Array.isArray(v.subtasks)) v.subtasks=v.subtasks?Object.values(v.subtasks):[]; if(!Array.isArray(v.photos)) v.photos=v.photos?Object.values(v.photos):[]; }
-    saveLocal(); status.textContent=navigator.onLine?'synced':'offline'; render();
+    healRepeats(); saveLocal(); status.textContent=navigator.onLine?'synced':'offline'; render();
   }, e=>{ console.warn(e); status.textContent='sync blocked · '+(e&&e.code||''); toast('Could not sync. Your changes are saved on this device.'); });
 });
 })();
