@@ -249,6 +249,8 @@ input,textarea{font:inherit;color:inherit}
 .task .t,.task .meta{-webkit-user-select:none;user-select:none}
 .toast .tbtn{margin-left:12px;color:var(--accent);font-weight:800;text-decoration:underline}
 .meta .rep{color:var(--accent)}
+.furow{margin:-2px 0 10px}
+.pill.fu{color:var(--accent,#5ee0a6);border-color:currentColor;opacity:.9}
 .subnote{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
 .gatenote{margin:10px 0 0;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
 /* search */
@@ -770,6 +772,14 @@ function toggleDone(id){ const t=tasks.get(id); if(!t) return;
   }
   upd(id,{done:!t.done}); }
 
+// Done for today, pick it up again later: check this one off and make a fresh copy on another day (notes and open steps carry over)
+function followUp(id, due){ const t=tasks.get(id); if(!t) return null;
+  const now=Date.now(); const n={...t,done:true,updatedAt:now};
+  const steps=(t.subtasks||[]).filter(x=>!x.done).map(x=>({...x,done:false}));
+  const nt={id:uid(),title:t.title,due:due||null,project:t.project||null,notes:t.notes||'',done:false,subtasks:steps,photos:[],repeat:null,pinned:false,followUpOf:t.followUpOf||t.id,createdAt:now,updatedAt:now,order:null};
+  recordHistory([{id:t.id,before:snap(t),after:snap(n)},{id:nt.id,before:null,after:snap(nt)}]);
+  tasks.set(t.id,n); tasks.set(nt.id,nt); sel=null; render(); saveLocal(); write(base()+'/tasks/'+t.id,n); write(base()+'/tasks/'+nt.id,nt); touchActivity();
+  toastAction('Done · follow-up '+fmtDue(due),'Undo',undo); return nt.id; }
 /* ---------- quick add ---------- */
 const qi=$('#qi'), qdateTxt=$('#qdateTxt'), qdate=$('#qdate');
 let manualDate=null;
@@ -1245,6 +1255,9 @@ function renderPanel(){
   ta.addEventListener('input',grow); ta.addEventListener('blur',()=>{ const v=ta.value.trim(); if(v&&v!==tasks.get(t.id).title) upd(t.id,{title:v}); });
   ta.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); ta.blur(); } });
   tt.append(chk,ta); pb.appendChild(tt); requestAnimationFrame(grow);
+  if(!t.done){ const fu=el('div','row furow'); const fb=el('button','pill fu','✓ Done · follow up later'); fb.title='Check this off today and put a fresh copy on another day';
+    fb.addEventListener('click',()=>openDatePicker(fb, addDays(todayStr(),2), d=>{ if(d) followUp(t.id,d); }));
+    fu.appendChild(fb); pb.appendChild(fu); }
 
   const ns=el('div'); ns.appendChild(el('span','lbl','Details'));
   const notes=el('textarea','notes'); notes.id='p-notes'; notes.placeholder='Add a description, links, context…'; notes.value=t.notes||'';
@@ -1434,6 +1447,9 @@ const HELP=[
    <span class="say">delete completed tasks</span>
    <span class="say">what's left tomorrow</span>
   </p>
+  <h3>Done for today, pick it up later</h3>
+  <p><span class="say">done with the Mercury check, follow up Thursday</span><span class="say">finished the invoice, revisit in 2 days</span></p>
+  <p>Checks today's off (so you get credit for it) and puts a fresh copy on the later day with your notes and open steps. Same thing from inside a task: tap <b>Done · follow up later</b> under the title.</p>
   <h3>Repeating tasks</h3>
   <p><span class="say">Medicine every Tuesday and Friday</span><span class="say">Gym every Mon, Wed and Fri</span></p>
   <p>Repeating tasks are pinned to their days. Shift, move and spread commands leave them alone, and the preview tells you how many it skipped.</p>
@@ -1595,6 +1611,7 @@ function planFromModel(m){
     if(c.create){ const title=String(c.title||'').trim(); if(!title) continue; const due=c.due||null; const dow=Array.isArray(c.repeat)&&c.repeat.length?[...new Set(c.repeat.map(Number))].sort():null;
       changes.push({create:{title,due,repeat:dow?{dow}:null,pinned:!!dow}}); lines.push({title:title,note:(due?'→ '+fmtDue(due):'')+(dow?' ↻ '+dow.map(d=>DOW[d]).join(' · '):'')}); continue; }
     const tk=tasks.get(c.id); if(!tk) continue;
+    if(c.followUp&&/^\d{4}-\d{2}-\d{2}$/.test(c.followUp)){ changes.push({followUp:{id:tk.id,due:c.followUp}}); lines.push({title:tk.title,note:'done today · follow-up '+fmtDue(c.followUp)}); continue; }
     if(c.del){ changes.push({id:tk.id,del:true}); lines.push({title:tk.title,note:'delete'}); continue; }
     const patch={}; const notes=[];
     if('due' in c && c.due!==undefined && c.due!==tk.due){ patch.due=c.due||null; notes.push((tk.due?fmtDue(tk.due):'no date')+' → '+(c.due?fmtDue(c.due):'no date')); }
@@ -1615,7 +1632,8 @@ function showPlan(p){
   aiGo.textContent = p.changes.length ? 'Do it ('+p.changes.length+')' : 'Preview';
 }
 function applyPlan(p){
-  const dels=p.changes.filter(c=>c.del), ups=p.changes.filter(c=>!c.del&&!c.create), creates=p.changes.filter(c=>c.create);
+  p.changes.filter(c=>c.followUp).forEach(c=>followUp(c.followUp.id,c.followUp.due));
+  const dels=p.changes.filter(c=>c.del), ups=p.changes.filter(c=>!c.del&&!c.create&&!c.followUp), creates=p.changes.filter(c=>c.create);
   if(ups.length) updMany(ups.map(c=>[c.id,c.patch]));
   creates.forEach(c=>{ const nt={id:uid(),title:c.create.title,due:c.create.due||null,project:null,notes:'',done:false,subtasks:[],photos:[],repeat:c.create.repeat||null,pinned:!!c.create.pinned,createdAt:Date.now(),updatedAt:Date.now()}; persist(nt.id,nt); });
   dels.forEach(c=>remove(c.id));
@@ -1662,6 +1680,10 @@ function fixTypos(q){
 function interpret(raw){
   const q=fixTypos(raw.toLowerCase().replace(/[’']/g,"'"));
   const t=todayStr(); const all=[...tasks.values()];
+  { const fm=q.match(/^(?:i'?m\s+|i\s+am\s+)?(?:done|finished|did|handled|completed)\s+(?:with\s+)?(?:the\s+)?(.+?)\s*[,.;]?\s*(?:and\s+|but\s+|then\s+)?(?:follow[\s-]*up|revisit|check\s+(?:back|again)|again|remind\s+me)\s*(?:on|in|by|for)?\s*(.+)$/);
+    if(fm){ const words=fm[1].replace(/\b(task|the|my|that)\b/g,' ').trim(); const due=dayFromWords(fm[2])||(fm[2].match(/(\d+)\s*days?/)?addDays(t,Number(fm[2].match(/(\d+)\s*days?/)[1])):null);
+      const cand=all.filter(x=>!x.done).map(x=>({x,score:words.split(/\s+/).filter(w=>w.length>2&&x.title.toLowerCase().includes(w)).length})).filter(c=>c.score>0).sort((a,b)=>b.score-a.score);
+      if(cand.length&&due) return {summary:'Check off “'+cand[0].x.title+'” for today and put a fresh copy on '+fmtDue(due)+'.',lines:[{title:cand[0].x.title,note:'done today · follow-up '+fmtDue(due)}],changes:[{followUp:{id:cand[0].x.id,due}}],done:'Done · follow-up '+fmtDue(due)}; } }
   const open=x=>!x.done; const hasDue=x=>!!x.due;
   const wantsDone=/\b(done|finished|completed|checked)\b/.test(q) && !/\b(unfinished|not done|incomplete|undone|open|remaining|left)\b/.test(q);
   const wantsOpen=/\b(unfinished|not done|incomplete|undone|open|remaining|left|unchecked)\b/.test(q);
@@ -1798,7 +1820,7 @@ $('#gPass').addEventListener('keydown',e=>{ if(e.key==='Enter') emailAuth(); });
 function friendlyAuth(e){ const c=(e&&e.code)||''; if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return 'Wrong email or password.'; if(c.includes('user-not-found')) return 'No account with that email yet. Tap Create an account, or check the spelling.'; if(c.includes('email-already-in-use')) return 'That email already has an account. Sign in instead.'; if(c.includes('weak-password')) return 'Password needs at least 6 characters.'; if(c.includes('invalid-email')) return 'That email looks off.'; if(c.includes('popup-closed')||c.includes('cancelled')) return ''; if(c.includes('unauthorized-domain')) return 'This domain is not authorized for sign-in yet.'; if(c.includes('network')) return 'No connection. Try again when online.'; return 'Sign-in failed. '+(e&&e.message||''); }
 
 /* ---------- stale-build defense: version.json bypasses every cache ---------- */
-const APP_VERSION='v2026-11-04.0010';
+const APP_VERSION='v2026-11-04.0146';
 let newVersion=null;
 const bootAt=Date.now();
 async function hardReload(){ status.textContent='updating…'; $('#updateNow').textContent='Updating…';

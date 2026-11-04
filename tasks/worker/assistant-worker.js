@@ -24,6 +24,7 @@ const PLAN_TOOL = {
             del: { type: 'boolean', description: 'Delete this task' },
             title: { type: 'string', description: 'Rename (existing) or name (new task)' },
             create: { type: 'boolean', description: 'true when this is a brand-new task' },
+followUp: { type: 'string', description: "YYYY-MM-DD. Mark this task done today AND put a fresh copy of it on this date (for 'done with X, follow up Thursday' / 'revisit in 2 days'). Do not also send done or create for it." },
             repeat: { type: ['array', 'null'], items: { type: 'integer', minimum: 0, maximum: 6 }, description: 'Weekdays it repeats on, 0=Sunday … 6=Saturday. null to stop repeating.' }
           }
         }
@@ -48,6 +49,7 @@ Rules of thumb:
 - Spreading/distributing means assigning tasks as evenly as possible across the given days, keeping their current order.
 - "shift forward one day" means each task moves to its own date + 1. "back" means earlier.
 - Recurring: "Medicine every Tuesday and Friday" creates ONE task titled exactly "Medicine" with repeat [2,5] due on the next matching day (today counts). Strip words like "set recurring task:", quotes, and trailing instructions from the title.
+- "done with X, follow up <day>" / "finished X, revisit in 2 days" / "did X, check again Monday": one change with n and followUp=<that date>. Nothing else for that task.
 - Never delete unless the user clearly asks to delete/remove/clear. "delete completed" = only done tasks.
 - Never invent tasks that aren't in the list. Refer to tasks by their #number only.
 - If nothing matches, return an empty changes list and explain in summary.
