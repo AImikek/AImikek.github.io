@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PH4910 Lawyer Call Tracker — mikek.ai/ltc</title>
-<meta name="description" content="Shared lawyer call tracker for Mike and Lorena. One version, both edit.">
+<meta name="description" content="Lawyer call tracker for Mike. Two sections — Tenant and Copyright — one at a time.">
 <meta name="color-scheme" content="dark">
 <style>
   :root{
@@ -52,6 +52,11 @@
   .filters{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
   .filters button{padding:9px 14px;font-size:13.5px;border-radius:999px;background:var(--glass2);color:var(--ink2);border:1px solid var(--line)}
   .filters button.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(139,92,246,.35)}
+  /* Category toggle: Tenant / Copyright — one section at a time, never both. */
+  .cat-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 4px}
+  .cat-toggle button{padding:13px 10px;font-size:15px;border-radius:14px;background:var(--glass2);color:var(--ink2);border:1px solid var(--line)}
+  .cat-toggle button.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(139,92,246,.35)}
+  .cat-toggle button small{display:block;font-size:11.5px;font-weight:600;opacity:.85;margin-top:2px}
   /* AT-A-GLANCE SUMMARY — compact dense grid, all attorneys, above the cards */
   .summary-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:2px 2px 8px}
   .summary-head h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted)}
@@ -166,11 +171,14 @@
 }
 </style>
 <!--
-  LTC — shared edition for Mike + Lorena.
+  LTC — Mike only since Nov 5, 2026 (Lorena's access removed).
   SECURITY: This file lives in a PUBLIC GitHub repo. Do NOT put case notes,
   the mikek.ai/4910 password, or private data in this file. Tracker data lives
   ONLY in Firestore, fetched after Firebase login, rules allow only
-  michaelkrilivsky@gmail.com and Lorer284@yahoo.com.
+  michaelkrilivsky@gmail.com.
+  NOTE: the 4910 password IS still embedded in emailText() below, in the
+  copied tenant email — that was Mike's Oct 27 tradeoff, and it must be
+  changed to the new password once Mike chooses one (Lorena knows the old one).
 -->
 <script type="importmap">
 { "imports": {
@@ -183,9 +191,9 @@
 <body>
 <header>
   <div class="wrap">
-    <div class="live-dot">Shared · Live</div>
+    <div class="live-dot">Live</div>
     <h1>PH4910 <span class="grad">Lawyer Tracker</span></h1>
-    <p>One shared version for Mike and Lorena. Sign in, call, log what each firm said — your edits save for both of you, live.</p>
+    <p>One version for Mike. Sign in, call, log what each firm said — your edits save live. Toggle between Tenant and Copyright below; only one section shows at a time.</p>
     <div class="rule"></div>
   </div>
 </header>
@@ -195,7 +203,7 @@
   <section id="loginSection" class="card login-hero">
     <div class="eyebrow">PH4910 · Lawyer Tracker</div>
     <h2>Welcome back</h2>
-    <p class="muted">Sign in with your own email and password.<br>Mike: michaelkrilivsky@gmail.com · Lorena: Lorer284@yahoo.com</p>
+    <p class="muted">Sign in with your own email and password.<br>Mike: michaelkrilivsky@gmail.com</p>
     <label>Email <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
     <label>Password <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Your password"></label>
     <div class="row"><button id="loginBtn">Sign in →</button><button id="forgotBtn" class="secondary">Forgot password</button></div>
@@ -213,6 +221,12 @@
 
     <div id="stats" class="stats"></div>
 
+    <div class="cat-toggle" role="tablist" aria-label="Tracker section">
+      <button id="catTenantBtn" class="active" data-category="tenant">🏠 Tenant<small>PH4910 landlord / escrow</small></button>
+      <button id="catCopyrightBtn" data-category="copyright">© Copyright<small>Photo demand — due Fri Nov 6</small></button>
+    </div>
+    <p id="catNote" class="muted" style="margin:2px 2px 6px"></p>
+
     <div class="top-sections">
     <details id="updateSection" class="card hidden">
       <summary>Apply tracker updates <span class="muted" style="font-weight:400">(Mike only)</span></summary>
@@ -227,7 +241,7 @@
     <details class="card">
       <summary>✉️ Email for sending</summary>
       <div style="margin-top:12px">
-        <p class="small">Pick a lawyer, then Copy email. The copied email already includes the full brief link <strong>and</strong> the password, so a firm can check the details right away.</p>
+        <p class="small" id="emailIntro">Pick a lawyer, then Copy email. The copied email already includes the full brief link <strong>and</strong> the password, so a firm can check the details right away.</p>
         <label>Send to
           <select id="emailLawyer"><option value="">— Choose a lawyer —</option></select>
         </label>
@@ -244,18 +258,24 @@
         </label>
         <div class="row"><button id="copyEmailBtn">Copy email</button><button id="mailtoBtn" class="secondary">Open in email app</button><button id="markSentBtn" class="secondary">✓ Mark email sent for this lawyer</button></div>
         <p id="copyStatus" class="saved"></p>
-        <p class="small" style="margin-top:8px"><strong>How sending works:</strong> This page itself cannot send Gmail — it has no server. So: <em>Copy email</em> = paste and send from your own email. <em>Open in email app</em> = opens your email app addressed to that lawyer, ready to send (from whoever's email app it opens in — Mike's if Mike taps it, Lorena's if she does). <em>Want it sent as Mike?</em> Tap “Mark email sent” only after it actually goes out, or tell Mike in chat and Muse will send it from michaelkrilivsky@gmail.com after Mike approves — Muse never sends without his go-ahead. The checkbox on each lawyer card is the record that it was sent.</p>
-        <p class="muted">Subject: Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29</p>
+        <p class="small" style="margin-top:8px"><strong>How sending works:</strong> This page itself cannot send Gmail — it has no server. So: <em>Copy email</em> = paste and send from your own email. <em>Open in email app</em> = opens your email app addressed to that lawyer, ready to send. <em>Want it sent as Mike?</em> Tap “Mark email sent” only after it actually goes out, or tell Mike in chat and Muse will send it from michaelkrilivsky@gmail.com after Mike approves — Muse never sends without his go-ahead. The checkbox on each lawyer card is the record that it was sent.</p>
+        <p class="muted" id="emailSubjectNote">Subject: Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29</p>
       </div>
     </details>
 
-    <details class="card">
+    <details class="card" id="tenantSnapshot">
       <summary>Case snapshot &amp; deadlines</summary>
       <p class="small" style="margin-top:10px"><strong>Oct 28</strong> — three-day pay-or-vacate deadline &nbsp;·&nbsp; <strong>Oct 30</strong> — seven-day cure deadline (deposit + alleged subleasing/advertising) &nbsp;·&nbsp; <strong>Nov 6</strong> — $15,000 copyright demand, practical deadline.<br>
       <strong>Escrow:</strong> $59,500 full release authorized Oct 23 — confirm landing / landlord confirmation before telling any firm it is settled.</p>
     </details>
 
-    <details class="card">
+    <details class="card hidden" id="copyrightSnapshot">
+      <summary>Case snapshot &amp; deadlines — copyright</summary>
+      <p class="small" style="margin-top:10px"><strong>Fri Nov 6</strong> — $15,000 copyright demand, practical deadline (Nov 7 is a Saturday). Demand Oct 23 from David C. Deal for photographer Miranda Kruse-Bunnell: 6 “virtually staged” PH4910 photos allegedly used in LiveWorkMiami marketing. Demands: cease-and-desist, full written accounting, $15,000.<br>
+      <strong>Do not</strong> pay, admit, contact the photographer directly, or send the accounting yourself. <strong>Takedown done:</strong> Facebook Marketplace (both listings), Diggz, liveworkmiami.com gallery, Roomies, Listanza — all removed by Oct 26. <strong>Key question for counsel:</strong> were the photos timely registered (§§411/412)? If not, statutory damages / fees are generally off the table — actual damages only. Mike says he made no money from the photos.</p>
+    </details>
+
+    <details class="card" id="tenantHowTo">
       <summary>How to call — opener, conflict check &amp; questions</summary>
       <div class="small" style="margin-top:10px">
         <p><strong>30-second opener:</strong> “Hi, I'm calling about an urgent Miami-Dade tenant dispute in a Brickell condo. We have an Oct 28 deadline and need counsel now. Can I do a quick conflict check, then tell you the facts in two minutes?”</p>
@@ -263,6 +283,17 @@
         <p><strong>Ask every firm:</strong> (1) Miami-Dade residential eviction defense for tenants? Any conflict? (2) Can you act before Oct 28? First step and timing? (3) Retainer / fee, refundable?, who handles it personally? (4) What do you need from us today?</p>
         <p><strong>Share the file:</strong> Encourage firms to read https://mikek.ai/4910 and share the password you already have for that page — it has the summary and full information, including all evidence. Do not post the password anywhere public, and do not send it to a firm until they have passed the conflict check.</p>
         <p><strong>Log after every call:</strong> Who you spoke to, date/time, conflict result, fee/retainer, can they act before Oct 28, next step, and decision: Vetting (in active talks), Hold (parked), Pass (closed/declined), or Hire (only when Mike confirms it).</p>
+      </div>
+    </details>
+
+    <details class="card hidden" id="copyrightHowTo">
+      <summary>How to call — copyright opener, conflict check &amp; questions</summary>
+      <div class="small" style="margin-top:10px">
+        <p><strong>30-second opener:</strong> “Hi, I'm calling about an urgent copyright demand in Miami — a photographer is demanding $15,000 over 6 listing photos, deadline tomorrow, Friday Nov 6. Can I do a quick conflict check, then tell you the facts in two minutes?”</p>
+        <p><strong>Conflict-check parties first:</strong> David C. Deal (opposing counsel) and photographer Miranda Kruse-Bunnell — do NOT contact them. Also check: landlord Stefania Garlatti / MENDOLA CORP, listing side Carlos Fernandez and Pietro Belmonte (Douglas Elliman), and LiveWorkMiami.</p>
+        <p><strong>Ask every firm:</strong> (1) Were the photos timely registered (§§411/412) — statutory damages / fees available, or actual damages only? (2) Innocent infringer (§504(c)(2)), fair use, de minimis? (3) Implied license — did the landlord's listing license extend to a tenant's co-living marketing? (4) Settlement range vs. $15,000, with a written release for all 6 photos / all past use? (5) Can you respond before Fri Nov 6, and what is the fee / retainer to do so? (6) Who handles it personally?</p>
+        <p><strong>Bring to intake:</strong> the Deal demand letter (Oct 23) with the 6 photos, any registration numbers Deal cites, landlord / listing agreement and photo-license / MLS terms, LiveWorkMiami posts and dates, takedown evidence, and revenue records (Mike says no money was made).</p>
+        <p><strong>Log after every call:</strong> Who you spoke to, date/time, conflict result, fee/retainer, can they act before Nov 6, next step, and decision: Vetting (in active talks), Hold (parked), Pass (closed/declined), or Hire (only when Mike confirms it).</p>
       </div>
     </details>
     </div>
@@ -294,7 +325,7 @@
     </div>
     <div id="addAttorneyForm" class="card hidden" style="margin-top:12px">
       <h2>Add an attorney</h2>
-      <p class="muted">Enter the basics — this creates the summary tile at the top <em>and</em> the full card below, with Next step, Notes, Contact, Decision, and the Call questions &amp; answers section already on it.</p>
+      <p class="muted">Enter the basics — this creates the summary tile at the top <em>and</em> the full card below, in the section you have open now (Tenant or Copyright), with Next step, Notes, Contact, Decision, and the Call questions &amp; answers section already on it.</p>
       <label>Full name * <input id="newName" placeholder="e.g. Christopher G. Berga"></label>
       <label>Firm <input id="newFirm" placeholder="e.g. BergaLaw, P.A."></label>
       <label>Phone <input id="newPhone" placeholder="e.g. (305) 990-2185"></label>
@@ -326,7 +357,7 @@ const firebaseConfig = {
   appId: "1:904928341738:web:106824414b7ebc76827193"
 };
 const CONFIGURED = !firebaseConfig.apiKey.startsWith("PASTE_");
-const ALLOWED = ["michaelkrilivsky@gmail.com", "lorer284@yahoo.com"];
+const ALLOWED = ["michaelkrilivsky@gmail.com"];
 // Verified LinkedIn links only (researched Oct 27, 2026 — no guessed URLs).
 // Carlson is a verified firm page; all other personal profiles were NOT FOUND in public search.
 
@@ -348,6 +379,25 @@ const CALL_QUESTIONS = [
   "Can you act this week, before the Oct 28 / Oct 30 deadlines — and what is your first move?"
 ];
 
+// Call questions — copyright defense: photo demand, registration, license scope, settlement.
+// Used only for lawyers with category "copyright"; tenant cards keep CALL_QUESTIONS above.
+const CALL_QUESTIONS_COPYRIGHT = [
+  "How many copyright infringement defense cases have you handled in the last 3 years — how many for photographers / photo claims specifically?",
+  "Have you defended a photo demand letter like this one? What was the demand vs. the settlement, and how much did the client pay?",
+  "Were the photos timely registered under 17 U.S.C. §§411/412 — and if not, does that take statutory damages and attorney's fees off the table here?",
+  "What is your read on innocent infringer (§504(c)(2), down to $200/work), fair use, and de minimis on these facts — I made no money and thought renting entitled me to use the photos?",
+  "Implied license: did the landlord's listing license / MLS terms extend to a tenant's co-living marketing? Who else used the photos, and who is the proper defendant?",
+  "What is a realistic settlement range vs. the $15,000 demand, and can you get a written release covering all 6 photos and all past use?",
+  "Do you take defense cases like this on a flat fee, capped fee, or hourly? Exact fee / retainer to respond before Fri Nov 6 — and what do I pay if we litigate?",
+  "Have you defended a claim in the U.S. District Court for the Southern District of Florida? What happened — settlement, dismissal, or verdict?",
+  "Have you handled DMCA / takedown matters? The ads are already taken down — does that help, and what else should I preserve?",
+  "Any conflict with David C. Deal, Miranda Kruse-Bunnell, Mendola Corp / Garlatti, Douglas Elliman, or LiveWorkMiami?",
+  "Who in your firm will actually handle my case — and have they tried a copyright case to verdict?",
+  "Can you act before Fri Nov 6 — and what is your first move?"
+];
+const TENANT_SUBJECT = "Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29";
+const COPYRIGHT_SUBJECT = "Urgent: copyright infringement demand — $15,000, deadline Fri Nov 6 — 15 minute call";
+
 const VERIFIED_LINKEDIN = {
   carlson: "https://www.linkedin.com/company/lscarlsonlaw/",
   salcines: "https://www.linkedin.com/company/law-offices-of-jacqueline-a-salcines-pa"
@@ -356,6 +406,10 @@ const $ = id => document.getElementById(id);
 if (!CONFIGURED) $("setupBanner").classList.remove("hidden");
 
 let auth, db, lawyers = [], unsub = null, collapsed = new Set(), decisionFilter = "all", sortMode = "order", hasPhoneOnly = false, hasEmailOnly = false, hasFlaggedOnly = false, showPass = false, focusId = null;
+// Category toggle: "tenant" (PH4910, existing 28) or "copyright" (photo demand, Nov 5, 2026).
+// Only one section is ever shown. Docs with no category field are treated as tenant.
+let category = "tenant";
+function catOf(l){ return (l && l.category) ? l.category : "tenant"; }
 if (CONFIGURED) {
   try { const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
   catch (e) { $("loginError").textContent = "Firebase setup error: " + e.message; }
@@ -384,7 +438,7 @@ if (auth) onAuthStateChanged(auth, user => {
   $("who").textContent = user.email || "";
   const _us = document.getElementById("updateSection"); if (_us) _us.classList.toggle("hidden", (user.email || "").toLowerCase() !== "michaelkrilivsky@gmail.com");
   if (!ALLOWED.includes((user.email || "").toLowerCase())) { $("status").textContent = "This account is not authorized for this tracker."; return; }
-  $("status").textContent = "Live — edits save to the shared tracker for both of you.";
+  $("status").textContent = "Live — edits save to your tracker.";
   unsub = onSnapshot(collection(db, "lawyers"), snap => {
     lawyers = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 99) - (b.order || 99));
     lawyers.forEach(l => { if (l.decision === "pass" && !collapsed.has("seen-" + l.id)) collapsed.add(l.id); });
@@ -399,7 +453,7 @@ function chip(d){ return `<span class="chip ${esc(d || "none")}">${esc(d || "no 
 function initials(name){ return (name || "?").split(" ").filter(w => w[0] && w[0].match(/[A-Za-z]/)).slice(0,2).map(w => w[0].toUpperCase()).join(""); }
 
 
-function initialsFor(email){ const e = (email || "").toLowerCase(); if (e === "michaelkrilivsky@gmail.com") return "MK"; if (e === "lorer284@yahoo.com") return "LR"; const local = e.split("@")[0] || "?"; return local.replace(/[^a-z]/g, "").slice(0, 2).toUpperCase() || "?"; }
+function initialsFor(email){ const e = (email || "").toLowerCase(); if (e === "michaelkrilivsky@gmail.com") return "MK"; const local = e.split("@")[0] || "?"; return local.replace(/[^a-z]/g, "").slice(0, 2).toUpperCase() || "?"; }
 // NOTE STAMP — CRM history: when anyone leaves a note, the new text gets
 // "Oct 29, 2:58 PM · MK — " inserted right before it. Stamping happens on
 // leaving the field (change/blur), never while typing, so the cursor never jumps.
@@ -429,10 +483,42 @@ function returnToTile(id) {
 }
 function render(filter = "") {
   const q = (filter || "").toLowerCase().trim();
-  // SEARCH OVERRIDES EVERYTHING: a search matches across the whole tracker,
+  // CATEGORY COMES FIRST: only the selected section is ever shown.
+  // Search stays inside the current section — it does not pull in the other one.
+  // SEARCH OVERRIDES EVERYTHING ELSE: a search matches across the current section,
   // regardless of decision filter, Pass hidden, Has phone/email/flagged, or a focused card.
+  const inCategory = l => catOf(l) === category;
   const matchesSearch = l => !q || [l.name, l.firm, l.phone, l.email, l.city, l.decision, l.nextStep, l.additionalNotes, l.fit, l.spokeTo].join(" ").toLowerCase().includes(q);
-  let list = lawyers.filter(matchesSearch);
+  let list = lawyers.filter(l => inCategory(l) && matchesSearch(l));
+  // Category toggle UI + section-specific help blocks.
+  const _tb = $("catTenantBtn"), _cb = $("catCopyrightBtn");
+  if (_tb && _cb) {
+    _tb.classList.toggle("active", category === "tenant");
+    _cb.classList.toggle("active", category === "copyright");
+    const _tn = lawyers.filter(l => catOf(l) === "tenant").length;
+    const _cn = lawyers.filter(l => catOf(l) === "copyright").length;
+    const _note = $("catNote");
+    if (_note) _note.textContent = category === "tenant"
+      ? `Tenant section — ${_tn} attorneys. PH4910 landlord / escrow dispute.`
+      : `Copyright section — ${_cn} attorneys. $15,000 photo demand, deadline Fri Nov 6. Call first, do not email alone.`;
+    const _show = (id, on) => { const el = $(id); if (el) el.classList.toggle("hidden", !on); };
+    _show("tenantSnapshot", category === "tenant");
+    _show("copyrightSnapshot", category === "copyright");
+    _show("tenantHowTo", category === "tenant");
+    _show("copyrightHowTo", category === "copyright");
+    const _intro = $("emailIntro");
+    if (_intro) _intro.textContent = category === "tenant"
+      ? "Pick a lawyer, then Copy email. The copied email already includes the full brief link and the password, so a firm can check the details right away."
+      : "Pick a lawyer, then Copy email. This copyright email has NO brief link or password — attach / share the Deal demand letter after the conflict check instead.";
+    const _subj = $("emailSubject");
+    if (_subj) {
+      const want = category === "tenant" ? TENANT_SUBJECT : COPYRIGHT_SUBJECT;
+      const other = category === "tenant" ? COPYRIGHT_SUBJECT : TENANT_SUBJECT;
+      if (_subj.value === other || !_subj.value) _subj.value = want;
+      const _sn = $("emailSubjectNote");
+      if (_sn) _sn.textContent = "Subject: " + want;
+    }
+  }
   if (!q) {
     if (decisionFilter === "nodecision") list = list.filter(l => (l.decision || "") === "");
     else if (decisionFilter !== "all") list = list.filter(l => (l.decision || "") === decisionFilter);
@@ -453,10 +539,11 @@ function render(filter = "") {
     else a.sort(byOrder);
     return a; };
   list = sortList(list);
-  if (focusId && !q) { const _f = lawyers.find(l => l.id === focusId); if (_f) { list = [_f]; collapsed.delete(focusId); } else { focusId = null; } }
-  const vetting = lawyers.filter(l => l.decision === "vetting").length;
-  const passed = lawyers.filter(l => l.decision === "pass").length;
-  $("stats").innerHTML = `<div class="stat"><b>${lawyers.length}</b><span>Attorneys</span></div><div class="stat"><b>${vetting}</b><span>Vetting</span></div><div class="stat"><b>${passed}</b><span>Passed</span></div>`;
+  if (focusId && !q) { const _f = lawyers.find(l => l.id === focusId && inCategory(l)); if (_f) { list = [_f]; collapsed.delete(focusId); } else { focusId = null; } }
+  const _catLawyers = lawyers.filter(inCategory);
+  const vetting = _catLawyers.filter(l => l.decision === "vetting").length;
+  const passed = _catLawyers.filter(l => l.decision === "pass").length;
+  $("stats").innerHTML = `<div class="stat"><b>${_catLawyers.length}</b><span>Attorneys</span></div><div class="stat"><b>${vetting}</b><span>Vetting</span></div><div class="stat"><b>${passed}</b><span>Passed</span></div>`;
   const filters = [["all","All"],["hire","Hire"],["priority","Priority"],["vetting","Vetting"],["hold","Hold"],["nodecision","No decision"]];
   $("filters").innerHTML = filters.map(([v, label]) => `<button class="${decisionFilter === v ? "active" : ""}" data-filter="${v}">${label}</button>`).join("")
     + `<button class="${showPass ? "active" : ""}" data-pass-toggle>Pass</button>`
@@ -467,13 +554,14 @@ function render(filter = "") {
   document.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { decisionFilter = b.dataset.filter; render($("search").value); });
   document.querySelector("[data-pass-toggle]").onclick = () => { showPass = !showPass; render($("search").value); };
   document.querySelectorAll("[data-contact]").forEach(b => b.onclick = () => { if (b.dataset.contact === "phone") hasPhoneOnly = !hasPhoneOnly; else if (b.dataset.contact === "flagged") hasFlaggedOnly = !hasFlaggedOnly; else hasEmailOnly = !hasEmailOnly; render($("search").value); });
-  $("count").textContent = list.length ? `${list.length} of ${lawyers.length} attorneys` : "";
+  $("count").textContent = list.length ? `${list.length} of ${_catLawyers.length} attorneys` : "";
   // AT-A-GLANCE SUMMARY: with no search, it follows the selected filters.
   // With a search, it shows only search matches, ignoring all filters.
+  // Either way it stays inside the current category.
   let summaryBase;
-  if (q) { summaryBase = lawyers.filter(matchesSearch); }
+  if (q) { summaryBase = lawyers.filter(l => inCategory(l) && matchesSearch(l)); }
   else {
-    summaryBase = decisionFilter === "all" ? lawyers : decisionFilter === "nodecision" ? lawyers.filter(l => (l.decision || "") === "") : lawyers.filter(l => (l.decision || "") === decisionFilter);
+    summaryBase = decisionFilter === "all" ? _catLawyers : decisionFilter === "nodecision" ? _catLawyers.filter(l => (l.decision || "") === "") : _catLawyers.filter(l => (l.decision || "") === decisionFilter);
     if (hasPhoneOnly) summaryBase = summaryBase.filter(l => (l.phone || "").trim());
     if (hasEmailOnly) summaryBase = summaryBase.filter(l => (l.email || "").trim());
     if (hasFlaggedOnly) summaryBase = summaryBase.filter(l => l.flaggedTomorrow);
@@ -541,8 +629,8 @@ function render(filter = "") {
         ${[["", "No decision"], ["hire", "Hire"], ["priority", "Priority"], ["vetting", "Vetting"], ["hold", "Hold"], ["pass", "Pass"]].map(([v, label]) => `<button class="${(l.decision || "") === v ? "active" : ""}" data-decision-btn="${v}" data-id="${esc(l.id)}">${label}</button>`).join("")}
       </div></div>
       <details class="qa-details"><summary>📞 Call questions & answers${l.callAnswers ? " (" + Object.values(l.callAnswers).filter(v => v && String(v).trim()).length + " answered)" : ""} — tap to expand</summary>
-        <p class="muted" style="margin:6px 0">Ask these on the call, then type the answers here — they autosave. Focus: tenant background, suing landlords, money recovered, and stopping / reversing eviction.</p>
-        ${CALL_QUESTIONS.map((q, i) => `<div class="qa-q">${i + 1}. ${esc(q)}</div><textarea data-qa-index="${i}" data-id="${esc(l.id)}" placeholder="Answer…">${esc((l.callAnswers && l.callAnswers[i]) || (l.callAnswers && l.callAnswers[String(i)]) || "")}</textarea>`).join("")}
+        <p class="muted" style="margin:6px 0">Ask these on the call, then type the answers here — they autosave. Focus: ${catOf(l) === "copyright" ? "registration (§§411/412), innocent infringer, implied license, and settlement vs. the $15,000 demand." : "tenant background, suing landlords, money recovered, and stopping / reversing eviction."}</p>
+        ${(catOf(l) === "copyright" ? CALL_QUESTIONS_COPYRIGHT : CALL_QUESTIONS).map((q, i) => `<div class="qa-q">${i + 1}. ${esc(q)}</div><textarea data-qa-index="${i}" data-id="${esc(l.id)}" placeholder="Answer…">${esc((l.callAnswers && l.callAnswers[i]) || (l.callAnswers && l.callAnswers[String(i)]) || "")}</textarea>`).join("")}
       </details>
       ${stampFor(l) ? `<div class="stamp">${esc(stampFor(l))}</div>` : ""}
       <div class="row" style="margin-top:12px"><span class="saved" data-saved="${esc(l.id)}">Autosaves as you type${l.updatedBy ? " · Last saved by " + esc(l.updatedBy) : ""}</span><button class="secondary" data-delete-btn data-id="${esc(l.id)}" style="padding:6px 10px;font-size:12px">Delete this lawyer</button></div>`}
@@ -606,13 +694,16 @@ function render(filter = "") {
 $("search").addEventListener("input", e => render(e.target.value));
 $("expandAll").onclick = () => { collapsed.clear(); render($("search").value); };
 $("collapseAll").onclick = () => { lawyers.forEach(l => collapsed.add(l.id)); render($("search").value); };
-// Reference email for Lorena. Per Mike's explicit instruction Oct 27, the 4910
-// password is included directly in the copied email so Lorena has no extra step.
-// Note: this file lives in a PUBLIC repo, so anyone viewing its source can see it.
+// Reference email. Tenant version: per Mike's explicit instruction Oct 27, the 4910
+// password is included directly in the copied email. Note: this file lives in a
+// PUBLIC repo, so anyone viewing its source can see it. Change pw below when Mike
+// chooses the new 4910 password (Lorena knows the old one — Nov 5, 2026).
+// Copyright version: NO brief link / password — share the Deal letter after the conflict check.
 function firstName(full){ const p = (full || "").trim().split(/\s+/); return p[0] || "[Name]"; }
 function emailText(){
   const sel = $("emailLawyer");
   const lawyer = lawyers.find(l => l.id === sel.value);
+  if (lawyer && catOf(lawyer) === "copyright") return emailTextCopyright(lawyer);
   const name = lawyer ? firstName(lawyer.name) : "[Name]";
   const pw = "Beautiful!2";
   return `Hi ${name},
@@ -628,15 +719,45 @@ Please run a conflict check on Mendola Corp, Stefania Garlatti, Douglas Elliman 
 Mike Krilivsky
 617-633-0544`;
 }
+function emailTextCopyright(lawyer){
+  const name = lawyer ? firstName(lawyer.name) : "[Name]";
+  return `Hi ${name},
+
+I'm looking for counsel urgently on a copyright infringement demand — deadline tomorrow, Friday Nov 6.
+
+In short: a commercial photographer, Miranda Kruse-Bunnell, through attorney David C. Deal, demands $15,000, a cease-and-desist, and a full written accounting, alleging my co-living marketing (LiveWorkMiami) used 6 of her "virtually staged" listing photos of the Brickell penthouse I rent (PH 4910, 1300 S Miami Ave). The photos were taken for the landlord's listing, not for me. I made no money from the photos, and all of the ads have already been taken down.
+
+Could we do a 15 minute call today or tomorrow morning, before the Nov 6 deadline? I'd like to hear about your experience defending photo / copyright demand letters, and what you would need to respond in time.
+
+Please run a conflict check on David C. Deal, Miranda Kruse-Bunnell, Mendola Corp / Stefania Garlatti, Douglas Elliman (Pietro Belmonte and Carlos Fernandez), and LiveWorkMiami. I can share the demand letter and the photos after the conflict check — please do not contact Deal or Kruse-Bunnell directly.
+
+Mike Krilivsky
+617-633-0544`;
+}
 let lastEmailLawyerId = "";
+let lastEmailCategory = "";
 function refreshEmailOptions(){
   const sel = $("emailLawyer"); if (!sel) return;
   const current = sel.value;
-  sel.innerHTML = `<option value="">— Choose a lawyer —</option>` + lawyers.map(l => `<option value="${esc(l.id)}" ${l.id === current ? "selected" : ""}>${esc(l.order)}. ${esc(l.name)}</option>`).join("");
+  const _catLawyers = lawyers.filter(l => catOf(l) === category);
+  // If the picked lawyer is in the other section, clear the picker — never email a tenant template to a copyright firm, or vice versa.
+  if (current && !_catLawyers.some(l => l.id === current)) sel.value = "";
+  sel.innerHTML = `<option value="">— Choose a lawyer —</option>` + _catLawyers.map(l => `<option value="${esc(l.id)}" ${l.id === sel.value ? "selected" : ""}>${esc(l.order)}. ${esc(l.name)}</option>`).join("");
   const _lawyer = lawyers.find(l => l.id === sel.value);
   $("emailAddressDisplay").value = _lawyer ? (_lawyer.email || "") : "";
-  if (sel.value !== lastEmailLawyerId || !$("emailPreview").value) { $("emailPreview").value = emailText(); lastEmailLawyerId = sel.value; }
+  if (sel.value !== lastEmailLawyerId || lastEmailCategory !== category || !$("emailPreview").value) { $("emailPreview").value = emailText(); lastEmailLawyerId = sel.value; lastEmailCategory = category; }
 }
+// Category toggle: switch section, clear focus/search, re-render. One section at a time.
+function setCategory(next){
+  if (next !== "tenant" && next !== "copyright") return;
+  if (next === category) return;
+  category = next; focusId = null;
+  const _s = $("search"); if (_s) _s.value = "";
+  render("");
+}
+const _catT = $("catTenantBtn"), _catC = $("catCopyrightBtn");
+if (_catT) _catT.onclick = () => setCategory("tenant");
+if (_catC) _catC.onclick = () => setCategory("copyright");
 $("emailLawyer").addEventListener("change", () => { const _l = lawyers.find(l => l.id === $("emailLawyer").value); $("emailAddressDisplay").value = _l ? (_l.email || "") : ""; $("emailPreview").value = emailText(); lastEmailLawyerId = $("emailLawyer").value; });
 $("copyEmailAddressBtn").onclick = async () => {
   const addr = $("emailAddressDisplay").value;
@@ -649,7 +770,7 @@ $("mailtoBtn").onclick = async () => {
   const sel = $("emailLawyer");
   const lawyer = lawyers.find(l => l.id === sel.value);
   if (!lawyer || !lawyer.email) { $("copyStatus").textContent = "Choose a lawyer with an email address first."; return; }
-  const subject = $("emailSubject").value || "Urgent: PH4910 lease dispute — 15 minute call tomorrow, October 29";
+  const subject = $("emailSubject").value || (category === "copyright" ? COPYRIGHT_SUBJECT : TENANT_SUBJECT);
   const body = $("emailPreview").value || emailText();
   // mailto: bodies are unreliable — many mail apps drop a long body or open a blank compose.
   // So copy the full email first, then open a compose with To + Subject only, and let the user paste the body.
@@ -714,9 +835,10 @@ if (_createBtn) _createBtn.onclick = async () => {
   if (existing) { status.textContent = `“${name}” is already in the tracker — jumping to their card instead of creating a duplicate.`; collapsed.delete(existing.id); render(""); const el = document.getElementById("lawyer-" + existing.id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
   let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "lawyer";
   let id = slug, n = 2; while (lawyers.some(l => l.id === id)) { id = slug + "-" + n++; }
-  const order = Math.max(0, ...lawyers.map(l => l.order || 0)) + 1;
+  // Order restarts per section: a new copyright attorney is #11 in Copyright, not #39 overall.
+  const order = Math.max(0, ...lawyers.filter(l => catOf(l) === category).map(l => l.order || 0)) + 1;
   try {
-    await setDoc(doc(db, "lawyers", id), { order, name, firm: document.getElementById("newFirm").value.trim(), phone: document.getElementById("newPhone").value.trim(), email: document.getElementById("newEmail").value.trim(), website: document.getElementById("newWebsite").value.trim(), city: document.getElementById("newCity").value.trim(), fit: document.getElementById("newFit").value.trim(), decision: "", nextStep: "", additionalNotes: "", spokeTo: "", feeRetainer: "", emailSent: false, callAnswers: {}, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true });
+    await setDoc(doc(db, "lawyers", id), { order, category, name, firm: document.getElementById("newFirm").value.trim(), phone: document.getElementById("newPhone").value.trim(), email: document.getElementById("newEmail").value.trim(), website: document.getElementById("newWebsite").value.trim(), city: document.getElementById("newCity").value.trim(), fit: document.getElementById("newFit").value.trim(), decision: "", nextStep: "", additionalNotes: "", spokeTo: "", feeRetainer: "", emailSent: false, callAnswers: {}, updatedAt: serverTimestamp(), updatedBy: auth.currentUser.email }, { merge: true });
     ["newName","newFirm","newPhone","newEmail","newWebsite","newCity","newFit"].forEach(f => document.getElementById(f).value = "");
     document.getElementById("addAttorneyForm").classList.add("hidden");
     collapsed.delete(id); render("");
