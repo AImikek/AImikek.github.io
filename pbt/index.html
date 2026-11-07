@@ -1931,6 +1931,14 @@ if (startHash) window.location.hash = '';
 const _sessParam = new URLSearchParams(window.location.search).get('s');
 const _paidParam = new URLSearchParams(window.location.search).get('paid');
 const _pageParam = new URLSearchParams(window.location.search).get('p');
+const _deepGames = _pageParam === 'games' || _pageParam === 'sessions';
+if (_deepGames) { try {
+  const _g = new URLSearchParams(window.location.search).get('g'); window._sessPin = _g ? _g.split(',').filter(Boolean) : null;
+  // Deep link straight to Games: put that page up NOW (with its loading state) so the tournament pages never paint first
+  const sp = document.getElementById('sessionsPage'); if (sp) sp.classList.remove('hidden');
+  const sl = document.getElementById('sessionsList'); if (sl) sl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-weight:600;">Loading sessions...</div>';
+  setActiveTab('sessions');
+} catch (e) {} }
 const _playerParam = new URLSearchParams(window.location.search).get('player');
 const urlTid = new URLSearchParams(window.location.search).get('t');
 
@@ -2173,6 +2181,7 @@ function subscribeTournament(tid) {
             }
           }
         }
+        try { if (!document.getElementById('sessionsPage').classList.contains('hidden')) setActiveTab('sessions'); } catch (e) {}
       } else if (skip) {
         skip = false;
         renderCurrent(); updateNav();
@@ -2318,12 +2327,13 @@ async function bootApp() {
     setTimeout(() => { try { openPlayerDetail(_playerParam); history.replaceState({}, '', window.location.pathname); } catch(e) {} }, 700);
   }
   if (_pageParam) {
-    setTimeout(() => { try {
+    const _goPage = () => { try {
       if (_pageParam === 'courts') openCourts();
       else if (_pageParam === 'guide') openQuickStart();
-      else if (_pageParam === 'games' || _pageParam === 'sessions') { const g = new URLSearchParams(window.location.search).get('g'); window._sessPin = g ? g.split(',').filter(Boolean) : null; openSessions(); }
+      else if (_deepGames) openSessions();
       history.replaceState({}, '', window.location.pathname);
-    } catch(e) {} }, 500);
+    } catch(e) {} };
+    if (_deepGames) _goPage(); else setTimeout(_goPage, 500);   // Games is already on screen; fill it right away
   }
   if (urlTid) {
     await set(ref(db, 'users/' + uid + '/activeTournamentId'), urlTid);
@@ -2377,6 +2387,7 @@ async function bootApp() {
   cfg = null; scores = {}; activeTid = null;
   updateNav();
   if (startHash==='leaderboard') { openLeaderboard(); return; }
+  if (_deepGames) return;   // the Games page is already up from the link
   if (await hasUpcomingSessions()) { window.openSessions(); return; }
   openSetup();
 }
@@ -10964,7 +10975,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-06.2';
+window.BUILD_TAG = 'v2026-11-06.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
