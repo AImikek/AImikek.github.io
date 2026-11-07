@@ -330,6 +330,11 @@
     border-bottom:1px solid var(--border);
     transition:transform 0.25s ease; }
   #topBar.bar-hidden { transform:translateY(-100%); }
+  /* Home-screen app: no browser chrome above us, so the see-through bar let scrolling content smear under the clock.
+     Solid bar + a solid strip the height of the status bar (0px in a normal browser tab). */
+  #safeTopShield { position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top); background:#04060F; z-index:396; pointer-events:none; }
+  @media (display-mode: standalone) { #topBar { background:#04060F; backdrop-filter:none; -webkit-backdrop-filter:none; } }
+  html.pwa #topBar { background:#04060F; backdrop-filter:none; -webkit-backdrop-filter:none; }
   /* Home-screen (standalone) mode: iOS paints its clock/battery OVER the top of the page, which buried the ☰ and 🏆
      buttons under the status bar. Every top-anchored surface steps down by the safe-area inset (0 in a normal browser). */
   #topBar { padding-top:calc(10px + env(safe-area-inset-top)); }
@@ -515,10 +520,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PB Tourney">
+<script>try{if(navigator.standalone||matchMedia("(display-mode: standalone)").matches)document.documentElement.classList.add("pwa");}catch(e){}</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 </head>
 <body>
+<div id="safeTopShield"></div>
 
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" style="display:none;">
@@ -1584,11 +1591,14 @@
     </div>
     <div class="adsec-card" id="adTextQueueCard">
       <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;margin-bottom:4px;">📱 Text queue · from your phone</div>
-      <div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:8px;line-height:1.45;">Line up a personal text to everyone at a level. Edit any one, then tap Text to open Messages with it ready; it checks off and moves to the next. Use {first} for their first name, {level} for the level, {app} for the app link.</div>
+      <div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:8px;line-height:1.45;">Line up a personal text to everyone at a level. Edit any one, then tap Text to open Messages with it ready; it checks off and moves to the next. Use {first} for their first name, {level} for the level, {games} for the games you tick below (with one link to them), {app} for the app link.</div>
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
         <select class="finput" id="tqMin" style="flex:1;margin-bottom:0;padding:10px;font-size:13px;color-scheme:dark;"><option value="5.0">5.0+ players</option><option value="4.5">4.5+ players</option><option value="4.0" selected>4.0+ players</option><option value="3.5">3.5+ players</option><option value="0">Everyone with a number</option></select>
       </div>
-      <textarea class="finput" id="tqTpl" rows="3" style="margin-bottom:6px;resize:vertical;min-height:70px;">Hey {first}, it's Mike! I'm putting together some {level} games this week. Want in? You can grab a spot in the app: {app}</textarea>
+      <div id="tqGames" style="margin-bottom:6px;"></div>
+      <textarea class="finput" id="tqTpl" rows="4" style="margin-bottom:6px;resize:vertical;min-height:84px;">Hey {first}, it's Mike! I'm putting together some {level} games. Want in?
+
+{games}</textarea>
       <button onclick="tqBuild()" style="display:block;width:100%;padding:11px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:10px;font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Build queue</button>
       <div id="tqList" style="margin-top:10px;"></div>
     </div>
@@ -2311,6 +2321,7 @@ async function bootApp() {
     setTimeout(() => { try {
       if (_pageParam === 'courts') openCourts();
       else if (_pageParam === 'guide') openQuickStart();
+      else if (_pageParam === 'games' || _pageParam === 'sessions') { const g = new URLSearchParams(window.location.search).get('g'); window._sessPin = g ? g.split(',').filter(Boolean) : null; openSessions(); }
       history.replaceState({}, '', window.location.pathname);
     } catch(e) {} }, 500);
   }
@@ -4899,10 +4910,31 @@ window._tq = null;
 const _tqKey = 'pbt_textQueue';
 function _tqSave() { try { localStorage.setItem(_tqKey, JSON.stringify(window._tq)); } catch (e) {} }
 function _tqLoad() { try { const v = JSON.parse(localStorage.getItem(_tqKey) || 'null'); if (v && Array.isArray(v.rows)) return v; } catch (e) {} return null; }
+window.tqGamesText = function(sids, pool) {
+  const app = location.origin + location.pathname.replace(/[^\/]*$/, '');
+  const picked = (pool || []).filter(s => (sids || []).includes(s.sid));
+  if (!picked.length) return 'Grab a spot in the app: ' + app;
+  const link = app + '?p=games&g=' + picked.map(s => s.sid).join(',');
+  return picked.map(s => (s.title || 'Pickleball') + ' · ' + sessWhen(s) + (s.location ? ' @ ' + s.location : '')).join('\n') + '\n\n' + (picked.length > 1 ? 'Both are here, grab a spot: ' : 'Grab a spot here: ') + link;
+};
+window.tqGamesRender = async function() {
+  const el = document.getElementById('tqGames'); if (!el || !isAdmin()) return;
+  let up = []; try { up = (await _upcoming()).filter(s => s.visibility !== 'private'); } catch (e) {}
+  window._tqPool = up; window._tqPick = (window._tqPick || []).filter(id => up.some(s => s.sid === id));
+  if (!up.length) { el.innerHTML = '<div style="font-size:11.5px;color:var(--muted);font-weight:600;">No upcoming public games to share yet.</div>'; return; }
+  el.innerHTML = '<div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px;">Games to share:</div>' + up.slice(0, 10).map(s => '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);margin-bottom:4px;cursor:pointer;font-size:12.5px;color:var(--white);font-weight:700;"><input type="checkbox" ' + (window._tqPick.includes(s.sid) ? 'checked' : '') + ' onchange="tqPickGame(\'' + s.sid + '\', this.checked)" style="width:18px;height:18px;accent-color:var(--cyan);flex-shrink:0;"><span>' + escInfo(s.title || 'Session') + ' <span style="color:var(--muted);font-weight:600;">· ' + escInfo(sessWhen(s)) + '</span></span></label>').join('')
+    + '<button onclick="tqCopyGamesLink()" style="margin-top:2px;padding:7px 10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Copy link to ticked games</button>';
+};
+window.tqPickGame = function(sid, on) { const p = new Set(window._tqPick || []); if (on) p.add(sid); else p.delete(sid); window._tqPick = [...p]; };
+window.tqCopyGamesLink = async function() {
+  const app = location.origin + location.pathname.replace(/[^\/]*$/, '');
+  const ids = window._tqPick || []; const url = app + '?p=games' + (ids.length ? '&g=' + ids.join(',') : '');
+  const ok = await copyTextRobust(url); copiedToast(ok ? '✓ Link copied' : url);
+};
 window.tqFill = function(tpl, r, lvlLabel) {
   const app = location.origin + location.pathname.replace(/[^\/]*$/, '');
   const first = String(r.name || '').trim().split(/\s+/)[0] || 'there';
-  return String(tpl || '').replace(/\{first\}/g, first).replace(/\{name\}/g, r.name || first).replace(/\{level\}/g, lvlLabel).replace(/\{app\}/g, app);
+  return String(tpl || '').replace(/\{first\}/g, first).replace(/\{name\}/g, r.name || first).replace(/\{level\}/g, lvlLabel).replace(/\{games\}/g, window.tqGamesText(window._tqPick, window._tqPool)).replace(/\{app\}/g, app).replace(/\n{3,}/g, '\n\n').trim();
 };
 window.tqCandidates = async function(min) {
   try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
@@ -6431,13 +6463,16 @@ window.openSessions = async function() {
         return s.ownerUid === me || inR || inW;
       })
       .sort((a,b) => (a.date||'').localeCompare(b.date||''));
+    const _pin = window._sessPin || []; if (_pin.length) upcoming.sort((a, b) => (_pin.includes(b.sid) ? 1 : 0) - (_pin.includes(a.sid) ? 1 : 0));
     list.innerHTML = upcoming.length ? upcoming.map(s => {
       const roster = s.roster ? (Array.isArray(s.roster)?s.roster:Object.values(s.roster)) : [];
       const spotsLeft = Math.max(0, (s.spots||4) - roster.length);
       const d = new Date(s.date + 'T12:00');
       const ds = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
       const _ad = window.avgDpr ? window.avgDpr(roster.map(r=>r.name)) : null;
-      return '<div onclick="openSessionDetail(\'' + s.sid + '\')" style="cursor:pointer;padding:14px;background:var(--surface);border:1px solid '+(spotsLeft?'rgba(0,240,255,0.3)':'var(--border)')+';border-radius:14px;margin-bottom:10px;">'
+      const _isPin = _pin.includes(s.sid);
+      return '<div onclick="openSessionDetail(\'' + s.sid + '\')" style="cursor:pointer;padding:14px;background:var(--surface);border:'+(_isPin?'2px solid var(--aqua)':'1px solid '+(spotsLeft?'rgba(0,240,255,0.3)':'var(--border)'))+';border-radius:14px;margin-bottom:10px;">'
+        +(_isPin?'<div style="font-family:\'Russo One\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;margin-bottom:6px;">📌 Shared with you</div>':'')
         +'<div style="display:flex;justify-content:space-between;align-items:center;">'
         +'<div style="font-family:\'Russo One\',sans-serif;font-size:15px;color:var(--white);">'+(s.title||'Session')+(s.recurring?' 🔁':'')+(s.visibility==='private'?' 🔒':'')+'</div>'
         +'<div style="font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;'+(spotsLeft?'background:rgba(0,245,196,0.12);color:var(--aqua);':'background:rgba(255,224,0,0.1);color:var(--yellow);')+'">'+(window.sessPrice(s) ? '💳 '+window.fmtMoney(window.sessPrice(s))+' · ' : '')+(spotsLeft ? spotsLeft+' open' : 'Full · waitlist open')+'</div></div>'
@@ -7864,6 +7899,7 @@ window.openAdminDash = async function() {
   try { window.renderSmsCard(); } catch (e) {}
   try { window.adBroadcastFill(); } catch (e) {}
   try { window.tqRender(); } catch (e) {}
+  try { window.tqGamesRender(); } catch (e) {}
   try { window.renderOptOuts(); } catch (e) {}
   try { window.weeklyDigest().catch(() => {}); } catch (e) {}
   document.getElementById('adStats').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-weight:600;padding:20px;">Loading...</div>';
@@ -10811,6 +10847,8 @@ function clearChatAttach()   { if(window.clearChatAttach && window.clearChatAtta
 function growChatInput(t)    { if(window.growChatInput && window.growChatInput !== growChatInput) { window.growChatInput(t); return; } __pbtWait(growChatInput, arguments); }
 function postSessionToChat(s){ if(window.postSessionToChat && window.postSessionToChat !== postSessionToChat) { window.postSessionToChat(s); return; } __pbtWait(postSessionToChat, arguments); }
 function groupTextSession(s) { if(window.groupTextSession && window.groupTextSession !== groupTextSession) { window.groupTextSession(s); return; } __pbtWait(groupTextSession, arguments); }
+function tqPickGame(s,o) { if(window.tqPickGame && window.tqPickGame !== tqPickGame) { window.tqPickGame(s,o); return; } __pbtWait(tqPickGame, arguments); }
+function tqCopyGamesLink() { if(window.tqCopyGamesLink && window.tqCopyGamesLink !== tqCopyGamesLink) { window.tqCopyGamesLink(); return; } __pbtWait(tqCopyGamesLink, arguments); }
 function tqBuild() { if(window.tqBuild && window.tqBuild !== tqBuild) { window.tqBuild(); return; } __pbtWait(tqBuild, arguments); }
 function tqSend(i) { if(window.tqSend && window.tqSend !== tqSend) { window.tqSend(i); return; } __pbtWait(tqSend, arguments); }
 function tqSkip(i) { if(window.tqSkip && window.tqSkip !== tqSkip) { window.tqSkip(i); return; } __pbtWait(tqSkip, arguments); }
@@ -10926,7 +10964,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-06.1';
+window.BUILD_TAG = 'v2026-11-06.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
