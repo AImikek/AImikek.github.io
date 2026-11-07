@@ -1582,6 +1582,16 @@
       </div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;font-size:12px;color:var(--white);font-weight:700;"><input type="checkbox" id="abSms" style="width:18px;height:18px;accent-color:var(--cyan);"> Also send as a text (important only · needs texting on)</label>
     </div>
+    <div class="adsec-card" id="adTextQueueCard">
+      <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;margin-bottom:4px;">📱 Text queue · from your phone</div>
+      <div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:8px;line-height:1.45;">Line up a personal text to everyone at a level. Edit any one, then tap Text to open Messages with it ready; it checks off and moves to the next. Use {first} for their first name, {level} for the level, {app} for the app link.</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+        <select class="finput" id="tqMin" style="flex:1;margin-bottom:0;padding:10px;font-size:13px;color-scheme:dark;"><option value="5.0">5.0+ players</option><option value="4.5">4.5+ players</option><option value="4.0" selected>4.0+ players</option><option value="3.5">3.5+ players</option><option value="0">Everyone with a number</option></select>
+      </div>
+      <textarea class="finput" id="tqTpl" rows="3" style="margin-bottom:6px;resize:vertical;min-height:70px;">Hey {first}, it's Mike! I'm putting together some {level} games this week. Want in? You can grab a spot in the app: {app}</textarea>
+      <button onclick="tqBuild()" style="display:block;width:100%;padding:11px;background:linear-gradient(135deg,var(--aqua),var(--cyan));color:#04060F;border:none;border-radius:10px;font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Build queue</button>
+      <div id="tqList" style="margin-top:10px;"></div>
+    </div>
     <div id="adIssues" style="display:none;"></div>
     <div id="adStats" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;"></div>
     <div id="adActiveNames" style="font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;margin:-2px 0 14px;"></div>
@@ -4884,6 +4894,85 @@ window.adBroadcast = async function() {
   document.getElementById('abText').value = '';
   copiedToast('📣 Sent to ' + k + (asText ? ' (texts where allowed)' : ''));
 };
+// ── Text queue: personal one-to-one texts from the admin's own phone (no Twilio), approved one at a time ──
+window._tq = null;
+const _tqKey = 'pbt_textQueue';
+function _tqSave() { try { localStorage.setItem(_tqKey, JSON.stringify(window._tq)); } catch (e) {} }
+function _tqLoad() { try { const v = JSON.parse(localStorage.getItem(_tqKey) || 'null'); if (v && Array.isArray(v.rows)) return v; } catch (e) {} return null; }
+window.tqFill = function(tpl, r, lvlLabel) {
+  const app = location.origin + location.pathname.replace(/[^\/]*$/, '');
+  const first = String(r.name || '').trim().split(/\s+/)[0] || 'there';
+  return String(tpl || '').replace(/\{first\}/g, first).replace(/\{name\}/g, r.name || first).replace(/\{level\}/g, lvlLabel).replace(/\{app\}/g, app);
+};
+window.tqCandidates = async function(min) {
+  try { if (!lbData) await loadLeaderboardData(); } catch (e) {}
+  let rm = {}; try { rm = window.pbtRatingsFor('doubles') || {}; } catch (e) {}
+  const dir = await loadChatDir(true);
+  let stops = {}; try { stops = (await get(ref(db, 'smsOptOut'))).val() || {}; } catch (e) {}
+  const me = currentUser && currentUser.uid; const out = [], seenPh = new Set(); let noNum = 0;
+  for (const [uid, d] of Object.entries(dir)) {
+    if (!d || !d.name || uid === me) continue;
+    const r = rm[String(d.name).trim().toLowerCase()];
+    const lvl = r ? r.rating : (parseFloat(d.dupr) || 0);
+    if (min > 0 && !(lvl >= min - 1e-9)) continue;
+    let raw = d.phone || ''; let p = {};
+    if (!d.unclaimed && uid.length >= 20) { p = await _profOf(uid); if (!raw) raw = p.phone || ''; }
+    const ph = window._gtNorm(raw);
+    if (!ph) { noNum++; continue; }
+    if (seenPh.has(ph)) continue; seenPh.add(ph);
+    const optedOut = !!stops[ph.replace(/\D/g, '')] || p.smsService === false || p.smsMarketing === false;
+    out.push({ uid, name: d.name, ph, lvl: lvl ? +lvl.toFixed(2) : null, basis: r ? 'DPR' : (lvl ? 'DUPR' : ''), optedOut });
+  }
+  out.sort((a, b) => (b.lvl || 0) - (a.lvl || 0) || a.name.localeCompare(b.name));
+  return { rows: out, noNum };
+};
+window.tqBuild = async function() {
+  if (!isAdmin()) return;
+  const min = parseFloat(document.getElementById('tqMin').value) || 0;
+  const tpl = document.getElementById('tqTpl').value || '';
+  const lvlLabel = min > 0 ? min.toFixed(1) + '+' : '';
+  const prev = window._tq || _tqLoad();
+  if (prev && prev.rows.some(r => r.status === 'todo') && !confirm('Start a new queue? Your current one still has unsent texts.')) return;
+  document.getElementById('tqList').innerHTML = '<div style="color:var(--muted);font-weight:600;font-size:12px;">Finding players…</div>';
+  const { rows, noNum } = await window.tqCandidates(min);
+  window._tq = { at: Date.now(), min, noNum, rows: rows.map(r => Object.assign(r, { msg: window.tqFill(tpl, r, lvlLabel), status: r.optedOut ? 'skip' : 'todo' })) };
+  _tqSave(); window.tqRender();
+};
+window.tqRender = function() {
+  const el = document.getElementById('tqList'); if (!el) return;
+  const q = window._tq || (window._tq = _tqLoad());
+  if (!q) { el.innerHTML = ''; return; }
+  const todo = q.rows.filter(r => r.status === 'todo').length, sent = q.rows.filter(r => r.status === 'sent').length;
+  const btn = (fn, lbl, prim) => '<button onclick="' + fn + '" style="padding:8px 12px;' + (prim ? 'background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04060F;border:none;' : 'background:transparent;border:1px solid var(--border);color:var(--muted);') + 'border-radius:9px;font-family:\'Russo One\',sans-serif;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">' + lbl + '</button>';
+  let h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-weight:800;font-size:12.5px;color:var(--white);">' + sent + ' sent · ' + todo + ' to go</div>' + btn('tqClear()', 'Clear') + '</div>';
+  if (q.noNum) h += '<div style="font-size:11.5px;color:var(--yellow);font-weight:700;margin-bottom:8px;">' + q.noNum + ' player' + (q.noNum === 1 ? '' : 's') + ' at this level have no number on file.</div>';
+  if (!q.rows.length) h += '<div style="color:var(--muted);font-weight:600;font-size:12px;">Nobody at this level has a number on file.</div>';
+  q.rows.forEach((r, i) => {
+    const lvl = r.lvl ? ' · ' + r.lvl.toFixed(2) + ' ' + r.basis : '';
+    if (r.status !== 'todo') {
+      h += '<div id="tqr' + i + '" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:5px;opacity:0.7;"><span style="font-weight:700;font-size:13px;color:var(--white);">' + (r.status === 'sent' ? '✅ ' : '⏭ ') + escInfo(r.name) + '<span style="font-size:11px;color:var(--muted);font-weight:600;">' + (r.status === 'skip' && r.optedOut ? ' · opted out of texts' : r.status === 'skip' ? ' · skipped' : ' · sent') + '</span></span>' + btn('tqUndo(' + i + ')', 'Undo') + '</div>';
+      return;
+    }
+    h += '<div id="tqr' + i + '" style="padding:10px;border-radius:12px;background:var(--surface2);border:1px solid rgba(0,240,255,0.3);margin-bottom:8px;">'
+      + '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;"><span style="font-weight:800;font-size:13.5px;color:var(--white);">' + escInfo(r.name) + '<span style="font-size:11px;color:var(--muted);font-weight:600;">' + escInfo(lvl) + '</span></span><span style="font-size:11.5px;color:var(--muted);font-weight:600;">' + escInfo(r.ph) + '</span></div>'
+      + '<textarea id="tqm' + i + '" oninput="tqEdit(' + i + ',this.value)" rows="3" style="width:100%;box-sizing:border-box;padding:8px 10px;background:rgba(4,6,15,0.4);border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--white);font-weight:600;font-family:inherit;line-height:1.4;resize:vertical;">' + escInfo(r.msg) + '</textarea>'
+      + '<div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end;">' + btn('tqSkip(' + i + ')', 'Skip') + btn('tqSend(' + i + ')', 'Text ▸', true) + '</div></div>';
+  });
+  el.innerHTML = h;
+};
+window.tqEdit = function(i, v) { const q = window._tq; if (q && q.rows[i]) { q.rows[i].msg = v; _tqSave(); } };
+window.tqSend = function(i) {
+  const q = window._tq; const r = q && q.rows[i]; if (!r) return;
+  const ta = document.getElementById('tqm' + i); if (ta) r.msg = ta.value;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const href = 'sms:' + r.ph + (ios ? '&' : '?') + 'body=' + encodeURIComponent(r.msg || '');
+  r.status = 'sent'; r.sentAt = Date.now(); _tqSave(); window.tqRender();
+  const nx = q.rows.findIndex(x => x.status === 'todo'); if (nx >= 0) { try { document.getElementById('tqr' + nx).scrollIntoView({ block: 'center' }); } catch (e) {} }
+  (window._go || (u => { window.location.href = u; }))(href);
+};
+window.tqSkip = function(i) { const q = window._tq; if (q && q.rows[i]) { q.rows[i].status = 'skip'; _tqSave(); window.tqRender(); } };
+window.tqUndo = function(i) { const q = window._tq; if (q && q.rows[i]) { q.rows[i].status = 'todo'; _tqSave(); window.tqRender(); } };
+window.tqClear = function() { if (window._tq && window._tq.rows.some(r => r.status === 'todo') && !confirm('Clear this queue? Unsent texts are dropped.')) return; window._tq = null; try { localStorage.removeItem(_tqKey); } catch (e) {} window.tqRender(); };
 window.adBroadcastFill = async function() {
   try { const sel = document.getElementById('abAud'); if (!sel) return; const up = await _upcoming(); const keep = sel.value;
     sel.innerHTML = '<option value="all">Everyone on the app</option><option value="g50">5.0+ players</option><option value="g45">4.5+ players</option><option value="g40">4.0+ players</option><option value="g35">3.5+ players</option>' + up.slice(0, 12).map(s => '<option value="' + s.sid + '">Roster: ' + escInfo(s.title) + ' · ' + escInfo(s.date) + '</option>').join(''); if (keep) sel.value = keep; } catch (e) {}
@@ -7774,6 +7863,7 @@ window.openAdminDash = async function() {
   try { window.adAvailNamesFill(); } catch (e) {}
   try { window.renderSmsCard(); } catch (e) {}
   try { window.adBroadcastFill(); } catch (e) {}
+  try { window.tqRender(); } catch (e) {}
   try { window.renderOptOuts(); } catch (e) {}
   try { window.weeklyDigest().catch(() => {}); } catch (e) {}
   document.getElementById('adStats').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-weight:600;padding:20px;">Loading...</div>';
@@ -10721,6 +10811,12 @@ function clearChatAttach()   { if(window.clearChatAttach && window.clearChatAtta
 function growChatInput(t)    { if(window.growChatInput && window.growChatInput !== growChatInput) { window.growChatInput(t); return; } __pbtWait(growChatInput, arguments); }
 function postSessionToChat(s){ if(window.postSessionToChat && window.postSessionToChat !== postSessionToChat) { window.postSessionToChat(s); return; } __pbtWait(postSessionToChat, arguments); }
 function groupTextSession(s) { if(window.groupTextSession && window.groupTextSession !== groupTextSession) { window.groupTextSession(s); return; } __pbtWait(groupTextSession, arguments); }
+function tqBuild() { if(window.tqBuild && window.tqBuild !== tqBuild) { window.tqBuild(); return; } __pbtWait(tqBuild, arguments); }
+function tqSend(i) { if(window.tqSend && window.tqSend !== tqSend) { window.tqSend(i); return; } __pbtWait(tqSend, arguments); }
+function tqSkip(i) { if(window.tqSkip && window.tqSkip !== tqSkip) { window.tqSkip(i); return; } __pbtWait(tqSkip, arguments); }
+function tqUndo(i) { if(window.tqUndo && window.tqUndo !== tqUndo) { window.tqUndo(i); return; } __pbtWait(tqUndo, arguments); }
+function tqClear() { if(window.tqClear && window.tqClear !== tqClear) { window.tqClear(); return; } __pbtWait(tqClear, arguments); }
+function tqEdit(i,v) { if(window.tqEdit && window.tqEdit !== tqEdit) { window.tqEdit(i,v); return; } __pbtWait(tqEdit, arguments); }
 function groupTextTournament(s) { if(window.groupTextTournament && window.groupTextTournament !== groupTextTournament) { window.groupTextTournament(s); return; } __pbtWait(groupTextTournament, arguments); }
 function gtPickTpl(k) { if(window.gtPickTpl && window.gtPickTpl !== gtPickTpl) { window.gtPickTpl(k); return; } __pbtWait(gtPickTpl, arguments); }
 function gtOpenTourney() { if(window.gtOpenTourney && window.gtOpenTourney !== gtOpenTourney) { window.gtOpenTourney(); return; } __pbtWait(gtOpenTourney, arguments); }
@@ -10830,7 +10926,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-02.4';
+window.BUILD_TAG = 'v2026-11-06.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
