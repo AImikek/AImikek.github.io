@@ -249,6 +249,7 @@
   .cdot { min-width:20px; height:20px; padding:0 6px; border-radius:99px; background:var(--pink); color:white; font-size:10px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
   #installBar.hidden { display:none !important; }
   #rosterPlayerSheet.hidden { display:none !important; }
+  #avatarView.hidden { display:none !important; }
   #venueSheet.hidden { display:none !important; }
   #phoneLinkOverlay.hidden { display:none !important; }
   #consentOverlay.hidden { display:none !important; }
@@ -10107,18 +10108,26 @@ function resizeImageFile(file, maxPx, quality) {
   });
 }
 // Tap any profile photo → big. Shows the small avatar right away (scaled up), swaps in the full-size copy when there is one.
+window.closeAvatar = function() { const ov = document.getElementById('avatarView'); if (ov) { ov.classList.add('hidden'); ov.style.display = 'none'; } };
 window.showAvatar = async function(ev, uid, name, small) {
-  try { if (ev) { ev.stopPropagation(); ev.preventDefault(); } } catch (e) {}
+  let el = null;
+  try { if (ev) { el = ev.currentTarget || ev.target; ev.stopPropagation(); ev.preventDefault(); } } catch (e) {}
+  // the tapped circle already shows the small photo as its background → use that, no second lookup needed
+  if (!small && el) { try { const m = /url\(["']?(.*?)["']?\)/.exec((el.style && el.style.backgroundImage) || ''); if (m) small = m[1]; } catch (e) {} }
   let ov = document.getElementById('avatarView');
-  if (!ov) { ov = document.createElement('div'); ov.id = 'avatarView'; ov.onclick = () => ov.classList.add('hidden'); ov.style.cssText = 'position:fixed;inset:0;z-index:990;background:rgba(4,6,15,0.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;cursor:pointer;'; document.body.appendChild(ov); }
+  if (!ov) { ov = document.createElement('div'); ov.id = 'avatarView'; ov.addEventListener('click', window.closeAvatar); ov.addEventListener('touchend', function(e) { e.preventDefault(); window.closeAvatar(); }); document.body.appendChild(ov); }
+  ov.style.cssText = 'position:fixed;inset:0;z-index:990;background:rgba(4,6,15,0.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;cursor:pointer;';
   const src0 = small || (window._avatarCache && window._avatarCache[uid]) || '';
   ov.innerHTML = '<img id="avatarViewImg" src="' + src0 + '" style="width:min(88vw,88vh);height:min(88vw,88vh);object-fit:cover;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.6);background:var(--surface2);">'
     + '<div style="margin-top:12px;font-family:\'Russo One\',sans-serif;font-size:16px;color:var(--white);">' + escInfo(name || '') + '</div>'
-    + '<div id="avatarViewSub" style="margin-top:4px;font-size:12px;color:var(--muted);font-weight:600;">tap to close</div>';
+    + '<div id="avatarViewSub" style="margin-top:4px;font-size:12px;color:var(--muted);font-weight:600;">tap anywhere to close</div>';
   ov.classList.remove('hidden');
+  const _img = document.getElementById('avatarViewImg'); if (_img && !src0) _img.style.opacity = '0';
   if (!uid) return;
-  try { const big = (await get(ref(db, 'users/' + uid + '/photo'))).val(); const img = document.getElementById('avatarViewImg'); if (big && img && !ov.classList.contains('hidden')) img.src = big; }
+  try { const big = (await get(ref(db, 'users/' + uid + '/photo'))).val(); const img = document.getElementById('avatarViewImg'); if (big && img && !ov.classList.contains('hidden')) { img.src = big; img.style.opacity = '1'; } }
   catch (e) {}
+  // no photo at all → say so rather than sit on a blank square
+  const img2 = document.getElementById('avatarViewImg'); if (img2 && !img2.getAttribute('src')) { const sub = document.getElementById('avatarViewSub'); if (sub) sub.textContent = 'No photo yet · tap anywhere to close'; }
 };
 window.uploadAvatar = async function(inp) {
   const f = inp && inp.files && inp.files[0]; if (!f) return;
@@ -10902,6 +10911,7 @@ function clearChatAttach()   { if(window.clearChatAttach && window.clearChatAtta
 function growChatInput(t)    { if(window.growChatInput && window.growChatInput !== growChatInput) { window.growChatInput(t); return; } __pbtWait(growChatInput, arguments); }
 function postSessionToChat(s){ if(window.postSessionToChat && window.postSessionToChat !== postSessionToChat) { window.postSessionToChat(s); return; } __pbtWait(postSessionToChat, arguments); }
 function groupTextSession(s) { if(window.groupTextSession && window.groupTextSession !== groupTextSession) { window.groupTextSession(s); return; } __pbtWait(groupTextSession, arguments); }
+function closeAvatar() { if(window.closeAvatar && window.closeAvatar !== closeAvatar) { window.closeAvatar(); return; } __pbtWait(closeAvatar, arguments); }
 function nameSuggest(i) { if(window.nameSuggest && window.nameSuggest !== nameSuggest) { window.nameSuggest(i); return; } __pbtWait(nameSuggest, arguments); }
 function nsPick(e) { if(window.nsPick && window.nsPick !== nsPick) { window.nsPick(e); return; } __pbtWait(nsPick, arguments); }
 function nsKey(e,i) { if(window.nsKey && window.nsKey !== nsKey) { window.nsKey(e,i); return; } __pbtWait(nsKey, arguments); }
@@ -11023,7 +11033,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-07.1';
+window.BUILD_TAG = 'v2026-11-07.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
