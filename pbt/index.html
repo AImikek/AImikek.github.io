@@ -518,7 +518,9 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- "black": opaque system status bar, page starts below it. iOS 26+ paints a Liquid Glass blur over anything drawn
+     under the status bar in a home-screen app (black-translucent), which made the top of the app look fuzzy. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="PB Tourney">
 <script>try{if(navigator.standalone||matchMedia("(display-mode: standalone)").matches)document.documentElement.classList.add("pwa");}catch(e){}</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -666,8 +668,8 @@
       <div class="team-picker" id="agPlayerPicker"></div>
 
       <div id="agNewPlayerWrap" style="margin-bottom:14px;">
-        <input class="finput" id="agNewName" placeholder="+ Type a new player's name"
-          style="margin-bottom:6px;" onkeydown="if(event.key==='Enter'){this.blur();}" onblur="addNewPlayerToGame()">
+        <div style="position:relative;"><input class="finput" id="agNewName" placeholder="+ Type a new player's name" autocomplete="off" autocapitalize="words"
+          style="margin-bottom:6px;" oninput="nameSuggest(this)" onfocus="nameSuggest(this)" onkeydown="nsKey(event,this);if(event.key==='Enter'){this.blur();}" onblur="pfHideSuggest(this);addNewPlayerToGame()"></div>
         <button onclick="addNewPlayerToGame()" style="width:100%;padding:10px;background:transparent;
           border:1px dashed rgba(0,240,255,0.25);color:var(--muted);border-radius:10px;
           font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">
@@ -1570,7 +1572,7 @@
     <div class="adsec-card" id="adAvailCard">
       <div style="font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:2px;color:var(--aqua);text-transform:uppercase;margin-bottom:6px;">📅 Log someone's availability</div>
       <div style="font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:8px;line-height:1.5;">Someone texted you when they can play? Put it on their account. No account yet → one gets created for them and merges in when they register with that number.</div>
-      <input class="finput" id="adAvName" list="adAvNames" placeholder="Name (e.g. Natalia Liss-Schull)" autocomplete="off" style="margin-bottom:6px;"><datalist id="adAvNames"></datalist>
+      <div style="position:relative;"><input class="finput" id="adAvName" placeholder="Name (e.g. Natalia Liss-Schull)" autocomplete="off" autocapitalize="words" style="margin-bottom:6px;" oninput="nameSuggest(this)" onfocus="nameSuggest(this)" onblur="pfHideSuggest(this)" onkeydown="nsKey(event,this)"></div>
       <div style="display:flex;gap:6px;">
         <input class="finput" id="adAvPhone" type="tel" placeholder="Phone (optional)" style="flex:1.4;margin-bottom:0;">
         <input class="finput" id="adAvLevel" type="number" inputmode="decimal" step="0.01" min="1" max="8" placeholder="Level" style="flex:0.8;margin-bottom:0;">
@@ -4196,7 +4198,7 @@ window.openSplit = async function(name) {
   x += '<label class="flabel">Which account is them?</label>';
   x += '<label style="display:flex;gap:10px;align-items:center;padding:9px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;"><input type="radio" name="splitAcct" value="" checked onchange="splitPickAccount()"> <span style="font-size:13px;font-weight:700;color:var(--white);">No login / not sure — just split the games</span></label>';
   accts.forEach(([u, d]) => { x += '<label style="display:flex;gap:10px;align-items:center;padding:9px 10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;"><input type="radio" name="splitAcct" value="' + u + '" onchange="splitPickAccount()">'
-    + (d.avatar ? '<span style="width:30px;height:30px;border-radius:50%;background:url(' + d.avatar + ') center/cover;flex-shrink:0;"></span>' : '<span style="width:30px;height:30px;border-radius:50%;background:var(--surface2);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👤</span>')
+    + (d.avatar ? '<span onclick="showAvatar(event,\'' + u + '\',\'' + String(d.name || '').replace(/'/g, '') + '\')" style="width:30px;height:30px;border-radius:50%;background:url(' + d.avatar + ') center/cover;flex-shrink:0;cursor:zoom-in;"></span>' : '<span style="width:30px;height:30px;border-radius:50%;background:var(--surface2);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👤</span>')
     + '<span style="font-size:12.5px;font-weight:700;color:var(--white);line-height:1.4;">' + escInfo(d.phone || (d.unclaimed ? 'unclaimed profile' : 'no phone')) + (d.email ? '<br><span style="color:var(--muted);font-weight:600;">' + escInfo(d.email) + '</span>' : '') + (d.dupr ? ' <span style="color:var(--yellow);">DUPR ' + escInfo(String(d.dupr)) + '</span>' : '') + (d.lastActive ? '<br><span style="color:var(--muted);font-weight:600;font-size:11px;">active ' + new Date(d.lastActive).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>' : '') + '</span></label>'; });
   x += '<label class="flabel" style="margin-top:8px;">Their tournaments</label>';
   if (!window._splitCtx.tids.length) x += '<div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px;">No logged games under this name.</div>';
@@ -4731,7 +4733,7 @@ window.psRun = function() {
     if (p.dupr) bits.push('<span style="color:var(--yellow);font-weight:800;">DUPR ' + escInfo(String(p.dupr)) + '</span>');
     if (p.city) bits.push('📍 ' + escInfo(p.city));
     const away = p.avail && window.availAwayOn(p.avail, today0);
-    const av = p.avatar ? '<div style="width:40px;height:40px;border-radius:50%;background:url(' + p.avatar + ') center/cover;flex-shrink:0;"></div>'
+    const av = p.avatar ? '<div onclick="showAvatar(event,\'' + (p.uid || '') + '\',\'' + String(p.name || '').replace(/'/g, '') + '\')" style="width:40px;height:40px;border-radius:50%;background:url(' + p.avatar + ') center/cover;flex-shrink:0;cursor:zoom-in;"></div>'
       : '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:16px;color:#04060F;flex-shrink:0;">' + escInfo((p.name[0] || '?').toUpperCase()) + '</div>';
     return '<div onclick="psOpen(' + i + ')" class="chat-row" style="cursor:pointer;">' + av
       + '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:14.5px;color:var(--white);">' + escInfo(p.name) + (away ? ' <span style="font-size:11px;color:var(--yellow);">✈️ away</span>' : '') + '</div>'
@@ -6387,7 +6389,7 @@ window.renderPdHeader = async function(name) {
   if (d.joinedAt) chips += chip('📅 member since ' + new Date(d.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), 'var(--muted)');
   const av = v('avatar');
   let hd = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">'
-    + (av ? '<div style="width:64px;height:64px;border-radius:50%;background:url(' + av + ') center/cover;flex-shrink:0;border:2px solid rgba(0,240,255,0.35);"></div>'
+    + (av ? '<div onclick="showAvatar(event,\'' + (uid || '') + '\',\'' + String(name || '').replace(/'/g, '') + '\')" title="Tap to enlarge" style="width:64px;height:64px;border-radius:50%;background:url(' + av + ') center/cover;flex-shrink:0;border:2px solid rgba(0,240,255,0.35);cursor:zoom-in;"></div>'
           : '<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:26px;color:#04060F;flex-shrink:0;">' + escInfo(String(name).trim()[0] || '?').toUpperCase() + '</div>')
     + '<div style="min-width:0;"><div style="font-family:\'Russo One\',sans-serif;font-size:20px;color:var(--white);line-height:1.1;">' + escInfo(name) + '</div>'
     + '<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:3px;">' + (uid && !d.unclaimed ? '✅ On the app' : 'Not on the app yet') + (uid === (currentUser && currentUser.uid) ? ' · this is you' : '') + '</div></div></div>';
@@ -7047,7 +7049,7 @@ function renderSessionDetail(sid, s) {
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
         +'<div style="min-width:0;"><span style="font-family:\'Russo One\',sans-serif;font-size:13px;color:var(--aqua);margin-right:10px;">'+(i+1)+'</span>'
         +'<span onclick="openRosterPlayerSheet(\''+encodeURIComponent(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'\\\'')+'\',\'roster\')" style="font-weight:700;color:var(--white);font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;">'
-          +(window._avatarCache && window._avatarCache[r.uid] ? '<span style="width:24px;height:24px;border-radius:50%;background:url('+window._avatarCache[r.uid]+') center/cover;flex-shrink:0;display:inline-block;"></span>' : '')
+          +(window._avatarCache && window._avatarCache[r.uid] ? '<span onclick="showAvatar(event,\''+(r.uid||'')+'\',\''+String(r.name||'').replace(/'/g,'')+'\')" style="width:24px;height:24px;border-radius:50%;background:url('+window._avatarCache[r.uid]+') center/cover;flex-shrink:0;display:inline-block;cursor:zoom-in;"></span>' : '')
           +r.name
           +(r.paid ? '<span title="Paid" style="font-size:11px;">💳</span>' : '')
           +(function(){ const d = window.dprOf && window.dprOf(r.name); return d ? '<span style="font-size:10px;color:var(--cyan);font-weight:800;">💎'+d.toFixed(2)+'</span>' : ''; })()
@@ -7345,7 +7347,7 @@ window.openRosterPlayerSheet = async function(uidEnc, name, listType) {
   const isAway = !!(prof && prof.awayUntil && prof.awayUntil >= today0);
   let h = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">'
     +(prof && prof.avatar
-      ? '<div style="width:52px;height:52px;border-radius:50%;background:url('+prof.avatar+') center/cover;flex-shrink:0;border:2px solid rgba(0,240,255,0.35);"></div>'
+      ? '<div onclick="showAvatar(event,\''+(uid||'')+'\',\''+String(name||'').replace(/'/g,'')+'\')" title="Tap to enlarge" style="width:52px;height:52px;border-radius:50%;background:url('+prof.avatar+') center/cover;flex-shrink:0;border:2px solid rgba(0,240,255,0.35);cursor:zoom-in;"></div>'
       : '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-family:\'Russo One\',sans-serif;font-size:20px;color:#04060F;flex-shrink:0;">'+(name ? escInfo(name.trim()[0].toUpperCase()) : '?')+'</div>')
     +'<div><div style="font-family:\'Russo One\',sans-serif;font-size:20px;color:var(--white);">'+escInfo(name)+'</div>'
     +'<div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">'+(listType==='waitlist'?'⏳ Waitlist':'✅ Roster')+'</div></div></div>';
@@ -8324,7 +8326,7 @@ window.adLogAvail = async function() {
   document.getElementById('adAvName').value = ''; document.getElementById('adAvPhone').value = ''; document.getElementById('adAvLevel').value = '';
 };
 window.adAvailNamesFill = async function() {
-  try { const dl = document.getElementById('adAvNames'); if (!dl) return; const dir = await loadChatDir(); dl.innerHTML = Object.values(dir).filter(d => d && d.name).map(d => d.name).sort((a, b) => a.localeCompare(b)).map(n => '<option value="' + escInfo(n) + '">').join(''); } catch (e) {}
+  try { await loadPlayerDirectory(); } catch (e) {}   // warms the suggestion list for the name box
 };
 // Admin: give any player name an unclaimed profile so contact info / DUPR can live on it
 // before they ever sign up. Same shape the importer creates; editable like any account.
@@ -8650,6 +8652,32 @@ window.pfPick = function(el) {
   // hop to the next empty box so a lineup is a tap-tap-tap affair
   const nxt = [...document.querySelectorAll('.pinput')].find(i => !i.value.trim());
   if (nxt) { try { nxt.focus({ preventScroll: true }); } catch (e) { nxt.focus(); } } else { try { inp.blur(); } catch (e) {} }
+};
+// Generic version for any single name box (availability logger, fix-a-name, new player in a game):
+// same dropdown as the lineup boxes, matches the whole directory + game history, tap fills the box.
+window.nameSuggest = function(inp) {
+  if (!inp) return; const w = inp.parentNode; if (!w) return;
+  let box = w.querySelector('.psug'); if (!box) { box = document.createElement('div'); box.className = 'psug'; w.appendChild(box); }
+  const q = inp.value.trim();
+  if (!q) { box.style.display = 'none'; if (!_dirLoaded) loadPlayerDirectory(); return; }
+  const m = window.pfMatches(q, []).filter(b => b.name.toLowerCase() !== q.toLowerCase());
+  if (!m.length) { box.style.display = 'none'; if (!_dirLoaded) loadPlayerDirectory().then(() => { if (document.activeElement === inp) window.nameSuggest(inp); }); return; }
+  box.innerHTML = m.map(b => '<div onmousedown="event.preventDefault();nsPick(this)" ontouchstart="" data-name="' + b.name.replace(/"/g, '&quot;') + '">' + escInfo(b.name) + (b.sub ? '<span>' + escInfo(b.sub) + '</span>' : '') + '</div>').join('');
+  box.style.display = 'block'; box._inp = inp; window._pfActive = -1;
+  if (!_dirLoaded) loadPlayerDirectory().then(() => { if (document.activeElement === inp) window.nameSuggest(inp); });
+};
+window.nsPick = function(el) {
+  const box = el.parentNode, inp = box._inp; if (!inp) return;
+  inp.value = el.getAttribute('data-name') || el.textContent; box.style.display = 'none';
+  try { inp.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+  try { inp.blur(); } catch (e) {}
+};
+window.nsKey = function(ev, inp) {
+  const box = inp.parentNode.querySelector('.psug'); if (!box || box.style.display === 'none') return;
+  const rows = [...box.querySelectorAll('div[data-name]')]; if (!rows.length) return;
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); window._pfActive = Math.max(0, Math.min(rows.length - 1, (window._pfActive == null ? -1 : window._pfActive) + (ev.key === 'ArrowDown' ? 1 : -1))); rows.forEach((r, i) => r.style.background = i === window._pfActive ? 'rgba(0,240,255,0.12)' : ''); }
+  else if ((ev.key === 'Enter' || ev.key === 'Tab') && window._pfActive >= 0) { ev.preventDefault(); window.nsPick(rows[window._pfActive]); }
+  else if (ev.key === 'Escape') box.style.display = 'none';
 };
 window.pfHideSuggest = function(inp) { setTimeout(() => { const box = inp && inp.parentNode && inp.parentNode.querySelector('.psug'); if (box) box.style.display = 'none'; }, 150); };
 window.pfKey = function(ev, inp) {
@@ -9055,7 +9083,7 @@ function renderGames() {
       +'<div style="font-size:11px;letter-spacing:1px;color:var(--muted);font-family:\'Russo One\',sans-serif;text-transform:uppercase;margin-bottom:6px;">Tap players to add them</div>'
       +'<div class="team-picker" id="lgPlayerPicker"></div>'
       +'<div style="margin-bottom:14px;">'
-      +'<input class="finput" id="lgNewName" placeholder="+ Type a new player\'s name" style="margin-bottom:6px;" onkeydown="if(event.key===\'Enter\'){this.blur();}">'
+      +'<div style="position:relative;"><input class="finput" id="lgNewName" placeholder="+ Type a new player\'s name" autocomplete="off" autocapitalize="words" style="margin-bottom:6px;" oninput="nameSuggest(this)" onfocus="nameSuggest(this)" onblur="pfHideSuggest(this)" onkeydown="nsKey(event,this);if(event.key===\'Enter\'){this.blur();}"></div>'
       +'<button onclick="addNewPlayerToGame()" style="width:100%;padding:10px;background:transparent;border:1px dashed rgba(0,240,255,0.25);color:var(--muted);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Add New Player</button>'
       +'</div>'
       +'<div id="lgTeamPreview" style="text-align:center;font-size:13px;color:var(--muted);font-weight:600;margin-bottom:14px;min-height:20px;"></div>'
@@ -10078,12 +10106,28 @@ function resizeImageFile(file, maxPx, quality) {
     img.src = url;
   });
 }
+// Tap any profile photo → big. Shows the small avatar right away (scaled up), swaps in the full-size copy when there is one.
+window.showAvatar = async function(ev, uid, name, small) {
+  try { if (ev) { ev.stopPropagation(); ev.preventDefault(); } } catch (e) {}
+  let ov = document.getElementById('avatarView');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'avatarView'; ov.onclick = () => ov.classList.add('hidden'); ov.style.cssText = 'position:fixed;inset:0;z-index:990;background:rgba(4,6,15,0.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;cursor:pointer;'; document.body.appendChild(ov); }
+  const src0 = small || (window._avatarCache && window._avatarCache[uid]) || '';
+  ov.innerHTML = '<img id="avatarViewImg" src="' + src0 + '" style="width:min(88vw,88vh);height:min(88vw,88vh);object-fit:cover;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,0.6);background:var(--surface2);">'
+    + '<div style="margin-top:12px;font-family:\'Russo One\',sans-serif;font-size:16px;color:var(--white);">' + escInfo(name || '') + '</div>'
+    + '<div id="avatarViewSub" style="margin-top:4px;font-size:12px;color:var(--muted);font-weight:600;">tap to close</div>';
+  ov.classList.remove('hidden');
+  if (!uid) return;
+  try { const big = (await get(ref(db, 'users/' + uid + '/photo'))).val(); const img = document.getElementById('avatarViewImg'); if (big && img && !ov.classList.contains('hidden')) img.src = big; }
+  catch (e) {}
+};
 window.uploadAvatar = async function(inp) {
   const f = inp && inp.files && inp.files[0]; if (!f) return;
   try {
     // square-crop by drawing center; simple approach: resize then let CSS cover
     const data = await resizeImageFile(f, 160, 0.82);
     await update(ref(db, 'users/' + currentUser.uid + '/profile'), { avatar: data });
+    // bigger copy (kept OUT of the directory/profile so lists stay light) for the tap-to-enlarge view
+    try { const big = await resizeImageFile(f, 720, 0.82); await set(ref(db, 'users/' + currentUser.uid + '/photo'), big); } catch (e) {}
     userProfile = Object.assign({}, userProfile, { avatar: data });
     try { await update(ref(db, 'directory/' + currentUser.uid), { avatar: data }); } catch(e) {}
     const av = document.getElementById('profileAvatarDisplay'); if (av) { av.style.backgroundImage = 'url(' + data + ')'; av.textContent = ''; }
@@ -10095,7 +10139,7 @@ window.uploadAvatar = async function(inp) {
   try { inp.value = ''; } catch(e) {}
 };
 window.removeAvatar = async function() {
-  try { await update(ref(db, 'users/' + currentUser.uid + '/profile'), { avatar: null }); await update(ref(db, 'directory/' + currentUser.uid), { avatar: null }); } catch(e) {}
+  try { await update(ref(db, 'users/' + currentUser.uid + '/profile'), { avatar: null }); await update(ref(db, 'directory/' + currentUser.uid), { avatar: null }); set(ref(db, 'users/' + currentUser.uid + '/photo'), null).catch(() => {}); } catch(e) {}
   userProfile = Object.assign({}, userProfile, { avatar: null });
   const av = document.getElementById('profileAvatarDisplay'); if (av) { av.style.backgroundImage = ''; av.textContent = userProfile.gender==='M'?'👨':userProfile.gender==='F'?'👩':'👤'; }
   const al = document.getElementById('avatarLbl'); if (al) al.textContent = 'Add a photo of your face';
@@ -10410,7 +10454,7 @@ window.viewHistoryDetail = function(tid) {
       +'<div style="font-size:10.5px;color:var(--muted);font-weight:600;margin-bottom:10px;">For merge mistakes: swaps the name in this tournament\'s games and title ONLY — the rest of the app is untouched.</div>'
       +'<div style="display:flex;gap:8px;">'
       +'<select id="hrlFrom" class="finput" style="flex:1;margin-bottom:0;">'+[...allP].sort().map(p=>'<option>'+escInfo(p)+'</option>').join('')+'</select>'
-      +'<input id="hrlTo" class="finput" placeholder="Correct name" autocomplete="off" style="flex:1;margin-bottom:0;">'
+      +'<div style="position:relative;flex:1;"><input id="hrlTo" class="finput" placeholder="Correct name" autocomplete="off" autocapitalize="words" style="margin-bottom:0;" oninput="nameSuggest(this)" onfocus="nameSuggest(this)" onblur="pfHideSuggest(this)" onkeydown="nsKey(event,this)"></div>'
       +'</div>'
       +'<button onclick="histRenameLocal(\''+tid+'\')" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid rgba(255,224,0,0.5);color:var(--yellow);border-radius:10px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Fix Name Here Only</button></div>';
     html += '<button onclick="copyHistoryJson(\''+tid+'\')" style="display:block;width:100%;margin-top:14px;padding:13px;background:transparent;border:1px solid var(--border);color:var(--white);border-radius:12px;font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📋 Copy JSON (Admin)</button>';
@@ -10858,6 +10902,10 @@ function clearChatAttach()   { if(window.clearChatAttach && window.clearChatAtta
 function growChatInput(t)    { if(window.growChatInput && window.growChatInput !== growChatInput) { window.growChatInput(t); return; } __pbtWait(growChatInput, arguments); }
 function postSessionToChat(s){ if(window.postSessionToChat && window.postSessionToChat !== postSessionToChat) { window.postSessionToChat(s); return; } __pbtWait(postSessionToChat, arguments); }
 function groupTextSession(s) { if(window.groupTextSession && window.groupTextSession !== groupTextSession) { window.groupTextSession(s); return; } __pbtWait(groupTextSession, arguments); }
+function nameSuggest(i) { if(window.nameSuggest && window.nameSuggest !== nameSuggest) { window.nameSuggest(i); return; } __pbtWait(nameSuggest, arguments); }
+function nsPick(e) { if(window.nsPick && window.nsPick !== nsPick) { window.nsPick(e); return; } __pbtWait(nsPick, arguments); }
+function nsKey(e,i) { if(window.nsKey && window.nsKey !== nsKey) { window.nsKey(e,i); return; } __pbtWait(nsKey, arguments); }
+function showAvatar(e,u,n,s) { if(window.showAvatar && window.showAvatar !== showAvatar) { window.showAvatar(e,u,n,s); return; } __pbtWait(showAvatar, arguments); }
 function tqPickGame(s,o) { if(window.tqPickGame && window.tqPickGame !== tqPickGame) { window.tqPickGame(s,o); return; } __pbtWait(tqPickGame, arguments); }
 function tqCopyGamesLink() { if(window.tqCopyGamesLink && window.tqCopyGamesLink !== tqCopyGamesLink) { window.tqCopyGamesLink(); return; } __pbtWait(tqCopyGamesLink, arguments); }
 function tqBuild() { if(window.tqBuild && window.tqBuild !== tqBuild) { window.tqBuild(); return; } __pbtWait(tqBuild, arguments); }
@@ -10975,7 +11023,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-06.3';
+window.BUILD_TAG = 'v2026-11-07.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
