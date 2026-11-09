@@ -323,7 +323,8 @@ async function runReminders(env) {
     const line = (s.title || 'Your game') + ' · ' + fmtT(s.startTime) + (s.location ? ' at ' + s.location : '');
     const post = async (uid, n) => { const nid = 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); await fbPatch(env, 'notifs/' + uid, { [nid]: Object.assign({ from: 'system', fromName: 'PB Tourney', at: Date.now(), read: false }, n) }); };
     // 1 hour before (window 50–70 min so a 10-minute cron can't miss it)
-    if (s.date === today && !s.remind1hAt && startMins - mins >= 50 && startMins - mins <= 70) {
+    const untilStart = s.date === today ? startMins - mins : s.date === tomorrow ? startMins + 1440 - mins : null;   // a 12:30am game seen at 11:35pm is 55 min away
+    if (untilStart != null && !s.remind1hAt && untilStart >= 50 && untilStart <= 70) {
       await fbPatch(env, 'sessions/' + sid, { remind1hAt: Date.now() });
       for (const r of roster) { if (!r.uid) continue; const p = await prof(r.uid); if (p.notif && p.notif.reminders === false) continue;
         try { await post(r.uid, { type: 'reminder', sid, text: '⏰ In about an hour: ' + line + ' · ' + roster.length + ' of ' + (s.spots || 4) + ' confirmed' }); hour++; } catch (e) {}
