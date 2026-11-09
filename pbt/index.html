@@ -9596,8 +9596,13 @@ function renderStandings() {
   if (!_rankModeTouched) rankMode = 'wins';   // Stats opens on Win % (tap Avg or Pts to re-sort)
 
   const _hasFinals = cfg.schedule.some(g => g.finals && !g.deleted);
-  const { list, uneven, effectiveMode, autoRule, maxGames } = calcStandings({ excludeFinals: _hasFinals });
-  const _fin = _hasFinals ? computeFinalStandings(list) : null;
+  // Podium seeding always comes from the round robin alone. The TABLE shows every game played (finals included)
+  // unless the organizer flips it to round-robin-only.
+  const _rr = calcStandings({ excludeFinals: _hasFinals });
+  const _fin = _hasFinals ? computeFinalStandings(_rr.list) : null;
+  if (window._statsInclFinals == null) window._statsInclFinals = true;
+  const _showAll = _hasFinals && window._statsInclFinals;
+  const { list, uneven, effectiveMode, autoRule, maxGames } = _showAll ? calcStandings({ excludeFinals: false }) : _rr;
   const champ = list[0];
   const total = cfg.schedule?.filter(g=>!g.deleted).length || 0;
   const done = cfg.schedule?.filter(g=>!g.deleted).reduce((n,g)=>{ const s=scores[g.key]; return n+(s&&s.s1!==null?1:0); },0) || 0;
@@ -9652,7 +9657,8 @@ function renderStandings() {
   const hW = effectiveMode==='wins', hP = effectiveMode==='pts', hA = effectiveMode==='avg';
   const hl = 'style="color:var(--cyan);background:rgba(0,240,255,0.07);"';
   const th = (key, label, on) => '<th onclick="setRankMode(\''+key+'\')" style="cursor:pointer;white-space:nowrap;'+(on?'color:var(--cyan);border-bottom:2px solid var(--cyan);':'')+'">'+label+(on?' ▾':'')+'</th>';
-  if (_hasFinals) html += '<div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin:6px 0 8px;">📋 Round Robin Standings <span style="color:var(--muted);font-size:10px;letter-spacing:0;text-transform:none;font-family:\'DM Sans\',sans-serif;font-weight:700;">(finals not included)</span></div>';
+  if (_hasFinals) html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0 8px;"><div style="font-family:\'Russo One\',sans-serif;font-size:12px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;">📋 ' + (_showAll ? 'Standings' : 'Round Robin Standings') + ' <span style="color:var(--muted);font-size:10px;letter-spacing:0;text-transform:none;font-family:\'DM Sans\',sans-serif;font-weight:700;">(' + (_showAll ? 'all games, finals included' : 'finals not included') + ')</span></div>'
+    + '<button onclick="toggleStatsFinals()" style="flex-shrink:0;padding:6px 10px;background:transparent;border:1px solid rgba(0,240,255,0.35);color:var(--cyan);border-radius:9px;font-family:\'Russo One\',sans-serif;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">' + (_showAll ? 'Round robin only' : 'Include finals') + '</button></div>';
   html += '<table class="stbl"><thead><tr>'
     +'<th>Player</th>'
     +th('wins', uneven ? 'W%' : 'W', hW)
@@ -9769,6 +9775,7 @@ window.saveStatsImage = async function() {
   }
 };
 
+window.toggleStatsFinals = function() { window._statsInclFinals = !window._statsInclFinals; renderStandings(); };
 window.setRankMode = function(mode) {
   rankMode = mode; _rankModeTouched = true;
   renderStandings();
@@ -10835,6 +10842,7 @@ function plSignOut()        { if(window.plSignOut && window.plSignOut !== plSign
 function openProfile()      { if(window.openProfile && window.openProfile !== openProfile) { window.openProfile(); return; } __pbtWait(openProfile, arguments); }
 function closeProfile()     { if(window.closeProfile && window.closeProfile !== closeProfile) { window.closeProfile(); return; } __pbtWait(closeProfile, arguments); }
 function saveProfileEdits() { if(window.saveProfileEdits && window.saveProfileEdits !== saveProfileEdits) { window.saveProfileEdits(); return; } __pbtWait(saveProfileEdits, arguments); }
+function toggleStatsFinals() { if(window.toggleStatsFinals && window.toggleStatsFinals !== toggleStatsFinals) { window.toggleStatsFinals(); return; } __pbtWait(toggleStatsFinals, arguments); }
 function setRankMode(m)     { if(window.setRankMode && window.setRankMode !== setRankMode) { window.setRankMode(m); return; } __pbtWait(setRankMode, arguments); }
 function openAddGame()      { if(window.openAddGame && window.openAddGame !== openAddGame) { window.openAddGame(); return; } __pbtWait(openAddGame, arguments); }
 function lgStartGame()      { if(window.lgStartGame && window.lgStartGame !== lgStartGame) { window.lgStartGame(); return; } __pbtWait(lgStartGame, arguments); }
@@ -11044,7 +11052,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-08.1';
+window.BUILD_TAG = 'v2026-11-08.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
