@@ -608,6 +608,7 @@
     <div id="npList"></div>
     <div id="npErr" style="font-size:12px;color:var(--yellow);font-weight:700;min-height:16px;margin:4px 0 6px;"></div>
     <button onclick="npSubmit()" id="npGo" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--pink),var(--purple));color:white;border:none;border-radius:14px;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;">Create accounts &amp; start</button>
+    <button onclick="npSkip()" id="npSkipBtn" style="width:100%;margin-top:8px;padding:13px;background:transparent;border:1px solid rgba(0,240,255,0.45);color:var(--cyan);border-radius:12px;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Skip numbers · start now</button>
     <button onclick="npCancel()" style="width:100%;margin-top:8px;padding:11px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:12px;font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Back to the lineup</button>
   </div>
 </div>
@@ -2496,7 +2497,7 @@ function applyModeToStep2() {
   document.getElementById('step2Sub').textContent = h2h ? 'Type a name — tap it when it pops up. Then Go and start logging games.'
     : isLog ? 'Add players — the session name is auto-created (you can rename later)' : 'Add your players below';
   const addRow = document.querySelector('#setupStep2 .pgrid + .pgrid'); if (addRow) addRow.style.display = h2h ? 'none' : '';
-  const rw = document.getElementById('rankRuleWrap'); if (rw) rw.style.display = h2h ? 'none' : '';
+  const rw = document.getElementById('rankRuleWrap'); if (rw) rw.style.display = (h2h || isLog) ? 'none' : '';   // Log Games: just play, no rule to pick
   updPCnt();
 }
 
@@ -8516,12 +8517,21 @@ window.npOpen = function(unknown) {
   window._npPending = unknown;
   const list = document.getElementById('npList');
   list.innerHTML = unknown.map((u, i) => '<div class="np-row"><div style="font-weight:800;color:var(--white);font-size:14.5px;margin-bottom:6px;">' + escInfo(u.name) + (u.uid ? ' <span style="font-size:10.5px;color:var(--muted);font-weight:600;">· has played before, no number on file</span>' : '') + '</div>'
-    + '<input class="finput" id="npPhone' + i + '" type="tel" inputmode="tel" autocomplete="off" placeholder="Mobile number (required)" oninput="this.classList.remove(\'bad\')">'
+    + '<input class="finput" id="npPhone' + i + '" type="tel" inputmode="tel" autocomplete="off" placeholder="Mobile number (optional)" oninput="this.classList.remove(\'bad\')">'
     + '<input class="finput" id="npEmail' + i + '" type="email" inputmode="email" autocomplete="off" autocapitalize="off" placeholder="Email (optional, helps them sign in)" style="margin-bottom:0;"></div>').join('');
   document.getElementById('npSub').textContent = unknown.length === 1 ? unknown[0].name + ' isn\'t on PB Tourney yet. Add a mobile number so the games count for them — they get a link to claim the account.' : 'These ' + unknown.length + ' names aren\'t on PB Tourney yet. Add a number for each so their games count for them — they get a link to claim their account.';
+  document.getElementById('npSub').textContent = (unknown.length === 1 ? unknown[0].name + ' isn\'t' : 'These ' + unknown.length + ' players aren\'t') + ' on PB Tourney yet. Add a number if you have it so the games count for them, or skip and add it later. Games log either way.';
   document.getElementById('npErr').textContent = '';
+  const go = document.getElementById('npGo'); if (go) go.textContent = 'Save numbers & start';
   document.getElementById('newPlayersSheet').classList.remove('hidden');
-  setTimeout(() => { try { document.getElementById('npPhone0').focus(); } catch (e) {} }, 150);
+  // no auto-focus: popping the keyboard made "skip" feel like the wrong answer
+};
+// Log now, numbers later: the names go into the games as typed. Remembered so the admin can fill numbers in afterwards.
+window.npSkip = function() {
+  const pend = window._npPending || [];
+  try { pend.forEach(u => { const k = u.name.toLowerCase().replace(/[.#$\[\]\/]/g, '_'); set(ref(db, 'noNumber/' + k), { name: u.name, at: Date.now(), by: currentUser && currentUser.uid || null }).catch(() => {}); }); } catch (e) {}
+  document.getElementById('newPlayersSheet').classList.add('hidden'); window._npPending = null;
+  window._npCleared = true; window.doStart();
 };
 window.npCancel = function() { document.getElementById('newPlayersSheet').classList.add('hidden'); window._npPending = null; };
 window.npSubmit = async function() {
@@ -8529,21 +8539,25 @@ window.npSubmit = async function() {
   const rows = pend.map((u, i) => ({ u, phone: window.normPhone(document.getElementById('npPhone' + i).value), email: (document.getElementById('npEmail' + i).value || '').trim().toLowerCase(), el: document.getElementById('npPhone' + i) }));
   const dir = await loadChatDir();
   const mine = window.normPhone(userProfile && userProfile.phone || (currentUser && currentUser.phoneNumber) || '');
+  const typed = rows.filter(r => r.el.value.trim());
+  if (!typed.length) { window.npSkip(); return; }   // nothing typed → same as skip
+  rows.forEach(r => { r.skip = !r.el.value.trim(); });
   for (const r of rows) {
-    if (!/^\+\d{10,15}$/.test(r.phone)) { r.el.classList.add('bad'); err.textContent = 'Enter a real mobile number for ' + r.u.name + '.'; r.el.focus(); return; }
+    if (r.skip) continue;
+    if (!/^\+\d{10,15}$/.test(r.phone)) { r.el.classList.add('bad'); err.textContent = 'That number for ' + r.u.name + ' doesn\'t look right (or leave it blank to skip).'; r.el.focus(); return; }
     if (r.phone === mine) { r.el.classList.add('bad'); err.textContent = 'That\'s your own number — ' + r.u.name + ' needs theirs.'; return; }
     if (r.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) { err.textContent = 'That email for ' + r.u.name + ' doesn\'t look right.'; return; }
-    const dupe = rows.find(o => o !== r && o.phone === r.phone); if (dupe) { r.el.classList.add('bad'); err.textContent = r.u.name + ' and ' + dupe.u.name + ' can\'t share a number.'; return; }
+    const dupe = rows.find(o => o !== r && !o.skip && o.phone === r.phone); if (dupe) { r.el.classList.add('bad'); err.textContent = r.u.name + ' and ' + dupe.u.name + ' can\'t share a number.'; return; }
   }
   // a number that already belongs to a member → that's who this is; use their real name instead of creating a twin
   const renames = {};
-  for (const r of rows) { const hit = Object.entries(dir).find(([u, d]) => d && d.name && window.normPhone(d.phone) === r.phone);
+  for (const r of rows) { if (r.skip) continue; const hit = Object.entries(dir).find(([u, d]) => d && d.name && window.normPhone(d.phone) === r.phone);
     if (hit && String(hit[1].name).trim().toLowerCase() !== r.u.name.toLowerCase()) { if (!confirm(r.phone + ' already belongs to ' + hit[1].name + ' on the app. Use "' + hit[1].name + '" instead of "' + r.u.name + '"?')) return; renames[r.u.name.toLowerCase()] = hit[1].name; r.existing = hit[0]; } else if (hit) r.existing = hit[0]; }
   const btn = document.getElementById('npGo'); btn.disabled = true; btn.textContent = 'Creating…';
   const created = [];
   try {
     for (const r of rows) {
-      if (r.existing) continue;
+      if (r.existing || r.skip) continue;
       const slug = r.u.uid || ('n_' + r.u.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''));
       const prev = (dir[slug]) || {};
       const card = Object.assign({}, prev, { name: prev.name || r.u.name, phone: r.phone, unclaimed: true, joinedAt: prev.joinedAt || Date.now(), createdBy: currentUser.uid, createdByName: chatName(), invitedAt: Date.now() });
@@ -8560,7 +8574,7 @@ window.npSubmit = async function() {
     window.doStart();
     if (created.length) setTimeout(() => window.npSendClaims(created), 1200);
   } catch (e) { err.textContent = 'Could not save: ' + (e.message || e); }
-  btn.disabled = false; btn.textContent = 'Create accounts & start';
+  btn.disabled = false; btn.textContent = 'Save numbers & start';
 };
 // The claim link: opens the app, shows who invited them; signing in with the same number (or email) attaches everything.
 window.npClaimUrl = slug => location.origin + location.pathname + '?claim=' + encodeURIComponent(slug);
@@ -10931,6 +10945,7 @@ function postSessionToChat(s){ if(window.postSessionToChat && window.postSession
 function groupTextSession(s) { if(window.groupTextSession && window.groupTextSession !== groupTextSession) { window.groupTextSession(s); return; } __pbtWait(groupTextSession, arguments); }
 function closeAvatar() { if(window.closeAvatar && window.closeAvatar !== closeAvatar) { window.closeAvatar(); return; } __pbtWait(closeAvatar, arguments); }
 function backToSessionFromSetup() { if(window.backToSessionFromSetup && window.backToSessionFromSetup !== backToSessionFromSetup) { window.backToSessionFromSetup(); return; } __pbtWait(backToSessionFromSetup, arguments); }
+function npSkip() { if(window.npSkip && window.npSkip !== npSkip) { window.npSkip(); return; } __pbtWait(npSkip, arguments); }
 function nameSuggest(i) { if(window.nameSuggest && window.nameSuggest !== nameSuggest) { window.nameSuggest(i); return; } __pbtWait(nameSuggest, arguments); }
 function nsPick(e) { if(window.nsPick && window.nsPick !== nsPick) { window.nsPick(e); return; } __pbtWait(nsPick, arguments); }
 function nsKey(e,i) { if(window.nsKey && window.nsKey !== nsKey) { window.nsKey(e,i); return; } __pbtWait(nsKey, arguments); }
@@ -11052,7 +11067,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-08.2';
+window.BUILD_TAG = 'v2026-11-21.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
