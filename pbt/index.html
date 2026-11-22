@@ -374,11 +374,11 @@
   #bottomBar::after { content:''; position:absolute; left:0; right:0; top:100%; height:90px; background:#04060F; pointer-events:none; }
 
   /* ── RAIL: icons down the right edge (Duo closed, or sideways) ── */
-  html { --rail:0px; --barh:72px; }
-  html.rail { --rail:calc(60px + env(safe-area-inset-right)); --barh:0px; }
+  html { --sar:env(safe-area-inset-right); --rail:0px; --barh:72px; }
+  html.rail { --rail:calc(60px + var(--sar)); --barh:0px; }
   html.rail #bottomBar { top:0; bottom:0; left:auto; right:0; width:var(--rail); flex-direction:column; justify-content:center; align-items:stretch; gap:10px;
     border-top:none; border-left:1px solid var(--border); background:#04060F; backdrop-filter:none; -webkit-backdrop-filter:none;
-    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0 !important; }
+    padding:env(safe-area-inset-top) var(--sar) env(safe-area-inset-bottom) 0 !important; }
   html.rail #bottomBar::after { display:none; }
   html.rail .bbtn { flex:0 0 auto; padding:11px 0; }
   html.rail .bbtn .bicon, html.rail #bottomBar.bar-small .bicon { font-size:23px; }
@@ -393,6 +393,21 @@
   html.rail #chatThread { padding-bottom:env(safe-area-inset-bottom) !important; }
   html.rail #installBar { right:calc(var(--rail) + 12px) !important; bottom:12px !important; }
   @media (max-width: 599px) { html.rail #topBar { padding-left:8px; padding-right:6px; } html.rail #topBar .tab { padding:6px 7px; } }
+
+  /* ── SYSTEM COLUMN: on the Duo, iOS keeps a column on the right for the clock. When the app is allowed to draw
+     there, the icons sit at the bottom of that column (like Photos) and the page keeps its full width. ── */
+  html.syscol { --rail:var(--sar); }
+  html.syscol #bottomBar { justify-content:flex-end; gap:6px; border-left:none; padding:0 0 calc(16px + env(safe-area-inset-bottom)) 0 !important; }
+  html.syscol .bbtn { padding:12px 0; }
+  html.syscol .bbtn.active { box-shadow:none; background:rgba(0,240,255,0.10); border-radius:16px; margin:0 12px; }
+  html.syscol [style*="position:fixed;inset:0"], html.syscol #addGameOverlay, html.syscol #sessionInfoEdit, html.syscol #profileOverlay,
+  html.syscol .settings-menu, html.syscol .overlay, html.syscol #loginScreen, html.syscol #safeTopShield { right:var(--rail) !important; }
+  /* Duo closed: narrow page, keep the stats table inside it */
+  @media (max-width: 599px) {
+    html.rail .stbl th { font-size:11px; letter-spacing:1px; padding-left:3px; padding-right:3px; }
+    html.rail .stbl td { padding-left:3px; padding-right:3px; }
+    html.rail .stbl td:first-child, html.rail .stbl th:first-child { padding-left:6px; }
+  }
 
   /* ── SPLIT: Games left, Stats right (Duo open sideways) ── */
   html.split #pageGames, html.split #pageStandings { display:block !important; position:fixed; top:calc(50px + env(safe-area-inset-top)); bottom:var(--barh);
@@ -627,10 +642,18 @@
   window.duoMode=function(w,h,duo){var land=w>h;
     return{rail:duo?(w<600||land):(land&&h<=600),split:land&&w>=(duo?760:900)};};
   function calc(){var w=window.innerWidth,h=window.innerHeight,duo=window.duoIs(w,h,screen.width,screen.height,navigator.userAgent),m=window.duoMode(w,h,duo),was=de.classList.contains('split');
+    var sar=0;try{var fk=localStorage.getItem('pbt_fakeSar');if(fk)de.style.setProperty('--sar',fk+'px');
+      var pr=document.createElement('div');pr.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;padding-right:var(--sar)';de.appendChild(pr);sar=parseFloat(getComputedStyle(pr).paddingRight)||0;de.removeChild(pr);}catch(e){}
+    var syscol=sar>=40;   // iOS handed us the status column (Duo home-screen app): the icons live there, in every posture
+    if(syscol)m.rail=true;
+    de.classList.toggle('syscol',syscol);
     de.classList.toggle('duo',duo);de.classList.toggle('rail',m.rail);de.classList.toggle('split',m.split);
-    window.__duoInfo=w+'×'+h+' · screen '+screen.width+(duo?' · Duo':'')+(m.rail?' · rail':'')+(m.split?' · split':'');
+    window.__duoInfo=w+'×'+h+' · screen '+screen.width+(duo?' · Duo':'')+(syscol?' · column '+Math.round(sar):'')+(m.rail?' · rail':'')+(m.split?' · split':'');
     try{var bt=document.getElementById('buildTag');if(bt&&window.BUILD_TAG)bt.textContent='PB Tourney build '+window.BUILD_TAG+' · '+window.__duoInfo;}catch(e){}
     if(was!==m.split&&window.__onDuoChange){try{window.__onDuoChange();}catch(e){}}}
+  // On the Duo the status area is the right-hand column. "black-translucent" lets a home-screen app draw in it
+  // (iOS reads this when the icon is added, so it takes effect after re-adding the icon). Other iPhones keep "black".
+  try{if(window.duoIs(window.innerWidth,window.innerHeight,screen.width,screen.height,navigator.userAgent)){var sm=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(sm)sm.setAttribute('content','black-translucent');}}catch(e){}
   calc();window.__duoCalc=calc;
   window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(calc,150);});   // a fold fires 2-3 resizes; wait for it to settle
   window.addEventListener('orientationchange',function(){setTimeout(calc,300);});
@@ -11203,7 +11226,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-22.3';
+window.BUILD_TAG = 'v2026-11-22.4';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG+(window.__duoInfo?' \u00b7 '+window.__duoInfo:''); console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
