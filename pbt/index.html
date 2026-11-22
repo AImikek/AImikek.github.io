@@ -621,12 +621,19 @@
 //   rail  = menu icons down the right edge: Duo closed (short, squarish portrait) or any phone held sideways
 //   split = Games on the left, Stats on the right: wide landscape (Duo open sideways)
 (function(){var de=document.documentElement,t;
-  window.duoMode=function(w,h){var r=w/h;return{rail:(w>=380&&w<600&&r>=0.62)||(w>h&&h<=600),split:w>=900&&w>h};};
-  function calc(){var m=window.duoMode(window.innerWidth,window.innerHeight),was=de.classList.contains('split');
-    de.classList.toggle('rail',m.rail);de.classList.toggle('split',m.split);
+  // Measured on a real Duo: closed = 382x678 (iOS keeps a system column on the right), open sideways = 811x626,
+  // and screen.width reports 466 either way. No other iPhone has a screen wider than 440pt, so that identifies it.
+  window.duoIs=function(w,h,sw,sh,ua){return /iPhone/.test(ua||'')&&(Math.min(sw||0,sh||0)>=460||(h>w&&(sw||0)-w>=50));};
+  window.duoMode=function(w,h,duo){var land=w>h;
+    return{rail:duo?(w<600||land):(land&&h<=600),split:land&&w>=(duo?760:900)};};
+  function calc(){var w=window.innerWidth,h=window.innerHeight,duo=window.duoIs(w,h,screen.width,screen.height,navigator.userAgent),m=window.duoMode(w,h,duo),was=de.classList.contains('split');
+    de.classList.toggle('duo',duo);de.classList.toggle('rail',m.rail);de.classList.toggle('split',m.split);
+    window.__duoInfo=w+'×'+h+' · screen '+screen.width+(duo?' · Duo':'')+(m.rail?' · rail':'')+(m.split?' · split':'');
+    try{var bt=document.getElementById('buildTag');if(bt&&window.BUILD_TAG)bt.textContent='PB Tourney build '+window.BUILD_TAG+' · '+window.__duoInfo;}catch(e){}
     if(was!==m.split&&window.__onDuoChange){try{window.__onDuoChange();}catch(e){}}}
   calc();window.__duoCalc=calc;
   window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(calc,150);});   // a fold fires 2-3 resizes; wait for it to settle
+  window.addEventListener('orientationchange',function(){setTimeout(calc,300);});
 })();
 </script>
 <script>try{if(navigator.standalone||matchMedia("(display-mode: standalone)").matches)document.documentElement.classList.add("pwa");}catch(e){}</script>
@@ -11196,8 +11203,8 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-22.2';
-(function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG; console.log('PB Tourney', window.BUILD_TAG); })();
+window.BUILD_TAG = 'v2026-11-22.3';
+(function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG+(window.__duoInfo?' \u00b7 '+window.__duoInfo:''); console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
   var lastCheck = 0;
