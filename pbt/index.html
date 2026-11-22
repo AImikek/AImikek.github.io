@@ -409,6 +409,16 @@
     html.rail .stbl td:first-child, html.rail .stbl th:first-child { padding-left:6px; }
   }
 
+  /* ── DUO: on the real device the bottom bar came loose while the page scrolled (it ended up mid-screen).
+     Games and Stats now scroll inside their own full-screen panel, exactly like every other screen in the app,
+     so the document never scrolls and the bars have nothing to drift against. The top bar also stays put,
+     which keeps the clock (drawn over the top-right corner when open upright) off the content. ── */
+  html.duo #pageGames, html.duo #pageStandings { position:fixed; top:0; bottom:0; left:0; right:var(--rail); max-width:none; margin:0;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    padding:calc(64px + env(safe-area-inset-top)) 16px calc(var(--barh) + 48px + env(safe-area-inset-bottom)); }
+  html.duo #topBar.bar-hidden { transform:none; }
+  html.duo body { overflow:hidden; }
+
   /* ── SPLIT: Games left, Stats right (Duo open sideways) ── */
   html.split #pageGames, html.split #pageStandings { display:block !important; position:fixed; top:calc(50px + env(safe-area-inset-top)); bottom:var(--barh);
     width:calc((100vw - var(--rail)) / 2); max-width:none; margin:0; padding:14px 16px 40px; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
@@ -651,9 +661,6 @@
     window.__duoInfo=w+'×'+h+' · screen '+screen.width+(duo?' · Duo':'')+(syscol?' · column '+Math.round(sar):'')+(m.rail?' · rail':'')+(m.split?' · split':'');
     try{var bt=document.getElementById('buildTag');if(bt&&window.BUILD_TAG)bt.textContent='PB Tourney build '+window.BUILD_TAG+' · '+window.__duoInfo;}catch(e){}
     if(was!==m.split&&window.__onDuoChange){try{window.__onDuoChange();}catch(e){}}}
-  // On the Duo the status area is the right-hand column. "black-translucent" lets a home-screen app draw in it
-  // (iOS reads this when the icon is added, so it takes effect after re-adding the icon). Other iPhones keep "black".
-  try{if(window.duoIs(window.innerWidth,window.innerHeight,screen.width,screen.height,navigator.userAgent)){var sm=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(sm)sm.setAttribute('content','black-translucent');}}catch(e){}
   calc();window.__duoCalc=calc;
   window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(calc,150);});   // a fold fires 2-3 resizes; wait for it to settle
   window.addEventListener('orientationchange',function(){setTimeout(calc,300);});
@@ -11226,7 +11233,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-22.4';
+window.BUILD_TAG = 'v2026-11-22.5';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG+(window.__duoInfo?' \u00b7 '+window.__duoInfo:''); console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
