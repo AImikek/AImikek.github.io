@@ -680,19 +680,20 @@
   function sa(){try{return !!(navigator.standalone||matchMedia('(display-mode: standalone)').matches);}catch(e){return false;}}
   function isDuo(){return /iPhone/.test(navigator.userAgent)&&Math.min(screen.width,screen.height)>=460;}
   function opted(){try{return localStorage.getItem('pbt_col')==='1';}catch(e){return false;}}
-  function gap(){return screen.width-window.innerWidth;}
-  function want(){return opted()&&!failed&&sa()&&isDuo()&&window.innerHeight>window.innerWidth&&gap()>=50&&gap()<=130;}
-  function snap(){var v=window.visualViewport;return{iw:window.innerWidth,vw:v?Math.round(v.width):0,sc:v?v.scale:1,o:window.orientation};}
+  function gap(){return screen.width-Math.min(window.innerWidth,de.clientWidth);}
+  function want(){return opted()&&!failed&&sa()&&isDuo()&&window.innerHeight>window.innerWidth&&de.clientWidth<screen.width-2&&gap()>=50&&gap()<=130;}
+  function snap(){var v=window.visualViewport;return{cw:de.clientWidth,iw:window.innerWidth,vw:v?Math.round(v.width):0,sc:v?v.scale:1,o:window.orientation};}
   function recalc(){try{window.__duoCalc&&window.__duoCalc();}catch(e){}}
   function release(){if(!on)return;on=false;mine=Date.now();vp.content=ORIG;de.style.removeProperty('--sar');de.classList.remove('colclaim');window.__colState='';}
   function claim(){if(on||!vp||!want())return;col=gap();mine=Date.now();
     vp.content='width='+screen.width+', height='+screen.height+', initial-scale=1, maximum-scale=1, viewport-fit=cover';
     setTimeout(function(){mine=Date.now();
-      if(window.innerWidth>=screen.width-2){on=true;de.style.setProperty('--sar',col+'px');de.classList.add('colclaim');window.__colState='claimed '+col;rec=snap();}
-      else{vp.content=ORIG;failed=true;window.__colState='column refused';}
-      recalc();},260);}
+      var cw=de.clientWidth,vv=window.visualViewport;if(cw>=screen.width-2){on=true;de.style.setProperty('--sar',col+'px');de.classList.add('colclaim');rec=snap();
+        window.__colState='claimed '+col+' (layout '+cw+', inner '+window.innerWidth+', visual '+(vv?Math.round(vv.width)+'@'+vv.scale.toFixed(2):'?')+')';}
+      else{vp.content=ORIG;failed=true;window.__colState='column refused (layout '+cw+', inner '+window.innerWidth+')';}
+      recalc();},400);}
   function sync(){if(Date.now()-mine<600)return;
-    if(on){var s=snap();if(s.iw!==rec.iw||s.vw!==rec.vw||s.sc!==rec.sc||s.o!==rec.o){release();setTimeout(function(){recalc();claim();},320);}}
+    if(on){var s=snap();if(s.cw!==rec.cw||s.iw!==rec.iw||s.vw!==rec.vw||s.sc!==rec.sc||s.o!==rec.o){release();setTimeout(function(){recalc();claim();},320);}}
     else claim();}
   window.addEventListener('resize',sync);window.addEventListener('orientationchange',function(){setTimeout(sync,350);});
   if(window.visualViewport)window.visualViewport.addEventListener('resize',sync);
@@ -700,7 +701,7 @@
   // the page is wider than what iOS thinks is visible: never let it pan sideways
   window.addEventListener('scroll',function(){if(on&&window.scrollX)window.scrollTo(0,window.scrollY);},{passive:true});
   // forward taps that land in the column
-  function inCol(x){return on&&x>=window.innerWidth-col;}
+  function inCol(x){return on&&x>=de.clientWidth-col;}
   document.addEventListener('touchstart',function(e){var t=e.changedTouches[0];ts=inCol(t.clientX)?{x:t.clientX,y:t.clientY,t:Date.now()}:null;},{capture:true,passive:true});
   document.addEventListener('touchend',function(e){if(!ts)return;var t=e.changedTouches[0],s=ts;ts=null;
     if(Math.abs(t.clientX-s.x)>10||Math.abs(t.clientY-s.y)>10||Date.now()-s.t>600)return;
@@ -11282,7 +11283,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-23.1';
+window.BUILD_TAG = 'v2026-11-23.2';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG+(window.__duoInfo?' \u00b7 '+window.__duoInfo:''); console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
