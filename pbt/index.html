@@ -653,6 +653,11 @@
   window.duoIs=function(w,h,sw,sh,ua){return /iPhone/.test(ua||'')&&(Math.min(sw||0,sh||0)>=460||(h>w&&(sw||0)-w>=50));};
   window.duoMode=function(w,h,duo){var land=w>h;
     return{rail:duo?(w<600||land):(land&&h<=600),split:land&&w>=(duo?760:900)};};
+  // Side-column experiment: closed, the Duo's status bar IS the right-hand column. With the opaque "black" style iOS never paints
+  // the page there, even when it is laid out full width. iOS reads the style once, when the icon is added, so the Duo gets
+  // "black-translucent" only when the page is opened as ?col=1 before Add to Home Screen.
+  try{if(/[?&]col=1/.test(location.search)){try{localStorage.setItem('pbt_col','1');}catch(e){}
+    if(window.duoIs(window.innerWidth,window.innerHeight,screen.width,screen.height,navigator.userAgent)){var sm=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(sm)sm.setAttribute('content','black-translucent');}}}catch(e){}
   function calc(){var w=window.innerWidth,h=window.innerHeight,duo=window.duoIs(w,h,screen.width,screen.height,navigator.userAgent),m=window.duoMode(w,h,duo),was=de.classList.contains('split');
     var sar=0;try{var fk=localStorage.getItem('pbt_fakeSar');if(fk)de.style.setProperty('--sar',fk+'px');
       var pr=document.createElement('div');pr.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;padding-right:var(--sar)';de.appendChild(pr);sar=parseFloat(getComputedStyle(pr).paddingRight)||0;de.removeChild(pr);}catch(e){}
@@ -11283,7 +11288,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-23.2';
+window.BUILD_TAG = 'v2026-11-23.3';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG+(window.__duoInfo?' \u00b7 '+window.__duoInfo:''); console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
