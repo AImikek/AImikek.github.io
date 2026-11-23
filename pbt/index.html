@@ -399,6 +399,8 @@
   html.syscol { --rail:var(--sar); }
   html.syscol #bottomBar { justify-content:flex-end; gap:6px; border-left:none; padding:0 0 calc(16px + env(safe-area-inset-bottom)) 0 !important; }
   html.syscol .bbtn { padding:12px 0; }
+  html.colclaim, html.colclaim body { overflow-x:hidden; max-width:100vw; }
+  html.colclaim #bottomBar { padding-top:190px !important; }
   html.syscol .bbtn.active { box-shadow:none; background:rgba(0,240,255,0.10); border-radius:16px; margin:0 12px; }
   html.syscol [style*="position:fixed;inset:0"], html.syscol #addGameOverlay, html.syscol #sessionInfoEdit, html.syscol #profileOverlay,
   html.syscol .settings-menu, html.syscol .overlay, html.syscol #loginScreen, html.syscol #safeTopShield { right:var(--rail) !important; }
@@ -658,8 +660,9 @@
     if(syscol)m.rail=true;
     de.classList.toggle('syscol',syscol);
     de.classList.toggle('duo',duo);de.classList.toggle('rail',m.rail);de.classList.toggle('split',m.split);
-    window.__duoInfo=w+'×'+h+' · screen '+screen.width+(duo?' · Duo':'')+(syscol?' · column '+Math.round(sar):'')+(m.rail?' · rail':'')+(m.split?' · split':'');
+    window.__duoInfo=w+'×'+h+' · screen '+screen.width+(duo?' · Duo':'')+(syscol?' · column '+Math.round(sar):'')+(window.__colState?' · '+window.__colState:'')+(m.rail?' · rail':'')+(m.split?' · split':'');
     try{var bt=document.getElementById('buildTag');if(bt&&window.BUILD_TAG)bt.textContent='PB Tourney build '+window.BUILD_TAG+' · '+window.__duoInfo;}catch(e){}
+    try{if(window.__colBtn)window.__colBtn();}catch(e){}
     if(was!==m.split&&window.__onDuoChange){try{window.__onDuoChange();}catch(e){}}}
   calc();window.__duoCalc=calc;
   window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(calc,150);});   // a fold fires 2-3 resizes; wait for it to settle
@@ -667,6 +670,51 @@
 })();
 </script>
 <script>try{if(navigator.standalone||matchMedia("(display-mode: standalone)").matches)document.documentElement.classList.add("pwa");}catch(e){}</script>
+<script>
+// ── Duo system column (experimental, opt-in from the ☰ menu) ──
+// Closed, iOS 27.2 lays a home-screen web app out 382pt wide and keeps the 84pt clock column to itself (27.1 exposed it
+// as safe-area-inset-right, which the syscol CSS already handles). Other web apps reclaim it by asking for a numeric
+// viewport the size of the screen; iOS then lays the page out 466pt wide, under the column. iOS does not hit-test
+// touches there, so taps are forwarded by hand. Unverified on a real device, hence the switch.
+(function(){var de=document.documentElement,vp=document.querySelector('meta[name="viewport"]'),ORIG=vp?vp.content:'',on=false,mine=0,failed=false,col=0,rec=null,bridged=0,ts=null;
+  function sa(){try{return !!(navigator.standalone||matchMedia('(display-mode: standalone)').matches);}catch(e){return false;}}
+  function isDuo(){return /iPhone/.test(navigator.userAgent)&&Math.min(screen.width,screen.height)>=460;}
+  function opted(){try{return localStorage.getItem('pbt_col')==='1';}catch(e){return false;}}
+  function gap(){return screen.width-window.innerWidth;}
+  function want(){return opted()&&!failed&&sa()&&isDuo()&&window.innerHeight>window.innerWidth&&gap()>=50&&gap()<=130;}
+  function snap(){var v=window.visualViewport;return{iw:window.innerWidth,vw:v?Math.round(v.width):0,sc:v?v.scale:1,o:window.orientation};}
+  function recalc(){try{window.__duoCalc&&window.__duoCalc();}catch(e){}}
+  function release(){if(!on)return;on=false;mine=Date.now();vp.content=ORIG;de.style.removeProperty('--sar');de.classList.remove('colclaim');window.__colState='';}
+  function claim(){if(on||!vp||!want())return;col=gap();mine=Date.now();
+    vp.content='width='+screen.width+', height='+screen.height+', initial-scale=1, maximum-scale=1, viewport-fit=cover';
+    setTimeout(function(){mine=Date.now();
+      if(window.innerWidth>=screen.width-2){on=true;de.style.setProperty('--sar',col+'px');de.classList.add('colclaim');window.__colState='claimed '+col;rec=snap();}
+      else{vp.content=ORIG;failed=true;window.__colState='column refused';}
+      recalc();},260);}
+  function sync(){if(Date.now()-mine<600)return;
+    if(on){var s=snap();if(s.iw!==rec.iw||s.vw!==rec.vw||s.sc!==rec.sc||s.o!==rec.o){release();setTimeout(function(){recalc();claim();},320);}}
+    else claim();}
+  window.addEventListener('resize',sync);window.addEventListener('orientationchange',function(){setTimeout(sync,350);});
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',sync);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)setTimeout(sync,300);});
+  // the page is wider than what iOS thinks is visible: never let it pan sideways
+  window.addEventListener('scroll',function(){if(on&&window.scrollX)window.scrollTo(0,window.scrollY);},{passive:true});
+  // forward taps that land in the column
+  function inCol(x){return on&&x>=window.innerWidth-col;}
+  document.addEventListener('touchstart',function(e){var t=e.changedTouches[0];ts=inCol(t.clientX)?{x:t.clientX,y:t.clientY,t:Date.now()}:null;},{capture:true,passive:true});
+  document.addEventListener('touchend',function(e){if(!ts)return;var t=e.changedTouches[0],s=ts;ts=null;
+    if(Math.abs(t.clientX-s.x)>10||Math.abs(t.clientY-s.y)>10||Date.now()-s.t>600)return;
+    var el=document.elementFromPoint(t.clientX,t.clientY);el=el&&el.closest?el.closest('button,a,[onclick]'):null;if(!el)return;
+    if(e.cancelable)e.preventDefault();bridged=Date.now();el.click();},{capture:true,passive:false});
+  document.addEventListener('click',function(e){if(e.isTrusted&&inCol(e.clientX)&&Date.now()-bridged<700){e.stopPropagation();e.preventDefault();}},true);
+  window.__colBtn=function(){var b=document.getElementById('duoColBtn');if(!b)return;b.style.display=(sa()&&isDuo())?'':'none';
+    b.textContent='📱 Side column: '+(opted()?(on?'on':(failed?'on (iOS said no)':'on (closed only)')):'off');};
+  window.duoColToggle=function(){try{if(opted())localStorage.removeItem('pbt_col');else localStorage.setItem('pbt_col','1');}catch(e){}
+    failed=false;if(opted())claim();else{release();setTimeout(recalc,320);}window.__colBtn();};
+  window.__colDev={claim:claim,release:release,state:function(){return{on:on,col:col,failed:failed};}};
+  claim();
+})();
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 </head>
@@ -1880,6 +1928,7 @@ document.addEventListener('touchend',   _unlockAudio, true);
     <button class="settings-item" id="adminSyncBtn" style="display:none;" onclick="closeSettings();syncHistoryToGlobal();">🔄 Publish History to Leaderboard (Admin)</button>
     <button class="settings-item" id="adminDashBtn" style="display:none;" onclick="closeSettings();openAdminDash();">📊 Admin Dashboard</button>
     <div class="settings-divider"></div>
+    <button class="settings-item" id="duoColBtn" style="display:none;" onclick="duoColToggle()">📱 Side column: off</button>
     <button class="settings-item" id="userInfo" style="color:var(--muted);font-size:13px;cursor:default;"></button>
     <div id="buildTag" style="padding:6px 16px;color:var(--muted);opacity:0.55;font-size:10px;font-weight:600;letter-spacing:1px;"></div>
   </div>
@@ -11233,7 +11282,7 @@ function enableCourtLocation(){ if(window.enableCourtLocation && window.enableCo
 function openCourtSubmit()   { if(window.openCourtSubmit && window.openCourtSubmit !== openCourtSubmit) { window.openCourtSubmit(); return; } __pbtWait(openCourtSubmit, arguments); }
 function submitCourt()       { if(window.submitCourt && window.submitCourt !== submitCourt) { window.submitCourt(); return; } __pbtWait(submitCourt, arguments); }
 function sharePage(k)        { if(window.sharePage && window.sharePage !== sharePage) { window.sharePage(k); return; } __pbtWait(sharePage, arguments); }
-window.BUILD_TAG = 'v2026-11-22.5';
+window.BUILD_TAG = 'v2026-11-23.1';
 (function(){ var bt=document.getElementById('buildTag'); if(bt) bt.textContent='PB Tourney build '+window.BUILD_TAG+(window.__duoInfo?' \u00b7 '+window.__duoInfo:''); console.log('PB Tourney', window.BUILD_TAG); })();
 // ── STALE-BUILD DEFENSE: compare against version.json (bypasses all caches) ──
 (function(){
