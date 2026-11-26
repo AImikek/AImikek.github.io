@@ -1,6 +1,6 @@
 /* Five Crowns Scorekeeper: offline support.
    The page itself is fetched fresh when online and falls back to the cached copy when not. */
-const CACHE = 'fivecrowns-v1';
+const CACHE = 'fivecrowns-v2';
 const SHELL = ['./', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (e) => {
 
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put('./', copy)); return res; })
         .catch(() => caches.match('./'))
     );

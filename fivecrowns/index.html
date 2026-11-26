@@ -296,13 +296,14 @@ table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed
   .v-game table.sc{height:100%}
   .v-game .sc th,.v-game .sc td{height:auto;padding:0 4px;line-height:1}
   .v-game .sc col.rc{width:15vw !important}
-  .v-game .sc thead th{height:7.5vh;font-size:min(4.6vh,2.9vw) !important;font-weight:700;padding-bottom:1vh}
+  .v-game .sc{--cw:calc((100vw - 4.4vw - 2.2vw - max(210px,16vw) - 15vw) / var(--n))}
+  .v-game .sc thead th{height:7.5vh;font-size:min(4.6vh,calc(var(--cw) / var(--l) / .62)) !important;font-weight:700;padding-bottom:1vh}
   .v-game .sc thead th.dl{font-size:min(2.4vh,1.4vw) !important;font-weight:600;padding-left:1.2vw}
-  .v-game .sc tr.tot td{font-size:min(8vh,5vw) !important;height:11.5vh}
+  .v-game .sc tr.tot td{font-size:min(7.6vh,calc(var(--cw) / var(--d) / .86)) !important;height:11.5vh}
   .v-game .sc tr.tot th{font-size:min(3vh,1.8vw);height:11.5vh;padding-left:1.2vw;text-align:left}
   .v-game .sc tr.tot td .cr{width:3vh;height:2vh;top:.5vh}
   .v-game .sc tr.tot td.lead span{top:1vh}
-  .v-game .sc tbody td{font-size:min(5.2vh,3.7vw) !important;font-weight:600}
+  .v-game .sc tbody td{font-size:min(5.2vh,calc(var(--cw) / 2.4)) !important;font-weight:600}
   .v-game .sc tbody th{padding-left:1.2vw;white-space:nowrap}
   .v-game .sc tbody th b{font-size:min(4vh,2.4vw);width:auto;min-width:3.2vw;margin-right:.7vw}
   .v-game .sc tbody th,.v-game .sc tbody td{height:calc((100dvh - 24.5vh) / 11)}
@@ -470,7 +471,8 @@ function vGame(){
       '<div class="txt"><strong>All 11 rounds are in</strong><span>Check the numbers, then make it official.</span></div></section>'+
       '<button class="btn gold" data-act="finish">Crown the winner</button>';
   }
-  h+='<div class="tablewrap"><table class="sc n'+n+'"><colgroup><col class="rc">'+g.pids.map(function(){return '<col>';}).join('')+'</colgroup><thead><tr><th class="dl">Dealer</th>';
+  var dg=Math.max(3,String(Math.max.apply(null,tot)).length),nl=Math.max.apply(null,g.pids.map(function(_,i){return nameOf(g,i).length;}));
+  h+='<div class="tablewrap"><table style="--n:'+n+';--d:'+dg+';--l:'+Math.max(4,nl)+'" class="sc n'+n+'"><colgroup><col class="rc">'+g.pids.map(function(){return '<col>';}).join('')+'</colgroup><thead><tr><th class="dl">Dealer</th>';
   g.pids.forEach(function(_,i){h+='<th>'+esc(nameOf(g,i))+'</th>';});
   h+='</tr></thead><tbody><tr class="tot"><th>Total</th>';
   tot.forEach(function(t){var L=anyDone&&t===min;h+='<td class="'+(L?'lead':'')+'">'+(L?MINI_CROWN:'')+'<span>'+t+'</span></td>';});
