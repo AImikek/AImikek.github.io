@@ -248,6 +248,42 @@ table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed
 #toast.on{opacity:1;transform:translate(-50%,0)}
 @media (max-height:700px){.pad button{height:44px}.pad{gap:6px}.erow{min-height:40px;padding-top:3px;padding-bottom:3px}.erow .val{height:32px}.sheet .btn{min-height:50px}.sheet{padding-top:10px}.sheet .bar{margin-bottom:6px}}
 @media (min-width:600px){ #veil{align-items:center} .sheet{border-radius:22px;border:2px solid var(--pink)} }
+
+/* big-screen scoreboard: the game fills the window so the table can read it from across the room */
+@media (min-width:900px) and (min-height:520px){
+  #app.v-game{
+    max-width:none;height:100dvh;padding:2.4vh 2.2vw;
+    display:grid;grid-template-columns:minmax(280px,23vw) 1fr;grid-template-rows:auto auto auto auto 1fr;column-gap:2.2vw;
+  }
+  .v-game>.bar,.v-game>.round,.v-game>.btn,.v-game>.hint{grid-column:1}
+  .v-game>.bar h2{font-size:min(26px,1.9vw)}
+  .v-game>.round{flex-direction:column;text-align:center;padding:4vh 1.4vw 3vh;gap:3.4vh;margin-bottom:2.4vh}
+  .v-game .wild{width:min(17vh,150px);height:min(23vh,204px);border-radius:14px;box-shadow:8px 8px 0 var(--pink)}
+  .v-game .wild b{font-size:min(11vh,96px)} .v-game .wild b.two{font-size:min(9vh,80px)} .v-game .wild b.fc{font-size:min(12vh,106px)}
+  .v-game .wild i{font-size:min(2.4vh,20px)} .v-game .wild .pips{font-size:min(2vh,17px);bottom:8px}
+  .v-game .round .txt strong{font-size:min(4.4vh,2.4vw)}
+  .v-game .round .txt span{font-size:min(2.6vh,1.4vw);margin-top:.8vh}
+  .v-game .round .txt .deal{font-size:min(3.4vh,1.8vw)}
+  .v-game>.btn{min-height:min(9vh,76px);font-size:min(3vh,1.6vw)}
+  .v-game>.hint{font-size:14px;margin-top:2vh}
+  .v-game>.tablewrap{grid-column:2;grid-row:1 / -1;margin:0;overflow:hidden}
+  .v-game table.sc{height:100%}
+  .v-game .sc th,.v-game .sc td{height:auto;padding:0 4px}
+  .v-game .sc col.rc{width:11vw !important}
+  .v-game .sc thead th{height:6.5vh;font-size:min(3.4vh,2.2vw) !important;font-weight:700;padding-bottom:1vh}
+  .v-game .sc thead th .dot{width:1.4vh;height:1.4vh;margin-bottom:.8vh}
+  .v-game .sc tr.tot td{font-size:min(6.4vh,4.2vw) !important;height:10.5vh}
+  .v-game .sc tr.tot th{font-size:min(3vh,1.8vw);height:10.5vh;padding-left:1.2vw;text-align:left}
+  .v-game .sc tr.tot td .cr{width:3vh;height:2vh;top:.5vh}
+  .v-game .sc tr.tot td.lead span{top:1vh}
+  .v-game .sc tbody td{font-size:min(4.6vh,3vw) !important;font-weight:600}
+  .v-game .sc tbody th{padding-left:1.2vw;white-space:nowrap}
+  .v-game .sc tbody th b{font-size:min(4vh,2.4vw);width:auto;min-width:3.2vw;margin-right:.7vw}
+  .v-game .sc tbody th,.v-game .sc tbody td{height:6.9vh}
+  .v-game .sc tbody th b.fc{font-size:min(4.2vh,2.5vw)}
+  .v-game .sc tbody th em{display:inline;font-size:min(2.4vh,1.4vw)}
+  .sheet{max-width:640px}
+}
 </style>
 </head>
 <body>
@@ -345,6 +381,7 @@ var app=document.getElementById('app'), veil=document.getElementById('veil');
 function go(v){view=v;render();window.scrollTo(0,0);}
 function render(){
   if(view==='game'&&!S.game)view='home';
+  app.className='v-'+view;
   app.innerHTML=({home:vHome,setup:vSetup,game:vGame,finish:vFinish,board:vBoard}[view])();
   flipNext=false;
 }
