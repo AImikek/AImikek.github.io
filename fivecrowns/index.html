@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Five Crowns Scorekeeper</title>
+<meta name="description" content="Keep score for Five Crowns. Add up to 7 players, enter each round, and track an all-time leaderboard.">
+<meta name="theme-color" content="#160832">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Five Crowns">
+<meta property="og:title" content="Five Crowns Scorekeeper">
+<meta property="og:description" content="Add your players, enter each round, crown the winner.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Outfit:wght@400;500;600;700&family=Yellowtail&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night:#160832; --deep:#221049; --panel:#2d1566; --panel2:#3a1c80;
+  --line:rgba(255,244,224,.14);
+  --pink:#ff3d9a; --aqua:#2de2e6; --gold:#ffc83d; --orange:#ff7a3c;
+  --cream:#fff4e0; --muted:#bfaee6;
+  --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Outfit",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --script:"Yellowtail","Brush Script MT",cursive;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--night)}
+body{
+  margin:0;min-height:100vh;min-height:100dvh;color:var(--cream);
+  font-family:var(--body);font-size:17px;line-height:1.4;
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(255,61,154,.34), transparent 60%),
+    radial-gradient(90% 50% at 100% 100%, rgba(45,226,230,.12), transparent 60%),
+    linear-gradient(180deg,#1b0a40 0%, #160832 55%, #10052a 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--aqua);outline-offset:2px}
+#app{
+  max-width:560px;margin:0 auto;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 16px calc(env(safe-area-inset-bottom,0px) + 28px);
+}
+h1,h2,h3,p{margin:0}
+
+/* buttons: hard offset shadows are the house style */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  min-height:56px;padding:12px 18px;border-radius:14px;
+  font-weight:700;font-size:18px;text-align:center;
+  background:var(--panel2);color:var(--cream);
+  border:2px solid var(--cream);box-shadow:4px 4px 0 rgba(0,0,0,.45);
+  transition:transform .08s, box-shadow .08s;
+}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 rgba(0,0,0,.45)}
+.btn.primary{background:linear-gradient(100deg,var(--pink),var(--orange));color:#1a0633;border-color:#1a0633;box-shadow:4px 4px 0 var(--aqua)}
+.btn.primary:active{box-shadow:1px 1px 0 var(--aqua)}
+.btn.gold{background:var(--gold);color:#1a0633;border-color:#1a0633;box-shadow:4px 4px 0 var(--pink)}
+.btn.quiet{background:transparent;border-color:var(--line);box-shadow:none;font-weight:600;color:var(--muted);min-height:48px;font-size:16px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.stack{display:flex;flex-direction:column;gap:14px}
+.iconbtn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(255,244,224,.08);flex:none}
+.iconbtn svg{width:22px;height:22px}
+
+/* top bar */
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.bar h2{flex:1;font-family:var(--display);font-size:19px;font-weight:400;letter-spacing:.01em;line-height:1.1}
+.bar h2 small{display:block;font-family:var(--body);font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+
+/* home hero */
+.hero{position:relative;text-align:center;padding:6px 0 4px;margin-bottom:22px}
+.hero svg.scene{width:100%;max-width:420px;height:auto;display:block;margin:0 auto}
+.hero h1{
+  font-family:var(--display);font-weight:400;font-size:clamp(40px,12.5vw,62px);line-height:.95;
+  margin-top:-18px;color:var(--cream);
+  text-shadow:0 0 18px rgba(255,61,154,.9), 3px 3px 0 var(--pink), 6px 6px 0 #1a0633;
+}
+.hero .sign{
+  font-family:var(--script);font-size:clamp(30px,9vw,42px);line-height:1;color:var(--aqua);
+  transform:rotate(-5deg);display:inline-block;margin-top:2px;
+  text-shadow:0 0 6px rgba(45,226,230,.9),0 0 22px rgba(45,226,230,.6);
+}
+@media (prefers-reduced-motion:no-preference){
+  .hero .sign{animation:flick 3.2s 1 .4s both}
+  @keyframes flick{0%{opacity:0}8%{opacity:1}11%{opacity:.25}14%{opacity:1}22%{opacity:.5}26%,100%{opacity:1}}
+}
+.resume{
+  background:var(--panel);border:2px solid var(--gold);border-radius:16px;padding:14px;
+  box-shadow:4px 4px 0 rgba(0,0,0,.45);
+}
+.resume p{font-size:15px;color:var(--muted);margin:2px 0 12px}
+.resume strong{font-size:18px}
+.fine{font-size:13px;color:var(--muted);text-align:center;margin-top:22px;line-height:1.5}
+.fine a{color:var(--muted)}
+
+/* setup */
+.lead{color:var(--muted);font-size:16px;margin-bottom:16px}
+.seats{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:8px}
+.seat{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:14px;padding:8px 8px 8px 12px;border:1px solid var(--line)}
+.seat .num{font-family:var(--display);font-size:18px;width:22px;text-align:center}
+.seat .nm{flex:1;font-weight:600;font-size:18px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat .tag{font-size:12px;font-weight:600;color:#1a0633;background:var(--gold);border-radius:99px;padding:3px 9px;flex:none}
+.seat .iconbtn{width:40px;height:40px}
+.empty{border:2px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--muted);margin-bottom:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chip{min-height:44px;padding:8px 16px;border-radius:99px;background:rgba(255,244,224,.08);border:1.5px solid var(--line);font-weight:600}
+.chip:active{background:rgba(255,244,224,.18)}
+.sub{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 8px}
+.addrow{display:flex;gap:8px;margin-bottom:22px}
+.addrow input, .field{
+  flex:1;min-width:0;height:52px;border-radius:14px;border:2px solid var(--line);background:rgba(0,0,0,.25);
+  padding:0 14px;font-size:18px;font-weight:500;
+}
+.addrow input::placeholder{color:rgba(191,174,230,.7)}
+.addrow input:focus,.field:focus{outline:none;border-color:var(--aqua)}
+.addrow .btn{width:auto;min-height:52px;padding:0 20px}
+
+/* round banner */
+.round{
+  display:flex;align-items:center;gap:16px;background:linear-gradient(120deg,var(--panel2),var(--panel));
+  border-radius:18px;padding:14px 16px 14px 14px;margin-bottom:14px;border:1px solid var(--line);
+}
+.wild{
+  flex:none;width:74px;height:100px;border-radius:10px;background:var(--cream);color:#2a0f5e;
+  transform:rotate(-6deg);box-shadow:5px 5px 0 var(--pink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;
+}
+.wild b{font-family:var(--display);font-weight:400;font-size:44px;line-height:1}
+.wild b.two{font-size:36px;letter-spacing:-.04em}
+.wild b.fc{font-family:var(--body);font-weight:700;font-size:50px}
+.wild i{font-style:normal;font-size:12px;font-weight:700;margin-top:2px}
+.wild .pips{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:1px}
+.round .txt{min-width:0}
+.round .txt strong{display:block;font-size:21px;font-weight:700;line-height:1.15}
+.round .txt span{display:block;color:var(--muted);font-size:15px;margin-top:3px}
+.round .txt .deal{color:var(--gold);font-weight:600}
+@media (prefers-reduced-motion:no-preference){
+  .wild.flip{animation:flip .5s cubic-bezier(.2,.9,.3,1.3)}
+  @keyframes flip{from{transform:rotate(-6deg) rotateY(90deg) scale(.9)}to{transform:rotate(-6deg) rotateY(0) scale(1)}}
+}
+
+/* score table */
+.tablewrap{margin:16px -6px 0;overflow-x:auto;border-radius:14px}
+table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-variant-numeric:tabular-nums}
+.sc th,.sc td{text-align:center;padding:0 2px;height:44px;border-bottom:1px solid var(--line);overflow:hidden}
+.sc col.rc{width:64px}
+.sc thead th{height:34px;font-size:13px;font-weight:600;border-bottom:0;white-space:nowrap;text-overflow:ellipsis;vertical-align:bottom;padding-bottom:5px}
+.sc thead th .dot{display:block;width:8px;height:8px;border-radius:50%;margin:0 auto 4px}
+.sc tr.tot td,.sc tr.tot th{
+  background:var(--cream);color:#1a0633;height:54px;border-bottom:0;
+  font-family:var(--display);font-size:22px;position:relative;
+}
+.sc tr.tot th{font-family:var(--body);font-size:14px;font-weight:700;border-radius:12px 0 0 12px}
+.sc tr.tot td:last-child{border-radius:0 12px 12px 0}
+.sc tr.tot td.lead{background:var(--gold)}
+.sc tr.tot td .cr{position:absolute;top:1px;left:50%;transform:translateX(-50%);width:16px;height:11px}
+.sc tr.tot td.lead span{position:relative;top:5px}
+.sc.n6 tr.tot td{font-size:min(19px,5vw)} .sc.n7 tr.tot td{font-size:min(17px,4.3vw)}
+.sc.n6 col.rc,.sc.n7 col.rc{width:56px}
+.sc.n6 tbody td,.sc.n7 tbody td{font-size:min(18px,4.6vw)}
+.sc.n6 thead th,.sc.n7 thead th{font-size:12px}
+.sc tbody th{text-align:left;padding-left:8px;font-weight:500;line-height:1.05}
+.sc tbody th b{font-family:var(--display);font-weight:400;font-size:17px;display:inline-block;width:26px}
+.sc tbody th b.fc{font-family:var(--body);font-weight:700;font-size:19px}
+.sc tbody th em{font-style:normal;font-size:11.5px;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc tbody td{font-size:18px;font-weight:600}
+.sc tbody td.z{color:var(--aqua)}
+.sc tbody tr.todo td,.sc tbody tr.todo th{color:rgba(191,174,230,.45)}
+.sc tbody tr.todo th em{color:rgba(191,174,230,.45)}
+.sc tbody tr.now td,.sc tbody tr.now th{background:rgba(255,61,154,.16);color:var(--cream);border-bottom-color:transparent}
+.sc tbody tr.now th{border-radius:10px 0 0 10px;box-shadow:inset 3px 0 0 var(--pink)}
+.sc tbody tr.now td:last-child{border-radius:0 10px 10px 0}
+.sc tbody tr.done,.sc tbody tr.now{cursor:pointer}
+.hint{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
+
+/* sheets */
+#veil{position:fixed;inset:0;background:rgba(8,2,24,.72);z-index:20;display:none;align-items:flex-end;justify-content:center}
+#veil.on{display:flex}
+.sheet{
+  width:100%;max-width:560px;max-height:calc(100dvh - 20px);display:flex;flex-direction:column;
+  background:var(--deep);border-radius:22px 22px 0 0;border-top:2px solid var(--pink);
+  padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 14px);
+}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}.sheet.still{animation:none}@keyframes up{from{transform:translateY(40px);opacity:0}}}
+.sheet .bar{margin-bottom:10px}
+.sheet .scroll{overflow-y:auto;min-height:0;flex:1 1 auto}
+.sheet p{color:var(--muted)}
+.erow{display:flex;align-items:center;gap:10px;width:100%;padding:5px 6px 5px 10px;border-radius:12px;min-height:44px;text-align:left;border:2px solid transparent}
+.erow .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.erow .nm{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.erow .run{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.erow .val{
+  flex:none;min-width:74px;height:36px;border-radius:9px;background:rgba(0,0,0,.3);display:grid;place-items:center;
+  font-family:var(--display);font-size:19px;padding:0 8px;font-variant-numeric:tabular-nums;white-space:nowrap
+}
+.erow .val.expr{font-family:var(--body);font-weight:600;font-size:15px}
+.erow .val:empty::before{content:"–";color:rgba(191,174,230,.5)}
+.erow.on{background:rgba(255,61,154,.16);border-color:var(--pink)}
+.erow.on .val{background:var(--cream);color:#1a0633}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px;flex:none}
+.pad button{height:50px;border-radius:12px;background:var(--panel2);font-family:var(--display);font-size:22px;border:1px solid var(--line)}
+.pad button:active{background:var(--pink);color:#1a0633}
+.pad .fn{font-family:var(--body);font-weight:700;font-size:15px;background:var(--panel)}
+.pad .out{background:rgba(45,226,230,.16);border-color:var(--aqua);color:var(--aqua);line-height:1.05}
+.pad .wide{grid-column:span 2}
+.pad .next{background:var(--cream);color:#1a0633}
+.sheet .btn{margin-top:10px;flex:none}
+.menu{display:flex;flex-direction:column;gap:10px}
+.vals{display:grid;grid-template-columns:1fr auto;gap:0;margin:6px 0 4px}
+.vals div{padding:11px 4px;border-bottom:1px solid var(--line);font-size:17px}
+.vals div:nth-child(even){font-family:var(--display);text-align:right;color:var(--gold)}
+.steps{margin:6px 0 4px;padding-left:22px;color:var(--cream)}
+.steps li{margin:8px 0}
+
+/* finish */
+.fin{text-align:center;padding-top:8px}
+.fin svg.big{width:150px;height:auto;filter:drop-shadow(0 0 22px rgba(255,200,61,.6))}
+.fin h1{font-family:var(--display);font-weight:400;font-size:clamp(32px,10vw,48px);line-height:1;margin:10px 0 2px;text-shadow:3px 3px 0 var(--pink),6px 6px 0 #1a0633}
+.fin .sign{font-family:var(--script);color:var(--aqua);font-size:32px;text-shadow:0 0 8px rgba(45,226,230,.8);display:inline-block;transform:rotate(-4deg)}
+.fin .pts{color:var(--muted);margin:8px 0 20px}
+@media (prefers-reduced-motion:no-preference){.fin svg.big{animation:drop .7s cubic-bezier(.2,.9,.3,1.4) both}@keyframes drop{from{transform:translateY(-80px) rotate(-20deg);opacity:0}}}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:30;width:100%;height:100%}
+
+/* lists */
+.rows{list-style:none;margin:0 0 22px;padding:0;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:14px;padding:10px 14px;border:1px solid var(--line);text-align:left}
+.row.first{border:2px solid var(--gold);background:linear-gradient(110deg,rgba(255,200,61,.2),var(--panel) 60%)}
+.row .rk{font-family:var(--display);font-size:20px;width:26px;text-align:center;flex:none}
+.row .who{flex:1;min-width:0}
+.row .who strong{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .who span{display:block;font-size:13.5px;color:var(--muted)}
+.row .big{font-family:var(--display);font-size:24px;text-align:right;line-height:1;flex:none}
+.row .big small{display:block;font-family:var(--body);font-size:12px;font-weight:500;color:var(--muted);margin-top:3px}
+.sect{font-family:var(--display);font-weight:400;font-size:16px;margin:0 0 10px}
+#toast{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translate(-50%,20px);
+  background:var(--cream);color:#1a0633;font-weight:700;padding:10px 18px;border-radius:99px;z-index:40;
+  opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;box-shadow:3px 3px 0 var(--pink);white-space:nowrap
+}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-height:700px){.pad button{height:44px}.pad{gap:6px}.erow{min-height:40px;padding-top:3px;padding-bottom:3px}.erow .val{height:32px}.sheet .btn{min-height:50px}.sheet{padding-top:10px}.sheet .bar{margin-bottom:6px}}
+@media (min-width:600px){ #veil{align-items:center} .sheet{border-radius:22px;border:2px solid var(--pink)} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="veil"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- game facts ---------- */
+var ROUNDS=[3,4,5,6,7,8,9,10,11,12,13];
+var MAXP=7;
+var COLORS=['#ff3d9a','#2de2e6','#ffc83d','#ff7a3c','#9bf542','#b48cff','#ff8fd0'];
+function face(n){return n===11?'J':n===12?'Q':n===13?'K':String(n);}
+function wildName(n){return n===11?'Jacks':n===12?'Queens':n===13?'Kings':n+'s';}
+
+/* ---------- storage ---------- */
+var KEY='fivecrowns.v1';
+var S=(function(){
+  try{var r=JSON.parse(localStorage.getItem(KEY));if(r&&Array.isArray(r.players)){r.history=r.history||[];return r;}}catch(e){}
+  return {players:[],game:null,history:[]};
+})();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function player(id){for(var i=0;i<S.players.length;i++)if(S.players[i].id===id)return S.players[i];return null;}
+function nameOf(g,i){var p=player(g.pids[i]);return p?p.name:(g.names&&g.names[i])||'Player';}
+function colorOf(g,i){return COLORS[i%COLORS.length];}
+function findByName(n){n=n.trim().toLowerCase();for(var i=0;i<S.players.length;i++)if(S.players[i].name.toLowerCase()===n)return S.players[i];return null;}
+function addPlayer(name){
+  name=name.trim().replace(/\s+/g,' ').slice(0,14);
+  if(!name)return null;
+  var p=findByName(name);if(p)return p;
+  p={id:uid(),name:name};S.players.push(p);save();return p;
+}
+function roundDone(g,r){for(var i=0;i<g.pids.length;i++)if(g.scores[r][i]==null)return false;return true;}
+function currentRound(g){for(var r=0;r<ROUNDS.length;r++)if(!roundDone(g,r))return r;return ROUNDS.length;}
+function totals(g){
+  return g.pids.map(function(_,i){var t=0;for(var r=0;r<ROUNDS.length;r++){var v=g.scores[r][i];if(v!=null&&roundDone(g,r))t+=v;}return t;});
+}
+function dealer(g,r){return r%g.pids.length;}
+function newGame(pids){
+  return {id:uid(),started:Date.now(),pids:pids.slice(),
+    names:pids.map(function(id){var p=player(id);return p?p.name:'Player';}),
+    scores:ROUNDS.map(function(){return pids.map(function(){return null;});})};
+}
+function listNames(a){if(a.length<2)return a.join('');if(a.length===2)return a[0]+' and '+a[1];return a.slice(0,-1).join(', ')+' and '+a[a.length-1];}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove('on');},1900);}
+
+/* ---------- art ---------- */
+function crownSVG(cls){
+  return '<svg class="'+(cls||'')+'" viewBox="0 0 120 80" aria-hidden="true">'+
+    '<path d="M14 60 8 24 21 44 34 12 47 40 60 6 73 40 86 12 99 44 112 24 106 60Z" fill="#ffc83d" stroke="#1a0633" stroke-width="4" stroke-linejoin="round"/>'+
+    '<rect x="13" y="60" width="94" height="13" rx="4" fill="#ff7a3c" stroke="#1a0633" stroke-width="4"/>'+
+    '<circle cx="8" cy="22" r="6" fill="#2de2e6" stroke="#1a0633" stroke-width="3"/>'+
+    '<circle cx="34" cy="10" r="6" fill="#9bf542" stroke="#1a0633" stroke-width="3"/>'+
+    '<circle cx="60" cy="5" r="6.5" fill="#ff3d9a" stroke="#1a0633" stroke-width="3"/>'+
+    '<circle cx="86" cy="10" r="6" fill="#b48cff" stroke="#1a0633" stroke-width="3"/>'+
+    '<circle cx="112" cy="22" r="6" fill="#fff4e0" stroke="#1a0633" stroke-width="3"/></svg>';
+}
+var MINI_CROWN='<svg class="cr" viewBox="0 0 120 80" aria-hidden="true"><path d="M10 72 4 22 26 46 42 10 60 40 78 10 94 46 116 22 110 72Z" fill="#1a0633"/></svg>';
+function palm(x,flip){
+  var t='translate('+x+' 0)'+(flip?' scale(-1 1)':'');
+  return '<g transform="'+t+'" fill="none" stroke="#12052b" stroke-linecap="round">'+
+    '<path d="M0 210C4 170 2 130 14 96" stroke-width="7"/>'+
+    '<g stroke-width="6"><path d="M14 96C-2 78-22 78-36 90"/><path d="M14 96C6 70-12 58-30 60"/><path d="M14 96C16 70 30 56 48 56"/><path d="M14 96C30 80 52 80 62 94"/><path d="M14 96C28 92 42 100 48 114"/><path d="M14 96C2 96-10 106-14 120"/></g></g>';
+}
+function scene(){
+  var stripes='';for(var i=0;i<6;i++){var y=118+i*13;stripes+='<rect x="90" y="'+y+'" width="240" height="'+(3+i*1.3)+'" fill="#000"/>';}
+  return '<svg class="scene" viewBox="0 0 420 210" aria-hidden="true">'+
+    '<defs><linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc83d"/><stop offset=".55" stop-color="#ff7a3c"/><stop offset="1" stop-color="#ff3d9a"/></linearGradient>'+
+    '<mask id="cut"><rect width="420" height="210" fill="#fff"/>'+stripes+'</mask>'+
+    '<radialGradient id="glow"><stop offset="0" stop-color="#ff3d9a" stop-opacity=".55"/><stop offset="1" stop-color="#ff3d9a" stop-opacity="0"/></radialGradient></defs>'+
+    '<circle cx="210" cy="110" r="150" fill="url(#glow)"/>'+
+    '<circle cx="210" cy="112" r="88" fill="url(#sun)" mask="url(#cut)"/>'+
+    palm(52,false)+palm(368,true)+
+    '<g transform="translate(138 52) scale(1.2)">'+crownSVG('').replace(/<svg[^>]*>|<\/svg>/g,'')+'</g>'+
+    '</svg>';
+}
+var ICON={
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>',
+  pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/></svg>'
+};
+
+/* ---------- views ---------- */
+var view='home', setupSel=[], lastFinished=null, flipNext=false;
+var app=document.getElementById('app'), veil=document.getElementById('veil');
+function go(v){view=v;render();window.scrollTo(0,0);}
+function render(){
+  if(view==='game'&&!S.game)view='home';
+  app.innerHTML=({home:vHome,setup:vSetup,game:vGame,finish:vFinish,board:vBoard}[view])();
+  flipNext=false;
+}
+
+function vHome(){
+  var h='<header class="hero">'+scene()+'<h1>Five Crowns</h1><div class="sign">score keeper</div></header><div class="stack">';
+  if(S.game){
+    var g=S.game,r=currentRound(g),names=g.pids.map(function(_,i){return nameOf(g,i);});
+    h+='<div class="resume"><strong>'+(r<11?'Round '+(r+1)+' of 11 is waiting':'All 11 rounds are in')+'</strong>'+
+       '<p>'+esc(listNames(names))+'</p><button class="btn primary" data-act="resume">Keep playing</button></div>'+
+       '<button class="btn" data-act="new">Start a new game</button>';
+  }else{
+    h+='<button class="btn primary" data-act="new">Start a new game</button>';
+  }
+  h+='<button class="btn" data-act="board">All-time leaderboard</button>'+
+     '<button class="btn quiet" data-act="values">What each card costs you</button>';
+  if(!isStandalone())h+='<button class="btn quiet" data-act="install">Add to your home screen</button>';
+  h+='</div><p class="fine">Scores and the leaderboard are saved on this device.<br>Fan-made scorekeeper, not affiliated with the makers of the card game.</p>';
+  return h;
+}
+
+function vSetup(){
+  var h='<div class="bar"><button class="iconbtn" data-act="home" aria-label="Back">'+ICON.back+'</button><h2>Who\'s playing?</h2></div>'+
+    '<p class="lead">Add players in the order you\'re sitting. The first one deals round one, then the deal moves down the list. 2 to 7 players.</p>';
+  if(setupSel.length){
+    h+='<ol class="seats">';
+    setupSel.forEach(function(id,i){var p=player(id);
+      h+='<li class="seat"><span class="num" style="color:'+COLORS[i]+'">'+(i+1)+'</span><span class="nm">'+esc(p.name)+'</span>'+
+        (i===0?'<span class="tag">deals first</span>':'<button class="iconbtn" data-act="seatup" data-i="'+i+'" aria-label="Move '+esc(p.name)+' up">'+ICON.up+'</button>')+
+        '<button class="iconbtn" data-act="unseat" data-i="'+i+'" aria-label="Remove '+esc(p.name)+'">'+ICON.x+'</button></li>';
+    });
+    h+='</ol>';
+  }else h+='<div class="empty">Nobody at the table yet.</div>';
+  var rest=S.players.filter(function(p){return setupSel.indexOf(p.id)<0;});
+  if(rest.length&&setupSel.length<MAXP){
+    h+='<p class="sub">Tap to add</p><div class="chips">'+rest.map(function(p){return '<button class="chip" data-act="seat" data-id="'+p.id+'">'+esc(p.name)+'</button>';}).join('')+'</div>';
+  }
+  if(setupSel.length<MAXP){
+    h+='<form class="addrow" data-form="addplayer"><input name="n" maxlength="14" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="New player\'s name" aria-label="New player\'s name"><button class="btn" type="submit">Add</button></form>';
+  }else h+='<p class="sub">That\'s a full table of 7.</p>';
+  h+='<button class="btn primary" data-act="start"'+(setupSel.length<2?' disabled':'')+'>'+(setupSel.length<2?'Add at least 2 players':'Start the game')+'</button>';
+  return h;
+}
+
+function vGame(){
+  var g=S.game,n=g.pids.length,cur=currentRound(g),tot=totals(g),over=cur>=11;
+  var anyDone=cur>0, min=Math.min.apply(null,tot);
+  var h='<div class="bar"><button class="iconbtn" data-act="home" aria-label="Home">'+ICON.back+'</button>'+
+    '<h2>'+(over?'Final scores':'Round '+(cur+1)+' of 11')+'</h2>'+
+    '<button class="iconbtn" data-act="menu" aria-label="Game menu">'+ICON.more+'</button></div>';
+  if(!over){
+    var w=ROUNDS[cur];
+    h+='<section class="round"><div class="wild'+(flipNext?' flip':'')+'"><b class="'+(w===10?'two':w>10?'fc':'')+'">'+face(w)+'</b><i>wild</i><span class="pips">♠ ♣ ♥ ♦ ★</span></div>'+
+      '<div class="txt"><strong>'+wildName(w)+' are wild</strong><span>'+w+' cards each. Jokers are wild too.</span>'+
+      '<span class="deal">'+esc(nameOf(g,dealer(g,cur)))+' deals</span></div></section>'+
+      '<button class="btn primary" data-act="enter" data-r="'+cur+'">Enter round '+(cur+1)+' scores</button>';
+  }else{
+    h+='<section class="round"><div class="wild"><b class="fc">K</b><i>done</i><span class="pips">♠ ♣ ♥ ♦ ★</span></div>'+
+      '<div class="txt"><strong>All 11 rounds are in</strong><span>Check the numbers, then make it official.</span></div></section>'+
+      '<button class="btn gold" data-act="finish">Crown the winner</button>';
+  }
+  h+='<div class="tablewrap"><table class="sc n'+n+'"><colgroup><col class="rc">'+g.pids.map(function(){return '<col>';}).join('')+'</colgroup><thead><tr><th></th>';
+  g.pids.forEach(function(_,i){h+='<th><span class="dot" style="background:'+colorOf(g,i)+'"></span>'+esc(nameOf(g,i))+'</th>';});
+  h+='</tr></thead><tbody><tr class="tot"><th>Total</th>';
+  tot.forEach(function(t){var L=anyDone&&t===min;h+='<td class="'+(L?'lead':'')+'">'+(L?MINI_CROWN:'')+'<span>'+t+'</span></td>';});
+  h+='</tr>';
+  ROUNDS.forEach(function(w,r){
+    var done=roundDone(g,r),cls=r===cur?'now':done?'done':'todo';
+    h+='<tr class="'+cls+'"'+(r<=cur?' data-act="enter" data-r="'+r+'"':'')+'><th><b'+(w>10?' class="fc"':'')+'>'+face(w)+'</b><em>'+esc(nameOf(g,dealer(g,r)))+'</em></th>';
+    g.pids.forEach(function(_,i){var v=g.scores[r][i];h+='<td class="'+(done&&v===0?'z':'')+'">'+(done?v:r===cur?'·':'')+'</td>';});
+    h+='</tr>';
+  });
+  h+='</tbody></table></div><p class="hint">'+(anyDone?'Tap any finished round to fix a score. Lowest total wins.':'Each row is a round. The small name is who deals. Lowest total wins.')+'</p>';
+  return h;
+}
+
+function standings(g){
+  var tot=totals(g);
+  return g.pids.map(function(id,i){return {i:i,id:id,name:nameOf(g,i),t:tot[i]};}).sort(function(a,b){return a.t-b.t;});
+}
+function vFinish(){
+  var g=lastFinished;if(!g)return vHome();
+  var st=standings(g),best=st[0].t,win=st.filter(function(s){return s.t===best;});
+  var h='<div class="fin">'+crownSVG('big')+'<h1>'+esc(listNames(win.map(function(s){return s.name;})))+'</h1>'+
+    '<div class="sign">'+(win.length>1?'share the crown':'takes the crown')+'</div>'+
+    '<p class="pts">'+best+' points, the lowest of '+st.length+' players</p></div><ol class="rows">';
+  var rk=0,prev=null;
+  st.forEach(function(s,k){if(s.t!==prev){rk=k+1;prev=s.t;}
+    h+='<li class="row'+(s.t===best?' first':'')+'"><span class="rk">'+rk+'</span><span class="who"><strong>'+esc(s.name)+'</strong></span><span class="big">'+s.t+'</span></li>';});
+  h+='</ol><div class="stack"><button class="btn primary" data-act="rematch">Play again, same players</button>'+
+    '<button class="btn" data-act="board">All-time leaderboard</button><button class="btn quiet" data-act="home">Home</button></div>';
+  return h;
+}
+
+function stats(){
+  var m={};
+  S.history.forEach(function(g){
+    var tot=g.totals,best=Math.min.apply(null,tot);
+    g.pids.forEach(function(id,i){
+      var p=player(id),k=id;
+      var s=m[k]||(m[k]={id:id,name:p?p.name:g.names[i],games:0,wins:0,sum:0,best:Infinity,outs:0});
+      if(p)s.name=p.name;
+      s.games++;s.sum+=tot[i];if(tot[i]===best)s.wins++;if(tot[i]<s.best)s.best=tot[i];
+      for(var r=0;r<g.scores.length;r++)if(g.scores[r][i]===0)s.outs++;
+    });
+  });
+  return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.wins-a.wins||(a.sum/a.games)-(b.sum/b.games);});
+}
+function vBoard(){
+  var st=stats();
+  var h='<div class="bar"><button class="iconbtn" data-act="home" aria-label="Back">'+ICON.back+'</button><h2>All-time leaderboard<small>Ranked by wins, then by lowest average score</small></h2></div>';
+  if(!st.length){
+    h+='<div class="empty">No finished games yet. Play all 11 rounds, crown a winner, and the standings show up here.</div>';
+  }else{
+    h+='<ol class="rows">';
+    st.forEach(function(s,k){
+      h+='<li class="row'+(k===0&&s.wins>0?' first':'')+'"><span class="rk">'+(k+1)+'</span><span class="who"><strong>'+esc(s.name)+'</strong>'+
+        '<span>'+s.games+(s.games===1?' game':' games')+', average score '+Math.round(s.sum/s.games)+'</span><span>Best game '+s.best+', went out '+s.outs+(s.outs===1?' time':' times')+'</span></span>'+
+        '<span class="big">'+s.wins+'<small>'+(s.wins===1?'win':'wins')+'</small></span></li>';
+    });
+    h+='</ol><h3 class="sect">Past games</h3><ul class="rows">';
+    S.history.slice().reverse().forEach(function(g){
+      var best=Math.min.apply(null,g.totals),w=[];g.totals.forEach(function(t,i){if(t===best)w.push(nameOf(g,i));});
+      var d=new Date(g.finished).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+      h+='<li class="row"><span class="who"><strong>'+esc(listNames(w))+' won with '+best+'</strong><span>'+d+', '+g.pids.length+' players</span></span>'+
+        '<button class="iconbtn" data-act="delgame" data-id="'+g.id+'" aria-label="Delete this game">'+ICON.x+'</button></li>';
+    });
+    h+='</ul>';
+  }
+  if(S.players.length){
+    h+='<h3 class="sect">Players</h3><ul class="rows">';
+    S.players.forEach(function(p){
+      h+='<li class="row"><span class="who"><strong>'+esc(p.name)+'</strong></span>'+
+        '<button class="iconbtn" data-act="rename" data-id="'+p.id+'" aria-label="Rename '+esc(p.name)+'">'+ICON.pen+'</button>'+
+        '<button class="iconbtn" data-act="delplayer" data-id="'+p.id+'" aria-label="Remove '+esc(p.name)+'">'+ICON.x+'</button></li>';
+    });
+    h+='</ul>';
+  }
+  h+='<button class="btn primary" data-act="new">Start a new game</button>';
+  return h;
+}
+
+/* ---------- sheets ---------- */
+var sheetKind=null;
+function sheet(html,kind,still){veil.innerHTML='<div class="sheet'+(still?' still':'')+'" role="dialog" aria-modal="true">'+html+'</div>';veil.classList.add('on');sheetKind=kind||'plain';}
+function closeSheet(){veil.classList.remove('on');veil.innerHTML='';sheetKind=null;entry=null;}
+function sheetHead(title,sub){return '<div class="bar"><h2>'+title+(sub?'<small>'+sub+'</small>':'')+'</h2><button class="iconbtn" data-act="close" aria-label="Close">'+ICON.x+'</button></div>';}
+function ask(title,body,yes,act,data){
+  sheet(sheetHead(title)+'<p>'+body+'</p><button class="btn primary" data-act="'+act+'"'+(data?' data-id="'+data+'"':'')+'>'+yes+'</button><button class="btn quiet" data-act="close">Cancel</button>');
+}
+
+/* score entry */
+var entry=null;
+function evalExpr(s){if(s==='')return null;var t=0;s.split('+').forEach(function(p){if(p!=='')t+=parseInt(p,10);});return t;}
+function openEntry(r){
+  var g=S.game;
+  entry={r:r,vals:g.scores[r].map(function(v){return v==null?'':String(v);}),at:0,fresh:true};
+  var first=entry.vals.indexOf('');entry.at=first<0?0:first;
+  drawEntry();
+}
+function drawEntry(){
+  var g=S.game,r=entry.r,w=ROUNDS[r],tot=totals(g),wasDone=roundDone(g,r);
+  var h=sheetHead('Round '+(r+1)+' scores',wildName(w)+' wild, '+esc(nameOf(g,dealer(g,r)))+' dealt')+'<div class="scroll">';
+  var all=true;
+  g.pids.forEach(function(_,i){
+    var s=entry.vals[i],v=evalExpr(s),base=tot[i]-(wasDone?g.scores[r][i]:0);
+    if(v==null)all=false;
+    h+='<button class="erow'+(i===entry.at?' on':'')+'" data-act="pick" data-i="'+i+'"><span class="dot" style="background:'+colorOf(g,i)+'"></span>'+
+      '<span class="nm">'+esc(nameOf(g,i))+'</span><span class="run">'+base+(v!=null?' → '+(base+v):'')+'</span>'+
+      '<span class="val'+(s.indexOf('+')>=0?' expr':'')+'">'+(s.indexOf('+')>=0?esc(s)+' = '+v:esc(s))+'</span></button>';
+  });
+  h+='</div><div class="pad">'+
+    [1,2,3].map(key).join('')+'<button class="fn" data-key="del" aria-label="Delete">⌫</button>'+
+    [4,5,6].map(key).join('')+'<button class="fn" data-key="+" aria-label="Plus">+</button>'+
+    [7,8,9].map(key).join('')+'<button class="fn out" data-key="out">Went<br>out</button>'+
+    '<button class="wide" data-key="0">0</button><button class="wide fn next" data-key="next">Next player</button></div>'+
+    '<button class="btn primary" data-act="saveround"'+(all?'':' disabled')+'>'+(all?'Save round '+(r+1):'Enter a score for everyone')+'</button>';
+  var old=veil.querySelector('.scroll'),top=old?old.scrollTop:0;
+  sheet(h,'entry',sheetKind==='entry');
+  veil.querySelector('.scroll').scrollTop=top;
+  var on=veil.querySelector('.erow.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});
+}
+function key(n){return '<button data-key="'+n+'">'+n+'</button>';}
+function advance(){
+  var n=entry.vals.length;
+  for(var k=1;k<=n;k++){var j=(entry.at+k)%n;if(entry.vals[j]===''){entry.at=j;entry.fresh=true;return;}}
+  entry.at=(entry.at+1)%n;entry.fresh=true;
+}
+function press(k){
+  if(!entry)return;
+  var s=entry.vals[entry.at];
+  if(k==='del'){s=s.slice(0,-1);entry.fresh=false;}
+  else if(k==='out'){entry.vals[entry.at]='0';advance();drawEntry();return;}
+  else if(k==='next'){if(s.slice(-1)==='+')entry.vals[entry.at]=s.slice(0,-1);advance();drawEntry();return;}
+  else if(k==='+'){if(s!==''&&s.slice(-1)!=='+')s+='+';entry.fresh=false;}
+  else{
+    if(entry.fresh&&s!==''&&s.indexOf('+')<0)s='';   /* typing over a saved score replaces it */
+    entry.fresh=false;
+    var parts=s.split('+'),last=parts[parts.length-1];
+    if(last==='0')last='';
+    if(last.length<3){parts[parts.length-1]=last+k;s=parts.join('+');}
+  }
+  entry.vals[entry.at]=s;drawEntry();
+}
+function saveRound(){
+  var g=S.game,r=entry.r,vals=entry.vals.map(evalExpr);
+  if(vals.some(function(v){return v==null;}))return;
+  var wasCur=r===currentRound(g);
+  g.scores[r]=vals;save();closeSheet();
+  flipNext=wasCur;render();
+  toast('Round '+(r+1)+' saved');
+  if(wasCur)window.scrollTo(0,0);
+}
+
+/* finishing */
+function finishGame(){
+  var g=S.game;if(!g||currentRound(g)<11)return;
+  g.finished=Date.now();g.totals=totals(g);g.names=g.pids.map(function(_,i){return nameOf(g,i);});
+  S.history.push(g);S.game=null;save();lastFinished=g;
+  go('finish');confetti();
+}
+
+/* sharing a game through a link */
+function b64e(s){return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)));}
+function shareLink(g){
+  var done=[];for(var r=0;r<11;r++){if(roundDone(g,r))done.push(g.scores[r]);else break;}
+  var data={v:1,n:g.pids.map(function(_,i){return nameOf(g,i);}),s:done};
+  return location.origin+location.pathname+'#g='+b64e(JSON.stringify(data));
+}
+function readShared(){
+  var m=/[#&]g=([A-Za-z0-9_-]+)/.exec(location.hash||'');if(!m)return null;
+  try{
+    var d=JSON.parse(b64d(m[1]));
+    if(!d||!Array.isArray(d.n)||d.n.length<2||d.n.length>MAXP||!Array.isArray(d.s)||d.s.length>11)return null;
+    var names=d.n.map(function(x){return String(x).trim().slice(0,14);});
+    if(names.some(function(x){return !x;}))return null;
+    var rounds=d.s.map(function(row){
+      if(!Array.isArray(row)||row.length!==names.length)throw 0;
+      return row.map(function(v){v=Number(v);if(!isFinite(v)||v<0||v>9999||Math.floor(v)!==v)throw 0;return v;});
+    });
+    return {names:names,rounds:rounds};
+  }catch(e){return null;}
+}
+var shared=null;
+function clearHash(){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
+function offerShared(){
+  shared=readShared();if(!shared)return;
+  var r=shared.rounds.length;
+  sheet(sheetHead('Open this game?')+
+    '<p>'+esc(listNames(shared.names))+', '+(r===0?'about to start round 1':r>=11?'all 11 rounds played':'with '+r+(r===1?' round':' rounds')+' already scored')+'.'+
+    (S.game?' This replaces the game you have in progress on this device.':'')+'</p>'+
+    '<button class="btn primary" data-act="openshared">Open the game</button><button class="btn quiet" data-act="skipshared">Not now</button>');
+}
+function openShared(){
+  var pids=shared.names.map(function(n){return addPlayer(n).id;});
+  var g=newGame(pids);shared.rounds.forEach(function(row,r){g.scores[r]=row.slice();});
+  S.game=g;save();shared=null;clearHash();closeSheet();go('game');
+}
+
+/* install help */
+function isStandalone(){try{return window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches;}catch(e){return false;}}
+var installEvt=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();installEvt=e;});
+function installHelp(){
+  if(installEvt){installEvt.prompt();installEvt=null;return;}
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  sheet(sheetHead('Add to your home screen')+(ios?
+    '<ol class="steps"><li>Open this page in Safari.</li><li>Tap the Share button (the square with an arrow pointing up).</li><li>Scroll down and tap "Add to Home Screen".</li><li>Tap "Add". The crown icon opens the scorekeeper like an app.</li></ol>':
+    '<ol class="steps"><li>Open your browser menu (the three dots).</li><li>Tap "Add to Home screen" or "Install app".</li><li>Confirm. The crown icon opens the scorekeeper like an app.</li></ol><p>On an iPhone, use Safari: Share, then "Add to Home Screen".</p>')+
+    '<button class="btn" data-act="close">Got it</button>');
+}
+function valuesSheet(){
+  sheet(sheetHead('What each card costs you','Count only the cards you couldn\'t lay down')+
+    '<div class="scroll"><div class="vals"><div>3 through 10</div><div>face value</div><div>Jack</div><div>11</div><div>Queen</div><div>12</div><div>King</div><div>13</div>'+
+    '<div>This round\'s wild card</div><div>20</div><div>Joker</div><div>50</div><div>Whoever goes out</div><div>0</div></div>'+
+    '<p>11 rounds. Round one deals 3 cards and 3s are wild, and it climbs one card a round until Kings are wild. Lowest total after the Kings round wins.</p></div>'+
+    '<button class="btn" data-act="close">Got it</button>');
+}
+
+/* confetti */
+function confetti(){
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var c=document.createElement('canvas');c.id='confetti';document.body.appendChild(c);
+  var x=c.getContext('2d'),W=c.width=innerWidth,H=c.height=innerHeight,P=[],t0=performance.now();
+  for(var i=0;i<140;i++)P.push({x:Math.random()*W,y:-20-Math.random()*H*.6,w:6+Math.random()*7,h:9+Math.random()*9,vx:-1.5+Math.random()*3,vy:2.5+Math.random()*4,r:Math.random()*6,vr:-.2+Math.random()*.4,c:COLORS[i%COLORS.length]});
+  (function tick(t){
+    x.clearRect(0,0,W,H);
+    P.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore();});
+    if(t-t0<4200)requestAnimationFrame(tick);else c.remove();
+  })(t0);
+}
+
+/* ---------- actions ---------- */
+var ACT={
+  home:function(){go('home');},
+  board:function(){go('board');},
+  resume:function(){go('game');},
+  'new':function(){
+    if(S.game){ask('Start over?','The game in progress won\'t be saved or counted on the leaderboard.','Start a new game','reallynew');return;}
+    ACT.reallynew();
+  },
+  reallynew:function(){
+    closeSheet();
+    var last=S.game||S.history[S.history.length-1];
+    setupSel=last?last.pids.filter(function(id){return !!player(id);}):[];
+    go('setup');
+  },
+  seat:function(el){if(setupSel.length<MAXP){setupSel.push(el.dataset.id);render();}},
+  unseat:function(el){setupSel.splice(+el.dataset.i,1);render();},
+  seatup:function(el){var i=+el.dataset.i,t=setupSel[i];setupSel[i]=setupSel[i-1];setupSel[i-1]=t;render();},
+  start:function(){if(setupSel.length<2)return;S.game=newGame(setupSel);save();flipNext=true;go('game');},
+  enter:function(el){openEntry(+el.dataset.r);},
+  pick:function(el){entry.at=+el.dataset.i;entry.fresh=true;drawEntry();},
+  saveround:saveRound,
+  finish:finishGame,
+  close:closeSheet,
+  rematch:function(){
+    var g=lastFinished,ids=g.pids.filter(function(id){return !!player(id);});
+    if(ids.length<2){setupSel=ids;go('setup');return;}
+    ids.push(ids.shift());            /* the deal moves on one seat */
+    S.game=newGame(ids);save();flipNext=true;go('game');
+  },
+  menu:function(){
+    sheet(sheetHead('Game menu')+'<div class="menu"><button class="btn" data-act="share">Send this game to another phone</button>'+
+      '<button class="btn" data-act="values">What each card costs you</button>'+
+      '<button class="btn quiet" data-act="abandon">End this game without saving</button></div>');
+  },
+  values:valuesSheet,
+  install:installHelp,
+  share:function(){
+    var url=shareLink(S.game);
+    function shown(){sheet(sheetHead('Send this game','Whoever opens the link gets the scores so far and can keep scoring')+
+      '<input class="field" style="width:100%;flex:none" readonly value="'+esc(url)+'" onfocus="this.select()">'+
+      '<button class="btn primary" data-act="copylink">Copy the link</button>');veil.querySelector('.field')._url=url;}
+    if(navigator.share){navigator.share({title:'Five Crowns game',url:url}).then(closeSheet).catch(shown);}
+    else shown();
+  },
+  copylink:function(){
+    var f=veil.querySelector('.field'),url=f.value;
+    function ok(){toast('Link copied');closeSheet();}
+    function manual(){f.focus();f.select();toast('Press and hold to copy');}
+    try{navigator.clipboard.writeText(url).then(ok,manual);}catch(e){manual();}
+  },
+  abandon:function(){ask('End this game?','The scores so far are thrown away and nothing goes on the leaderboard.','End the game','reallyabandon');},
+  reallyabandon:function(){S.game=null;save();closeSheet();go('home');},
+  delgame:function(el){ask('Delete this game?','It comes off the leaderboard for everyone who played.','Delete the game','reallydelgame',el.dataset.id);},
+  reallydelgame:function(el){S.history=S.history.filter(function(g){return g.id!==el.dataset.id;});save();closeSheet();render();},
+  delplayer:function(el){var p=player(el.dataset.id);
+    if(S.game&&S.game.pids.indexOf(p.id)>=0){toast(p.name+' is in the current game');return;}
+    ask('Remove '+esc(p.name)+'?','They leave your player list. Games they already finished stay on the leaderboard.','Remove '+esc(p.name),'reallydelplayer',p.id);},
+  reallydelplayer:function(el){S.players=S.players.filter(function(p){return p.id!==el.dataset.id;});setupSel=setupSel.filter(function(id){return id!==el.dataset.id;});save();closeSheet();render();},
+  rename:function(el){var p=player(el.dataset.id);
+    sheet(sheetHead('Rename '+esc(p.name))+'<form class="addrow" data-form="rename" data-id="'+p.id+'" style="margin-bottom:0"><input name="n" maxlength="14" autocomplete="off" autocapitalize="words" value="'+esc(p.name)+'" aria-label="Name"><button class="btn primary" type="submit">Save</button></form>');
+    var f=veil.querySelector('input');f.focus();f.select();},
+  openshared:openShared,
+  skipshared:function(){shared=null;clearHash();closeSheet();}
+};
+
+document.addEventListener('click',function(e){
+  var k=e.target.closest('[data-key]');if(k){press(k.dataset.key);return;}
+  var el=e.target.closest('[data-act]');
+  if(el){if(el.disabled)return;var f=ACT[el.dataset.act];if(f)f(el);return;}
+  if(e.target===veil&&sheetKind!=='entry')closeSheet();
+});
+document.addEventListener('submit',function(e){
+  var f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();
+  var v=f.elements.n.value;
+  if(f.dataset.form==='addplayer'){
+    if(!v.trim())return;
+    var p=addPlayer(v);
+    if(setupSel.indexOf(p.id)>=0){toast(p.name+' is already at the table');}
+    else if(setupSel.length<MAXP)setupSel.push(p.id);
+    render();var inp=app.querySelector('.addrow input');if(inp)inp.focus();
+  }else if(f.dataset.form==='rename'){
+    v=v.trim().replace(/\s+/g,' ').slice(0,14);if(!v)return;
+    var other=findByName(v);
+    if(other&&other.id!==f.dataset.id){toast('There\'s already a '+other.name);return;}
+    player(f.dataset.id).name=v;save();closeSheet();render();
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(sheetKind==='entry'&&entry){
+    if(/^[0-9]$/.test(e.key))press(e.key);
+    else if(e.key==='+')press('+');
+    else if(e.key==='Backspace'){press('del');e.preventDefault();}
+    else if(e.key==='Tab'){press('next');e.preventDefault();}
+    else if(e.key==='Enter'){e.preventDefault();if(entry.vals.every(function(s){return evalExpr(s)!=null;})&&entry.vals[entry.at].slice(-1)!=='+')saveRound();else press('next');}
+    else if(e.key==='Escape')closeSheet();
+  }else if(e.key==='Escape'&&sheetKind)closeSheet();
+});
+
+/* ---------- boot ---------- */
+render();
+offerShared();
+window.addEventListener('hashchange',offerShared);
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+}
+})();
+</script>
+</body>
+</html>
