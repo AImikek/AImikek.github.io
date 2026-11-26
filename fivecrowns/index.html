@@ -37,7 +37,6 @@ body{
   font-family:var(--body);font-size:17px;line-height:1.4;
   background:
     radial-gradient(120% 60% at 50% -10%, rgba(255,61,154,.34), transparent 60%),
-    radial-gradient(90% 50% at 100% 100%, rgba(45,226,230,.12), transparent 60%),
     linear-gradient(180deg,#1b0a40 0%, #160832 55%, #10052a 100%);
   background-attachment:fixed;
   -webkit-font-smoothing:antialiased;
@@ -61,8 +60,7 @@ h1,h2,h3,p{margin:0}
   transition:transform .08s, box-shadow .08s;
 }
 .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 rgba(0,0,0,.45)}
-.btn.primary{background:linear-gradient(100deg,var(--pink),var(--orange));color:#1a0633;border-color:#1a0633;box-shadow:4px 4px 0 var(--aqua)}
-.btn.primary:active{box-shadow:1px 1px 0 var(--aqua)}
+.btn.primary{background:linear-gradient(100deg,var(--pink),var(--orange));color:#1a0633;border-color:#1a0633}
 .btn.gold{background:var(--gold);color:#1a0633;border-color:#1a0633;box-shadow:4px 4px 0 var(--pink)}
 .btn.quiet{background:transparent;border-color:var(--line);box-shadow:none;font-weight:600;color:var(--muted);min-height:48px;font-size:16px}
 .btn[disabled]{opacity:.4;pointer-events:none}
@@ -152,7 +150,7 @@ h1,h2,h3,p{margin:0}
 table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-variant-numeric:tabular-nums}
 .sc th,.sc td{text-align:center;padding:0 2px;height:44px;border-bottom:1px solid var(--line);overflow:hidden}
 .sc col.rc{width:64px}
-.sc thead th{height:34px;font-size:13px;font-weight:600;border-bottom:0;white-space:nowrap;text-overflow:ellipsis;vertical-align:bottom;padding-bottom:5px}
+.sc thead th{height:30px;font-size:15px;font-weight:700;border-bottom:0;white-space:nowrap;text-overflow:ellipsis;vertical-align:bottom;padding-bottom:5px}
 .sc thead th .dot{display:block;width:8px;height:8px;border-radius:50%;margin:0 auto 4px}
 .sc tr.tot td,.sc tr.tot th{
   background:var(--cream);color:#1a0633;height:54px;border-bottom:0;
@@ -166,13 +164,14 @@ table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed
 .sc.n6 tr.tot td{font-size:min(19px,5vw)} .sc.n7 tr.tot td{font-size:min(17px,4.3vw)}
 .sc.n6 col.rc,.sc.n7 col.rc{width:56px}
 .sc.n6 tbody td,.sc.n7 tbody td{font-size:min(18px,4.6vw)}
-.sc.n6 thead th,.sc.n7 thead th{font-size:12px}
+.sc.n6 thead th,.sc.n7 thead th{font-size:min(14px,3.5vw)}
+.sc thead th.dl{text-align:left;padding-left:8px;font-size:12px;font-weight:600;color:var(--muted)}
 .sc tbody th{text-align:left;padding-left:8px;font-weight:500;line-height:1.05}
 .sc tbody th b{font-family:var(--display);font-weight:400;font-size:17px;display:inline-block;width:26px}
 .sc tbody th b.fc{font-family:var(--body);font-weight:700;font-size:19px}
-.sc tbody th em{font-style:normal;font-size:11.5px;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc tbody th em{font-style:normal;font-size:12.5px;font-weight:600;color:var(--cream);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sc tbody td{font-size:18px;font-weight:600}
-.sc tbody td.z{color:var(--aqua)}
+.sc tbody td.z{color:var(--muted)}
 .sc tbody tr.todo td,.sc tbody tr.todo th{color:rgba(191,174,230,.45)}
 .sc tbody tr.todo th em{color:rgba(191,174,230,.45)}
 .sc tbody tr.now td,.sc tbody tr.now th{background:rgba(255,61,154,.16);color:var(--cream);border-bottom-color:transparent}
@@ -209,7 +208,7 @@ table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed
 .pad button{height:50px;border-radius:12px;background:var(--panel2);font-family:var(--display);font-size:22px;border:1px solid var(--line)}
 .pad button:active{background:var(--pink);color:#1a0633}
 .pad .fn{font-family:var(--body);font-weight:700;font-size:15px;background:var(--panel)}
-.pad .out{background:rgba(45,226,230,.16);border-color:var(--aqua);color:var(--aqua);line-height:1.05}
+.pad .out{border-color:var(--cream);line-height:1.05}
 .pad .wide{grid-column:span 2}
 .pad .next{background:var(--cream);color:#1a0633}
 .sheet .btn{margin-top:10px;flex:none}
@@ -227,7 +226,33 @@ table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed
 .fin .sign{font-family:var(--script);color:var(--aqua);font-size:32px;text-shadow:0 0 8px rgba(45,226,230,.8);display:inline-block;transform:rotate(-4deg)}
 .fin .pts{color:var(--muted);margin:8px 0 20px}
 @media (prefers-reduced-motion:no-preference){.fin svg.big{animation:drop .7s cubic-bezier(.2,.9,.3,1.4) both}@keyframes drop{from{transform:translateY(-80px) rotate(-20deg);opacity:0}}}
-#confetti{position:fixed;inset:0;pointer-events:none;z-index:30;width:100%;height:100%}
+.awards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.award{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;text-align:left}
+.award span{display:block;font-size:13px;color:var(--muted)}
+.award strong{display:block;font-size:18px;line-height:1.2;margin-top:2px}
+#cer{position:fixed;inset:0;z-index:35;display:grid;place-items:center;text-align:center;padding:24px;cursor:pointer;overflow:hidden;
+  background:radial-gradient(90% 60% at 50% 40%, #4a1a8f, #160832 70%)}
+#cer canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#cer canvas{z-index:0}
+#cer .in{position:relative;z-index:1;max-width:100%}
+#cer .skip{z-index:1}
+#cer .lab{font-family:var(--script);color:var(--aqua);font-size:clamp(30px,6vw,64px);line-height:1;transform:rotate(-4deg);text-shadow:0 0 10px rgba(45,226,230,.8)}
+#cer h1{font-family:var(--display);font-weight:400;font-size:clamp(46px,12vw,170px);line-height:.95;margin:14px 0 10px;text-shadow:4px 4px 0 var(--pink),8px 8px 0 #1a0633;overflow-wrap:anywhere}
+#cer p{font-size:clamp(17px,2.4vw,30px);color:var(--cream)}
+#cer .skip{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);left:0;right:0;font-size:14px;color:var(--muted)}
+#cer svg.big{width:clamp(130px,22vw,260px);height:auto;filter:drop-shadow(0 0 26px rgba(255,200,61,.7))}
+#cer.champ h1{color:var(--gold)}
+#cer.most h1{color:var(--pink);text-shadow:4px 4px 0 #1a0633}
+#cer .lab{animation:cfade .5s both}
+#cer.last h1{animation:slam .55s cubic-bezier(.2,.9,.3,1.25) .25s both}
+#cer.most h1{animation:sink 2.6s cubic-bezier(.3,.1,.3,1) .25s both;transform-origin:20% 50%}
+#cer.champ svg.big{animation:drop .8s cubic-bezier(.2,.9,.3,1.4) both}
+#cer.champ h1{animation:pop .6s cubic-bezier(.2,.9,.3,1.5) .5s both}
+#cer p{animation:cfade .5s .9s both}
+@keyframes cfade{from{opacity:0}}
+@keyframes slam{from{transform:scale(4) rotate(-8deg);opacity:0}}
+@keyframes pop{from{transform:scale(.2);opacity:0}}
+@keyframes sink{0%{transform:translateY(-120%) rotate(0);opacity:0}18%{transform:translateY(0) rotate(0);opacity:1}30%{transform:rotate(-7deg)}42%{transform:rotate(9deg)}54%{transform:rotate(-4deg)}70%,100%{transform:translateY(14%) rotate(11deg)}}
 
 /* lists */
 .rows{list-style:none;margin:0 0 22px;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -253,35 +278,36 @@ table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed
 @media (min-width:900px) and (min-height:520px){
   #app.v-game{
     max-width:none;height:100dvh;padding:2.4vh 2.2vw;
-    display:grid;grid-template-columns:minmax(280px,23vw) 1fr;grid-template-rows:auto auto auto auto 1fr;column-gap:2.2vw;
+    display:grid;grid-template-columns:minmax(210px,16vw) 1fr;grid-template-rows:auto auto auto auto 1fr;column-gap:2.2vw;
   }
   .v-game>.bar,.v-game>.round,.v-game>.btn,.v-game>.hint{grid-column:1}
-  .v-game>.bar h2{font-size:min(26px,1.9vw)}
-  .v-game>.round{flex-direction:column;text-align:center;padding:4vh 1.4vw 3vh;gap:3.4vh;margin-bottom:2.4vh}
-  .v-game .wild{width:min(17vh,150px);height:min(23vh,204px);border-radius:14px;box-shadow:8px 8px 0 var(--pink)}
-  .v-game .wild b{font-size:min(11vh,96px)} .v-game .wild b.two{font-size:min(9vh,80px)} .v-game .wild b.fc{font-size:min(12vh,106px)}
+  .v-game>.bar h2{font-size:min(17px,1.2vw);white-space:nowrap}
+  .v-game>.hint{display:none}
+  .v-game>.round{flex-direction:column;text-align:center;padding:3vh 1vw 2.4vh;gap:2.6vh;margin-bottom:2vh}
+  .v-game .wild{width:min(13vh,116px);height:min(17.5vh,156px);border-radius:14px;box-shadow:8px 8px 0 var(--pink)}
+  .v-game .wild b{font-size:min(8.4vh,74px)} .v-game .wild b.two{font-size:min(7vh,62px)} .v-game .wild b.fc{font-size:min(9vh,80px)}
   .v-game .wild i{font-size:min(2.4vh,20px)} .v-game .wild .pips{font-size:min(2vh,17px);bottom:8px}
-  .v-game .round .txt strong{font-size:min(4.4vh,2.4vw)}
-  .v-game .round .txt span{font-size:min(2.6vh,1.4vw);margin-top:.8vh}
-  .v-game .round .txt .deal{font-size:min(3.4vh,1.8vw)}
-  .v-game>.btn{min-height:min(9vh,76px);font-size:min(3vh,1.6vw)}
+  .v-game .round .txt strong{font-size:min(3.4vh,1.7vw)}
+  .v-game .round .txt span{font-size:min(2.1vh,1.05vw);margin-top:.8vh}
+  .v-game .round .txt .deal{font-size:min(3.2vh,1.6vw)}
+  .v-game>.btn{min-height:min(8vh,68px);font-size:min(2.4vh,1.25vw);padding:8px}
   .v-game>.hint{font-size:14px;margin-top:2vh}
   .v-game>.tablewrap{grid-column:2;grid-row:1 / -1;margin:0;overflow:hidden}
   .v-game table.sc{height:100%}
   .v-game .sc th,.v-game .sc td{height:auto;padding:0 4px}
-  .v-game .sc col.rc{width:11vw !important}
-  .v-game .sc thead th{height:6.5vh;font-size:min(3.4vh,2.2vw) !important;font-weight:700;padding-bottom:1vh}
-  .v-game .sc thead th .dot{width:1.4vh;height:1.4vh;margin-bottom:.8vh}
-  .v-game .sc tr.tot td{font-size:min(6.4vh,4.2vw) !important;height:10.5vh}
-  .v-game .sc tr.tot th{font-size:min(3vh,1.8vw);height:10.5vh;padding-left:1.2vw;text-align:left}
+  .v-game .sc col.rc{width:15vw !important}
+  .v-game .sc thead th{height:7.5vh;font-size:min(4.6vh,2.9vw) !important;font-weight:700;padding-bottom:1vh}
+  .v-game .sc thead th.dl{font-size:min(2.4vh,1.4vw) !important;font-weight:600;padding-left:1.2vw}
+  .v-game .sc tr.tot td{font-size:min(8vh,5vw) !important;height:11.5vh}
+  .v-game .sc tr.tot th{font-size:min(3vh,1.8vw);height:11.5vh;padding-left:1.2vw;text-align:left}
   .v-game .sc tr.tot td .cr{width:3vh;height:2vh;top:.5vh}
   .v-game .sc tr.tot td.lead span{top:1vh}
-  .v-game .sc tbody td{font-size:min(4.6vh,3vw) !important;font-weight:600}
+  .v-game .sc tbody td{font-size:min(5.6vh,3.7vw) !important;font-weight:600}
   .v-game .sc tbody th{padding-left:1.2vw;white-space:nowrap}
   .v-game .sc tbody th b{font-size:min(4vh,2.4vw);width:auto;min-width:3.2vw;margin-right:.7vw}
-  .v-game .sc tbody th,.v-game .sc tbody td{height:6.9vh}
+  .v-game .sc tbody th,.v-game .sc tbody td{height:6.7vh}
   .v-game .sc tbody th b.fc{font-size:min(4.2vh,2.5vw)}
-  .v-game .sc tbody th em{display:inline;font-size:min(2.4vh,1.4vw)}
+  .v-game .sc tbody th em{display:inline;font-size:min(3.2vh,1.9vw)}
   .sheet{max-width:640px}
 }
 </style>
@@ -409,7 +435,7 @@ function vSetup(){
   if(setupSel.length){
     h+='<ol class="seats">';
     setupSel.forEach(function(id,i){var p=player(id);
-      h+='<li class="seat"><span class="num" style="color:'+COLORS[i]+'">'+(i+1)+'</span><span class="nm">'+esc(p.name)+'</span>'+
+      h+='<li class="seat"><span class="num">'+(i+1)+'</span><span class="nm">'+esc(p.name)+'</span>'+
         (i===0?'<span class="tag">deals first</span>':'<button class="iconbtn" data-act="seatup" data-i="'+i+'" aria-label="Move '+esc(p.name)+' up">'+ICON.up+'</button>')+
         '<button class="iconbtn" data-act="unseat" data-i="'+i+'" aria-label="Remove '+esc(p.name)+'">'+ICON.x+'</button></li>';
     });
@@ -434,17 +460,17 @@ function vGame(){
     '<button class="iconbtn" data-act="menu" aria-label="Game menu">'+ICON.more+'</button></div>';
   if(!over){
     var w=ROUNDS[cur];
-    h+='<section class="round"><div class="wild'+(flipNext?' flip':'')+'"><b class="'+(w===10?'two':w>10?'fc':'')+'">'+face(w)+'</b><i>wild</i><span class="pips">♠ ♣ ♥ ♦ ★</span></div>'+
-      '<div class="txt"><strong>'+wildName(w)+' are wild</strong><span>'+w+' cards each. Jokers are wild too.</span>'+
+    h+='<section class="round"><div class="wild'+(flipNext?' flip':'')+'"><b class="'+(w===10?'two':w>10?'fc':'')+'">'+face(w)+'</b><i>'+(S.hideWild?'cards':'wild')+'</i></div>'+
+      '<div class="txt"><strong>'+(S.hideWild?w+' cards each':wildName(w)+' are wild')+'</strong>'+(S.hideWild?'':'<span>'+w+' cards each. Jokers are wild too.</span>')+
       '<span class="deal">'+esc(nameOf(g,dealer(g,cur)))+' deals</span></div></section>'+
       '<button class="btn primary" data-act="enter" data-r="'+cur+'">Enter round '+(cur+1)+' scores</button>';
   }else{
-    h+='<section class="round"><div class="wild"><b class="fc">K</b><i>done</i><span class="pips">♠ ♣ ♥ ♦ ★</span></div>'+
+    h+='<section class="round"><div class="wild"><b class="fc">K</b><i>done</i></div>'+
       '<div class="txt"><strong>All 11 rounds are in</strong><span>Check the numbers, then make it official.</span></div></section>'+
       '<button class="btn gold" data-act="finish">Crown the winner</button>';
   }
-  h+='<div class="tablewrap"><table class="sc n'+n+'"><colgroup><col class="rc">'+g.pids.map(function(){return '<col>';}).join('')+'</colgroup><thead><tr><th></th>';
-  g.pids.forEach(function(_,i){h+='<th><span class="dot" style="background:'+colorOf(g,i)+'"></span>'+esc(nameOf(g,i))+'</th>';});
+  h+='<div class="tablewrap"><table class="sc n'+n+'"><colgroup><col class="rc">'+g.pids.map(function(){return '<col>';}).join('')+'</colgroup><thead><tr><th class="dl">Dealer</th>';
+  g.pids.forEach(function(_,i){h+='<th>'+esc(nameOf(g,i))+'</th>';});
   h+='</tr></thead><tbody><tr class="tot"><th>Total</th>';
   tot.forEach(function(t){var L=anyDone&&t===min;h+='<td class="'+(L?'lead':'')+'">'+(L?MINI_CROWN:'')+'<span>'+t+'</span></td>';});
   h+='</tr>';
@@ -462,17 +488,26 @@ function standings(g){
   var tot=totals(g);
   return g.pids.map(function(id,i){return {i:i,id:id,name:nameOf(g,i),t:tot[i]};}).sort(function(a,b){return a.t-b.t;});
 }
+function awards(g){
+  var st=standings(g),best=st[0].t,worst=st[st.length-1].t,last=g.scores[10],lmin=Math.min.apply(null,last);
+  return {st:st,best:best,worst:worst,lmin:lmin,
+    champ:st.filter(function(s){return s.t===best;}).map(function(s){return s.name;}),
+    most:st.filter(function(s){return s.t===worst;}).map(function(s){return s.name;}),
+    last:g.pids.map(function(_,i){return i;}).filter(function(i){return last[i]===lmin;}).map(function(i){return nameOf(g,i);})};
+}
 function vFinish(){
   var g=lastFinished;if(!g)return vHome();
-  var st=standings(g),best=st[0].t,win=st.filter(function(s){return s.t===best;});
+  var A=awards(g),st=A.st,best=A.best,win=st.filter(function(s){return s.t===best;});
   var h='<div class="fin">'+crownSVG('big')+'<h1>'+esc(listNames(win.map(function(s){return s.name;})))+'</h1>'+
     '<div class="sign">'+(win.length>1?'share the crown':'takes the crown')+'</div>'+
-    '<p class="pts">'+best+' points, the lowest of '+st.length+' players</p></div><ol class="rows">';
+    '<p class="pts">'+best+' points, the lowest of '+st.length+' players</p></div>'+
+    '<div class="awards"><div class="award"><span>Won the last hand</span><strong>'+esc(listNames(A.last))+'</strong></div>'+
+    '<div class="award"><span>Most points, '+A.worst+'</span><strong>'+esc(listNames(A.most))+'</strong></div></div><ol class="rows">';
   var rk=0,prev=null;
   st.forEach(function(s,k){if(s.t!==prev){rk=k+1;prev=s.t;}
     h+='<li class="row'+(s.t===best?' first':'')+'"><span class="rk">'+rk+'</span><span class="who"><strong>'+esc(s.name)+'</strong></span><span class="big">'+s.t+'</span></li>';});
   h+='</ol><div class="stack"><button class="btn primary" data-act="rematch">Play again, same players</button>'+
-    '<button class="btn" data-act="board">All-time leaderboard</button><button class="btn quiet" data-act="home">Home</button></div>';
+    '<button class="btn" data-act="board">All-time leaderboard</button><button class="btn quiet" data-act="replay">Watch the awards again</button><button class="btn quiet" data-act="home">Home</button></div>';
   return h;
 }
 
@@ -544,12 +579,12 @@ function openEntry(r){
 }
 function drawEntry(){
   var g=S.game,r=entry.r,w=ROUNDS[r],tot=totals(g),wasDone=roundDone(g,r);
-  var h=sheetHead('Round '+(r+1)+' scores',wildName(w)+' wild, '+esc(nameOf(g,dealer(g,r)))+' dealt')+'<div class="scroll">';
+  var h=sheetHead('Round '+(r+1)+' scores',(S.hideWild?w+' cards, ':wildName(w)+' wild, ')+esc(nameOf(g,dealer(g,r)))+' dealt')+'<div class="scroll">';
   var all=true;
   g.pids.forEach(function(_,i){
     var s=entry.vals[i],v=evalExpr(s),base=tot[i]-(wasDone?g.scores[r][i]:0);
     if(v==null)all=false;
-    h+='<button class="erow'+(i===entry.at?' on':'')+'" data-act="pick" data-i="'+i+'"><span class="dot" style="background:'+colorOf(g,i)+'"></span>'+
+    h+='<button class="erow'+(i===entry.at?' on':'')+'" data-act="pick" data-i="'+i+'">'+
       '<span class="nm">'+esc(nameOf(g,i))+'</span><span class="run">'+base+(v!=null?' → '+(base+v):'')+'</span>'+
       '<span class="val'+(s.indexOf('+')>=0?' expr':'')+'">'+(s.indexOf('+')>=0?esc(s)+' = '+v:esc(s))+'</span></button>';
   });
@@ -601,7 +636,7 @@ function finishGame(){
   var g=S.game;if(!g||currentRound(g)<11)return;
   g.finished=Date.now();g.totals=totals(g);g.names=g.pids.map(function(_,i){return nameOf(g,i);});
   S.history.push(g);S.game=null;save();lastFinished=g;
-  go('finish');confetti();
+  go('finish');ceremony(g);
 }
 
 /* sharing a game through a link */
@@ -662,6 +697,55 @@ function valuesSheet(){
     '<button class="btn" data-act="close">Got it</button>');
 }
 
+/* the three awards, one after another: last hand, most points, then the crown */
+function ceremony(g){
+  if(!g)return;
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var A=awards(g),old=document.getElementById('cer');if(old)old.remove();
+  document.getElementById('toast').classList.remove('on');
+  var stages=[
+    {k:'last',lab:'the last hand goes to',names:A.last,sub:A.lmin===0?'Went out on the Kings round':'Lowest in the Kings round with '+A.lmin},
+    {k:'most',lab:'most points',names:A.most,sub:A.worst+' points. Somebody had to hold the jokers.'},
+    {k:'champ',lab:A.champ.length>1?'sharing the crown':'lowest total takes the crown',names:A.champ,sub:A.best+' points'}];
+  var el=document.createElement('div');el.id='cer';document.body.appendChild(el);
+  var i=-1,timer=null,raf=null;
+  function next(){
+    clearTimeout(timer);cancelAnimationFrame(raf);i++;
+    if(i>=stages.length){el.remove();return;}
+    var s=stages[i];el.className=s.k;
+    el.innerHTML='<canvas></canvas><div class="in">'+(s.k==='champ'?crownSVG('big'):'')+'<div class="lab">'+s.lab+'</div><h1>'+esc(listNames(s.names))+'</h1><p>'+esc(s.sub)+'</p></div><div class="skip">'+(i<2?'Tap for the next award':'Tap to see the final scores')+'</div>';
+    raf=particles(el.querySelector('canvas'),s.k);
+    timer=setTimeout(next,i<2?4200:6500);
+  }
+  el.addEventListener('click',next);next();
+  function particles(c,kind){
+    var x=c.getContext('2d'),W=c.width=innerWidth,H=c.height=innerHeight,P=[],id,u=Math.max(1,Math.min(W,H)/420);
+    var pal=['#ffc83d','#ff3d9a','#fff4e0','#ff7a3c'],n=kind==='most'?46:kind==='last'?34:170;
+    for(var j=0;j<n;j++){
+      if(kind==='last')P.push({x:W/2,y:H+40,vx:(-9+Math.random()*18)*u,vy:(-13-Math.random()*13)*u,r:Math.random()*6,vr:-.15+Math.random()*.3,d:j*55,t:['K','K','Q','J'][j%4]});
+      else if(kind==='most')P.push({x:Math.random()*W,y:-40-Math.random()*H,vx:0,vy:(2.5+Math.random()*4)*u,r:-.3+Math.random()*.6,vr:0,d:0,t:['+50','+20','+13','+50','+12'][j%5]});
+      else P.push({x:Math.random()*W,y:-20-Math.random()*H*.8,w:(6+Math.random()*8)*u,h:(9+Math.random()*10)*u,vx:-1.5+Math.random()*3,vy:(2.5+Math.random()*4)*u,r:Math.random()*6,vr:-.2+Math.random()*.4,d:0,c:pal[j%4]});
+    }
+    var t0=performance.now();
+    (function tick(t){
+      x.clearRect(0,0,W,H);var e=t-t0;
+      P.forEach(function(p){
+        if(e<p.d)return;
+        p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;if(kind==='last')p.vy+=.34*u;
+        if(kind==='most'&&p.y>H+60)p.y=-60;
+        x.save();x.translate(p.x,p.y);x.rotate(p.r);
+        if(kind==='last'){var w=44*u,h=60*u;x.fillStyle='#fff4e0';x.beginPath();if(x.roundRect)x.roundRect(-w/2,-h/2,w,h,6*u);else x.rect(-w/2,-h/2,w,h);x.fill();
+          x.fillStyle='#2a0f5e';x.font='700 '+(30*u)+'px Outfit,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(p.t,0,2*u);}
+        else if(kind==='most'){x.globalAlpha=.55;x.fillStyle='#ff3d9a';x.font=(34*u)+'px Bungee,Impact,sans-serif';x.textAlign='center';x.fillText(p.t,0,0);}
+        else{x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);}
+        x.restore();
+      });
+      id=raf=requestAnimationFrame(tick);
+    })(t0);
+    return id;
+  }
+}
+
 /* confetti */
 function confetti(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -698,6 +782,7 @@ var ACT={
   pick:function(el){entry.at=+el.dataset.i;entry.fresh=true;drawEntry();},
   saveround:saveRound,
   finish:finishGame,
+  replay:function(){ceremony(lastFinished);},
   close:closeSheet,
   rematch:function(){
     var g=lastFinished,ids=g.pids.filter(function(id){return !!player(id);});
@@ -707,9 +792,11 @@ var ACT={
   },
   menu:function(){
     sheet(sheetHead('Game menu')+'<div class="menu"><button class="btn" data-act="share">Send this game to another phone</button>'+
+      '<button class="btn" data-act="togglewild">'+(S.hideWild?'Show what\'s wild each round':'Hide what\'s wild each round')+'</button>'+
       '<button class="btn" data-act="values">What each card costs you</button>'+
       '<button class="btn quiet" data-act="abandon">End this game without saving</button></div>');
   },
+  togglewild:function(){S.hideWild=!S.hideWild;save();closeSheet();render();toast(S.hideWild?'Wild card hidden. Good luck, everyone.':'Wild card showing');},
   values:valuesSheet,
   install:installHelp,
   share:function(){
