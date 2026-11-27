@@ -281,6 +281,8 @@ table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed
 .row .who span{display:block;font-size:13.5px;color:var(--muted)}
 .row .big{font-family:var(--display);font-size:24px;text-align:right;line-height:1;flex:none}
 .row .big small{display:block;font-family:var(--body);font-size:12px;font-weight:500;color:var(--muted);margin-top:3px}
+.shared{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:18px}
+.shared p{font-size:15px;color:var(--muted);margin-bottom:12px}
 .sect{font-family:var(--display);font-weight:400;font-size:16px;margin:0 0 10px}
 #toast{
   position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);transform:translate(-50%,20px);
@@ -356,6 +358,52 @@ var S=(function(){
 })();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+/* ---------- shared leaderboard (Firebase project mikek-fivecrowns, Realtime Database over REST) ----------
+   Every device belongs to one group. Finished games are stored under groups/<gid>/games, deletions under groups/<gid>/gone.
+   The group id is a long random string that only travels inside invite and result links. */
+var DB='https://mikek-fivecrowns-default-rtdb.firebaseio.com';
+var GID=/^[a-z0-9]{20,32}$/, syncState='idle';
+function newGid(){var a=new Uint8Array(24),o='';(window.crypto||window.msCrypto).getRandomValues(a);for(var i=0;i<24;i++)o+='abcdefghjkmnpqrstuvwxyz23456789'[a[i]%31];return o;}
+function ensureGid(){if(!S.gid){S.gid=newGid();save();}return S.gid;}
+function pack(g){var np=g.played||11;return {f:g.finished,n:g.pids.map(function(_,i){return nameOf(g,i);}),s:g.scores.slice(0,np)};}
+function cleanGame(id,d){
+  try{
+    if(!d||typeof id!=='string'||id.length>24||!Array.isArray(d.n)||d.n.length<2||d.n.length>MAXP||!Array.isArray(d.s)||d.s.length<1||d.s.length>11)return null;
+    var names=d.n.map(function(x){return String(x).trim().slice(0,14);});if(names.some(function(x){return !x;}))return null;
+    var rounds=d.s.map(function(row){if(!Array.isArray(row)||row.length!==names.length)throw 0;return row.map(function(v){v=Number(v);if(!isFinite(v)||v<0||v>9999||Math.floor(v)!==v)throw 0;return v;});});
+    return {id:id,f:Number(d.f)||Date.now(),names:names,rounds:rounds};
+  }catch(e){return null;}
+}
+function adopt(c){
+  var pids=c.names.map(function(n){return addPlayer(n).id;});
+  var g=newGame(pids);g.id=c.id;g.started=c.f;g.finished=c.f;g.played=c.rounds.length;
+  c.rounds.forEach(function(row,r){g.scores[r]=row.slice();});
+  g.totals=totals(g);S.history.push(g);S.history.sort(function(a,b){return a.finished-b.finished;});return g;
+}
+function api(method,path,body){
+  return fetch(DB+'/groups/'+S.gid+path+'.json',{method:method,headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)})
+    .then(function(r){if(!r.ok)throw new Error('sync '+r.status);return r.json();});
+}
+function sync(){
+  if(!S.gid){if(!S.history.length)return;ensureGid();}
+  if(syncState==='busy'||!window.fetch)return;
+  syncState='busy';
+  var pend=(S.pendingGone||[]).slice();
+  Promise.all(pend.map(function(id){return api('PUT','/gone/'+id,true).then(function(){return api('DELETE','/games/'+id);});}))
+  .then(function(){S.pendingGone=[];return api('GET','');})
+  .then(function(data){
+    data=data||{};var games=data.games||{},gone=data.gone||{},changed=false,have={};
+    var before=S.history.length;S.history=S.history.filter(function(g){return !gone[g.id];});if(S.history.length!==before)changed=true;
+    S.history.forEach(function(g){have[g.id]=1;});
+    Object.keys(games).forEach(function(id){if(have[id]||gone[id])return;var c=cleanGame(id,games[id]);if(c){adopt(c);changed=true;}});
+    var ups=S.history.filter(function(g){return !games[g.id]&&g.id.length<=24;}).map(function(g){return api('PUT','/games/'+g.id,pack(g));});
+    S.synced=Date.now();save();
+    return Promise.all(ups).then(function(){syncState='ok';if(changed||view==='board')if(view==='board'||view==='home')render();});
+  })
+  .catch(function(){syncState='off';if(view==='board')render();});
+}
+function inviteLink(){return location.origin+location.pathname+'#j='+ensureGid();}
 
 /* ---------- helpers ---------- */
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -446,7 +494,7 @@ function vHome(){
   h+='<button class="btn" data-act="board">All-time leaderboard</button>'+
      '<button class="btn quiet" data-act="values">What each card costs you</button>';
   if(!isStandalone())h+='<button class="btn quiet" data-act="install">Add to your home screen</button>';
-  h+='</div><p class="fine">Scores and the leaderboard are saved on this device.<br>Fan-made scorekeeper, not affiliated with the makers of the card game.</p>';
+  h+='</div><p class="fine">Games are saved on this device and shared with the people you invite.<br>Fan-made scorekeeper, not affiliated with the makers of the card game.</p>';
   return h;
 }
 
@@ -551,6 +599,7 @@ function stats(){
 function vBoard(){
   var st=stats();
   var h='<div class="bar"><button class="iconbtn" data-act="home" aria-label="Back">'+ICON.back+'</button><h2>All-time leaderboard<small>Ranked by wins, then by lowest average score</small></h2></div>';
+  h+='<div class="shared"><p>'+(S.gid?(syncState==='off'?'Offline right now. Games sync to your group when you\'re back online.':syncState==='busy'?'Syncing with your group.':'Shared leaderboard. Everyone you invite sees the same games.'):'Invite the people you play with and you all share one leaderboard.')+'</p><button class="btn" data-act="invite">Invite people to this leaderboard</button></div>';
   if(!st.length){
     h+='<div class="empty">No finished games yet. Play all 11 rounds, crown a winner, and the standings show up here.</div>';
   }else{
@@ -664,7 +713,7 @@ function finishGame(early){
   if(done<11&&(early!==true||done<1))return;
   if(done<11){for(var r=done;r<11;r++)g.scores[r]=g.pids.map(function(){return null;});}
   g.played=done;g.finished=Date.now();g.totals=totals(g);g.names=g.pids.map(function(_,i){return nameOf(g,i);});
-  S.history.push(g);S.game=null;save();lastFinished=g;
+  S.history.push(g);S.game=null;save();lastFinished=g;sync();
   go('finish');ceremony(g);
 }
 
@@ -677,7 +726,7 @@ function shareLink(g){
   return location.origin+location.pathname+'#g='+b64e(JSON.stringify(data));
 }
 function resultLink(g){
-  var np=g.played||11,data={v:1,id:g.id,f:g.finished,n:g.pids.map(function(_,i){return nameOf(g,i);}),s:g.scores.slice(0,np)};
+  var np=g.played||11,data={v:1,gid:ensureGid(),id:g.id,f:g.finished,n:g.pids.map(function(_,i){return nameOf(g,i);}),s:g.scores.slice(0,np)};
   return location.origin+location.pathname+'#r='+b64e(JSON.stringify(data));
 }
 function readShared(key){
@@ -692,7 +741,7 @@ function readShared(key){
       if(!Array.isArray(row)||row.length!==names.length)throw 0;
       return row.map(function(v){v=Number(v);if(!isFinite(v)||v<0||v>9999||Math.floor(v)!==v)throw 0;return v;});
     });
-    return {names:names,rounds:rounds,id:typeof d.id==='string'?d.id.slice(0,24):null,f:Number(d.f)||Date.now()};
+    return {names:names,rounds:rounds,id:typeof d.id==='string'?d.id.slice(0,24):null,f:Number(d.f)||Date.now(),gid:GID.test(d.gid||'')?d.gid:null};
   }catch(e){return null;}
 }
 var shared=null;
@@ -701,16 +750,22 @@ function openResult(){
   var d=readShared('r');if(!d||!d.id||d.rounds.length<1)return false;
   clearHash();
   var g=null;S.history.forEach(function(x){if(x.id===d.id)g=x;});
+  if(!S.gid&&d.gid){S.gid=d.gid;}
   if(!g){
-    var pids=d.names.map(function(n){return addPlayer(n).id;});
-    g=newGame(pids);g.id=d.id;g.started=d.f;g.finished=d.f;g.played=d.rounds.length;
-    d.rounds.forEach(function(row,r){g.scores[r]=row.slice();});
-    g.totals=totals(g);S.history.push(g);S.history.sort(function(a,b){return a.finished-b.finished;});save();
+    g=adopt({id:d.id,f:d.f,names:d.names,rounds:d.rounds});save();
     setTimeout(function(){toast('Added to your leaderboard');},300);
   }
-  lastFinished=g;go('finish');return true;
+  save();lastFinished=g;go('finish');sync();return true;
+}
+function offerJoin(){
+  var m=/[#&]j=([a-z0-9]{20,32})/.exec(location.hash||'');if(!m)return false;
+  if(S.gid===m[1]){clearHash();go('board');sync();return true;}
+  sheet(sheetHead('Join this leaderboard?')+'<p>You\'ll see every game this group has finished, and games you finish show up for them too.'+(S.history.length?' The '+S.history.length+(S.history.length===1?' game':' games')+' already on this device get added to the group.':'')+'</p>'+
+    '<button class="btn primary" data-act="join" data-id="'+m[1]+'">Join the leaderboard</button><button class="btn quiet" data-act="skipshared">Not now</button>');
+  return true;
 }
 function offerShared(){
+  if(offerJoin())return;
   if(openResult())return;
   shared=readShared();if(!shared)return;
   var r=shared.rounds.length;
@@ -894,7 +949,7 @@ function confetti(){
 /* ---------- actions ---------- */
 var ACT={
   home:function(){go('home');},
-  board:function(){go('board');},
+  board:function(){go('board');sync();},
   resume:function(){go('game');},
   'new':function(){
     if(S.game){ask('Start over?','The game in progress won\'t be saved or counted on the leaderboard.','Start a new game','reallynew');return;}
@@ -954,8 +1009,8 @@ var ACT={
   },
   abandon:function(){ask('End this game?','The scores so far are thrown away and nothing goes on the leaderboard.','End the game','reallyabandon');},
   reallyabandon:function(){S.game=null;save();closeSheet();go('home');},
-  delgame:function(el){ask('Delete this game?','It comes off the leaderboard for everyone who played.','Delete the game','reallydelgame',el.dataset.id);},
-  reallydelgame:function(el){S.history=S.history.filter(function(g){return g.id!==el.dataset.id;});save();closeSheet();render();},
+  delgame:function(el){ask('Delete this game?','It comes off the leaderboard for everyone in your group.','Delete the game','reallydelgame',el.dataset.id);},
+  reallydelgame:function(el){S.history=S.history.filter(function(g){return g.id!==el.dataset.id;});if(S.gid){S.pendingGone=(S.pendingGone||[]).concat([el.dataset.id]);}save();closeSheet();render();sync();},
   delplayer:function(el){var p=player(el.dataset.id);
     if(S.game&&S.game.pids.indexOf(p.id)>=0){toast(p.name+' is in the current game');return;}
     ask('Remove '+esc(p.name)+'?','They leave your player list. Games they already finished stay on the leaderboard.','Remove '+esc(p.name),'reallydelplayer',p.id);},
@@ -963,6 +1018,12 @@ var ACT={
   rename:function(el){var p=player(el.dataset.id);
     sheet(sheetHead('Rename '+esc(p.name))+'<form class="addrow" data-form="rename" data-id="'+p.id+'" style="margin-bottom:0"><input name="n" maxlength="14" autocomplete="off" autocapitalize="words" value="'+esc(p.name)+'" aria-label="Name"><button class="btn primary" type="submit">Save</button></form>');
     var f=veil.querySelector('input');f.focus();f.select();},
+  join:function(el){if(!GID.test(el.dataset.id))return;S.gid=el.dataset.id;save();clearHash();closeSheet();go('board');sync();toast('You\'re in');},
+  invite:function(){
+    var url=inviteLink();sync();
+    function shown(){sheet(sheetHead('Invite people','Anyone who opens this link shares one leaderboard with you')+'<input class="field" style="width:100%;flex:none" readonly value="'+esc(url)+'" onfocus="this.select()"><button class="btn primary" data-act="copylink">Copy the link</button>');}
+    if(navigator.share){navigator.share({title:'Five Crowns leaderboard',text:'Join our Five Crowns leaderboard',url:url}).catch(shown);}else shown();
+  },
   openshared:openShared,
   skipshared:function(){shared=null;clearHash();closeSheet();}
 };
@@ -1010,6 +1071,9 @@ document.addEventListener('keydown',function(e){
 /* ---------- boot ---------- */
 render();
 offerShared();
+sync();
+window.addEventListener('online',sync);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)sync();});
 window.addEventListener('hashchange',offerShared);
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
   window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});

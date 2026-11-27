@@ -1,0 +1,23 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "groups": {
+      "$gid": {
+        ".read": "$gid.length >= 20",
+        "games": {
+          "$id": {
+            ".write": "$gid.length >= 20 && $id.length <= 24",
+            ".validate": "newData.hasChildren(['f','n','s']) && newData.child('f').isNumber() && !newData.child('n/7').exists() && !newData.child('s/11').exists()"
+          }
+        },
+        "gone": {
+          "$id": {
+            ".write": "$gid.length >= 20 && $id.length <= 24",
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    }
+  }
+}
