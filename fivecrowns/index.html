@@ -276,7 +276,7 @@ table.sc{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed
 .row{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:14px;padding:10px 14px;border:1px solid var(--line);text-align:left}
 .row.first{border:2px solid var(--gold);background:linear-gradient(110deg,rgba(255,200,61,.2),var(--panel) 60%)}
 .row .rk{font-family:var(--display);font-size:20px;width:26px;text-align:center;flex:none}
-.row .who{flex:1;min-width:0}
+.row .who{flex:1;min-width:0;text-align:left;-webkit-user-select:auto;user-select:auto}
 .row .who strong{display:block;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .who span{display:block;font-size:13.5px;color:var(--muted)}
 .row .big{font-family:var(--display);font-size:24px;text-align:right;line-height:1;flex:none}
@@ -511,8 +511,8 @@ function standings(g){
   return g.pids.map(function(id,i){return {i:i,id:id,name:nameOf(g,i),t:tot[i]};}).sort(function(a,b){return a.t-b.t;});
 }
 function awards(g){
-  var st=standings(g),best=st[0].t,worst=st[st.length-1].t,last=g.scores[10],lmin=Math.min.apply(null,last);
-  return {st:st,best:best,worst:worst,lmin:lmin,
+  var np=g.played||11,st=standings(g),best=st[0].t,worst=st[st.length-1].t,last=g.scores[np-1],lmin=Math.min.apply(null,last);
+  return {np:np,st:st,best:best,worst:worst,lmin:lmin,
     champ:st.filter(function(s){return s.t===best;}).map(function(s){return s.name;}),
     most:st.filter(function(s){return s.t===worst;}).map(function(s){return s.name;}),
     last:g.pids.map(function(_,i){return i;}).filter(function(i){return last[i]===lmin;}).map(function(i){return nameOf(g,i);})};
@@ -522,13 +522,13 @@ function vFinish(){
   var A=awards(g),st=A.st,best=A.best,win=st.filter(function(s){return s.t===best;});
   var h='<div class="fin">'+crownSVG('big')+'<h1>'+esc(listNames(win.map(function(s){return s.name;})))+'</h1>'+
     '<div class="sign">'+(win.length>1?'share the crown':'takes the crown')+'</div>'+
-    '<p class="pts">'+best+' points, the lowest of '+st.length+' players</p></div>'+
+    '<p class="pts">'+best+' points, the lowest of '+st.length+' players'+(A.np<11?'<br>Short game, '+A.np+' of 11 rounds':'')+'</p></div>'+
     '<div class="awards"><div class="award"><span>Won the last hand</span><strong>'+esc(listNames(A.last))+'</strong></div>'+
     '<div class="award"><span>Most points, '+A.worst+'</span><strong>'+esc(listNames(A.most))+'</strong></div></div><ol class="rows">';
   var rk=0,prev=null;
   st.forEach(function(s,k){if(s.t!==prev){rk=k+1;prev=s.t;}
     h+='<li class="row'+(s.t===best?' first':'')+'"><span class="rk">'+rk+'</span><span class="who"><strong>'+esc(s.name)+'</strong></span><span class="big">'+s.t+'</span></li>';});
-  h+='</ol><div class="stack"><button class="btn primary" data-act="rematch">Play again, same players</button>'+
+  h+='</ol><div class="stack"><button class="btn gold" data-act="sharefinal">Share the final scores</button><button class="btn primary" data-act="rematch">Play again, same players</button>'+
     '<button class="btn" data-act="board">All-time leaderboard</button><button class="btn quiet" data-act="replay">Watch the awards again</button><button class="btn quiet" data-act="home">Home</button></div>';
   return h;
 }
@@ -539,13 +539,14 @@ function stats(){
     var tot=g.totals,best=Math.min.apply(null,tot);
     g.pids.forEach(function(id,i){
       var p=player(id),k=id;
-      var s=m[k]||(m[k]={id:id,name:p?p.name:g.names[i],games:0,wins:0,sum:0,best:Infinity,outs:0});
+      var s=m[k]||(m[k]={id:id,name:p?p.name:g.names[i],games:0,full:0,wins:0,sum:0,best:Infinity,outs:0});
       if(p)s.name=p.name;
-      s.games++;s.sum+=tot[i];if(tot[i]===best)s.wins++;if(tot[i]<s.best)s.best=tot[i];
+      s.games++;if(tot[i]===best)s.wins++;
+      if(!g.played||g.played>=11){s.full++;s.sum+=tot[i];if(tot[i]<s.best)s.best=tot[i];}
       for(var r=0;r<g.scores.length;r++)if(g.scores[r][i]===0)s.outs++;
     });
   });
-  return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.wins-a.wins||(a.sum/a.games)-(b.sum/b.games);});
+  return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.wins-a.wins||(a.full?a.sum/a.full:1e9)-(b.full?b.sum/b.full:1e9);});
 }
 function vBoard(){
   var st=stats();
@@ -556,14 +557,14 @@ function vBoard(){
     h+='<ol class="rows">';
     st.forEach(function(s,k){
       h+='<li class="row'+(k===0&&s.wins>0?' first':'')+'"><span class="rk">'+(k+1)+'</span><span class="who"><strong>'+esc(s.name)+'</strong>'+
-        '<span>'+s.games+(s.games===1?' game':' games')+', average score '+Math.round(s.sum/s.games)+'</span><span>Best game '+s.best+', went out '+s.outs+(s.outs===1?' time':' times')+'</span></span>'+
+        '<span>'+s.games+(s.games===1?' game':' games')+(s.full?', average score '+Math.round(s.sum/s.full):'')+'</span><span>'+(s.full?'Best game '+s.best+', went out ':'Went out ')+s.outs+(s.outs===1?' time':' times')+'</span></span>'+
         '<span class="big">'+s.wins+'<small>'+(s.wins===1?'win':'wins')+'</small></span></li>';
     });
     h+='</ol><h3 class="sect">Past games</h3><ul class="rows">';
     S.history.slice().reverse().forEach(function(g){
       var best=Math.min.apply(null,g.totals),w=[];g.totals.forEach(function(t,i){if(t===best)w.push(nameOf(g,i));});
       var d=new Date(g.finished).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
-      h+='<li class="row"><span class="who"><strong>'+esc(listNames(w))+' won with '+best+'</strong><span>'+d+', '+g.pids.length+' players</span></span>'+
+      h+='<li class="row"><button class="who" data-act="viewgame" data-id="'+g.id+'"><strong>'+esc(listNames(w))+' won with '+best+'</strong><span>'+d+', '+g.pids.length+' players'+(g.played&&g.played<11?', '+g.played+' of 11 rounds':'')+'. Tap to open</span></button>'+
         '<button class="iconbtn" data-act="delgame" data-id="'+g.id+'" aria-label="Delete this game">'+ICON.x+'</button></li>';
     });
     h+='</ul>';
@@ -658,9 +659,11 @@ function saveRound(){
 }
 
 /* finishing */
-function finishGame(){
-  var g=S.game;if(!g||currentRound(g)<11)return;
-  g.finished=Date.now();g.totals=totals(g);g.names=g.pids.map(function(_,i){return nameOf(g,i);});
+function finishGame(early){
+  var g=S.game;if(!g)return;var done=currentRound(g);
+  if(done<11&&(early!==true||done<1))return;
+  if(done<11){for(var r=done;r<11;r++)g.scores[r]=g.pids.map(function(){return null;});}
+  g.played=done;g.finished=Date.now();g.totals=totals(g);g.names=g.pids.map(function(_,i){return nameOf(g,i);});
   S.history.push(g);S.game=null;save();lastFinished=g;
   go('finish');ceremony(g);
 }
@@ -673,8 +676,13 @@ function shareLink(g){
   var data={v:1,n:g.pids.map(function(_,i){return nameOf(g,i);}),s:done};
   return location.origin+location.pathname+'#g='+b64e(JSON.stringify(data));
 }
-function readShared(){
-  var m=/[#&]g=([A-Za-z0-9_-]+)/.exec(location.hash||'');if(!m)return null;
+function resultLink(g){
+  var np=g.played||11,data={v:1,id:g.id,f:g.finished,n:g.pids.map(function(_,i){return nameOf(g,i);}),s:g.scores.slice(0,np)};
+  return location.origin+location.pathname+'#r='+b64e(JSON.stringify(data));
+}
+function readShared(key){
+  key=key||'g';
+  var m=new RegExp('[#&]'+key+'=([A-Za-z0-9_-]+)').exec(location.hash||'');if(!m)return null;
   try{
     var d=JSON.parse(b64d(m[1]));
     if(!d||!Array.isArray(d.n)||d.n.length<2||d.n.length>MAXP||!Array.isArray(d.s)||d.s.length>11)return null;
@@ -684,12 +692,26 @@ function readShared(){
       if(!Array.isArray(row)||row.length!==names.length)throw 0;
       return row.map(function(v){v=Number(v);if(!isFinite(v)||v<0||v>9999||Math.floor(v)!==v)throw 0;return v;});
     });
-    return {names:names,rounds:rounds};
+    return {names:names,rounds:rounds,id:typeof d.id==='string'?d.id.slice(0,24):null,f:Number(d.f)||Date.now()};
   }catch(e){return null;}
 }
 var shared=null;
 function clearHash(){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
+function openResult(){
+  var d=readShared('r');if(!d||!d.id||d.rounds.length<1)return false;
+  clearHash();
+  var g=null;S.history.forEach(function(x){if(x.id===d.id)g=x;});
+  if(!g){
+    var pids=d.names.map(function(n){return addPlayer(n).id;});
+    g=newGame(pids);g.id=d.id;g.started=d.f;g.finished=d.f;g.played=d.rounds.length;
+    d.rounds.forEach(function(row,r){g.scores[r]=row.slice();});
+    g.totals=totals(g);S.history.push(g);S.history.sort(function(a,b){return a.finished-b.finished;});save();
+    setTimeout(function(){toast('Added to your leaderboard');},300);
+  }
+  lastFinished=g;go('finish');return true;
+}
 function offerShared(){
+  if(openResult())return;
   shared=readShared();if(!shared)return;
   var r=shared.rounds.length;
   sheet(sheetHead('Open this game?')+
@@ -701,6 +723,62 @@ function openShared(){
   var pids=shared.names.map(function(n){return addPlayer(n).id;});
   var g=newGame(pids);shared.rounds.forEach(function(row,r){g.scores[r]=row.slice();});
   S.game=g;save();shared=null;clearHash();closeSheet();go('game');
+}
+
+function shareFinalSheet(){
+  sheet(sheetHead('Share the final scores','Anyone who opens the link also gets this game on their own leaderboard')+
+    '<div class="menu"><button class="btn primary" data-act="sharefinallink">Share a link</button><button class="btn" data-act="sharefinalimage">Share as an image</button></div>');
+}
+function shareFinalLink(){
+  var g=lastFinished,url=resultLink(g),A=awards(g);
+  function shown(){sheet(sheetHead('Share the final scores')+'<input class="field" style="width:100%;flex:none" readonly value="'+esc(url)+'" onfocus="this.select()"><button class="btn primary" data-act="copylink">Copy the link</button>');}
+  if(navigator.share){navigator.share({title:'Five Crowns final scores',text:listNames(A.champ)+' won Five Crowns with '+A.best+' points',url:url}).then(closeSheet).catch(shown);}
+  else shown();
+}
+function scoreImage(g,cb){
+  var A=awards(g),st=A.st,W=1080,rowH=92,top=560,H=top+st.length*rowH+250,c=document.createElement('canvas');c.width=W;c.height=H;
+  var x=c.getContext('2d');
+  function paint(img){
+    var bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#3a1280');bg.addColorStop(.45,'#1d0a45');bg.addColorStop(1,'#120529');x.fillStyle=bg;x.fillRect(0,0,W,H);
+    var gl=x.createRadialGradient(W/2,150,10,W/2,150,520);gl.addColorStop(0,'rgba(255,61,154,.45)');gl.addColorStop(1,'rgba(255,61,154,0)');x.fillStyle=gl;x.fillRect(0,0,W,700);
+    if(img)x.drawImage(img,W/2-135,50,270,180);
+    x.textAlign='center';x.textBaseline='alphabetic';
+    var name=listNames(A.champ).toUpperCase(),fs=120;x.font=fs+'px Bungee,Impact,sans-serif';
+    while(x.measureText(name).width>W-140&&fs>40){fs-=6;x.font=fs+'px Bungee,Impact,sans-serif';}
+    x.fillStyle='#ff3d9a';x.fillText(name,W/2+5,355+5);x.fillStyle='#fff4e0';x.fillText(name,W/2,355);
+    x.fillStyle='#2de2e6';x.font='64px Yellowtail,cursive';x.fillText(A.champ.length>1?'share the crown':'takes the crown',W/2,435);
+    x.fillStyle='#bfaee6';x.font='500 34px Outfit,sans-serif';
+    x.fillText(A.best+' points, the lowest of '+st.length+(A.np<11?'  ('+A.np+' of 11 rounds)':''),W/2,500);
+    var rk=0,prev=null;
+    st.forEach(function(s,k){
+      if(s.t!==prev){rk=k+1;prev=s.t;}
+      var y=top+k*rowH,first=s.t===A.best,last=s.t===A.worst&&A.worst>A.best;
+      x.fillStyle=first?'#ffc83d':last?'#ff2d4a':'#2d1566';x.beginPath();if(x.roundRect)x.roundRect(70,y,W-140,rowH-14,20);else x.rect(70,y,W-140,rowH-14);x.fill();
+      x.fillStyle=first?'#1a0633':'#fff4e0';x.textAlign='left';x.font='40px Bungee,Impact,sans-serif';x.fillText(rk,104,y+54);
+      x.font='600 42px Outfit,sans-serif';x.fillText(s.name,180,y+54);
+      x.textAlign='right';x.font='46px Bungee,Impact,sans-serif';x.fillText(s.t,W-104,y+56);
+    });
+    var y2=top+st.length*rowH+50;x.textAlign='center';x.fillStyle='#fff4e0';x.font='500 34px Outfit,sans-serif';
+    x.fillText('Won the last hand: '+listNames(A.last),W/2,y2);
+    x.fillText('Most points: '+listNames(A.most)+' with '+A.worst,W/2,y2+52);
+    x.fillStyle='#bfaee6';x.font='500 30px Outfit,sans-serif';
+    x.fillText(new Date(g.finished).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})+'   mikek.ai/fivecrowns',W/2,H-50);
+    c.toBlob(function(b){cb(b);},'image/png');
+  }
+  var svg=crownSVG('').replace('<svg','<svg xmlns="http://www.w3.org/2000/svg" width="270" height="180"');
+  var im=new Image();im.onload=function(){paint(im);};im.onerror=function(){paint(null);};
+  var go2=function(){im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);};
+  try{Promise.all([document.fonts.load('40px Bungee'),document.fonts.load('64px Yellowtail'),document.fonts.load('600 42px Outfit')]).then(go2,go2);}catch(e){go2();}
+}
+function shareFinalImage(){
+  var g=lastFinished;toast('Making the image');
+  scoreImage(g,function(blob){
+    if(!blob){toast('Couldn\'t make the image');return;}
+    var file=null;try{file=new File([blob],'five-crowns-scores.png',{type:'image/png'});}catch(e){}
+    function download(){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='five-crowns-scores.png';document.body.appendChild(a);a.click();a.remove();toast('Image saved to your downloads');closeSheet();}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Five Crowns final scores'}).then(closeSheet).catch(function(e){if(!e||e.name!=='AbortError')download();});}
+    else download();
+  });
 }
 
 /* install help */
@@ -730,7 +808,7 @@ function ceremony(g){
   var A=awards(g),old=document.getElementById('cer');if(old)old.remove();
   document.getElementById('toast').classList.remove('on');
   var stages=[
-    {k:'last',lab:'the last hand goes to',names:A.last,sub:A.lmin===0?'Went out on the Kings round':'Lowest in the Kings round with '+A.lmin},
+    {k:'last',lab:'the last hand goes to',names:A.last,sub:A.lmin===0?'Went out on the '+wildName(ROUNDS[A.np-1])+' round':'Lowest in the '+wildName(ROUNDS[A.np-1])+' round with '+A.lmin},
     {k:'most',lab:'most points',names:A.most,sub:A.worst+' points. Somebody had to hold the jokers.'},
     {k:'champ',lab:A.champ.length>1?'sharing the crown':'lowest total takes the crown',names:A.champ,sub:A.best+' points'}];
   var el=document.createElement('div');el.id='cer';document.body.appendChild(el);
@@ -835,8 +913,14 @@ var ACT={
   enter:function(el){openEntry(+el.dataset.r);},
   pick:function(el){entry.at=+el.dataset.i;entry.fresh=true;drawEntry();},
   saveround:saveRound,
-  finish:finishGame,
+  finish:function(){finishGame(false);},
+  finishearly:function(){var n=currentRound(S.game);ask('Finish after '+n+(n===1?' round':' rounds')+'?','The scores so far become the final scores. The game goes on the leaderboard as a short game, so it counts for wins but not for averages.','Finish and crown the winner','reallyfinishearly');},
+  reallyfinishearly:function(){closeSheet();finishGame(true);},
   replay:function(){ceremony(lastFinished);},
+  sharefinal:shareFinalSheet,
+  sharefinallink:shareFinalLink,
+  sharefinalimage:shareFinalImage,
+  viewgame:function(el){var g=null;S.history.forEach(function(x){if(x.id===el.dataset.id)g=x;});if(g){lastFinished=g;go('finish');}},
   close:closeSheet,
   rematch:function(){
     var g=lastFinished,ids=g.pids.filter(function(id){return !!player(id);});
@@ -845,7 +929,8 @@ var ACT={
     S.game=newGame(ids);save();flipNext=true;go('game');
   },
   menu:function(){
-    sheet(sheetHead('Game menu')+'<div class="menu"><button class="btn" data-act="share">Send this game to another phone</button>'+
+    var cr=currentRound(S.game);
+    sheet(sheetHead('Game menu')+'<div class="menu">'+(cr>=1&&cr<11?'<button class="btn gold" data-act="finishearly">Finish the game now</button>':'')+'<button class="btn" data-act="share">Send this game to another phone</button>'+
       '<button class="btn" data-act="togglewild">'+(S.hideWild?'Show what\'s wild each round':'Hide what\'s wild each round')+'</button>'+
       '<button class="btn" data-act="values">What each card costs you</button>'+
       '<button class="btn quiet" data-act="abandon">End this game without saving</button></div>');
